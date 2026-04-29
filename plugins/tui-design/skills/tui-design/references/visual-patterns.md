@@ -1,0 +1,617 @@
+# Visual patterns — borders, color, density, layout
+
+A deep dive into the visual design choices that make TUIs feel professional. The top-level `SKILL.md` covers the principles; this file goes deeper with the *why*, the *when*, and the trade-offs.
+
+---
+
+## The seven canonical layouts in detail
+
+### 1. Persistent multi-panel
+
+All panels visible simultaneously in fixed positions. Focus shifts via Tab or numeric keys. The user builds spatial memory: "files are top-left, branches are below, diff is on the right."
+
+**Examples:** lazygit (5 left panels + 1 right), btop (CPU/mem/net/processes as 4 quadrants), htop (header / process list / F-key footer).
+
+**When to use:**
+- Users want to see multiple related views at once without switching.
+- The data is observed at a glance (monitors, dashboards).
+- Numeric panel jumps make sense (`1`–`5`).
+
+**When to avoid:**
+- Each pane needs full attention (use IDE three-panel or drill-down stack instead).
+- Total information would overwhelm at smaller terminal sizes.
+
+**Implementation notes:**
+- Use border *color* to indicate the focused panel — strongest possible signal.
+- Footer hint bar should be **panel-aware**: `c` does different things in lazygit's Files vs Commits panel; show what's relevant.
+- Numeric jumps (`1`–`5`) should work from any panel — don't make users return to a "menu" first.
+
+### 2. Miller columns
+
+Three (sometimes more) columns: parent → current → preview. `h`/`l` (or `←`/`→`) ascend/descend.
+
+**Examples:** yazi (default ratio `[1, 4, 3]` for parent/current/preview), ranger (the original), broot (tree-mode variant), nnn, lf.
+
+**When to use:**
+- Hierarchical data: filesystems, JSON, K8s resource trees.
+- Users need to see context (parent) and outcome (preview) without losing position.
+
+**When to avoid:**
+- Narrow terminals (<80 cols) — degrades poorly. Provide a single-pane fallback.
+- Non-hierarchical data — the parent column is wasted.
+
+**Implementation notes:**
+- The middle column should be widest — that's where the user works.
+- Preview column shows file content / nested object / pod logs depending on what's selected.
+- Selection in the middle column updates the preview live (debounce if expensive).
+
+### 3. Drill-down stack
+
+Browser-style: navigate into deeper views with a back-stack, `Esc` returns to the previous view.
+
+**Examples:** k9s (`:pods` → Enter on pod → `Esc` back), lazydocker (sidebar → drill into container → `Esc`), gh dash (PR list → PR detail).
+
+**When to use:**
+- Many resource types where the user needs to pivot between them.
+- Each detail view is full-screen and demands attention.
+- Command-mode navigation is natural (`:resource`).
+
+**When to avoid:**
+- Users need to compare two things side-by-side (use multi-panel).
+- The back-stack would get deep (>3 levels confuses users).
+
+**Implementation notes:**
+- Status bar should show the current "address" (breadcrumb): `cluster/namespace/pods/my-pod-7d9f`.
+- `Esc` always backs up one level. The user should never feel trapped.
+- Implement a stack of view-state objects. On push, save the current view; on pop, restore.
+
+### 4. Widget dashboard
+
+Independent widgets in a grid, each owning its data lifecycle. Layout is configurable.
+
+**Examples:** bottom (btm), btop, glances, gtop. All let users define rows and column ratios in TOML.
+
+**When to use:**
+- Monitoring/observability where users want to compose their own view.
+- Each widget has its own update cadence.
+
+**When to avoid:**
+- Static data layouts — config overhead doesn't earn its keep.
+- Users who want a single curated experience.
+
+**Implementation notes:**
+- Define a config schema (TOML/YAML) early. Users *will* want to customize.
+- Each widget should be independently scrollable/expandable.
+- Mouse-resize is nice-to-have (btop supports it).
+
+### 5. IDE three-panel
+
+Sidebar → main content → detail/output. The main panel often has tabs giving it multiple personalities.
+
+**Examples:** Posting (collection tree → request editor → response), Harlequin (catalog → editor → results), helix (tree+telescope+diagnostics).
+
+**When to use:**
+- Editor-like workflows where users compose then execute then inspect.
+- A small set of "current items" needs prominent focus while keeping a navigator.
+
+**When to avoid:**
+- Pure browsing (no composition step) — multi-panel is simpler.
+- Mobile-style narrow terminals — too many panels to fit.
+
+**Implementation notes:**
+- Sidebar collapsible (`Ctrl+B` or similar). Users will toggle it.
+- Main panel tabs cycled with `[`/`]` or `Ctrl+Tab`.
+- Output panel often docked bottom or right; resizable.
+
+### 6. Overlay / popup
+
+Appears over the shell, does one thing, exits.
+
+**Examples:** fzf (the canonical example), atuin (replaces Ctrl+R), zoxide+fzf for directory selection, gum prompts.
+
+**When to use:**
+- "Summon → choose → output → exit" interactions.
+- Tools meant to compose with shell pipelines.
+- Replacing a built-in like Ctrl+R reverse-search.
+
+**When to avoid:**
+- Long-running interactions — users will resent the cramped popup space.
+- Anything that needs to persist state between invocations.
+
+**Implementation notes:**
+- **Use the alternate screen** so the popup doesn't pollute scrollback.
+- Provide both `--height 40%` (inline) and `--popup` (centered) modes.
+- Output goes to stdout; the popup goes to stderr or `/dev/tty`.
+- Sub-100ms startup is non-negotiable — users summon these dozens of times a day.
+
+### 7. Tabbed within panel
+
+Tab bars inside a larger layout, cycled with `[`/`]` or `Ctrl+Tab`.
+
+**Examples:** lazygit's Local/Remotes/Tags tabs in the branches panel; lazydocker's Logs/Stats/Env/Config/Top tabs in the right pane.
+
+**When to use:**
+- One panel needs multiple personalities without changing the global layout.
+- The tabs are related (different views of the same selected object).
+
+**When to avoid:**
+- Tabs are unrelated — that's a sign you actually need different panels.
+- More than 5–6 tabs — split into nested tabs or use a different pattern.
+
+**Implementation notes:**
+- Active tab visually distinct (bold + underline + accent color).
+- Tab key labels (`Logs [1]`, `Stats [2]`, `Env [3]`) so users can jump directly.
+- Cycle order matches reading order (left to right).
+
+---
+
+## Borders — when, what, and why
+
+### The Unicode block
+
+The Unicode box-drawing block is U+2500–U+257F:
+- **Single line**: `─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼`
+- **Heavy**: `━ ┃ ┏ ┓ ┗ ┛ ┣ ┫ ┳ ┻ ╋`
+- **Double**: `═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬`
+- **Rounded**: `╭ ╮ ╰ ╯` (combined with single-line straights)
+
+### The aesthetic landscape
+
+- **Single-line** — default for most modern TUIs (lazygit, k9s, btop, htop). Reads cleanly without dominating.
+- **Rounded corners** — the Charm aesthetic (Bubble Tea apps, gum, glow). Slightly softer; modern.
+- **Heavy** — emphasis. Use sparingly — for the focused panel border, or a "hot" warning state.
+- **Double** — reads as "DOS." Avoid for modern apps unless you're going for retro.
+
+### When to use borders
+
+- The pane has dynamic content needing a visible boundary.
+- Focus state must be communicated visually (border color change is the strongest signal).
+- Adjacent panels need clear separation.
+- The border is doing real work — not just decoration.
+
+### When to skip borders
+
+- Content is static (htop has no internal borders — it's all dense layout).
+- Density matters more than structure.
+- The pane is implicitly bounded (only thing on screen, or at the edge).
+
+A single blank row often beats a heavy border. Don't decorate.
+
+### The background-leak problem
+
+Each terminal cell has only fg/bg colors. A border cell renders the line in the foreground but the cell's background "leaks" through behind the border characters. If your panel has a contrasting background to its parent, this looks wrong:
+
+```
+parent_bg has black background
+panel has dark blue background
+border characters: render in panel's blue background
+        ^^^ creates a visible "step" between border and content
+```
+
+**Solutions:**
+- Use the same background for panel and borders.
+- Or use one-eighth block characters (`▏▎▍`) as borders — Textual does this for themed apps.
+
+### ASCII fallback
+
+For legacy SSH, Windows conhost, `TERM=dumb`, or any system where Unicode might be unreliable:
+- Single-line `─│┌┐└┘├┤┬┴┼` → `-|+++++++++`
+- Heavy → `=|+++` (or just bold the ASCII)
+- Rounded `╭╮╰╯` → `+`
+
+Detect via `$LANG` containing UTF-8 or `$LC_ALL`, and via terminal capability queries. Provide a config option (`--ascii`, `MYAPP_ASCII=1`) for explicit override.
+
+---
+
+## Color in depth
+
+### The three tiers
+
+Design in layers:
+
+1. **Monochrome** — does the app work with `NO_COLOR=1`? Layout, weight (bold/dim), and reverse video carry the meaning.
+2. **16 ANSI** — does it look right with the user's theme (Solarized, Gruvbox, Catppuccin, whatever)? You don't control these; theme-coherent palettes do.
+3. **256 / truecolor** — fine-grained palette for designed themes. Detect via `$COLORTERM=truecolor`.
+
+The user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+
+### Semantic tokens
+
+Define a vocabulary by *function*, not appearance:
+
+```
+status.success    → green
+status.warning    → yellow
+status.error      → red
+status.info       → blue or cyan
+
+text.primary      → default fg
+text.muted        → dim or gray
+text.emphasis     → bold + accent
+
+bg.base           → default bg
+bg.surface        → slightly elevated
+bg.overlay        → modal/popup bg
+
+accent.primary    → brand color
+accent.secondary  → complementary
+
+border.default    → muted
+border.focus      → accent.primary
+
+git.staged        → green
+git.modified      → yellow
+git.untracked     → red or cyan
+git.added         → green (foreground)
+git.deleted       → red (foreground)
+```
+
+Then map tokens to palette colors. **Lipgloss's `AdaptiveColor`**, **Textual's CSS variables**, and **Ratatui's palette indirection** all implement this.
+
+This indirection earns its keep when adding themes (Catppuccin Latte + Frappé + Macchiato + Mocha is one config file, not four code changes) or when supporting light/dark modes.
+
+### Conventional meanings
+
+| Color | Meaning |
+|---|---|
+| Green | Success, added, online, OK |
+| Red | Error, deleted, danger, offline |
+| Yellow | Warning, modified, pending, in-progress |
+| Cyan / Blue | Info, paths, links, hints |
+| Magenta | Special, highlights, attention without alarm |
+| Dim / gray | Secondary, disabled, metadata, timestamps |
+| Bold (any color) | Title, primary content, emphasis |
+
+Stick to conventions. A green error message confuses everyone.
+
+### Color and accessibility
+
+About 8% of males have red-green color vision deficiency. Don't rely on color alone:
+
+- Pair color with **letters**: lazygit shows file status as `M` (modified, yellow), `A` (added, green), `D` (deleted, red), `??` (untracked, cyan). Even if color is invisible, the letters carry meaning.
+- Pair color with **symbols**: delta's `+` and `-` line prefixes work in monochrome.
+- Pair color with **position**: errors at the end of output, success in a separate column.
+
+**Safe color pairs for CVD:**
+- Blue + orange.
+- Blue + yellow.
+- Black + white (and any high-contrast neutral pair).
+
+Avoid red + green as the only distinction. If you must use them, add letters or symbols.
+
+### Honor `NO_COLOR`
+
+[no-color.org](https://no-color.org) is a 2018 informal standard. Respect it: when `NO_COLOR` env var is set (any value), suppress all color output.
+
+`ripgrep`, `bat`, `eza`, `delta`, `fd`, `gh`, `cargo`, all major modern tools honor it. Most language ecosystems' color libraries (chalk, picocolors, owo-colors, rich, lipgloss) handle it automatically.
+
+Provide tool-specific `MYAPP_NO_COLOR` and `MYAPP_FORCE_COLOR` for finer control.
+
+---
+
+## Typography in monospace
+
+You can't change font size. Typography signals are limited but useful:
+
+| Attribute | Use for | Notes |
+|---|---|---|
+| **Bold** | Titles, current selection, primary content, focused panel name | Universal support |
+| **Dim** | Metadata, timestamps, disabled items, secondary text | Universal support |
+| **Italic** | Light emphasis | Poorly supported; never the only signal |
+| **Underline** | OSC 8 hyperlinks, shortcut hints | Wide support; meaningful |
+| **Reverse video** | Cursor row, current selection | Works on every terminal back to VT100 |
+| **Strikethrough** | Cancelled / deleted items | Limited support |
+| **Blink** | Don't | Disabled in most modern terminals; accessibility hazard |
+
+**Reverse video is the canonical "current selection" signal.** It's the most reliable and most readable. Use it for the highlighted row in lists, the current cell in tables, the cursor position.
+
+**Bold + accent color** for the focused panel's title. Combined with border color change, that's unmistakable focus indication.
+
+---
+
+## Density: pack vs pad
+
+You have a fixed grid. Two strategies:
+
+### Pack (high density)
+
+Examples: htop, btop, k9s.
+
+Used when:
+- Data is scanned at a glance.
+- It updates in real time.
+- Users read horizontally across rows.
+
+Tactics:
+- Tight rows (no extra spacing).
+- Compact headers (one line, dim text).
+- Abbreviations and units (`GiB`, `1.2k`, `99.9%`).
+- Sparklines, mini-bars.
+- One-line per record.
+
+### Pad (low density)
+
+Examples: gum/huh forms, glow markdown, Posting.
+
+Used when:
+- Users are reading prose.
+- Filling forms (fields need breathing room).
+- Making single decisions.
+
+Tactics:
+- Generous vertical spacing between fields.
+- One field per line; labels above for narrow.
+- Single column for forms.
+- Lots of margin around modals.
+
+**A single blank row often beats a heavy border** for visual separation in moderate-density layouts.
+
+### Hybrid: hierarchy through density
+
+Use density to communicate hierarchy: dense data tables in the main panel, padded settings/forms in modals, dense status bars at the bottom.
+
+---
+
+## Visual hierarchy in monospace
+
+Since you can't change font size, hierarchy comes from:
+
+1. **Position** — top/left reads first; status bar at bottom.
+2. **Color and weight** — bold + accent for headlines; dim for secondary.
+3. **Reverse video** — current selection.
+4. **Indentation and connectors** — `├─ └─` for trees; consistent indent units (2 cells is standard).
+5. **Whitespace** — blank rows for separation; pads around important content.
+6. **Bullets / symbols** — `▶` expandable, `▼` expanded, `●` active, `○` inactive, `•` static bullet.
+7. **Borders** — focused panel highlighted via border color.
+
+Combining 2–3 signals creates clear hierarchy. The current selection: reverse video + bold. The focused panel: accent border + bold title. A warning: yellow + `[!]` prefix + slightly lifted from surrounding text via blank line above.
+
+---
+
+## Tables and lists
+
+### Alignment rules
+
+- **Numerics: right-aligned.** Easy to scan magnitudes.
+- **Text: left-aligned.** Standard.
+- **Dates: fixed-width ISO-8601** (`2026-04-28 14:30`). Sortable; doesn't shift on locale.
+- **Status / categorical: centered or left** — be consistent.
+
+### Truncation
+
+When content exceeds column width:
+
+- **Tail truncation** (`/usr/local/share/...`) — for paths, where the tail is the leaf you're looking at. Used by eza, k9s.
+- **Middle truncation** (`/usr/.../file.txt`) — when the basename matters. Used by bat, helix.
+- **Wrap** — only for prose. Never wrap in cells of dense tables.
+
+Reserve a cell (or three for `...`) for the ellipsis. Don't truncate so aggressively that nothing remains: `... ` is useless.
+
+### Sort indicators
+
+Show which column is currently sorted: `▲` ascending, `▼` descending. Place after the column header: `Size ▼`. Click (or key) to toggle and cycle.
+
+### Filtering
+
+When filtering a list:
+
+- Show count: `123/45678` (the fzf convention).
+- Highlight matched substring within results.
+- Sub-100ms response — anything slower feels broken.
+
+### Wide tables on narrow terminals
+
+Three approaches:
+
+1. **Hide low-priority columns.** Define column priority; drop them as width shrinks. eza does this.
+2. **Horizontal scroll.** k9s scrolls table content horizontally on narrow terminals.
+3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The universal escape hatch.
+
+Detail-on-Enter is the highest-leverage pattern: you can show fewer columns, and the user is one keypress away from full detail.
+
+### Virtualization
+
+**Always virtualize** lists that might exceed a few hundred items.
+
+- **k9s** virtualizes for thousands of pods.
+- **Toolong** tails multi-GB log files.
+- **Textual `DataTable`** virtualizes by default.
+- **Ratatui `List` + `ListState`** handles offsetting efficiently.
+- **Bubbles `list`** virtualizes.
+- **Ink** + `<Static>` for append-only logs.
+
+The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ items.
+
+---
+
+## Status bars, headers, footers
+
+### The canonical four-section layout
+
+```
+┌─────────────────────────────────────────┐
+│ Header (top)                            │ ← persistent context: app, dataset, mode
+├─────────────────────────────────────────┤
+│                                         │
+│   Main area (middle)                    │ ← the panels
+│                                         │
+├─────────────────────────────────────────┤
+│ Status / mode line                      │ ← ephemeral feedback
+│ Footer hint bar                         │ ← always-visible shortcuts
+└─────────────────────────────────────────┘
+```
+
+Some apps merge status and footer into one line. Some skip the header. The principle stays: persistent context up top, work in the middle, keys at the bottom.
+
+### Header content
+
+- App name (often with logo char or color block).
+- Current dataset / context: branch name (lazygit), cluster + namespace (k9s), file path (bat/glow).
+- Mode indicator (NORMAL / INSERT in editors).
+- Right-aligned: time, host, version (sparingly — only if meaningful).
+
+### Status / mode line
+
+- Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
+- Auto-fade after a few seconds (or replace with idle state).
+- Vim-style mode indicators with **distinct cursor shapes**: block in NORMAL, bar in INSERT, underline in REPLACE.
+- Color-coded: green = OK / saved, yellow = pending, red = error.
+
+### Footer hint bar
+
+The single most important discoverability tool.
+
+- 3–5 most-useful shortcuts always visible.
+- Update based on context (panel, mode).
+- Full reference behind `?`.
+
+Format: `key action · key action · key action`. Use `·` (middle dot) or `|` as separator.
+
+Examples:
+- htop: `F1Help F2Setup F3Search F4Filter F5Tree F6SortBy F7Nice- F8Nice+ F9Kill F10Quit`
+- lazygit: per-pane, e.g., in Files panel `space stage ↵ commit p push P pull r refresh ?`
+
+**Auto-generation:** Bubble Tea's `bubbles/help` generates from your `key.KeyMap`. Textual's `Footer` widget renders `BINDINGS`. Ink doesn't auto-generate but you can build the same. Define keys once, get the hint bar for free.
+
+---
+
+## Progress indicators
+
+### Spinners
+
+The de facto modern default for indeterminate work: **Braille spinners**.
+
+```
+⠋⠙⠹⠸⠼⠴⠦⠧
+```
+
+Eight frames at ~80ms per frame = smooth rotation. `cli-spinners` (the npm package, vendored everywhere) ships ~70+ named styles.
+
+**Rules:**
+- Show only after ~150–200ms — instant work shouldn't flash a spinner.
+- Stop with a final state symbol: `✓` (success), `✗` (failure), or just disappear.
+- Suppress entirely on non-TTY. CI logs shouldn't have spinners.
+
+### Determinate progress bars
+
+Block characters for sub-cell precision:
+```
+▏▎▍▌▋▊▉█
+```
+
+These give 8 sub-positions per cell. A 40-cell-wide bar can represent 40 × 8 = 320 distinct progress states.
+
+```
+[████████▎             ] 41%
+```
+
+Show: percent, current/total counts where meaningful, ETA for long operations.
+
+### Multi-progress
+
+Multiple parallel tasks each with their own bar:
+
+```
+package-a [████████████████████] 100% ✓
+package-b [████████▎           ]  41%
+package-c [██▎                 ]  10%
+```
+
+Bubbles `MultiProgress`, indicatif `MultiProgress`, rich `Progress` (multiple tasks), listr2 `concurrent` mode all support this. Used by Docker pulls, npm/cargo builds, parallel installers.
+
+### Pulse / fade
+
+Ambient indication of background work without commanding attention. Used by lazygit's auto-fetch — a subtle dim pulse on the relevant panel. Useful when work is happening but doesn't need to be in the user's face.
+
+### Empty states and loading states
+
+**Empty states:** never just "No data." Say what to do next: "No requests. Press `n` to create one." Posting does this well.
+
+**Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
+
+**Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
+
+---
+
+## Theming systems
+
+Most production TUIs support themes. The canonical approach:
+
+1. **Define semantic tokens** (`status.error`, `text.muted`, etc.).
+2. **Define palette mappings** as TOML/YAML/CSS — one file per theme.
+3. **Allow theme selection** via config, env var, or runtime command.
+
+### Configuration formats
+
+- **TOML** — lazygit, bottom, btop, helix, delta, bat, fzf, starship.
+- **YAML** — k9s, alacritty.
+- **TCSS (Textual CSS)** — Textual apps; live-reloads.
+- **JSON** — VS Code-style; less common in TUIs.
+
+### Community palettes you should support
+
+Either ship them or document how to import them:
+
+- **Catppuccin** (Latte, Frappé, Macchiato, Mocha).
+- **Dracula**.
+- **Nord**.
+- **Gruvbox** (light, dark; soft, medium, hard).
+- **Tokyo Night**.
+- **Rose Pine** (Main, Moon, Dawn).
+- **Solarized** (light, dark).
+- **base16** umbrella spec — many themes follow this.
+
+The community has built theme repos for most popular tools; users expect plug-and-play.
+
+### Light/dark detection
+
+- OSC `]11;?` query — many terminals respond with their background color.
+- `$COLORFGBG` env var — set by some terminals (rxvt-derivatives).
+- Lipgloss's `AdaptiveColor` and Textual's runtime theme switching abstract this.
+
+If you support both light and dark, default to "auto" and let users override with `--theme dark`.
+
+---
+
+## Responsive design
+
+Assume minimum **80×24** (the historical VT100 size). Below that:
+
+- Render a clear "terminal too small (need 80×24)" message.
+- Don't crash, don't render garbled content.
+
+### Adaptive breakpoints
+
+Pick breakpoints that match real terminal sizes:
+
+- **Narrow (<80 cols)**: collapse multi-pane to single-pane with tab nav. lazygit's `-sm full` does this.
+- **Standard (80–120)**: canonical layout.
+- **Wide (>120)**: show extra columns and preview panes.
+
+### Sizing primitives
+
+**Never use absolute positions.** Use:
+- **Percentages** (Textual `width: 30%`).
+- **Fractional units** (Textual `1fr`/`3fr`, Ratatui `Fill(weight)`).
+- **`min` / `max`** constraints.
+- **Ratios** (Ratatui `Ratio(num, den)`).
+- **Flex** (Ink, Yoga).
+
+Subscribe to `SIGWINCH` and re-layout on every resize event. Debounce rapid resizes (100–200ms) so a user dragging the corner doesn't trigger 60 re-layouts.
+
+---
+
+## Common visual pitfalls
+
+1. **Hardcoded colors** that clash with user themes. Use semantic tokens.
+2. **Decorative borders** that don't earn their keep.
+3. **Color-only signaling.** Pair with letters or symbols.
+4. **Misaligned tables** when text contains CJK or emoji. Use `unicode_width` / `string-width`.
+5. **Over-bolding.** Bold loses meaning when half the screen is bold.
+6. **Inconsistent capitalization** in headers (mix of "Branch", "branch", "BRANCH").
+7. **Emoji as the only signal.** Some terminals render them as boxes.
+8. **Light-mode-only colors** (low contrast on dark, or vice versa).
+9. **Tiny status bar** that hides important state under the fold.
+10. **No visual focus indication** — users tab around guessing where they are.
+
+When reviewing a TUI, walk this list. Most existing apps fail on 3–5 items.

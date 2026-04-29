@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.skill
+dist/
+
+# OS
+Thumbs.db
+
+# Skill workspace (local testing)
+*-workspace/

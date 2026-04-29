@@ -1,0 +1,22 @@
+{
+  "name": "tui-design",
+  "version": "1.0.0",
+  "description": "Design and build clean, professional, minimal terminal UI (TUI) applications and command-line tools — covers Bubble Tea, Ratatui, Textual, Ink, plus universal patterns for layout, color, keybindings, and discoverability.",
+  "author": {
+    "name": "gfargo",
+    "url": "https://github.com/gfargo"
+  },
+  "repository": "https://github.com/gfargo/tui-design-skill",
+  "license": "MIT",
+  "keywords": [
+    "tui",
+    "terminal",
+    "cli",
+    "bubble-tea",
+    "ratatui",
+    "textual",
+    "ink",
+    "design",
+    "ux"
+  ]
+}

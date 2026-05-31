@@ -1,6 +1,8 @@
 # Rust ecosystem — Ratatui, crossterm, Cursive, clap
 
-Ratatui dominates Rust TUI development with 20.1k+ stars, 24.9M+ downloads, and 3,500+ crates building on it. Forked from `tui-rs` in February 2023. Notable production users: **gitui, bottom, yazi, atuin, bandwhich, oha, tokio-console, csvlens, gpg-tui, systemctl-tui, tenere, kdash**. Helix uses its own custom renderer but follows similar patterns.
+Ratatui dominates Rust TUI development — thousands of crates build on it. Forked from `tui-rs` in February 2023. Notable production users: **gitui, bottom, yazi, atuin, bandwhich, oha, tokio-console, csvlens, gpg-tui, systemctl-tui, tenere, kdash**. Helix uses its own custom renderer but follows similar patterns.
+
+**Current line: 0.30** (in beta through late 2025). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
 
 ## Quick recommendation
 
@@ -163,7 +165,7 @@ let span = "Hello".bold().yellow().on_black();
 - **Termion** — Unix-only, older, smaller. Choose only if you want Unix-only and minimal dependencies.
 - **Termwiz** — cross-platform, advanced features (Sixel, kitty image protocol). Choose if you need terminal graphics protocols. Authored by the WezTerm developer.
 
-**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Ratatui 0.30+ provides `crossterm_{version}` feature flags to manage this.
+**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps — pick the one flag matching your Crossterm and don't enable both.
 
 ## State management patterns
 

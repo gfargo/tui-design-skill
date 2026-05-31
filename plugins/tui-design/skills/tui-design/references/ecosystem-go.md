@@ -21,7 +21,14 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 
 ## Bubble Tea (charmbracelet/bubbletea)
 
-The Elm Architecture in Go: ~42k stars, weekly releases, v2 in beta. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() string`.
+The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() string`.
+
+**v2 is stable** (shipped 2025). What changed and why it matters:
+- **New "Cursed Renderer"** — rewritten from scratch on the ncurses diffing algorithm; faster and more accurate redraws. Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
+- **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback.
+- **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). Lipgloss and Bubbles have matching v2 lines — keep all three on the same major.
+
+**Migrating v1 → v2:** the core MVU loop is unchanged, so most models port cleanly. The friction is in the key/message types (richer `KeyMsg`, new mouse messages) and that styling is now pure Lipgloss v2. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
 
 **The mental model:**
 - **Model**: a single struct holding all state.
@@ -260,7 +267,7 @@ Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect
 
 ## tview (rivo/tview)
 
-Retained-mode, callback-based — the traditional ncurses style. Built on **tcell** (gdamore's terminal library, replacement for termbox). ~13.8k stars, maintained slowly but steadily. Powers **k9s**.
+Retained-mode, callback-based — the traditional ncurses style. Built on **tcell** (gdamore's terminal library, replacement for termbox). Mature and maintained slowly but steadily. Powers **k9s**.
 
 **Widgets:** `Box`, `TextView`, `TextArea`, `InputField`, `Table`, `TreeView`, `List`, `Form`, `Image`, `Modal`, `Pages`, `Flex`, `Grid`, `Frame`, `DropDown`, `Button`, `Checkbox`.
 

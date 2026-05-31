@@ -2,7 +2,7 @@
 
 Three tools occupy distinct niches:
 
-- **Textual** (>27k stars) — modern reactive TUI framework. Async-first, CSS-styled, web-deployable.
+- **Textual** — the modern reactive TUI framework for Python. Async-first, CSS-styled, web-deployable.
 - **Rich** — output formatting library. Used by thousands of CLIs; the rendering engine inside Textual but excellent standalone.
 - **prompt_toolkit** — input-focused REPLs and shells. Powers IPython, ptpython, mycli/pgcli/litecli.
 

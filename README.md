@@ -171,7 +171,7 @@ The nesting (`plugins/tui-design/skills/tui-design/`) is the official Claude Cod
 
 Issues and pull requests welcome. Particularly useful contributions:
 
-- **Fixes to ecosystem references** when libraries change (Bubble Tea v2 lands, Ratatui adds new widgets, Textual ships new APIs)
+- **Fixes to ecosystem references** when libraries change (a new Bubble Tea or Lipgloss major, Ratatui adds new widgets, Textual ships new APIs)
 - **New exemplar apps** worth studying with concrete lessons
 - **Clarifications** where the skill's advice produced unexpected results in real use
 - **Translations** of the skill into other languages

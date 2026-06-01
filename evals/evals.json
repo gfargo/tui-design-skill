@@ -1,0 +1,43 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Design-review evals targeting two real-use weak spots: (1) sense of overall terminal clutter/density, (2) responsive behavior across terminal sizes. Eval 1 = explicit clutter review with a busy mockup. Eval 2 = explicit responsive question. Eval 3 = open-ended review that names NEITHER concern, to test whether the skill surfaces clutter + responsiveness proactively.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "cluttered-ci-dashboard-review",
+      "prompt": "I'm building a TUI for monitoring our CI/CD pipelines in Go (Bubble Tea + Lipgloss). Here's my current layout at about 120 columns. Honestly it feels noisy and cramped and I can't put my finger on why. Can you review it and tell me what's making it feel busy and what you'd change?\n\n\u250c\u2500 CI MONITOR v2.1 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 \u250c\u2500 Pipelines \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u250c\u2500 Details \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502\n\u2502 \u2502 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502 \u2502 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502 \u2502\n\u2502 \u2502 \u2502 \u25b6 build-api    [PASS]  \u2502 \u2502 \u2502 \u2502 Job:      build-api                 \u2502 \u2502 \u2502\n\u2502 \u2502 \u2502 \u25b6 build-web    [PASS]  \u2502 \u2502 \u2502 \u2502 Status:   \u2705 PASSED \u2705              \u2502 \u2502 \u2502\n\u2502 \u2502 \u2502 \u25b6 test-unit    [FAIL]  \u2502 \u2502 \u2502 \u2502 Duration: 3m 42s                    \u2502 \u2502 \u2502\n\u2502 \u2502 \u2502 \u25b6 test-e2e     [....]  \u2502 \u2502 \u2502 \u2502 Branch:   main                      \u2502 \u2502 \u2502\n\u2502 \u2502 \u2502 \u25b6 deploy-stg   [WAIT]  \u2502 \u2502 \u2502 \u2502 Commit:   a3f9c2b                   \u2502 \u2502 \u2502\n\u2502 \u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502 \u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502 \u2502\n\u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502\n\u2502 \u250c\u2500 Logs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502\n\u2502 \u2502 [INFO] 2026-05-31 14:22:01 :: Starting build-api ::                     \u2502 \u2502\n\u2502 \u2502 [INFO] 2026-05-31 14:22:03 :: Compiling sources ...                    \u2502 \u2502\n\u2502 \u2502 [INFO] 2026-05-31 14:22:09 :: Running vet + lint ...                   \u2502 \u2502\n\u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502\n\u2502 [q] Quit  [r] Refresh  [\u2191/\u2193] Navigate  [Enter] Select  [Tab] Switch Pane    \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518",
+      "files": [],
+      "assertions": [
+        "Names the nested / redundant borders (boxes inside boxes) as a specific clutter source",
+        "Recommends replacing borders with whitespace for at least one region",
+        "Flags the redundant decoration (e.g. the duplicated check-mark around PASSED, or version in the border)",
+        "Proactively addresses behavior at narrower terminal widths even though the prompt only asked about clutter"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "responsive-miller-columns",
+      "prompt": "I've built a 3-pane Ratatui file-manager layout \u2014 Miller columns: parent | current | preview \u2014 and it looks great on my 220-column ultrawide. The problem is our users run it over SSH, inside tmux splits, and some on 13-inch laptops. Right now it just renders all three columns at 33% width no matter what. Below about 90 columns the preview pane is unreadable and filenames truncate to mush; at 80x24 it's basically unusable, and I haven't even thought about what happens narrower than that. What do I need to do to make this hold up across terminal sizes \u2014 80x24, tmux splits, even down around 60 columns?",
+      "files": [],
+      "assertions": [
+        "Specifies concrete width breakpoints / thresholds (named column counts)",
+        "Recommends collapsing to fewer panes (single-pane) at narrow widths",
+        "Recommends a pane priority \u2014 e.g. drop the preview first",
+        "Mentions a minimum terminal size AND a 'too small' fallback message",
+        "Recommends percentage / min-width / constraint-based layout instead of fixed 33%"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "open-ended-k8s-tui-review",
+      "prompt": "Here's the design for a new Kubernetes TUI I'm about to build in Rust with Ratatui, modeled loosely on k9s. I'd love a UX review before I write any code.\n\nIt's a 4-panel grid. Top-left is a namespace list, top-right is a pod list. Bottom-left is a pod details panel that shows every field \u2014 name, status, pod IP, host IP, node, all labels, all annotations, restart count, age, QoS class, conditions, and the owner reference. Bottom-right is a live log tail. Every panel has a rounded border with a title in it. There's a header bar across the top showing cluster / context / namespace, and a footer bar that lists all 14 keybindings. Color coding: green = running, red = failed/crashloop, yellow = pending. The whole thing is designed for my 160x50 terminal window.\n\nWhat do you think \u2014 anything you'd change before I start?",
+      "files": [],
+      "assertions": [
+        "Proactively flags the 'every field' details panel as clutter and recommends prioritization or detail-on-Enter",
+        "Proactively flags the 14-key footer as a wall-of-shortcuts and recommends showing a few + ? for the rest",
+        "Proactively raises responsiveness (what happens below 160x50) though the prompt never mentions size",
+        "Flags color-only status coding (green/red/yellow) and recommends pairing with symbols or letters"
+      ]
+    }
+  ]
+}

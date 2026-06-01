@@ -1,0 +1,57 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Generative BUILD-task evals across Go/Rust/TS. Hypothesis: base model writes working TUI code but omits the non-negotiables (alt screen, panic-safe terminal restore, resize handling, async I/O off the UI thread, virtualization, semantic color / NO_COLOR, no reserved-key binding, footer hints). Prompts deliberately DON'T list these requirements \u2014 they just ask for a polished/shippable program \u2014 so the skill's value is whether it makes the model include them by default. Assertions are objectively checkable in the generated code. Validated 2026-05-31: with-skill 100% (27/27) vs baseline 82% (24/27); baseline missed NO_COLOR honoring in all 3 ecosystems plus Ink alt-screen and crash-safe restore.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "build-go-docker-monitor",
+      "prompt": "Build me a terminal UI in Go (Bubble Tea + Lipgloss) for monitoring my running Docker containers. I want a list of containers with their status and CPU/mem, and when I select one I can see its recent logs in a side panel. It should poll Docker every couple of seconds so the data stays live. Use the official Docker SDK (github.com/docker/docker/client). Give me a complete, runnable program \u2014 something I'd actually be comfortable shipping to my team, not a toy demo. Include the go.mod deps.",
+      "files": [],
+      "assertions": [
+        "Uses the alternate screen (tea.WithAltScreen)",
+        "Recovers/restores the terminal on panic so a crash doesn't leave it in raw mode + alt screen",
+        "Re-lays-out on tea.WindowSizeMsg (handles resize) rather than fixed dimensions",
+        "Docker polling runs in a tea.Cmd / goroutine and results return via Msg \u2014 Update/View never block on Docker I/O",
+        "Container list is virtualized (uses bubbles/list or renders only the visible window), not a naive render-all",
+        "EXPLICITLY honors NO_COLOR \u2014 an actual env check or lipgloss color-profile/AdaptiveColor indirection that strips color, not merely relying on a text word",
+        "Status paired with a letter/word/glyph so it's readable in monochrome (not color alone)",
+        "A footer/help hint bar shows the key bindings",
+        "q and ctrl+c quit cleanly; no terminal-reserved key (ctrl+c/z/s/q) is bound to an app action"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "build-rust-log-tailer",
+      "prompt": "Build me a Ratatui app in Rust that tails a large log file (could be several GB) \u2014 it should live-update as new lines are appended, let me scroll back up through history, and filter visible lines by a search term I type. Give me a complete, runnable program with the Cargo deps listed. Make it solid: I'll be running this on production boxes over SSH, so it needs to behave.",
+      "files": [],
+      "assertions": [
+        "Enters alt screen + raw mode and restores terminal state on normal exit",
+        "Installs a panic hook (e.g. color_eyre / set_hook) that restores the terminal BEFORE printing the backtrace",
+        "Handles resize \u2014 layout recomputed from current frame size each draw, no absolute positions",
+        "Tailing/file-watching runs on a separate thread or async task feeding a channel; the render loop never blocks on file I/O",
+        "Does NOT load the whole multi-GB file into memory \u2014 tails from the end and/or keeps a bounded/ring buffer; renders only visible lines",
+        "EXPLICITLY honors NO_COLOR (env check or theme indirection) \u2014 not exclusively hardcoded raw color codes",
+        "Footer hint bar present; q quits and / starts search",
+        "Long lines are truncated (or width-handled) so they don't break the layout"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "build-ink-git-tui",
+      "prompt": "Build me an interactive git TUI in TypeScript with Ink \u2014 show the working-tree status (staged / unstaged / untracked files), let me stage and unstage files with a keypress, and show a diff preview for whichever file is selected. Basically a lazygit-lite. Give me a complete, runnable program including the package.json dependencies. I want it to feel polished.",
+      "files": [],
+      "assertions": [
+        "Uses Ink's useInput for keyboard handling and supports hjkl AND arrow keys",
+        "Enters the alternate screen (?1049h or equivalent) so the TUI doesn't pollute the user's scrollback",
+        "Installs a crash handler (uncaughtException / unhandledRejection) that restores the terminal \u2014 leaves alt screen + shows cursor \u2014 BEFORE printing the trace",
+        "Cleans up on normal exit (useApp().exit / unmount) so the terminal isn't left in raw mode",
+        "Runs git via async child_process (spawn/execFile), not a blocking execSync on the render path",
+        "Handles large diff output without re-rendering it every frame (e.g. <Static>, memo, or a scroll viewport)",
+        "File status paired with letters/symbols (M/A/D/??) so status survives in monochrome, not color alone",
+        "Honors NO_COLOR via an explicit semantic-token/theme indirection (tokens resolve to undefined/no color under NO_COLOR), not merely relying on chalk's built-in default",
+        "A footer hint bar shows the key bindings",
+        "q / ctrl+c exit cleanly; no terminal-reserved key bound to an app action"
+      ]
+    }
+  ]
+}

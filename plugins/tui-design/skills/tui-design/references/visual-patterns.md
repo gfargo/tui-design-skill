@@ -350,6 +350,45 @@ Tactics:
 
 Use density to communicate hierarchy: dense data tables in the main panel, padded settings/forms in modals, dense status bars at the bottom.
 
+### The clutter audit — making "feels busy" countable
+
+"It feels noisy" is a real signal but useless until you convert it into specific offenders. When a layout feels cluttered, **count — don't squint** — and report the count, not a vibe:
+
+- **Border-nesting depth.** Trace any corner from the terminal edge inward. More than *one* border between the edge and the content is too many. A border wrapping content that's already inside a bordered panel separates nothing and shows no focus — delete it. Boxes-inside-boxes is the single most common cause of "busy," and an outer full-screen frame is almost always redundant (the terminal edge already frames the app).
+- **Signals per piece of state.** Count how many things encode the same fact. `[PASS]` + green + `✅` + a `▶` row prefix is *four* signals for one status. Keep one (color paired with a letter/word for monochrome safety); cut the rest.
+- **Always-on markers.** A glyph that appears on 100% of rows (a `▶` on every line) marks nothing — it's texture, not information. Reserve markers for the exception: the selected row, the failed item.
+- **Chrome-to-data ratio.** Add up the cells spent on borders, titles, padding, labels, and repeated boilerplate (a full ISO date on every log line when only the time changes) versus cells showing actual data. A high chrome ratio *is* the cluttered feeling.
+- **The removal test.** For each decorative element ask: "if I delete this, do I lose information?" If no, delete it. Whitespace is not empty space — it's the cheapest separator you have, and a single blank row routinely out-reads a heavy border.
+
+Run this pass on any layout — yours or someone else's. "Three concentric borders before the content, status encoded four ways, a marker on every row, full datestamps repeated every log line" tells the user exactly what to cut. "Simplify it" tells them nothing.
+
+---
+
+## Responsive design — breakpoints and the floor
+
+A terminal layout is not designed for one size. The same app runs on a 220-column ultrawide, an 80×24 SSH session, a 60-column tmux split, and a 13-inch laptop. **A layout that only works at the author's window size is unfinished** — and the author rarely notices, because they only ever see their own terminal. Pressure-test every layout at the floor, and raise it in any review even when the user only asked about something else: it's the most-missed issue in TUI design.
+
+### The breakpoint ladder
+
+Decide behavior per width band, widest to narrowest. Exact thresholds depend on content, but the shape is universal:
+
+- **Wide (>120 cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
+- **Standard (80–120)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
+- **Narrow (60–80)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here.
+- **Too small (<60 cols or <24 rows)** — don't render garbage or panic. Show a clean `terminal too small — need 80×24` message until the user resizes.
+
+This is why a **drill-down model degrades better than a fixed grid**: when only one primary thing is ever on screen, narrowing just shrinks it; a fixed 2×2 grid has nowhere to go and turns to mush. If you find yourself unable to make a grid responsive, that's often a sign the layout should have been drill-down in the first place.
+
+### Mechanics
+
+- **Lay out in relative units, never absolute positions:** percentages, ratios, `Min`/`Max`/`Fill` constraints (Ratatui), `fr` units (Textual), flex (Ink/Yoga). Recompute the layout from the current frame size on every render — never cache pixel positions.
+- **Decide what's load-bearing.** When width runs out, what hides *first*? Usually: preview pane → secondary columns → low-priority table columns. Keep the primary view and the footer hints. **Detail-on-Enter** is the escape hatch — it lets you hide columns/fields at narrow widths without losing access to the data.
+- **Truncate, don't wrap, in cells**; reserve a cell for the ellipsis. Tail-truncate paths, middle-truncate when the basename matters.
+- **Handle `SIGWINCH`** and re-layout on every resize, debounced (100–200ms) so dragging a tmux divider doesn't thrash.
+- **Define the minimum size explicitly** (80×24 is the conventional floor) and *test there* — not just at your own resolution. `tmux split-window -h` is a free narrow-terminal test rig.
+
+When reviewing a layout, state the degradation plan concretely: "at 80×24 the preview drops and you get parent│current; below 60 it's a single pane; below that, a too-small message." **A review that doesn't name what happens at the floor hasn't finished.**
+
 ---
 
 ## Visual hierarchy in monospace

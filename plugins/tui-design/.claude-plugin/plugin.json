@@ -1,6 +1,6 @@
 {
   "name": "tui-design",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Design and build clean, professional, minimal terminal UI (TUI) applications and command-line tools — covers Bubble Tea, Ratatui, Textual, Ink, plus universal patterns for layout, color, keybindings, and discoverability.",
   "author": {
     "name": "gfargo",

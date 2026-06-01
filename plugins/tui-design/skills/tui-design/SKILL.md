@@ -99,6 +99,14 @@ Density choices:
 
 Don't decorate. Borders that exist purely for "looks polished" usually make the app feel busier without adding meaning.
 
+## Two reflexes to apply unprompted
+
+These are the two things the default instinct misses most, because users rarely ask for them by name — and a strong base model will answer the literal question without raising either. Apply both to **any** layout you design or review, even when the user asked about something else entirely (a color choice, a keybinding, "why does this feel busy"). This is where most of the value is.
+
+**1. Run a clutter audit — make "feels busy" countable.** Never answer "it feels noisy" with "simplify it." Count the offenders and name the specific cuts: border-nesting depth (more than *one* border between the terminal edge and the content is too many; an outer full-screen frame is almost always redundant), how many separate signals encode the same state (`[PASS]` + green + `✅` + a row marker is four), markers that sit on every row (a glyph on 100% of rows marks nothing), and the ratio of cells spent on chrome — borders, labels, repeated boilerplate like a full datestamp on every log line — versus actual data. The full method is in `references/visual-patterns.md` → *The clutter audit*.
+
+**2. Pressure-test the floor.** A layout designed at the author's own window size is unfinished — they never see it break because they only ever see their own terminal. State concretely what happens at **80×24 and a 60-column tmux split**: what collapses to a single pane, what hides, what truncates, and the "terminal too small" message below the minimum. Multi-column layouts (Miller columns, 2×N grids) must have a single-pane fallback. **Raise this in every layout review even when size was never mentioned** — it is the single most-missed issue in TUI design, and "it looks great on my screen" is exactly the blind spot it addresses. Breakpoint ladder in `references/visual-patterns.md` → *Responsive design*.
+
 ## Tables and lists
 
 Always:
@@ -255,7 +263,7 @@ When the user asks you to build something:
 
 5. **What's the data model?** Lists, trees, tables, forms, free-text? This determines which widgets you need and whether to virtualize.
 
-6. **What's the minimum viable terminal size?** Usually 80×24. Decide what gets hidden, collapsed, or stacked at narrower widths.
+6. **What's the responsive plan across sizes?** Don't design for one window. Walk the breakpoint ladder (wide >120 / standard 80–120 / narrow 60–80 / too-small below) and decide what gets hidden, collapsed, or stacked at each — and the "terminal too small" message below the 80×24 floor. A fixed grid that can't fold to a single pane is a design smell; drill-down degrades more gracefully. See `references/visual-patterns.md` → *Responsive design*.
 
 Then, with the ecosystem reference loaded, write the code. The non-negotiables (alt screen, terminal restoration, resize, suspend, async I/O, no UI-thread blocking) apply regardless of language.
 
@@ -270,6 +278,8 @@ Walk through this checklist:
 - Are there always-visible footer hints? Does `?` show full help?
 - Is every action keyboard-reachable? Are `q` and `Esc` consistent?
 - Are panels in fixed positions? Or do they jump around on focus?
+- **Clutter audit** — border-nesting depth (>1 inside a panel?), duplicate signals encoding one state, markers on every row, chrome-vs-data ratio. Name specific cuts, not "simplify."
+- **Pressure-test the floor** — what does this do at 80×24 and a 60-col tmux split? Is there a degradation plan (what hides / collapses / stacks) and a "too small" message? Flag this even if the user didn't ask about size.
 - Are tables aligned correctly? Do they handle CJK / emoji width?
 - Are long lists virtualized?
 - Does I/O block the UI thread anywhere?

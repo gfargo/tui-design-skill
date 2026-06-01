@@ -2,6 +2,17 @@
 
 All notable changes to the `tui-design` skill are documented here. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), and the project follows semantic versioning.
 
+## [1.2.0] — 2026-05-31
+
+Adds two proactive review reflexes, validated with an eval-driven loop (design-review prompts, with-skill vs. baseline, scored across repeated runs to separate signal from model variance). The motivation: a strong base model already critiques layouts well *when prompted directly* — the skill's leverage is making it do so **consistently and unprompted**.
+
+### Added
+- **The clutter audit (`SKILL.md` + `visual-patterns.md`):** a countable method for density judgment — border-nesting depth, signals-per-state, always-on markers, chrome-vs-data ratio, and the removal test — so "feels busy" becomes named, specific cuts instead of "simplify it." Measurably increased the quantified specificity of clutter critique across runs.
+- **Responsive design — breakpoints and the floor (`visual-patterns.md`):** a dedicated section with the breakpoint ladder (wide >120 / standard 80–120 / narrow 60–80 / too-small) and the mechanics (relative units, load-bearing-element priority, `SIGWINCH`, an 80×24 minimum with a too-small message). `SKILL.md` now instructs both reflexes be applied to any layout review **even when the user only asked about something else** — the most-missed behavior in practice.
+
+### Changed
+- `SKILL.md` review checklist and the new-project decision flow now reference the clutter audit and the breakpoint ladder directly, so the reflexes fire from every entry point.
+
 ## [1.1.0] — 2026-05-31
 
 Freshness and accuracy pass on the ecosystem references. No structural changes; all routing and universal principles are unchanged.

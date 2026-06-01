@@ -138,6 +138,11 @@ The output is `dist/tui-design.skill` — a zip whose root is the `tui-design/` 
 tui-design-skill/
 ├── .claude-plugin/
 │   └── marketplace.json          # plugin marketplace catalog
+├── .github/
+│   └── workflows/
+│       └── release.yml           # builds + attaches tui-design.skill on each release
+├── scripts/
+│   └── package-skill.sh          # builds dist/tui-design.skill locally
 ├── plugins/
 │   └── tui-design/
 │       ├── .claude-plugin/

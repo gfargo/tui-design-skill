@@ -118,18 +118,17 @@ Once installed, Claude will reach for this skill automatically when you ask abou
 
 ## Build
 
-If you want to build the `.skill` file yourself rather than downloading it:
+Every published release automatically gets a `tui-design.skill` asset attached by CI (see `.github/workflows/release.yml`), so the [latest release](https://github.com/gfargo/tui-design-skill/releases/latest) is the easiest source.
+
+To build it yourself instead:
 
 ```bash
 git clone https://github.com/gfargo/tui-design-skill.git
 cd tui-design-skill
-
-# Using Anthropic's skill-creator package_skill.py
-# (requires the Claude.ai code execution sandbox or local clone of anthropics/skills)
-python -m scripts.package_skill plugins/tui-design/skills/tui-design ./dist
+./scripts/package-skill.sh        # writes dist/tui-design.skill
 ```
 
-The output is `dist/tui-design.skill` — a zip file you can upload to Claude.ai.
+The output is `dist/tui-design.skill` — a zip whose root is the `tui-design/` skill folder (`SKILL.md` + `references/`), ready to upload to Claude.ai. Only `bash` and `zip` are required.
 
 ---
 

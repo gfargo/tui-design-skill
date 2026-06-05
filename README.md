@@ -6,6 +6,19 @@ Use it for greenfield builds, design reviews, refactors, library decisions, and 
 
 ---
 
+> ### 📦 Also in the [`gfargo/skills`](https://github.com/gfargo/skills) marketplace
+>
+> This skill now also lives in my central skills marketplace, alongside my other skills (like [`vhs-cli-demos`](https://github.com/gfargo/skills), for capturing screenshots + demo GIFs of terminal apps). Add it once and get them all:
+>
+> ```bash
+> /plugin marketplace add gfargo/skills
+> /plugin install terminal@gfargo-skills   # → terminal:tui-design  +  terminal:vhs-cli-demos
+> ```
+>
+> This standalone repo still works exactly as before (including `npx skills` and the `.skill` release download) — use it if you only want `tui-design` on its own. The central marketplace is the better pick if you want my whole collection from a single source.
+
+---
+
 ## Install
 
 ### Option A — Claude Code (plugin marketplace, recommended)

@@ -79,7 +79,7 @@ ln -s tui-design-skill/plugins/tui-design/skills/tui-design tui-design
 
 ## What the skill covers
 
-The skill is structured so its top-level `SKILL.md` carries the **universal principles** and routes to per-topic reference files on demand. Total: ~4,000 lines across 9 files, but Claude only loads what's relevant to the current question.
+The skill is structured so its top-level `SKILL.md` carries the **universal principles** and routes to per-topic reference files on demand. Total: ~4,200 lines across 9 files, but Claude only loads what's relevant to the current question.
 
 **Top-level (`SKILL.md`):**
 - Seven canonical TUI layouts (multi-panel, miller columns, drill-down stack, widget dashboard, IDE three-panel, overlay, tabbed-within-panel) — when to use each, what to avoid
@@ -88,6 +88,8 @@ The skill is structured so its top-level `SKILL.md` carries the **universal prin
 - Two reflexes applied to every layout review — the **clutter audit** (make "feels busy" countable) and **pressure-test the floor** (responsive behavior at 80×24 and narrower), even when the user didn't ask about them
 - Cross-app keybinding conventions (`q`, `?`, `/`, `Esc`, `hjkl`, `Tab`, `Ctrl+P`, ...)
 - The four non-negotiables: alt screen, panic-safe terminal restore, `SIGWINCH`, `SIGTSTP`
+- Testing & debugging: the three-layer test pyramid and the log-to-a-file rule, with per-ecosystem APIs in the references
+- Inline vs alt-screen as a first-class design decision (fzf-class tools vs apps you live in)
 - Decision flow for new TUI/CLI projects
 - Review checklist for existing TUIs
 
@@ -97,8 +99,8 @@ The skill is structured so its top-level `SKILL.md` carries the **universal prin
 - `ecosystem-python.md` — Textual (TCSS, reactive, workers, Pilot testing, `textual serve`), Rich, prompt_toolkit, Typer, questionary
 - `ecosystem-typescript.md` — Ink (used by Claude Code, GitHub Copilot CLI, Gemini CLI), @clack/prompts, @inquirer/prompts, OpenTUI, color-library tradeoffs, argparse comparison
 - `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs
-- `visual-patterns.md` — deep dive on the 7 layouts, borders, color tiers, semantic tokens, density, the clutter audit, responsive design (the breakpoint ladder + the floor), tables, status bars, progress, theming
-- `interaction-patterns.md` — keybinding philosophies, focus management, the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
+- `visual-patterns.md` — deep dive on the 7 layouts, inline vs alt-screen (and the receipt-pattern exit contract), borders, color tiers, semantic tokens, density, the clutter audit, responsive design (the breakpoint ladder + the floor), tables, status bars, progress, theming
+- `interaction-patterns.md` — keybinding philosophies, focus management, OSC 8/52/9 (hyperlinks, clipboard-over-SSH, notifications), the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
 - `exemplar-apps.md` — case studies of lazygit, k9s, btop, fzf, helix, yazi, atuin, htop, Posting, Harlequin, Claude Code, starship, and others
 
 ---
@@ -162,7 +164,7 @@ tui-design-skill/
 │       │   └── plugin.json       # plugin manifest
 │       └── skills/
 │           └── tui-design/
-│               ├── SKILL.md      # top-level skill (~300 lines)
+│               ├── SKILL.md      # top-level skill (~315 lines)
 │               └── references/
 │                   ├── ecosystem-go.md
 │                   ├── ecosystem-rust.md

@@ -140,6 +140,15 @@ expect(lastFrame()).toBe('Counter: 1');
 
 Plus `renderToString()` (Ink 6.8+) for synchronous render-to-string in tests.
 
+**Staleness caveat.** ink-testing-library's last release is v4.0.0 (May 2024); its own devDeps still pin `ink ^5` / React 18, and open issues track Ink 6/7 compatibility — including "stdin.write() does not trigger useInput callbacks". `lastFrame()`/`frames` render assertions still work (it just injects fake streams, and it doesn't render styles — text only), but **input simulation via `stdin.write` is unreliable on Ink ≥5**, which matters given Ink 7's rewritten input handling. For input-driven tests on Ink 6/7, the proven pattern is Gemini CLI's: a custom vitest harness that wraps Ink's own `render` with your app's context providers and exposes `lastFrame()`-style helpers, assertions as plain string checks — plus PTY-level integration tests (**node-pty** + `strip-ansi`) that drive the built CLI in a real pseudo-terminal for actual keyboard flows. Both `ink` and `ink-testing-library` are ESM-only, so vitest is the path of least resistance over Jest.
+
+## Debugging
+
+- **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*` calls, clears the live output, renders the message above it, and repaints the UI. If console output *is* garbling the screen, something bypassed the patch — direct `process.stdout.write` calls or child-process stdio inherited straight to the terminal.
+- **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place — the single best tool for answering "which frame went wrong".
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (documented for Ink 7; exit the CLI manually with Ctrl+C afterwards).
+- **High-volume tracing** goes to stderr — `useStderr().write()` preserves Ink's output — or to a file you `tail -f` in another terminal. Never stdout; Ink owns it.
+
 ## Pastel — Next.js-style filesystem routing
 
 `vadimdemedes/pastel` builds CLI command structure from filesystem layout, with Zod schemas for argument validation. Like Next.js for CLIs:
@@ -401,7 +410,7 @@ oclif + ink + chalk + listr2
 
 ## Idioms summary
 
-- **Ink**: Strings only inside `<Text>`. Use Yoga flexbox properties on `<Box>`. Use ink-ui components rather than reinventing. Use `<Static>` for log streams. Use `useDeferredValue` for streaming text. Test with ink-testing-library.
+- **Ink**: Strings only inside `<Text>`. Use Yoga flexbox properties on `<Box>`. Use ink-ui components rather than reinventing. Use `<Static>` for log streams. Use `useDeferredValue` for streaming text. Test render output with ink-testing-library (`lastFrame()` assertions); for input-driven tests on Ink 6/7, wrap Ink's own `render` in a vitest harness and use node-pty for real keyboard flows.
 - **Clack**: Always `isCancel`-check every prompt. Use `intro`/`outro` to frame the flow. Use `spinner` for async work, `taskLog` for streaming output.
 - **Inquirer**: Use modular `@inquirer/*` imports, not the legacy monolithic `inquirer` package.
 - **picocolors** for tooling, **chalk** for user CLIs.

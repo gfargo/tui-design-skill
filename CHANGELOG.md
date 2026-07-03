@@ -2,6 +2,24 @@
 
 All notable changes to the `tui-design` skill are documented here. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), and the project follows semantic versioning.
 
+## [1.4.0] — 2026-07-03
+
+Tier-2 content expansion closing the four zero-coverage areas identified by the v1.3.0 audit: testing, debugging, inline-vs-alt-screen, and OSC escapes. All content written from web-verified research briefs (per-claim sources; unverifiable claims omitted or hedged), then validated with a six-eval with/without comparison (`evals/tier2-content-evals.json`). Honest result on a frontier model: strategy-level pass rates are already saturated (29/30 both sides); the measured lift is *specifics* — the with-skill run fixed both baseline factual errors (tmux `set-clipboard external` semantics; the OSC 52 clipboard-read security issue) and averaged −20s / −1.4k tokens per answer. The content's larger value is insurance for smaller models and against ecosystem drift.
+
+### Added
+- **SKILL.md — "Testing and debugging"** (three-layer pyramid: pure update-layer unit tests → pinned-size/profile golden/snapshot → sparing PTY e2e; the never-print-to-the-owned-terminal rule), inline-vs-alt-screen as a first-class decision in the routing table, decision flow, and layouts list, and an OSC pointer. 299 → 314 lines; description untouched.
+- **`ecosystem-go.md` — Testing + Debugging**: teatest/v2 (correct import — it stayed on `github.com/charmbracelet/x`, not charm.land), v2 `KeyPressMsg` unit-test literals, executing returned Cmds, golden files + `-update`, CI determinism via `WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii))`, the crush-skips-teatest signal; `tea.LogToFile` + `DEBUG` + headless delve.
+- **`ecosystem-rust.md`**: insta color/style caveat, multi-size testing with odd sizes + pure `compute_layout`, gitui/openai-codex real-world anchors; Debugging section (tracing-to-file, in-app debug pane, tui-logger, second-terminal debugger attach).
+- **`ecosystem-typescript.md`**: ink-testing-library staleness correction (v4 pins Ink 5; `stdin.write` unreliable on Ink 6/7) with the Gemini CLI vitest-harness + node-pty pattern; Debugging section (`patchConsole` semantics, `debug: true` frame-append, React DevTools, stderr discipline).
+- **`ecosystem-python.md`**: `run_test()` gotchas (headless 80×24, notifications/tooltips off by default), message assertion via recorder handler or `message_hook`, validation-testing wiring, `textual-dev` package note.
+- **`visual-patterns.md` — "Inline, alt-screen, or overlay — where the UI lives"**: live-in vs summon rule, verified per-framework mechanics (Bubble Tea v2 view field, Ink 7 `alternateScreen`, Textual `run(inline=True)`, Ratatui `Viewport::Inline` + `insert_before`), the fzf `--height`//dev/tty model, and the receipt-pattern exit contract (gum's stderr-UI/stdout-result mechanics).
+- **`interaction-patterns.md` — "Talking to the terminal emulator — OSC 8, 52, 9"**: support matrices, the Ratatui OSC 8 gap, `file://`-opens-locally caveat, OSC 52 size ceilings and tmux `set-clipboard on|external` semantics (no passthrough needed), write-only clipboard security posture, OSC 9/777 notification etiquette.
+- **`evals/tier2-content-evals.json`** — the six-eval set (reproducible artifact), assertions graded against the research ground truth.
+
+### Fixed
+- SKILL.md's overlay-layout bullet no longer says "use the alternate screen" unconditionally — fzf-class tools may be inline with bounded height; pointer to the new section.
+- Theming section: lingering v1 `AdaptiveColor` reference updated to `LightDark` (missed in 1.3.0).
+
 ## [1.3.0] — 2026-07-03
 
 Accuracy and freshness pass driven by a full parallel audit of all nine files, with every load-bearing claim re-verified against upstream docs (pkg.go.dev, crates.io, PyPI, npm, project changelogs). The May eval rounds validated the skill's *behavior*; this audit targeted the other axis — whether the code snippets and version claims are still true — and found the rot concentrated in the fastest-moving ecosystems.

@@ -21,6 +21,8 @@ Use this skill's body for the **universal principles** below. Then load referenc
 | Designing layout, borders, color, typography, density | `references/visual-patterns.md` |
 | Designing keybindings, focus, navigation, modal vs modeless | `references/interaction-patterns.md` |
 | Studying what makes specific apps great (lazygit, k9s, fzf, btop, helix, yazi, atuin) | `references/exemplar-apps.md` |
+| Testing or debugging a TUI | that ecosystem's `references/ecosystem-*.md` (Testing / Debugging sections) |
+| Inline vs full-screen; clipboard, hyperlinks, notifications (OSC) | `references/visual-patterns.md` → *Inline, alt-screen, or overlay*; `references/interaction-patterns.md` → *Talking to the terminal emulator* |
 
 If the user hasn't named a language, ask which ecosystem before diving into framework specifics. The universal principles below apply regardless.
 
@@ -45,7 +47,7 @@ Most successful TUIs use one of these. Choose by workflow shape, not by aestheti
 - **Drill-down stack** — Browser-style: navigate deeper with a back-stack, `Esc` returns. Often paired with command-mode navigation (`:pods`, `:nodes`). Used by **k9s, lazydocker**. Best when there are many resource types and the user needs to pivot between them.
 - **Widget dashboard** — Independent widgets in a grid, each owning its data lifecycle. Layout configurable via TOML/YAML. Used by **bottom, btop, glances**. Best for monitoring/observability where users want to compose their own view.
 - **IDE three-panel** — Sidebar → main content → detail/output, often with tabs in the main panel. Used by **Posting, Harlequin, helix**. Best for editor-like workflows.
-- **Overlay / popup** — Appears over the shell, does one thing, exits. Used by **fzf, atuin, zoxide+fzf**. Best for "summon → choose → output" interactions. Use the alternate screen so it doesn't pollute scrollback.
+- **Overlay / popup** — Appears over the shell, does one thing, exits. Used by **fzf, atuin, zoxide+fzf**. Best for "summon → choose → output" interactions. Render either full-screen on the alternate screen or inline with a bounded height (fzf's `--height`); either way, clean up on exit and print the result to stdout. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
 - **Tabbed within panel** — Tab bars cycled with `[`/`]`. Used inside larger layouts (lazygit's Local/Remotes/Tags, lazydocker's Logs/Stats/Env tabs). Best when one panel needs multiple personalities without changing the global layout.
 
 The universal rule: **panels never move without explicit user action.**
@@ -181,6 +183,17 @@ Other essentials:
 - **Don't redraw on a fixed timer.** Redraw on events. Most apps idle at 0 fps until something happens. Cap animations at 30–60 fps.
 - **Logging can't go to stdout.** Alt-screen + raw mode would corrupt the UI. Log to a file (`tea.LogToFile`, `~/.cache/myapp/log`), use a separate console (Textual's `textual console`), or render an in-app log pane (lazygit, k9s).
 - **Cell width ≠ string length.** CJK ideographs are width 2; emoji should be width 2 (legacy `wcwidth` lies). Use `unicode-segmentation` (Rust), `golang.org/x/text` + `mattn/go-runewidth` (Go), `wcwidth` (Python), `string-width` (JS — Ink uses this) — never `len()` or `.length`.
+- **Clipboard, hyperlinks, and desktop notifications go through OSC escapes** (52 / 8 / 9) — the *local* emulator interprets them, so they work over SSH where shelling out to `pbcopy`/`xclip` can't. Support matrices and tmux caveats: `references/interaction-patterns.md` → *Talking to the terminal emulator*.
+
+## Testing and debugging
+
+TUIs are testable; teams that skip tests usually just don't know the shape. Three layers, bottom-heavy:
+
+1. **Unit-test the update/event layer as pure functions.** Every modern framework separates state change from rendering — feed a synthetic key event in, assert on state out. Cheapest, least flaky, and catches the "Tab silently stopped working" class of regression. Even Charm's own apps lean on this layer over harnesses.
+2. **Golden/snapshot the rendered frame** at a *pinned terminal size and color profile* — unpinned size or profile is the #1 cause of snapshot tests that flap in CI. Harnesses: teatest/v2 golden files (Go), `TestBackend` + insta (Rust), Pilot + pytest-textual-snapshot (Python), ink-testing-library frame assertions (TS).
+3. **PTY end-to-end sparingly** — one or two smoke flows at most; it's slow and the tooling is thin in every ecosystem.
+
+Debugging follows one rule: **never write debug output to the terminal the TUI owns** — raw mode + alt screen turn `print` into screen corruption. Log to a file and `tail -f` it in a second terminal, or use the framework's dev console. Exact APIs live in each ecosystem reference's Testing / Debugging sections.
 
 ## Performance and compatibility
 
@@ -212,7 +225,7 @@ If a11y matters seriously, ship a web alternative or a plain-CLI mode alongside 
 
 ## Theming
 
-Most production TUIs support themes via TOML/YAML config (lazygit, bottom, btop, helix, delta, bat, fzf), TCSS files (Textual), or composable styles (Lipgloss). Light/dark detection via OSC `]11;?` query or `$COLORFGBG`; Lipgloss's `AdaptiveColor` and Textual's runtime theme switching are the cleanest implementations.
+Most production TUIs support themes via TOML/YAML config (lazygit, bottom, btop, helix, delta, bat, fzf), TCSS files (Textual), or composable styles (Lipgloss). Light/dark detection via OSC `]11;?` query or `$COLORFGBG`; Lipgloss's `LightDark` and Textual's runtime theme switching are the cleanest implementations.
 
 Community palettes you should be able to support: Catppuccin (Latte/Frappé/Macchiato/Mocha), Dracula, Nord, Gruvbox, Tokyo Night, Rose Pine, Solarized, base16. Build your theme via semantic tokens, then map tokens → palette colors. Adding a new theme should be one config file, not a code change.
 
@@ -249,9 +262,10 @@ Ranked by real-world complaint frequency:
 
 When the user asks you to build something:
 
-1. **Is this a full-screen interactive app, or a one-shot command?**
-   - One-shot CLI (no full-screen UI, exits when done) → load `references/cli-basics.md`. Apply argparse + color + maybe a spinner and you're done.
-   - Full-screen interactive → continue.
+1. **Is this a one-shot command, a summon-choose-exit tool, or a full-screen app?**
+   - One-shot CLI (no UI, exits when done) → load `references/cli-basics.md`. Apply argparse + color + maybe a spinner and you're done.
+   - Summon–choose–exit tool (fzf-class picker, prompt, wizard, live progress) → render **inline**, not on the alt screen: bounded height, machine-readable result to stdout, a one-line receipt left in scrollback. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
+   - Full-screen interactive (a session you live in) → alt screen; continue.
 
 2. **What ecosystem?**
    - Already chosen → load that ecosystem's reference.
@@ -285,6 +299,7 @@ Walk through this checklist:
 - Does I/O block the UI thread anywhere?
 - Are reserved keys (Ctrl+C/Z/S/Q) bound to anything?
 - Does it ship with at least one popular community theme support (Catppuccin, Gruvbox, etc.) or a way to define one?
+- Is the update/event layer unit-testable as pure functions? Are frame snapshots (if any) pinned to a size and color profile?
 
 Most existing TUIs fail 3–5 of these. Calling them out specifically gives the user a concrete improvement path.
 

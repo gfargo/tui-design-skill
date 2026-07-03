@@ -101,7 +101,7 @@ return m, fetchData
 - `len(string)` ≠ display width. Use `lipgloss.Width()`.
 - Goroutines never call `View()` directly — send via `program.Send(msg)`.
 - CJK/emoji width in the v2 stack goes through `charmbracelet/x/ansi` (uniseg-based grapheme clustering) — trust `lipgloss.Width()`, never `len()`.
-- Don't `fmt.Println` — corrupts the screen. Use `tea.LogToFile("debug.log", "DEBUG")`.
+- Don't `fmt.Println` — corrupts the screen. Use `tea.LogToFile("debug.log", "DEBUG")` (see **Debugging** below).
 - Cobra + Bubble Tea: don't write to stdout from `PreRun` (alt-screen eats it).
 
 ---
@@ -379,6 +379,65 @@ When the user wants pretty CLI output (no full-screen UI):
 - **lipgloss** — yes, you can use it standalone for `fmt.Println(style.Render(...))`. This is what most Charm CLI tools do.
 - **pterm** — color, tables, spinners, progress bars, charts, prompts. All-in-one. Less elegant API than Lipgloss but has more built-in.
 - **fatih/color** — simple ANSI color wrapper. Used by countless tools. `color.Red("hello")`, `color.New(color.FgYellow, color.Bold).Println(...)`.
+
+---
+
+## Testing
+
+**Test in layers, bottom-heavy.** Even Charm's flagship v2 app (crush, 163 test files) uses zero teatest — it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base of the pyramid; the harness is the thin top.
+
+**Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
+
+```go
+func TestQuitKey(t *testing.T) {
+    m := newModel()
+    updated, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"}) // v2 rune key
+    m = updated.(model)
+    if cmd == nil { t.Fatal("expected quit cmd") }
+}
+```
+
+v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials are `tea.KeyPressMsg{Code: tea.KeyEnter}`, modifiers use `Mod: tea.ModCtrl`. To test a returned Cmd, just call it — `tea.Cmd` is `func() Msg` — and assert on the message (`tea.QuitMsg` for quit; `tea.BatchMsg` is an exported `[]Cmd` you can unpack and run).
+
+**Layer 2 — teatest** runs the real program against in-memory buffers (no PTY, works in bare CI containers). For Bubble Tea v2 import `github.com/charmbracelet/x/exp/teatest/v2` — teatest did **not** move to charm.land; plain `x/exp/teatest` is the v1 line. Both are pseudo-versioned experiments, but teatest/v2 is what maintainers point to as the official harness.
+
+```go
+tm := teatest.NewTestModel(t, newModel(),
+    teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
+    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)), // v2 only
+)
+teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+    return bytes.Contains(b, []byte("ready"))
+}, teatest.WithDuration(5*time.Second)) // defaults (1s timeout, 50ms poll) are tight for CI
+tm.Type("hello")                        // v2: emits one KeyPressMsg per rune
+tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+out, _ := io.ReadAll(tm.FinalOutput(t))
+teatest.RequireEqualOutput(t, out) // golden file: testdata/<TestName>.golden
+```
+
+Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` block forever without it. Goldens are stored escaped (diffable text) and refreshed with `go test ./... -update`.
+
+**Determinism in CI:** the #1 golden-file flake is color-profile detection — v2 wraps output in a `colorprofile.Writer`, and the emitted escapes vary with `TERM`/`COLORTERM`/`NO_COLOR`. Pin the profile (`tea.WithColorProfile(colorprofile.Ascii)` — v2-only; on v1 use `lipgloss.SetColorProfile(termenv.Ascii)`) and the term size, or goldens will flap. Bubble Tea's own teatest example is currently skipped over exactly this.
+
+**E2E:** PTY/expect practice is thin in Go — teatest deliberately avoids PTYs. For real-terminal visual regression, VHS golden output (`Output golden.ascii` in a tape) is the blessed heavyweight option; needs `ttyd` + `ffmpeg`, with `charmbracelet/vhs-action` for CI.
+
+---
+
+## Debugging
+
+**stdout is off-limits while the program runs** — Bubble Tea holds the terminal in raw mode on the alternate screen, so `fmt.Println` output gets swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
+
+```go
+if len(os.Getenv("DEBUG")) > 0 {
+    f, _ := tea.LogToFile("debug.log", "debug")
+    defer f.Close()
+}
+```
+
+Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; v2 adds `tea.LogToFileWith` for a custom logger.
+
+**Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless — `dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`, then `dlv connect 127.0.0.1:43000` from a second terminal.
 
 ---
 

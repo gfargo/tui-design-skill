@@ -1,12 +1,6 @@
 # Python ecosystem — Textual, Rich, prompt_toolkit
 
-Three tools occupy distinct niches:
-
-- **Textual** — the modern reactive TUI framework for Python. Async-first, CSS-styled, web-deployable.
-- **Rich** — output formatting library. Used by thousands of CLIs; the rendering engine inside Textual but excellent standalone.
-- **prompt_toolkit** — input-focused REPLs and shells. Powers IPython, ptpython, mycli/pgcli/litecli.
-
-These three solve different problems. Pick by what the program *is*, not just by Python familiarity.
+Three tools occupy distinct niches: **Textual** (the modern reactive TUI framework — async-first, CSS-styled, web-deployable), **Rich** (output formatting — the rendering engine inside Textual, excellent standalone), and **prompt_toolkit** (input-focused REPLs and shells — powers IPython, ptpython, mycli/pgcli/litecli). They solve different problems. Pick by what the program *is*, not just by Python familiarity.
 
 ## Quick recommendation
 
@@ -27,6 +21,8 @@ These three solve different problems. Pick by what the program *is*, not just by
 ## Textual (Textualize/textual)
 
 **Architectural model: reactive, async-first, message-passing.** Strongly inspired by web frameworks. App subclass + Widgets in a DOM-like tree (App → Screen → Widgets) + TCSS for layout/style + reactive attributes for state + Messages/Events for communication, all on asyncio.
+
+**Status:** Textualize the company wound down in mid-2025; Will McGugan maintains Textual and Rich as open source. If the user asks "isn't Textual dead?" — no. The release cadence says otherwise: four major versions since the announcement, with 8.x current as of mid-2026. Those majors did carry breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
 
 **Canonical structure:**
 
@@ -65,7 +61,7 @@ Textual ships dozens. Categories:
 
 **Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`.
 
-**Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+**Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
 
 **Container/structure:** `Header`, `Footer`, `LoadingIndicator`, `ProgressBar`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
 
@@ -215,13 +211,14 @@ class ConfirmDialog(ModalScreen[bool]):
     def cancel(self) -> None:
         self.dismiss(False)
 
-# In your app:
+# In your app — must run in a worker:
+@work
 async def action_delete(self) -> None:
     if await self.push_screen_wait(ConfirmDialog()):
         await self.do_delete()
 ```
 
-`push_screen_wait` is the await-able way; results come back via `dismiss(value)`.
+`push_screen_wait` is the await-able way; results come back via `dismiss(value)`. It only works inside a worker — the `@work` decorator is mandatory, so waiting for the screen doesn't block the app. Calling it from a plain handler raises `NoActiveWorker`.
 
 ## Testing — Pilot + pytest-textual-snapshot
 
@@ -234,7 +231,7 @@ async def test_button_click():
         await pilot.press("tab", "enter")
         await pilot.click("#submit")
         await pilot.pause()
-        assert app.query_one("#result").renderable == "Done"
+        assert app.query_one("#result", Static).content == "Done"
 ```
 
 For SVG snapshots:
@@ -243,7 +240,7 @@ def test_homepage(snap_compare):
     assert snap_compare("path/to/app.py", press=["tab", "enter", "a"])
 ```
 
-Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. This is genuinely production-grade testing — better than what Ratatui or Bubble Tea offer.
+Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. This is genuinely production-grade testing — in our view still the most complete story of any TUI framework, though Ratatui's `TestBackend` and Bubble Tea's `teatest` have matured.
 
 ## Dev tools
 
@@ -252,10 +249,11 @@ Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. Th
 - **`textual serve app.py`** — serves the app over HTTP/WebSocket; runs in a browser tab. Same Python code, no changes.
 - **`textual keys`** — interactive key inspector; press keys to see what events Textual receives.
 
-The `textual serve` / **textual-web** combination is genuinely unusual: same codebase runs in terminal, over SSH, or in a browser. This is also the best accessibility story in TUI-land — browsers have real screen reader support.
+`textual serve` is genuinely unusual: same codebase runs in terminal, over SSH, or in a browser — and it's the best accessibility story in TUI-land, since browsers have real screen reader support. Prefer it (self-hosted, still maintained) over **textual-web**, the company's hosted service, whose future is unclear post-Textualize.
 
 ## Notable Textual apps
 
+- **Toad** — Will McGugan's universal terminal UI for agentic coding, with ACP support for Claude Code, Gemini CLI, and others. The flagship Textual app.
 - **Posting** — HTTP client (Postman alternative).
 - **Harlequin** — SQL IDE.
 - **Toolong** — log viewer for multi-GB files.
@@ -349,7 +347,7 @@ choice = questionary.select(
 
 ## Other libraries
 
-- **Urwid** — pre-Textual TUI framework; mature but legacy. New projects should use Textual.
+- **Urwid** — pre-Textual TUI framework; mature and actively maintained again (v3.0.x through 2025, v4.0 in 2026) after years of dormancy. New projects should still use Textual.
 - **Blessed** — modernized curses wrapper, cross-platform via `jinxed`. For bespoke games/animations where you want fine control. Not recommended as a first choice.
 - **curses** — stdlib, Unix-only, lowest level. Avoid for new code unless you have a strict zero-dep requirement.
 - **InquirerPy** — Python port of Inquirer.js. Alternative to questionary.

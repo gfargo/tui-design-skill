@@ -12,7 +12,7 @@ The Node.js ecosystem splits along two axes:
 |---|---|
 | Full-screen TUI app | **Ink** (React-flexbox) |
 | Modern Clack-style wizard prompts | **@clack/prompts** |
-| Prompt-heavy CLI (many questions) | **@inquirer/prompts** (Inquirer v9+) |
+| Prompt-heavy CLI (many questions) | **@inquirer/prompts** (the modern modular rewrite) |
 | Single elegant spinner | **ora** |
 | Hierarchical task runner | **listr2** |
 | Argparse, simple | **commander** (de facto default) |
@@ -26,16 +26,15 @@ The Node.js ecosystem splits along two axes:
 | Beyond Ink's perf ceiling | **OpenTUI** (Zig-backed, v0.x) |
 | Image rendering in terminal | **terminal-kit** |
 
-**Default modern stack:**
-- One-shot interactive setup: **commander + @clack/prompts + picocolors**.
-- Full TUI app: **Ink + @inkjs/ui + zustand + commander + ink-testing-library**.
-- Heavy CLI with many subcommands: **oclif** or **commander + @inquirer/prompts + listr2**.
+**Default full-TUI stack: Ink + @inkjs/ui + zustand + commander + ink-testing-library.** For other project shapes, see "Stack recommendations by project shape" at the end.
 
 ---
 
 ## Ink (vadimdemedes/ink)
 
 **Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, diffs against the previous frame, and emits ANSI patches in a single buffered terminal write.
+
+Current major: **Ink 7** (7.1.x as of mid-2026), which requires **Node ≥ 22 and React 19** — deployment-relevant if your users are on Node 20 LTS; stay on Ink 6 there.
 
 **Hello world:**
 
@@ -98,12 +97,16 @@ Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no class
 
 Ink-specific:
 - **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, ctrl, shift, meta, pageUp, pageDown}`.
-- **`useApp()`** — `{exit, exitWithError}`.
+- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush}`. Pass an `Error` to `exit` to reject `waitUntilExit()`; there is no separate error variant.
 - **`useStdin()`** — `{stdin, setRawMode, isRawModeSupported}`.
 - **`useStdout()`** / **`useStderr()`** — write outside the live UI.
 - **`useFocus({autoFocus, isActive, id})`** — Tab-focusable component.
 - **`useFocusManager()`** — `{focus(id), focusNext, focusPrevious, enableFocus, disableFocus}`.
 - **`useWindowSize()`** — `{columns, rows}`, updates on resize.
+- **`usePaste(callback)`** — bracketed-paste events (Ink 7), so pasted text arrives as one chunk instead of spraying through `useInput` character by character.
+- **`useCursor()`** — position the real terminal cursor (IME-friendly input).
+- **`useAnimation()`** — frame ticker with pause/resume.
+- **`useBoxMetrics()`** — measured dimensions of a box at runtime.
 
 Plus all standard React hooks (`useState`, `useEffect`, `useReducer`, `useContext`, `useMemo`).
 
@@ -160,30 +163,31 @@ Each file exports a default React component plus optional `args`/`options` Zod s
 - Yoga flexbox is genuinely good for terminal layout.
 - Excellent testing story.
 - React Devtools work (`DEV=true` env var).
+- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
 - Used by some of the most-deployed CLIs in the world.
 
 **Weaknesses:**
 - **Heavy startup**: React + Yoga + reconciler ≈ 80–150ms cold start. Bad for one-shot scripts where users expect instant response. For frequently-invoked commands (`mycli --version`, `mycli completion`), provide a fast path that bypasses Ink.
-- **ESM-only since Ink 5.** For CJS, pin Ink 4 or use a bundler.
-- **High-frequency re-renders flicker.** When streaming LLM tokens or tailing logs, use `useDeferredValue` or manual debounce. `<Static>` exists specifically to handle large append-only logs without re-rendering them.
-- **Screen-reader support is rudimentary** (`INK_SCREEN_READER=true` enables a subset).
+- **ESM-only since Ink 4** (March 2023). For CJS, pin Ink 3 or use a bundler.
+- **Node 22 floor on Ink 7** (plus React 19). Many teams are still on Node 20 LTS — Ink 6 is the last major that supports them.
+- **High-frequency re-renders used to flicker.** Ink 6.7+ ships synchronized updates (plus an opt-in Kitty keyboard protocol), which largely fixed this. When streaming LLM tokens or tailing logs, still prefer `useDeferredValue` or manual debounce; `<Static>` exists specifically to handle large append-only logs without re-rendering them.
+- **Screen-reader support is improving but terminal-bound.** Ink 7 added `aria-label` / `aria-hidden` / `aria-role` / `aria-state` props on `<Box>`/`<Text>` and screen-reader-aware rendering — a real step past the old `INK_SCREEN_READER` env-var subset — but a browser UI remains the stronger accessibility story.
 
 ## Pitfalls
 
 1. **Strings as direct children of `<Box>` throw.** Wrap in `<Text>`.
-2. **Raw mode requires TTY.** Guard with `if (process.stdin.isTTY)`.
-3. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
-4. **`ora` and Ink fight over the terminal.** Use `<Spinner>` from `@inkjs/ui` instead inside Ink.
-5. **Don't run Ink and `blessed` in the same command** — both grab raw mode and alt-screen.
-6. **`console.log` from Ink 3+ is intercepted** and displayed cleanly above the live UI. Don't fight it.
-7. **CI detection**: check `process.env.CI` and degrade to non-interactive output.
-8. **Older Windows cmd.exe** doesn't support all ANSI; target Windows Terminal.
+2. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
+3. **`ora` and Ink fight over the terminal.** Use `<Spinner>` from `@inkjs/ui` instead inside Ink.
+4. **`console.log` from Ink 3+ is intercepted** and displayed cleanly above the live UI. Don't fight it.
+5. **Ink 7 fixed Backspace reporting as `key.delete`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade — check `key.backspace`.
+
+Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "Pitfalls common to JS/TS terminal apps" below.
 
 ---
 
 ## Modern prompts: @clack/prompts
 
-`@clack/prompts` (~4 KB gzipped) has largely displaced Inquirer for new wizard-style CLIs. Used by **create-vite, create-astro, create-svelte, create-t3-app**, and inspired the Rust port `cliclack`.
+`@clack/prompts` (~4 KB gzipped) has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (clack.cc) and actively released. Used by **create-vite, create-astro, create-svelte, create-t3-app**, and inspired the Rust port `cliclack`.
 
 ```ts
 import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
@@ -226,7 +230,7 @@ The visual style — blue-bordered connectors between prompts, single Unicode gl
 
 ## @inquirer/prompts
 
-Inquirer v9+ rewrite with modular packages and TypeScript types. The workhorse for prompt-heavy CLIs:
+The modern modular rewrite of Inquirer — TypeScript-first packages that replaced the legacy monolithic `inquirer`. The workhorse for prompt-heavy CLIs:
 
 ```ts
 import {input, select, confirm, password} from '@inquirer/prompts';
@@ -281,7 +285,7 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 
 | Parser | Weekly DL | Style | Best for |
 |---|---|---|---|
-| **commander** | ~500M | Fluent API | The default for most projects (webpack, babel, vue-cli) |
+| **commander** | ~400M+ | Fluent API | The default for most projects (webpack, babel, vue-cli) |
 | **yargs** | High | Fluent + middleware | Best validation; used by Mocha, nyc, jest |
 | **citty** | Growing | TS-first, declarative | UnJS ecosystem (Nuxt, Nitro, unbuild) |
 | **cac** | Lower | Tiny ~7K | Vite uses it; minimal deps |
@@ -313,9 +317,9 @@ program.parse();
 
 ## OpenTUI (anomalyco/opentui)
 
-The credible new entrant: TypeScript bindings over a Zig native core via C ABI. Double-buffered rendering with alpha blending, scissor clipping, hit grid for mouse. Three packages: `@opentui/core` (low-level), `@opentui/react` (React renderer), `@opentui/solid` (SolidJS renderer).
+The credible new entrant, built by Anomaly: TypeScript bindings over a Zig native core via C ABI. Double-buffered rendering with alpha blending, scissor clipping, hit grid for mouse. Packages: `@opentui/core` (low-level), `@opentui/react` and `@opentui/solid` (React and SolidJS renderers), and `@opentui/three` — a Three.js WebGPU renderer that rasterizes 3D scenes into terminal cells, its most differentiating capability.
 
-Powers **opencode** (sst's terminal coding agent) and **terminal.shop**.
+Powers **opencode** (Anomaly's terminal coding agent) in production, and will also power **terminal.shop**.
 
 **Choose if** pushing past Ink's performance ceiling — animations, real-time streaming with low latency, or complex layouts where Yoga's CPU cost matters. **Trade-off:** v0.x churn, smaller community than Ink, native binary in the install.
 
@@ -341,8 +345,8 @@ Retained-mode classics, pre-Ink era.
 - **Cloudflare Wrangler** — Ink.
 - **Gatsby CLI** — Ink (was one of the first major adopters).
 - **Prisma CLI** — Ink.
-- **opencode** (sst) — OpenTUI.
-- **terminal.shop** — OpenTUI; novel "shop in your terminal" use case.
+- **opencode** (Anomaly) — OpenTUI.
+- **terminal.shop** — adopting OpenTUI; novel "shop in your terminal" use case.
 - **create-vite, create-astro, create-svelte** — Clack-style scaffolders.
 - **Listr** demos — task runner aesthetic.
 
@@ -399,7 +403,7 @@ oclif + ink + chalk + listr2
 
 - **Ink**: Strings only inside `<Text>`. Use Yoga flexbox properties on `<Box>`. Use ink-ui components rather than reinventing. Use `<Static>` for log streams. Use `useDeferredValue` for streaming text. Test with ink-testing-library.
 - **Clack**: Always `isCancel`-check every prompt. Use `intro`/`outro` to frame the flow. Use `spinner` for async work, `taskLog` for streaming output.
-- **Inquirer**: Use modular `@inquirer/*` imports, not the v8 `inquirer` package.
+- **Inquirer**: Use modular `@inquirer/*` imports, not the legacy monolithic `inquirer` package.
 - **picocolors** for tooling, **chalk** for user CLIs.
 - **commander** unless you have a reason to use something else.
 - For SSH-served Node apps, use **ssh2** + a custom shell handler — Ink doesn't have a direct equivalent to Charm's Wish, but the pattern works.

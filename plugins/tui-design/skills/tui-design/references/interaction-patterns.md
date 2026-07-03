@@ -2,6 +2,20 @@
 
 A deep dive into how users interact with TUIs — keybinding philosophy, focus management, navigation patterns, mouse support, and discoverability. The top-level `SKILL.md` covers the principles; this file goes deeper into the *why* and the trade-offs.
 
+**Contents:**
+- [Keybinding philosophies](#keybinding-philosophies)
+- [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
+- [Reserved keys — never bind these](#reserved-keys--never-bind-these)
+- [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
+- [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
+- [Focus management](#focus-management)
+- [Search and filter](#search-and-filter)
+- [Multi-select](#multi-select)
+- [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
+- [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+- Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
+- [Common interaction pitfalls](#common-interaction-pitfalls)
+
 ---
 
 ## Keybinding philosophies
@@ -178,7 +192,7 @@ When to add: when your keymap exceeds ~20 distinct actions. Below that, `?` help
 **The principle:** *every action that has a keybinding should also be a palette command.* The keybinding is the shortcut; the palette is the long-form name + searchable description.
 
 Examples:
-- Textual's built-in command palette (`Ctrl+\` by default).
+- Textual's built-in command palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT).
 - VS Code's Ctrl+Shift+P (the conceptual ancestor for many TUIs).
 - helix's `:` (ex-style command, not strictly a palette but similar role).
 - k9s's `:` (resource-typing, but adopts the same "type to filter actions" model).
@@ -300,8 +314,8 @@ Universal pattern: **Space toggles** the row's marked state. Marked rows show a 
 Variants:
 - **Visual mode** (`v`): yazi and vim — extend selection with motion keys.
 - **Range select** (Shift+Click or Shift+arrow): from current to clicked.
-- **Select all** (`Ctrl+A`): mark everything.
-- **Invert** (`Ctrl+I` or `*`): swap marked/unmarked.
+- **Select all** (`Ctrl+A`): mark everything — with the caveat that `Ctrl+A` is tmux's common prefix and readline's start-of-line, so keep an alternative binding.
+- **Invert** (`*` or another printable key): swap marked/unmarked. Avoid `Ctrl+I` — in the legacy encoding it's indistinguishable from Tab (only the Kitty keyboard protocol tells them apart), and Tab is your focus-cycle key.
 
 After multi-selecting, an action key applies to all marked items: `d` deletes all marked, `y` yanks all, etc.
 

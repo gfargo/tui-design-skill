@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Generative BUILD-task evals across Go/Rust/TS. Hypothesis: base model writes working TUI code but omits the non-negotiables (alt screen, panic-safe terminal restore, resize handling, async I/O off the UI thread, virtualization, semantic color / NO_COLOR, no reserved-key binding, footer hints). Prompts deliberately DON'T list these requirements \u2014 they just ask for a polished/shippable program \u2014 so the skill's value is whether it makes the model include them by default. Assertions are objectively checkable in the generated code. Validated 2026-05-31: with-skill 100% (27/27) vs baseline 82% (24/27); baseline missed NO_COLOR honoring in all 3 ecosystems plus Ink alt-screen and crash-safe restore.",
+  "notes": "Generative BUILD-task evals across Go/Rust/TS. Hypothesis: base model writes working TUI code but omits the non-negotiables (alt screen, panic-safe terminal restore, resize handling, async I/O off the UI thread, virtualization, semantic color / NO_COLOR, no reserved-key binding, footer hints). Prompts deliberately DON'T list these requirements \u2014 they just ask for a polished/shippable program \u2014 so the skill's value is whether it makes the model include them by default. Assertions are objectively checkable in the generated code. Validated 2026-05-31: with-skill 100% (27/27) vs baseline 82% (24/27); baseline missed NO_COLOR honoring in all 3 ecosystems plus Ink alt-screen and crash-safe restore. 2026-07-03: Go assertions made Bubble Tea v1/v2-agnostic (v2 removed tea.WithAltScreen and moved alt-screen/color-profile handling onto the view / LightDark) to match the v1.3.0 accuracy pass.",
   "evals": [
     {
       "id": 0,
@@ -8,12 +8,12 @@
       "prompt": "Build me a terminal UI in Go (Bubble Tea + Lipgloss) for monitoring my running Docker containers. I want a list of containers with their status and CPU/mem, and when I select one I can see its recent logs in a side panel. It should poll Docker every couple of seconds so the data stays live. Use the official Docker SDK (github.com/docker/docker/client). Give me a complete, runnable program \u2014 something I'd actually be comfortable shipping to my team, not a toy demo. Include the go.mod deps.",
       "files": [],
       "assertions": [
-        "Uses the alternate screen (tea.WithAltScreen)",
+        "Uses the alternate screen (tea.WithAltScreen() on Bubble Tea v1, or view AltScreen = true in View() on v2)",
         "Recovers/restores the terminal on panic so a crash doesn't leave it in raw mode + alt screen",
         "Re-lays-out on tea.WindowSizeMsg (handles resize) rather than fixed dimensions",
         "Docker polling runs in a tea.Cmd / goroutine and results return via Msg \u2014 Update/View never block on Docker I/O",
         "Container list is virtualized (uses bubbles/list or renders only the visible window), not a naive render-all",
-        "EXPLICITLY honors NO_COLOR \u2014 an actual env check or lipgloss color-profile/AdaptiveColor indirection that strips color, not merely relying on a text word",
+        "EXPLICITLY honors NO_COLOR \u2014 an actual env check or lipgloss color-profile indirection that strips color (v1 AdaptiveColor/SetColorProfile or v2 LightDark/WithColorProfile), not merely relying on a text word",
         "Status paired with a letter/word/glyph so it's readable in monochrome (not color alone)",
         "A footer/help hint bar shows the key bindings",
         "q and ctrl+c quit cleanly; no terminal-reserved key (ctrl+c/z/s/q) is bound to an app action"

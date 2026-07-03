@@ -4,6 +4,36 @@ Concrete case studies. When the user asks "how should I lay out my dashboard" or
 
 For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`. This file is the case-study companion.
 
+## How to use this file
+
+When the user asks about a design choice and you're unsure of the answer, find the analogous case here:
+
+- "How should I lay out a dashboard?" → btop, bottom, htop.
+- "How should drilling-down work?" → k9s, lazydocker.
+- "How should I make searching fast?" → fzf, atuin.
+- "How do I handle a million-row table?" → Harlequin, Toolong.
+- "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
+- "How do I keep my AI chat smooth at high token rates?" → Claude Code, Copilot CLI (Ink + `<Static>`).
+- "What's the spec for my undo system?" → lazygit's git-action stack.
+- "How should mouse work in my TUI?" → btop (full mouse), helix (none), lazygit (augmentation).
+- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (<50ms).
+- "What does a polished setup wizard look like?" → @clack/prompts (create-vite, create-astro) — see `ecosystem-typescript.md`.
+- "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
+
+Concrete examples beat abstract principles for design questions. When in doubt, point at the app and the user can study its source.
+
+**Entries, grouped:**
+- Git: [lazygit](#lazygit-go-gocui) · [gitui](#gitui-rust-ratatui)
+- Kubernetes / Docker: [k9s](#k9s-go-tview) · [lazydocker](#lazydocker-go-gocui)
+- Monitors: [btop / btop++](#btop--btop-c-rust-clone-as-bottom) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
+- Pickers and search: [fzf](#fzf-go) · [atuin](#atuin-rust-ratatui)
+- Editors: [helix](#helix-rust-custom-renderer) · [neovim](#neovim-c--lua)
+- File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-mostly-python-and-go)
+- IDE-style apps: [Posting](#posting-python-textual) · [Harlequin](#harlequin-python-textual)
+- Viewers: [Toolong](#toolong-python-textual) · [Glow](#glow-go-bubble-tea)
+- Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript-ink)
+- CLI output discipline: [starship](#starship-rust-no-ui-framework) · [yt-dlp / aria2](#yt-dlp--aria2-cli-but-excellent-terminal-output)
+
 ---
 
 ## lazygit (Go, gocui)
@@ -58,7 +88,7 @@ For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`.
 
 ---
 
-## btop / btop++ (C++; clones in Rust as bottom and Go as gotop)
+## btop / btop++ (C++; Rust clone as bottom)
 
 > System monitor. The pinnacle of widget dashboard layouts.
 
@@ -78,7 +108,7 @@ For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`.
 
 **Lessons:** in a dashboard, every widget should be independent — its own update cadence, its own scroll, its own focus. Don't synchronize what doesn't need to be.
 
-**Stack:** C++ (btop), Rust (bottom — `btm`), Go (gotop).
+**Stack:** C++ (btop), Rust (bottom — `btm`). Go's gotop pioneered the clone lineage, but cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat it as a current peer.
 
 ---
 
@@ -111,11 +141,11 @@ For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`.
 
 > Modal editor. Selection-first, multi-cursor first.
 
-**Layout:** IDE three-panel — file tree (toggleable), main editor area (with multiple split views), bottom status + diagnostics.
+**Layout:** IDE three-panel — file explorer (toggleable; merged Jan 2025, navigate-only — no file management), main editor area (with multiple split views), bottom status + diagnostics. For most of its history helix had no tree at all — its identity was pickers instead of trees.
 
 **What it does well:**
 - **Selection-first modal editing.** `wd` selects-word-then-deletes (visual feedback before destructive action) vs vim's `dw`.
-- **Multi-cursor as primary**, not an afterthought. `,C` adds a cursor below; selections can be split.
+- **Multi-cursor as primary**, not an afterthought. `C` copies the selection to the next line (adding a cursor); selections can be split.
 - **Tree-sitter** for syntax-aware text objects.
 - **Space-based which-key.** Press `Space`, see a menu of `f` (file picker), `b` (buffer picker), `s` (symbols), etc.
 - **`:` command mode** with completion.
@@ -144,7 +174,6 @@ For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`.
 - **Vim-style keybindings** with `:` command mode for less-common actions.
 - **Plugins in Lua** — extends without recompile.
 - **Tasks pane** for ongoing work (copies, transcodes).
-- **Bookmarks** — `m{a-z}` to mark, `'{a-z}` to jump.
 
 **Specific features worth copying:**
 - Async-everything — no operation should block the UI.
@@ -175,6 +204,8 @@ For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`.
 - Dual CLI + TUI — the CLI handles scripts, the TUI handles exploration.
 
 **Lessons:** the highest-leverage tools replace existing workflows rather than adding new ones. Users will switch to a slightly better Ctrl+R; they won't switch to a wholly new mental model.
+
+Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintained alongside it.
 
 **Stack:** Rust, Ratatui, optional self-hosted sync server.
 
@@ -442,23 +473,3 @@ For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`.
 - **Final summary** at the end (success / failed counts, total size).
 
 **Lessons:** even non-interactive CLIs benefit from thoughtful output design. Show progress, show summary, degrade for non-TTY.
-
----
-
-## How to use this file
-
-When the user asks about a design choice and you're unsure of the answer, find the analogous case here:
-
-- "How should I lay out a dashboard?" → btop, bottom, htop.
-- "How should drilling-down work?" → k9s, lazydocker.
-- "How should I make searching fast?" → fzf, atuin.
-- "How do I handle a million-row table?" → Harlequin, Toolong.
-- "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
-- "How do I keep my AI chat smooth at high token rates?" → Claude Code, Copilot CLI (Ink + `<Static>`).
-- "What's the spec for my undo system?" → lazygit's git-action stack.
-- "How should mouse work in my TUI?" → btop (full mouse), helix (none), lazygit (augmentation).
-- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (<50ms).
-- "What does a polished setup wizard look like?" → @clack/prompts examples (create-vite, create-astro).
-- "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
-
-Concrete examples beat abstract principles for design questions. When in doubt, point at the app and the user can study its source.

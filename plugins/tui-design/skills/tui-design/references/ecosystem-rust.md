@@ -2,7 +2,7 @@
 
 Ratatui dominates Rust TUI development — thousands of crates build on it. Forked from `tui-rs` in February 2023. Notable production users: **gitui, bottom, yazi, atuin, bandwhich, oha, tokio-console, csvlens, gpg-tui, systemctl-tui, tenere, kdash**. Helix uses its own custom renderer but follows similar patterns.
 
-**Current line: 0.30** (in beta through late 2025). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
+**Current line: 0.30** (0.30.0 stable since December 2025; 0.30.2 current). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
 
 ## Quick recommendation
 
@@ -136,7 +136,7 @@ Constraint variants:
 - `Max(n)` — at most n cells.
 - `Percentage(p)` — p% of available.
 - `Ratio(num, den)` — fraction.
-- `Fill(weight)` — proportional to weight (newer, prefer over Percentage when ratios are simple).
+- `Fill(weight)` — proportional to weight (prefer over `Percentage` when ratios are simple).
 
 Layouts cache by default — split once and reuse the resulting `Rect`s in the same frame.
 
@@ -164,8 +164,9 @@ let span = "Hello".bold().yellow().on_black();
 - **Crossterm** — default, cross-platform (Linux/macOS/Windows), pure Rust, MIT. Use this unless you have a specific reason not to.
 - **Termion** — Unix-only, older, smaller. Choose only if you want Unix-only and minimal dependencies.
 - **Termwiz** — cross-platform, advanced features (Sixel, kitty image protocol). Choose if you need terminal graphics protocols. Authored by the WezTerm developer.
+- **mousefood** — `embedded-graphics` backend over `ratatui-core`, taking Ratatui's `no_std` support to embedded hardware displays.
 
-**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps — pick the one flag matching your Crossterm and don't enable both.
+**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Crossterm 0.29 (April 2025) is the current stable; 0.28 is the legacy pin. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps — prefer `crossterm_0_29`, pick only the flag matching your Crossterm, and don't enable both.
 
 ## State management patterns
 
@@ -192,7 +193,7 @@ fn view(model: &Model, frame: &mut Frame) { /* ... */ }
 
 Useful when state is complex and you want testable update logic.
 
-**3. Component pattern** — each component implements an `init`/`handle_events`/`update`/`draw` interface and communicates via `mpsc::UnboundedSender<Action>`. The official `ratatui/templates` repo uses this with Tokio. Best for larger apps.
+**3. Component pattern** — each component implements an `init`/`handle_events`/`update`/`draw` interface and communicates via `mpsc::UnboundedSender<Action>`. The official `ratatui/templates` repo uses this with Tokio. Best for larger apps. If you'd rather adopt a framework than roll your own, **tui-realm** formalizes this pattern on top of Ratatui (components, subscriptions, message-based events).
 
 ## Async with Tokio
 
@@ -320,7 +321,9 @@ siv.run();
 
 **iocraft** — newer, declarative React-like with hooks and JSX-style macros. Uses **taffy** (the same flexbox engine used by Bevy and Servo). Choose if you want a modern declarative API or are coming from React/Ink.
 
-**Dioxus TUI / Plasmo** — experimental React-like with Dioxus's renderer. Niche; not production-ready.
+**Dioxus TUI / Plasmo** — abandoned React-like renderer for Dioxus. Unmaintained; don't start new work on it.
+
+**Ratzilla** (`ratatui/ratzilla`) — run Ratatui apps in the browser via WASM; maintained under the ratatui org. Handy for demos and web playgrounds of terminal apps.
 
 **Original `tui-rs`** — the predecessor to Ratatui, archived. Migrate to Ratatui.
 
@@ -330,7 +333,7 @@ siv.run();
 2. **Crossterm version skew.** Run `cargo tree -p crossterm`; ensure one version.
 3. **Naive redraw loop.** Don't busy-loop calling `draw`. Use `event::poll(timeout)` for sync, `tokio::select!` for async.
 4. **On Windows, both Press and Release events fire.** Filter with `key.kind == KeyEventKind::Press`.
-5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` all use `&mut StatefulWidgetState` — the state lives in your App struct, not the widget.
+5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` are `StatefulWidget`s — you pass `&mut ListState` / `TableState` / `ScrollbarState` at render time; the state lives in your App struct, not the widget.
 6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
 7. **Layouts cache.** Split once and reuse the `Rect`s; don't re-split mid-frame for the same area.
 8. **`String::len()` is bytes, not cells.** Use `unicode_width::UnicodeWidthStr::width(s)` for display width.
@@ -354,7 +357,7 @@ siv.run();
 - **helix** — modal editor; custom renderer but Ratatui-adjacent patterns.
 - **zellij** — terminal multiplexer.
 
-When the user is building something similar, point them at the relevant repo. Ratatui's own `examples/` directory and the `ratatui/templates` repo are also gold.
+When the user is building something similar, point them at the relevant repo. Ratatui's own `examples/` directory is also gold.
 
 ---
 
@@ -380,7 +383,7 @@ Pair with the principles in `references/cli-basics.md` for argument design, exit
 - For async apps, use the EventStream + tick channel + `tokio::select!` pattern.
 - Layout once per frame; reuse the `Rect`s.
 - Use `Stylize` extension trait for brevity (`.bold().yellow()`).
-- For complex apps, copy from `ratatui/templates` rather than starting from scratch.
+- For complex apps, copy from the official template rather than starting from scratch.
 - Respect `NO_COLOR` — owo-colors and most modern crates do automatically.
 - Use `unicode_width` for cell-width math; don't trust `String::len()`.
 

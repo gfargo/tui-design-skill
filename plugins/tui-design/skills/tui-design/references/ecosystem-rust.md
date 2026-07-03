@@ -256,7 +256,20 @@ terminal.backend().assert_buffer_lines([
 ]);
 ```
 
-Pair with **`insta`** for snapshot testing — `insta::assert_snapshot!(terminal.backend())`. Snapshots are stored as text files and reviewed via `cargo insta review`.
+Pair with **`insta`** for snapshot testing — `insta::assert_snapshot!(terminal.backend())`. Snapshots are stored as text files and reviewed via `cargo insta review`. This is the officially documented recipe (ratatui.rs → Recipes → Testing), with one caveat straight from that page: **snapshots capture text only — color and style are not asserted.** When color matters (selected-row highlight, error styling), compare `Buffer`s instead: build the expected buffer with `Buffer::with_lines(...)`, apply `set_style` to the regions you care about, and `assert_eq!` against the backend's buffer — the official counter-app tutorial demonstrates exactly this.
+
+**Test at multiple sizes.** Resize bugs live at unusual dimensions, so run the same render across several `TestBackend` sizes — include odd ones like 79×23 alongside 80×24 and 200×50 — snapshotting each under a size-suffixed name (`app_79x23`). Parameterizing per-size with `rstest` (which ratatui itself uses for its own tests) is a natural fit, though that combination is community practice rather than an official recipe. Extracting layout math into a pure `fn compute_layout(area: Rect) -> ...` makes per-size assertions cheap — no terminal needed at all.
+
+Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025 — and had to revert and re-land them over a startup-latency issue, a useful caution that snapshot tests over a full async app need deterministic wait points, not sleeps. **openai/codex** makes insta snapshot coverage *mandatory* for any change that affects visible TUI output (workflow: `cargo insta pending-snapshots`, `cargo insta accept`).
+
+## Debugging
+
+`println!` and `dbg!` are broken inside a running TUI: raw mode stops newline processing — crossterm's docs say it directly, "`println!` can't be used, use `write!` instead" — and anything printed is stomped by the next draw or hidden entirely under the alt screen. The working options:
+
+- **Log to a file and tail it** (official recipe): `tracing` + `tracing-subscriber` (env-filter) writing to a plain file with ANSI disabled, then `tail -f app.log` in a second terminal.
+- **In-app debug pane** (official recipe): keep `show_debug: bool` in app state, split off a column when toggled, and render `format!("{state:#?}")` into it.
+- **tui-logger** (0.18.x, actively maintained) — the ready-made in-app log widget, with `log`/`slog`/`tracing` support behind feature flags; the official debug recipe points to it as an alternative.
+- **Debuggers:** attach from a *second* terminal (`lldb -p <pid>` / `gdb -p`) or use an IDE debugger so the debug console is separate from the app's terminal — stopping the process in its own terminal leaves you at a prompt that's still in raw mode + alt screen. (Convention rather than official doctrine, but it follows directly from the raw-mode behavior.)
 
 ## Companion crates
 

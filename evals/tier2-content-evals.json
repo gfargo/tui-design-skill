@@ -1,0 +1,84 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Tier-2 content-gap evals (2026-07-03). The v1.3.0 audit identified four zero-coverage areas: (1) testing TUIs, (2) debugging workflow, (3) inline vs alt-screen as a design decision, (4) OSC escapes (8 hyperlinks / 52 clipboard / 9 notifications). These prompts test whether the skill produces correct, current, ecosystem-specific answers in those areas. Baseline = v1.3.0 skill (which lacks the content); with-skill = post-expansion. Because these are knowledge gaps rather than behavior gaps, the failure mode to watch in baseline runs is confident hallucination of testing/debugging APIs \u2014 the same rot class the v1.3.0 audit fixed elsewhere. Assertions are graded against web-verified ground truth briefs stored in the workspace.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "go-testing-ci",
+      "prompt": "I've got a Bubble Tea app in Go \u2014 a small kanban TUI, ~1500 lines \u2014 that my team relies on daily. Every refactor breaks something: last week Tab-cycling between columns silently stopped working and nobody noticed for two days. I want automated tests running in CI so this stops happening, but honestly I don't even know how you test a TUI. Where do I start?",
+      "files": [],
+      "assertions": [
+        "Names teatest (charmbracelet/x teatest package) as the Bubble Tea integration-test harness, with correct current import path",
+        "Shows or describes the golden-file / output-assertion workflow for frames (and how to update goldens)",
+        "Recommends unit-testing Update() directly as plain functions (send a Msg, assert on model) as the cheapest layer",
+        "Addresses deterministic output in CI \u2014 forcing a fixed color profile and window size so frames are stable",
+        "Describes a layered strategy (unit Update tests + integration teatest) rather than a single tool"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "textual-testing-form",
+      "prompt": "how do i write tests for my textual app? it's a data-entry screen with an Input, a Select and a submit Button \u2014 i want to test that a validation error shows when the name field is empty, and that pressing submit posts the right message. already using pytest, python 3.12, latest textual.",
+      "files": [],
+      "assertions": [
+        "Uses App.run_test() as an async context manager yielding a Pilot, with pytest.mark.asyncio or equivalent \u2014 correct current API",
+        "Drives the UI via pilot.press / pilot.click with awaits and uses pilot.pause() before asserting",
+        "Shows how to assert on posted messages or state (not just rendered text)",
+        "Mentions pytest-textual-snapshot / snap_compare for visual regression as a complementary layer",
+        "Code contains no stale API (e.g. .renderable, sync run_test, push_screen_wait outside a worker)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ratatui-debug-regression",
+      "prompt": "My Ratatui app (crossterm backend, tokio) has a rendering bug: after certain resizes, one panel's bottom border overlaps the footer by one row. It's intermittent and I've been println-debugging, which obviously corrupts the screen. What's the right way to (a) debug this properly and (b) write a regression test so it can't come back?",
+      "files": [],
+      "assertions": [
+        "Tells the user println/stdout debugging corrupts a raw-mode TUI and gives a working alternative: log to a file (e.g. tracing + file appender or tui-logger) and tail it in a second terminal",
+        "Recommends TestBackend with a fixed terminal size to reproduce the layout deterministically",
+        "Shows buffer assertions (assert_buffer_lines / expected Buffer) or insta snapshot testing on the rendered buffer",
+        "Points out the bug class: layout math computed from a stale/cached size instead of the current frame area each draw",
+        "Suggests testing the specific failing sizes (table-driven across widths/heights, including odd sizes) rather than one happy-path size"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ink-debug-workflow",
+      "prompt": "My Ink CLI in TypeScript is misbehaving two ways: (1) when I sprinkle console.log debugging the output sometimes garbles or interleaves weirdly with the UI, and (2) a state update I can see happening (the reducer runs) never shows up on screen. What's the right debugging workflow for Ink apps so I'm not guessing?",
+      "files": [],
+      "assertions": [
+        "Explains Ink intercepts/patches console.log to render it above the live region, and names the actual mechanism or the debug/patchConsole render options",
+        "Recommends React DevTools attachment for Ink (DEV=true) to inspect the component tree and state",
+        "Suggests writing to stderr or a log file for high-volume tracing instead of console.log",
+        "Recommends reproducing in ink-testing-library (render + lastFrame/frames + stdin.write) to isolate the state-update bug",
+        "Diagnoses the non-rendering state update plausibly (mutating state / same reference so React bails out, or missing re-render trigger) rather than hand-waving"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "inline-vs-altscreen-picker",
+      "prompt": "I'm building a small 'pick one of your recent git branches' helper in Go \u2014 like fzf but specialized. Two design questions before I start: should it take over the whole screen the way lazygit does, and what should the terminal look like after it exits? I want the command a user ran and the branch they picked to still be visible in scrollback afterwards.",
+      "files": [],
+      "assertions": [
+        "Recommends inline (non-alt-screen) rendering for a summon-choose-exit picker, with the explicit reasoning (alt screen erases context; overlay tools like fzf render inline)",
+        "Explains the mechanics in current Bubble Tea (v2: a View without AltScreen set / v1: omit tea.WithAltScreen) \u2014 no stale or invented API",
+        "Describes the exit contract: UI cleans up after itself and prints the selection to stdout so it survives in scrollback and is pipeable",
+        "Mentions the fzf --height pattern (bounded inline viewport) as the model for this class of tool",
+        "Covers stdout discipline for scriptability: result on stdout, UI on stderr/tty, so `git checkout $(mytool)` works"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "osc-clipboard-hyperlinks-ssh",
+      "prompt": "My Rust log-viewer TUI shows file paths and request IDs. Users keep asking for two things: click a path to open the file in their editor, and press y to copy the request ID. The catch is half of them run it over SSH, often inside tmux, so I can't just shell out to pbcopy/xclip. How do I make both features work, including the tmux case?",
+      "files": [],
+      "assertions": [
+        "Addresses OSC 8 hyperlinks explicitly and reasons correctly about their fit here (over SSH file:// opens on the LOCAL machine, and Ratatui has no native OSC 8 support) \u2014 recommending them blindly OR ignoring them entirely both fail",
+        "Recommends OSC 52 for clipboard \u2014 explains it works over SSH because the terminal emulator, not the remote host, owns the clipboard",
+        "Covers the tmux specifics: set-clipboard on (and/or passthrough) so OSC 52 escapes reach the outer terminal",
+        "Notes real-world limits honestly: emulator support varies, OSC 52 size caps, and a fallback (shell out to pbcopy/xclip/wl-copy when local) is still worth having",
+        "Warns that clipboard READ via OSC 52 is a security-sensitive capability most terminals disable (write-only is the safe design)"
+      ]
+    }
+  ]
+}

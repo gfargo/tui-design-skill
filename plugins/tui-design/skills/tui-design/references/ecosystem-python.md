@@ -242,7 +242,15 @@ def test_homepage(snap_compare):
 
 Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. This is genuinely production-grade testing — in our view still the most complete story of any TUI framework, though Ratatui's `TestBackend` and Bubble Tea's `teatest` have matured.
 
+Gotchas worth knowing:
+
+- **`run_test()` runs headless at `size=(80, 24)` and disables notifications and tooltips by default.** A test asserting on a `notify()` toast will silently see nothing — pass `notifications=True` (and `tooltips=True` if relevant) to `run_test`.
+- **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
+- **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded `Input.Submitted`/`Changed` message's `event.validation_result` (`is_valid`, `failure_descriptions`) — or on `input.is_valid` / the auto-applied `-invalid`/`-valid` CSS classes.
+
 ## Dev tools
+
+The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
 
 - **`textual run --dev`** — hot-reloads TCSS on save, enables devtools.
 - **`textual console`** — separate process receives logs and `print()` output. Run in another terminal: `textual console`, then `textual run --dev myapp.py`.

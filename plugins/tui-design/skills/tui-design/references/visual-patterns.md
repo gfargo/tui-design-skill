@@ -4,6 +4,7 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 
 **Contents:**
 - [The seven canonical layouts in detail](#the-seven-canonical-layouts-in-detail)
+- [Inline, alt-screen, or overlay — where the UI lives](#inline-alt-screen-or-overlay--where-the-ui-lives)
 - [Borders — when, what, and why](#borders--when-what-and-why)
 - [Color in depth](#color-in-depth)
 - [Typography in monospace](#typography-in-monospace)
@@ -156,6 +157,39 @@ Tab bars inside a larger layout, cycled with `[`/`]` or `Ctrl+Tab`.
 - Active tab visually distinct (bold + underline + accent color).
 - Tab key labels (`Logs [1]`, `Stats [2]`, `Env [3]`) so users can jump directly.
 - Cycle order matches reading order (left to right).
+
+---
+
+## Inline, alt-screen, or overlay — where the UI lives
+
+Before choosing a layout, choose a screen buffer. The **alternate screen** is a separate buffer with no scrollback; on exit the terminal restores whatever was there before. **Inline** rendering paints in the normal buffer, below the shell prompt, and scrolls with everything else.
+
+**The rule: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, dashboards — long-lived, navigational, full-screen — belong on the alt screen precisely so they don't pollute scrollback (vim's reason for using it). One-shot pickers, prompts, confirmations, and progress for a single command belong inline. Scrollback is the user's working memory: taking over the whole screen — erasing their context — to pick one item from a list is rude. An inline tool behaves like a command, not an application.
+
+### Mechanics per framework
+
+- **Bubble Tea v2** — inline is the default. Alt screen is a declarative field on the view: `v := tea.NewView(...); v.AltScreen = true`. Because it's set per-frame, an app can switch between inline and alt-screen at runtime.
+- **Ink** — inline by default. Since Ink 7, the `alternateScreen: true` render option gives a vim-style alt screen that restores the previous terminal content on exit (interactive mode only — ignored in CI or with piped stdout).
+- **Textual** — `app.run(inline=True)` (since 0.55). Height is controlled with CSS on `Screen`: `Screen { &:inline { height: 50vh; } }`. Inline mode is not supported on Windows.
+- **Ratatui** — `Viewport::Inline(height)` via `Terminal::with_options`. To emit permanent log/output lines above the live UI, `Terminal::insert_before` is the sanctioned pattern: inserted lines push the viewport down, then scroll into scrollback above it.
+
+### The fzf model — bounded inline viewport
+
+`fzf --height 40%` renders the finder below the cursor instead of taking the full screen. The UI paints on `/dev/tty` (stderr as fallback) so stdout stays clean — that's why `vim $(fzf)` works. This hybrid — inline, height-capped, scrollback intact above — is the right shape for anything fzf-like.
+
+### The exit contract — the receipt pattern
+
+Inside `$(...)` or a pipe, stdout is not a TTY; anything the UI paints to stdout becomes part of the captured "result." So: **chrome to stderr or `/dev/tty`, answer to stdout.** gum runs its Bubble Tea UI with `tea.WithOutput(os.Stderr)` and prints the chosen value to stdout, stripping ANSI when stdout isn't a TTY — which is exactly why `CHOICE=$(gum choose a b c)` composes.
+
+On exit, do one of two respectable things: erase the transient UI completely (fzf's default), or replace it with a one-line receipt that stays in scrollback — `✓ deployed api-server in 12s`. Textual's `inline_no_clear` and fzf's `--no-clear` are the deliberate leave-the-last-frame escape hatches. What you must not do is leave a dead, half-drawn UI behind.
+
+### Choose by workflow
+
+| Workflow | Mode |
+|---|---|
+| One-shot pick / confirm / progress | Inline; exit with a receipt |
+| Explore / monitor / edit session | Alt screen; restore on exit |
+| Hybrid (fzf-like; logs + live status) | Inline with a height cap (`--height 40%`, `Viewport::Inline`) |
 
 ---
 

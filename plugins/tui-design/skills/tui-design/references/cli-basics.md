@@ -4,6 +4,20 @@ For programs that don't have a full-screen UI: read args, do work, print output,
 
 The bar for a CLI to feel professional is lower than a TUI, but the principles are settled. Most "this CLI is bad" reactions trace to violating items on this checklist.
 
+**Contents:**
+- [Foundational principles](#foundational-principles)
+- [Input and arguments](#input-and-arguments)
+- [Output design](#output-design)
+- [Exit codes](#exit-codes)
+- [Error messages](#error-messages)
+- [Help and discoverability](#help-and-discoverability)
+- [Subcommands](#subcommands)
+- [Configuration and state](#configuration-and-state)
+- [Performance and signals](#performance-and-signals)
+- [Future-proofing](#future-proofing) · [Naming](#naming)
+- [Concrete exemplars to study](#concrete-exemplars-to-study)
+- [Final checklist](#final-checklist)
+
 ---
 
 ## Foundational principles
@@ -38,7 +52,7 @@ GNU extensions (now near-universal):
 - Long options (`--verbose`, `--output=foo.txt`).
 - Every short option has a long counterpart.
 
-**Reserve single letters for the most common flags only.** `-f`/`--file`, `-o`/`--output`, `-v`/`--verbose`, `-q`/`--quiet`, `-h`/`--help`. If users will type it daily, give it a short form. If they'll type it monthly, long-only is fine.
+**Reserve single letters for the most common flags only.** `-f`/`--file`, `-o`/`--output`, `-v`/`--verbose`, `-q`/`--quiet`, `-h`/`--help`. If users will type it daily, give it a short form. If they'll type it monthly, long-only is fine. Beware `-f`: real-world tools split between `--file` (tar, make) and `--force` (rm, git push) — pick one meaning per tool and never use it for both.
 
 ### Flags vs positional args
 
@@ -293,7 +307,7 @@ This is what `git`, `docker`, `kubectl` all use. Predictable.
 
 **Use `~/.config/mytool/`, not `~/.mytool/`.** Older "dotfile in $HOME" pollution is being phased out — adopt XDG for new tools.
 
-On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. macOS users tend to accept either XDG or `~/Library/Application Support/mytool/`.
+On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On macOS, prefer XDG (`~/.config/mytool/`) for developer CLIs — it keeps dotfiles portable across machines; reserve `~/Library/Application Support/` for GUI-style apps.
 
 ### Environment variables
 

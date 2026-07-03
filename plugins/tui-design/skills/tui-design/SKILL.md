@@ -81,7 +81,7 @@ Conventional meanings have crystallized:
 - **Magenta** → special, highlights
 - **Dim / gray** → secondary, disabled
 
-Define semantic tokens (`status.error`, `git.staged`, `text.muted`) and theme them. Lipgloss's `AdaptiveColor`, Textual's CSS variables, and Ratatui's palette pipelines all implement this indirection. Scattering hex codes through code is a phase you grow out of.
+Define semantic tokens (`status.error`, `git.staged`, `text.muted`) and theme them. Lipgloss's `LightDark` (v2; `AdaptiveColor` in v1/compat), Textual's CSS variables, and Ratatui's palette pipelines all implement this indirection. Scattering hex codes through code is a phase you grow out of.
 
 **Never use color alone.** Pair with letters (lazygit's file status: `M` modified, `A` added, `D` deleted, `??` untracked) or symbols (delta's `+`/`-` line prefixes). Safe color pairs for CVD: blue+orange, blue+yellow, black+white.
 

@@ -15,26 +15,26 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 | Subcommand framing for any of the above | **Cobra** or **urfave/cli** |
 | TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
 
-**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.sh` apps, `gh`, and most new Go TUIs use.
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps, `gh`, and most new Go TUIs use.
 
 ---
 
 ## Bubble Tea (charmbracelet/bubbletea)
 
-The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() string`.
+The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
 
-**v2 is stable** (shipped 2025). What changed and why it matters:
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.0.x). What changed and why it matters:
 - **New "Cursed Renderer"** — rewritten from scratch on the ncurses diffing algorithm; faster and more accurate redraws. Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
 - **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback.
-- **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). Lipgloss and Bubbles have matching v2 lines — keep all three on the same major.
+- **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish — keep them on the same major.
 
-**Migrating v1 → v2:** the core MVU loop is unchanged, so most models port cleanly. The friction is in the key/message types (richer `KeyMsg`, new mouse messages) and that styling is now pure Lipgloss v2. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched: `View()` now returns `tea.View` instead of `string`, key handling moves to `tea.KeyPressMsg`, and the alt-screen/mouse program options moved onto the view. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
 
 **The mental model:**
 - **Model**: a single struct holding all state.
 - **Init**: returns the initial Cmd (or `nil`).
 - **Update(msg)**: pure function returning `(newModel, Cmd)`. The only place state changes.
-- **View()**: pure function returning the entire frame as a string. Bubble Tea diffs against the previous frame and emits minimal ANSI.
+- **View()**: pure function returning the entire frame as a `tea.View` — content plus frame-level declarations (alt screen, mouse mode, cursor). Bubble Tea diffs against the previous frame and emits minimal ANSI.
 - **Cmds and Msgs**: side effects live in `tea.Cmd` (a `func() tea.Msg`); messages flow back through Update.
 
 **Canonical structure:**
@@ -48,7 +48,7 @@ func (m model) Init() tea.Cmd { return nil }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
-    case tea.KeyMsg:
+    case tea.KeyPressMsg:  // KeyMsg is an interface in v2; msg.Code/msg.Text replace Type/Runes
         switch msg.String() {
         case "q", "ctrl+c":
             return m, tea.Quit
@@ -61,22 +61,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     return m, nil
 }
 
-func (m model) View() string {
-    return fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count)
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
 }
 
 func main() {
-    p := tea.NewProgram(model{}, tea.WithAltScreen())
+    p := tea.NewProgram(model{})
     if _, err := p.Run(); err != nil {
         log.Fatal(err)
     }
 }
 ```
 
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
+
 **Important options:**
-- `tea.WithAltScreen()` — use the alternate screen (don't pollute scrollback). Required for full-screen TUIs.
-- `tea.WithMouseCellMotion()` — enable mouse including drag. `tea.WithMouseAllMotion()` for hover.
 - `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
+- `tea.WithColorProfile(p)` — force a specific color profile; the testing hook for golden-file output.
 
 **Async via Cmds:**
 ```go
@@ -97,7 +100,7 @@ return m, fetchData
 **Pitfalls:**
 - `len(string)` ≠ display width. Use `lipgloss.Width()`.
 - Goroutines never call `View()` directly — send via `program.Send(msg)`.
-- CJK alignment depends on `mattn/go-runewidth` (transitive dep of Lipgloss).
+- CJK/emoji width in the v2 stack goes through `charmbracelet/x/ansi` (uniseg-based grapheme clustering) — trust `lipgloss.Width()`, never `len()`.
 - Don't `fmt.Println` — corrupts the screen. Use `tea.LogToFile("debug.log", "DEBUG")`.
 - Cobra + Bubble Tea: don't write to stdout from `PreRun` (alt-screen eats it).
 
@@ -136,21 +139,20 @@ case tea.WindowSizeMsg:
     m.rightPaneWidth = msg.Width - m.leftPaneWidth
 ```
 
-**`AdaptiveColor`** for light/dark theming:
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants:
 ```go
-lipgloss.AdaptiveColor{Light: "#236", Dark: "#cef"}
+hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+lightDark := lipgloss.LightDark(hasDark)
+fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
 ```
-Lipgloss queries the terminal for background and picks the appropriate variant.
+The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
 
 **Sub-packages:**
 - `lipgloss/table` — bordered, styled tables with column alignment.
 - `lipgloss/list` — bullet/numbered/tree lists with custom enumerators.
 - `lipgloss/tree` — hierarchical trees with custom indenters.
 
-**Testing tip:** in CI/golden-file tests, force ASCII output:
-```go
-lipgloss.SetColorProfile(termenv.Ascii)
-```
+**Testing tip:** `SetColorProfile` is gone in v2. Downsampling now happens at write time — `lipgloss.Print`/`Println`/`Sprint` detect the output's profile via the `colorprofile` package. In Bubble Tea programs, force ASCII for CI/golden-file tests with `tea.WithColorProfile(colorprofile.Ascii)`.
 
 ---
 
@@ -223,7 +225,7 @@ The `help` Bubble auto-renders the footer from these bindings — define once, g
 
 ## Huh (charmbracelet/huh)
 
-Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs.
+Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — themes now take an `isDark` bool (e.g. `huh.ThemeCharm(isDark)`) instead of self-detecting.
 
 ```go
 form := huh.NewForm(
@@ -251,14 +253,16 @@ Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect
 
 **Accessibility:** `form.WithAccessible(true)` switches to plain prompts (line-by-line, no alt-screen) for screen readers and limited terminals — a genuinely thoughtful feature.
 
-**Embedding in Bubble Tea:** `huh.NewForm(...).WithProgramOptions(tea.WithAltScreen())` and forward messages via `m.form, cmd = m.form.Update(msg)`.
+**Full-screen:** `tea.WithAltScreen()` is gone in v2 — declare it on the view instead: `form.WithViewHook(func(v tea.View) tea.View { v.AltScreen = true; return v })`.
+
+**Embedding in Bubble Tea:** forward messages via `m.form, cmd = m.form.Update(msg)`.
 
 ---
 
 ## Other Charm libraries worth knowing
 
 - **Glamour** (`charmbracelet/glamour`) — render Markdown to ANSI. Themable via JSON stylesheets. Used for `gh` PR/issue rendering, `glow` markdown viewer.
-- **Wish** (`charmbracelet/wish`) — serve Bubble Tea apps over SSH with HTTP-style middleware. Per-session Lipgloss renderers (`bm.MakeRenderer(sess)`) use the *client's* color profile, not the server's.
+- **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH with HTTP-style middleware. Per-session Lipgloss renderers (`bm.MakeRenderer(sess)`) use the *client's* color profile, not the server's.
 - **Soft Serve** — git server with a Bubble Tea TUI; built on Wish.
 - **gum** — shell-script wrapper around Bubble Tea components. `gum choose`, `gum input`, `gum confirm`, `gum spin`. Use when scripting Bash and you want huh-quality prompts without writing Go.
 - **VHS** — record terminal sessions to GIFs from a `.tape` script. Gold for documentation.
@@ -331,11 +335,13 @@ g.MainLoop()
 
 `gdamore/tcell` is the modern alternative to termbox-go: terminfo-based, cross-platform, mouse and SGR support, used by tview internally. Use directly only if you're building a framework or have very specific needs (custom rendering pipeline, embedded use). Most apps should use Bubble Tea or tview on top.
 
+**Ultraviolet** (`charmbracelet/ultraviolet`) is the standalone rendering engine underneath Bubble Tea v2's renderer — the same tier as tcell if you're building your own framework.
+
 ---
 
 ## CLI framing: Cobra and urfave/cli
 
-**Cobra** (`spf13/cobra`) — the dominant subcommand framework for Go. Powers kubectl, gh, hugo, helm, docker. Decorator-style (well, functional-config-style) command tree:
+**Cobra** (`spf13/cobra`) — the dominant subcommand framework for Go. Powers kubectl, gh, hugo, helm, docker. Struct-literal command tree:
 
 ```go
 var rootCmd = &cobra.Command{
@@ -357,6 +363,8 @@ func init() {
 **Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. Don't write to stdout from `PreRun` if you'll enter alt-screen (output gets eaten). For commands that take pipe input, check `isatty.IsTerminal(os.Stdin.Fd())` before launching the TUI; if piped, run in non-interactive mode.
 
 Cobra ships shell completion generation (`cobra-cli completion bash|zsh|fish|powershell`) — wire it up; users expect it.
+
+**Fang** (`charmbracelet/fang`) — the CLI starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation. The idiomatic Cobra companion in a Charm-stack app.
 
 **urfave/cli** (`urfave/cli/v2`) — alternative subcommand framework, simpler API, less popular but used by syncthing and others.
 
@@ -380,6 +388,7 @@ When the user wants pretty CLI output (no full-screen UI):
 - **lazydocker** (gocui) — same paradigm for Docker.
 - **k9s** (tview) — Kubernetes TUI; command-mode navigation, drill-down stack.
 - **gh** (Cobra + Lipgloss) — GitHub CLI; not a full TUI, but excellent CLI design.
+- **Crush** (Bubble Tea v2) — Charm's AI coding agent; the flagship production v2 app.
 - **glow** (Bubble Tea) — markdown reader.
 - **soft serve** (Wish + Bubble Tea) — SSH-served git UI.
 - **circumflex** — Hacker News reader (Bubble Tea).
@@ -405,7 +414,7 @@ For SSH-served TUIs, **Wish** is the right answer — it handles per-session ter
 ## Idioms summary
 
 - **Bubble Tea**: All I/O in `tea.Cmd`s. Cache `WindowSizeMsg` for layout. Forward messages to child Bubbles. Use `tea.Batch` for parallel, `tea.Sequence` for ordered. Use `key.Binding` + `key.Matches` for declarative keys. Use `tea.LogToFile` for debug — never `fmt.Println`.
-- **Lipgloss**: Define styles once at package level (they're immutable). Use `JoinHorizontal`/`JoinVertical`/`Place` for layout. Use `AdaptiveColor` for theme support. Use `Width()`/`Height()` to measure, not `len()`.
+- **Lipgloss**: Define styles once at package level (they're immutable). Use `JoinHorizontal`/`JoinVertical`/`Place` for layout. Use `LightDark` for theme support. Use `Width()`/`Height()` to measure, not `len()`.
 - **Bubbles**: Embed components in your model. Forward `Update` calls. Use `key.KeyMap` + `help.Model` for the footer hint bar.
 - **tview**: Use `app.QueueUpdateDraw` for goroutine-originated changes — never `app.Draw` directly off-thread.
 - **gocui**: Layout is your `Manager` function. Each view is an `io.Writer`. Use `gocui.ErrQuit` to exit.

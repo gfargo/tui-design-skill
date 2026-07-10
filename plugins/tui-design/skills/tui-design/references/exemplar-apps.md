@@ -43,20 +43,14 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **Layout:** persistent multi-panel — 5 panels on the left (Status, Files, Branches, Commits, Stash), 1 large panel on the right (Diff/details), command log strip at the bottom.
 
 **What it does well:**
-- **Numeric panel jumps** (`1`–`5`) feel instant and stay in muscle memory.
-- **Context-sensitive single letters.** `c` commits in Files, checks out in Branches, copies in Stash. Works because the **footer hint bar updates per panel** — you always see what `c` does *now*.
 - **Per-pane sub-tabs.** The Branches panel has Local / Remotes / Tags as `[`/`]` tabs.
 - **Undo/redo for git operations** (`z` / `Ctrl+z`) — including rebases. This is unusually thoughtful for a TUI.
 - **Subtle pulse animation** on background fetch — present without commanding attention.
 - **Custom commands and aliases** in TOML config.
-
-**Specific features worth copying:**
-- The footer hint bar that updates per panel.
-- Numeric panel jumps for >3 panels.
-- A confirmation modal pattern that defaults to No.
 - A "command log" pane showing what git commands actually ran (transparency).
+- A confirmation modal pattern that defaults to No.
 
-**Lessons:** the cognitive load of "this letter means different things in different panels" is *worth it* if the footer always shows what's available. Trust users to read; help them see.
+**Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
 
 **Stack:** Go, gocui (jesseduffield's fork), TOML config.
 
@@ -69,20 +63,14 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **Layout:** drill-down stack with command-mode navigation. Top status header (cluster, context, namespace), main resource list, footer hints. Drill into a resource → full-screen detail view → `Esc` back.
 
 **What it does well:**
-- **Command mode** (`:pods`, `:svc`, `:ingress`) with **tab-completion and aliases**. Power users are stupendously fast.
 - **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes. Different resources get different actions.
 - **Sortable columns** with `<` and `>`.
 - **Fuzzy filter** (`/`) to narrow huge lists in real time.
-- **Live updates** — pods change state; k9s reflects without refresh.
+- **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
 - **Plugin system** for custom actions (TOML).
+- **Status-header** showing the current "address" of where you are.
 
-**Specific features worth copying:**
-- Command mode with tab-completion for any TUI with many "object types."
-- Status-header showing the current "address" of where you are.
-- Aliases (`po` for `pods`) — discoverable via `?`.
-- Live updates with a debounced redraw (don't refresh on every event).
-
-**Lessons:** when there are dozens of resource types, command mode beats menu navigation. But you must ship tab-completion and a discoverable alias list, or only the author will know what's possible.
+**Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
 
 **Stack:** Go, tview, YAML config, K8s client-go.
 
@@ -119,19 +107,13 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **Layout:** overlay/popup — appears over the shell, does one thing, exits.
 
 **What it does well:**
-- **Sub-100ms response** to every keystroke. This is *the* feature.
-- **Match count visible** (`123/45678`).
-- **Inline preview** with `--preview` — shows file contents, command output, anything.
-- **Multi-select** with Tab.
-- **Composable** — pipes to anywhere. `git branch | fzf | xargs git checkout` is the canonical pattern.
-- **Smart-case** (lowercase = case-insensitive).
+- **Inline preview** with `--preview` — shows file contents, command output, anything, without leaving the picker.
+- **Composable** — pipes to anywhere. `git branch | fzf | xargs git checkout` is the canonical pattern; even a full TUI can have a "summon fzf for picking" sub-flow.
+- Renders inline on `/dev/tty`, not the alt screen — see `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
 
-**Specific features worth copying:**
-- The sub-100ms ceiling. If your filter is slower, profile until it isn't.
-- The `--preview` pattern. Lets users see context without leaving the picker.
-- Composability via stdin/stdout. Even your TUI can have a "summon fzf for picking" sub-flow.
+**Pattern recipe:** the instant-fuzzy-filter interaction (sub-100ms updates, match count, smart-case, ranking) is dissected in `references/interaction-patterns.md` → *The fzf pattern in detail*.
 
-**Lessons:** speed is a feature. Users summon fzf hundreds of times a day; making it 50ms instead of 200ms transforms the experience. Optimize for instantaneous feel.
+**Lessons:** speed is a feature. Users summon fzf hundreds of times a day; making it 50ms instead of 200ms transforms the experience.
 
 **Stack:** Go, no UI framework — direct terminal manipulation.
 
@@ -144,17 +126,13 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **Layout:** IDE three-panel — file explorer (toggleable; merged Jan 2025, navigate-only — no file management), main editor area (with multiple split views), bottom status + diagnostics. For most of its history helix had no tree at all — its identity was pickers instead of trees.
 
 **What it does well:**
-- **Selection-first modal editing.** `wd` selects-word-then-deletes (visual feedback before destructive action) vs vim's `dw`.
-- **Multi-cursor as primary**, not an afterthought. `C` copies the selection to the next line (adding a cursor); selections can be split.
 - **Tree-sitter** for syntax-aware text objects.
 - **Space-based which-key.** Press `Space`, see a menu of `f` (file picker), `b` (buffer picker), `s` (symbols), etc.
 - **`:` command mode** with completion.
 - **Built-in LSP** (no plugins needed for most languages).
-
-**Specific features worth copying:**
-- Visual feedback before destructive action — highlight what you're about to operate on.
-- Which-key popups for leader-key namespaces. Dramatically lowers the discovery barrier on modal apps.
 - Single-binary distribution with sensible defaults — works out of the box.
+
+**Pattern recipe:** selection-first editing and multi-cursor-as-primary are dissected in `references/interaction-patterns.md` → *The helix pattern — selection-first modal editing*.
 
 **Lessons:** modes don't have to be confusing. Strong cursor-shape + status-bar mode indication + which-key for leaders make modal apps approachable.
 

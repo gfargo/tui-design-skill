@@ -13,8 +13,8 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 - [Visual hierarchy in monospace](#visual-hierarchy-in-monospace)
 - [Tables and lists](#tables-and-lists)
 - [Status bars, headers, footers](#status-bars-headers-footers)
-- [Progress indicators](#progress-indicators)
-- [Theming systems](#theming-systems)
+- [Progress indicators](#progress-indicators) (includes disconnected/stale-data and timeout/cancel UX)
+- [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
 - [Common visual pitfalls](#common-visual-pitfalls)
 
 ---
@@ -134,9 +134,7 @@ Appears over the shell, does one thing, exits.
 - Anything that needs to persist state between invocations.
 
 **Implementation notes:**
-- **Use the alternate screen** so the popup doesn't pollute scrollback.
-- Provide both `--height 40%` (inline) and `--popup` (centered) modes.
-- Output goes to stdout; the popup goes to stderr or `/dev/tty`.
+- Buffer choice (inline vs alt screen) and the exit contract are covered in full below — see *Inline, alt-screen, or overlay*.
 - Sub-100ms startup is non-negotiable — users summon these dozens of times a day.
 
 ### 7. Tabbed within panel
@@ -255,13 +253,7 @@ Detect via `$LANG` containing UTF-8 or `$LC_ALL`, and via terminal capability qu
 
 ### The three tiers
 
-Design in layers:
-
-1. **Monochrome** — does the app work with `NO_COLOR=1`? Layout, weight (bold/dim), and reverse video carry the meaning.
-2. **16 ANSI** — does it look right with the user's theme (Solarized, Gruvbox, Catppuccin, whatever)? You don't control these; theme-coherent palettes do.
-3. **256 / truecolor** — fine-grained palette for designed themes. Detect via `$COLORTERM=truecolor`.
-
-The user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+Design in the three layers SKILL.md's *Color as a semantic system* names (monochrome / 16 ANSI / 256-truecolor). The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
 
 ### Semantic tokens
 
@@ -546,19 +538,13 @@ Some apps merge status and footer into one line. Some skip the header. The princ
 
 ### Footer hint bar
 
-The single most important discoverability tool.
-
-- 3–5 most-useful shortcuts always visible.
-- Update based on context (panel, mode).
-- Full reference behind `?`.
-
-Format: `key action · key action · key action`. Use `·` (middle dot) or `|` as separator.
+Visual format: `key action · key action · key action`. Use `·` (middle dot) or `|` as separator. 3–5 shortcuts, updated per context (panel, mode).
 
 Examples:
 - htop: `F1Help F2Setup F3Search F4Filter F5Tree F6SortBy F7Nice- F8Nice+ F9Kill F10Quit`
 - lazygit: per-pane, e.g., in Files panel `space stage ↵ commit p push P pull r refresh ?`
 
-**Auto-generation:** Bubble Tea's `bubbles/help` generates from your `key.KeyMap`. Textual's `Footer` widget renders `BINDINGS`. Ink doesn't auto-generate but you can build the same. Define keys once, get the hint bar for free.
+Why this bar matters and how to auto-generate it from your keymap: `references/interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
 
 ---
 
@@ -618,6 +604,10 @@ Ambient indication of background work without commanding attention. Used by lazy
 
 **Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
 
+**Disconnected/stale-data states, for anything backed by a live connection:** k9s ships real retry/backoff config for this (`apiServerTimeout`, `maxConnRetry`) — connection loss is a designed-for case, not an afterthought. Keeping the last-known-good view visible (dimmed, with a "stale" or "reconnecting" indicator) rather than blanking the screen is the reasonable approach and what the retry mechanics imply, though it's worth being honest that this exact visual treatment isn't independently documented anywhere — treat it as the sensible inference, not a cited standard. What *is* independently confirmed as a failure mode to avoid: btop has an open bug where a temporarily-unavailable GPU permanently rewrites the user's saved widget configuration instead of just hiding the metric until it reappears — a concrete example of *not* degrading gracefully. Don't let transient unavailability mutate persistent config.
+
+**Timeout and cancellation for a hung operation:** worth doing — show elapsed time once a wait crosses a second or two, and let `Esc` cancel an in-flight request — but be aware this isn't an established convention you can point to; even lazygit and gh only have partial, inconsistently-applied versions of it (spinners without a documented cancel contract, progress meters added feature-by-feature rather than systemically). There's also no TUI-specific sourced number for "give up and show an error after N seconds" — if you need one, the general web-UI guidance (indicator at 1s, determinate indicator past 3s) is a reasonable default to borrow, but say so rather than presenting it as TUI precedent. Prioritize showing elapsed time and allowing cancellation over picking a specific auto-timeout.
+
 ---
 
 ## Theming systems
@@ -649,6 +639,18 @@ Either ship them or document how to import them:
 - **base16** umbrella spec — many themes follow this.
 
 The community has built theme repos for most popular tools; users expect plug-and-play.
+
+### Icons and Nerd Fonts — there is no detection, only opt-in
+
+No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, does exactly that) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
+
+- **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence — it fully trusts the user.
+- **lazygit** — `gui.nerdFontsVersion: '2' | '3' | ""`; empty (the default) means no icons at all.
+- **yazi** — icons are default-on, baked into the shipped theme file rather than gated by a flag; a user without a Nerd Font swaps in a community `theme-no-nerd-fonts.toml` instead of toggling a setting.
+
+**Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 reorganized Material Design Icons' codepoints (`F500–FD46` → `F0001+`) because the old range collided with CJK Unicode — a real, documented breaking change, which is exactly why lazygit's config asks for `'2'` or `'3'` explicitly rather than shipping one hardcoded set.
+
+The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII — is real, but starship is the cleanest evidence of a tool actually shipping all three rungs as named presets (`nerd-font` / `no-nerd-font` / `plain-text-symbols`). Most tools are binary (icons on with a Nerd Font, or off), not a full three-tier ladder — don't imply every icon-capable tool implements all three.
 
 ### Light/dark detection
 

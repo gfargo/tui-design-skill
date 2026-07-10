@@ -2,6 +2,15 @@
 
 Three tools occupy distinct niches: **Textual** (the modern reactive TUI framework — async-first, CSS-styled, web-deployable), **Rich** (output formatting — the rendering engine inside Textual, excellent standalone), and **prompt_toolkit** (input-focused REPLs and shells — powers IPython, ptpython, mycli/pgcli/litecli). They solve different problems. Pick by what the program *is*, not just by Python familiarity.
 
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Textual](#textual-textualize-textual) — [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
+- [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
+- [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
+- [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
+- [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
+- [Idioms summary](#idioms-summary)
+
 ## Quick recommendation
 
 | If the user wants… | Use |
@@ -248,14 +257,21 @@ Gotchas worth knowing:
 - **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
 - **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded `Input.Submitted`/`Changed` message's `event.validation_result` (`is_valid`, `failure_descriptions`) — or on `input.is_valid` / the auto-applied `-invalid`/`-valid` CSS classes.
 
-## Dev tools
+## Debugging
 
 The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
 
-- **`textual run --dev`** — hot-reloads TCSS on save, enables devtools.
-- **`textual console`** — separate process receives logs and `print()` output. Run in another terminal: `textual console`, then `textual run --dev myapp.py`.
+Never `print()` inside a running Textual app — raw mode + the live display corrupt on any direct stdout write. Instead:
+
+- **`textual console`** — a separate process that receives logs and `print()`/`self.log(...)` output. Run it in another terminal, then `textual run --dev myapp.py` in the app's terminal.
+- **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
+- **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
+
+**Profiling:** neither `textual run --dev`/`console` nor `textual-dev diagnose` measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. **A correction worth internalizing:** `DataTable.add_rows()` is not a bulk-insert optimization — it's a plain loop over `add_row()`, paying the same per-row bookkeeping cost `len(rows)` times. If bulk-inserting thousands of rows is slow, switching from a manual loop to `add_rows()` won't fix it. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
+
+## Dev tools
+
 - **`textual serve app.py`** — serves the app over HTTP/WebSocket; runs in a browser tab. Same Python code, no changes.
-- **`textual keys`** — interactive key inspector; press keys to see what events Textual receives.
 
 `textual serve` is genuinely unusual: same codebase runs in terminal, over SSH, or in a browser — and it's the best accessibility story in TUI-land, since browsers have real screen reader support. Prefer it (self-hosted, still maintained) over **textual-web**, the company's hosted service, whose future is unclear post-Textualize.
 

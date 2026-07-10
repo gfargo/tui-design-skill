@@ -4,6 +4,20 @@ Ratatui dominates Rust TUI development — thousands of crates build on it. Fork
 
 **Current line: 0.30** (0.30.0 stable since December 2025; 0.30.2 current). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
 
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Ratatui](#ratatui-ratatui-ratatui) — [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+- [Backends](#backends-crossterm-vs-termion-vs-termwiz)
+- [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Companion crates](#companion-crates)
+- [Panic safety](#panic-safety--the-critical-pattern)
+- [Alternatives to Ratatui](#alternatives-to-ratatui)
+- [Pitfalls](#pitfalls)
+- [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
+- [CLI design in Rust](#cli-design-in-rust)
+- [Idioms summary](#idioms-summary)
+
 ## Quick recommendation
 
 | If the user wants… | Use |
@@ -270,6 +284,8 @@ Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025
 - **In-app debug pane** (official recipe): keep `show_debug: bool` in app state, split off a column when toggled, and render `format!("{state:#?}")` into it.
 - **tui-logger** (0.18.x, actively maintained) — the ready-made in-app log widget, with `log`/`slog`/`tracing` support behind feature flags; the official debug recipe points to it as an alternative.
 - **Debuggers:** attach from a *second* terminal (`lldb -p <pid>` / `gdb -p`) or use an IDE debugger so the debug console is separate from the app's terminal — stopping the process in its own terminal leaves you at a prompt that's still in raw mode + alt screen. (Convention rather than official doctrine, but it follows directly from the raw-mode behavior.)
+
+**Profiling:** `cargo flamegraph` is the standard tool — ratatui.rs's own Recipes and FAQ have no profiling entry, so there's no official recipe to follow here. One real gotcha worth knowing: `cargo flamegraph` stops recording by forwarding Ctrl+C as SIGINT to the wrapped `perf`/`dtrace` process, but `crossterm::terminal::enable_raw_mode()` intercepts Ctrl+C before it becomes a signal — it arrives as an ordinary key event your app's loop has to interpret instead. In practice, either give your app a quit key that calls `disable_raw_mode()` and exits normally (a clean process exit works fine with `flamegraph`'s wrapper), or bypass the wrapper entirely and run `perf record -p $(pgrep app) -- sleep 30` against an already-running process. For async task time in a Ratatui+Tokio app, `tokio-console` (via the `console-subscriber` crate) shows per-task poll/wake/busy time live. The recurring real-world slow path, seen across several ratatui GitHub issues (high CPU in `terminal.draw`, a `Table` widget laggy at 15k rows): it's rarely widget construction itself — Ratatui's immediate-mode model rebuilding widgets every frame is by design and meant to be cheap — the actual cost is accidental O(n) work smuggled into the render closure, like eagerly collecting a large `Vec` or recomputing string widths on every draw instead of caching outside the loop.
 
 ## Companion crates
 

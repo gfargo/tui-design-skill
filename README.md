@@ -1,8 +1,15 @@
 # tui-design
 
+[![Release](https://img.shields.io/github/v/release/gfargo/tui-design-skill?label=release&color=2da44e)](https://github.com/gfargo/tui-design-skill/releases)
+[![Skills](https://www.skills.sh/b/gfargo/tui-design-skill)](https://www.skills.sh/gfargo/tui-design-skill)
+[![Build](https://github.com/gfargo/tui-design-skill/actions/workflows/release.yml/badge.svg)](https://github.com/gfargo/tui-design-skill/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A Claude Skill for designing and building **clean, professional, minimal terminal UI (TUI) applications and command-line tools** — across Go, Rust, Python, and TypeScript.
 
 Use it for greenfield builds, design reviews, refactors, library decisions, and "should I use Bubble Tea or Ratatui?"-class questions. Covers the universal patterns (layouts, color, keybindings, discoverability) plus per-ecosystem deep-dives for Bubble Tea, Ratatui, Textual, and Ink.
+
+**[What it covers](#what-the-skill-covers) · [When it triggers](#when-the-skill-triggers) · [Example prompts](#example-prompts) · [Install](#install) · [Build](#build) · [Repo layout](#repository-layout) · [Contributing](#contributing)**
 
 ---
 
@@ -16,6 +23,60 @@ Use it for greenfield builds, design reviews, refactors, library decisions, and 
 > ```
 >
 > This standalone repo still works exactly as before (including `npx skills` and the `.skill` release download) — use it if you only want `tui-design` on its own. The central marketplace is the better pick if you want my whole collection from a single source.
+
+---
+
+## What the skill covers
+
+The skill is structured so its top-level `SKILL.md` carries the **universal principles** and routes to per-topic reference files on demand. Total: ~4,400 lines across 9 files, but Claude only loads what's relevant to the current question.
+
+**Top-level (`SKILL.md`):**
+- Seven canonical TUI layouts (multi-panel, miller columns, drill-down stack, widget dashboard, IDE three-panel, overlay, tabbed-within-panel) — when to use each, what to avoid
+- Visual hierarchy in monospace (color, weight, reverse video, borders, density)
+- Color as a semantic system, `NO_COLOR`, accessibility tradeoffs
+- Two reflexes applied to every layout review — the **clutter audit** (make "feels busy" countable) and **pressure-test the floor** (responsive behavior at 80×24 and narrower), even when the user didn't ask about them
+- Cross-app keybinding conventions (`q`, `?`, `/`, `Esc`, `hjkl`, `Tab`, `Ctrl+P`, ...)
+- The four non-negotiables: alt screen, panic-safe terminal restore, `SIGWINCH`, `SIGTSTP`
+- Testing & debugging: the three-layer test pyramid and the log-to-a-file rule, with per-ecosystem APIs (including performance profiling) in the references
+- Inline vs alt-screen as a first-class design decision (fzf-class tools vs apps you live in)
+- Decision flow for new TUI/CLI projects
+- Review checklist for existing TUIs
+
+**References (loaded as needed):**
+- `ecosystem-go.md` — Bubble Tea, Lipgloss, Bubbles, Huh, tview, gocui, Cobra, Wish, gum
+- `ecosystem-rust.md` — Ratatui, Crossterm, color-eyre panic safety, Cursive, clap, cliclack, async with Tokio
+- `ecosystem-python.md` — Textual (TCSS, reactive, workers, Pilot testing, `textual serve`), Rich, prompt_toolkit, Typer, questionary
+- `ecosystem-typescript.md` — Ink (used by Claude Code, GitHub Copilot CLI, Gemini CLI), @clack/prompts, @inquirer/prompts, OpenTUI, color-library tradeoffs, argparse comparison
+- `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs, plus shell integration hooks, shipping/update/telemetry etiquette, and first-run auth flows
+- `visual-patterns.md` — deep dive on the 7 layouts, inline vs alt-screen (and the receipt-pattern exit contract), borders, color tiers, semantic tokens, density, the clutter audit, responsive design (the breakpoint ladder + the floor), tables, status bars, progress, disconnected/timeout states, theming, Nerd Font icon conventions
+- `interaction-patterns.md` — keybinding philosophies, focus management, forms and settings-screen design, OSC 8/52/9 (hyperlinks, clipboard-over-SSH, notifications), the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
+- `exemplar-apps.md` — case studies of lazygit, k9s, btop, fzf, helix, yazi, atuin, htop, Posting, Harlequin, Claude Code, starship, and others
+
+---
+
+## When the skill triggers
+
+Once installed, Claude will reach for this skill automatically when you ask about:
+
+- **Building** a TUI or CLI ("build me a TUI for monitoring my docker containers")
+- **Reviewing or refactoring** existing terminal UIs ("here's my Ratatui code, what's wrong with it?")
+- **Library / framework choices** ("Bubble Tea vs Ratatui vs Textual vs Ink for a kanban app")
+- **Specific design questions** ("how should I lay out a multi-pane git client", "should I support mouse")
+- **Naming a known TUI app** as inspiration (lazygit, k9s, btop, helix, fzf, yazi, atuin)
+- **Phrases like** "terminal app," "ncurses-style," "interactive shell tool," "CLI dashboard," "fzf-like picker"
+
+---
+
+## Example prompts
+
+**Build:**
+> "I want to build a TUI for monitoring my homelab — five docker hosts each running ~20 containers. I'd like to see CPU/mem/network at a glance and drill into any container's logs. I'm comfortable with Go and Rust. What would you build and how would you lay it out?"
+
+**Review:**
+> "Here's the layout of my Ratatui app: status bar at top with a progress bar, three panels horizontally split (file list 30%, diff 50%, commit log 20%), no footer. Keys are vim-style hjkl plus single letters. What's wrong with this from a UX perspective and what would you change?"
+
+**Library decision:**
+> "I'm starting a new TUI project in 2026 and torn between Bubble Tea, Ratatui, Textual, and Ink. It's a project management tool — kanban-board-style with multiple lists, drag-to-move, syncs to a backend, will be installed by ~5,000 internal users at our company. What would you pick and why?"
 
 ---
 
@@ -77,60 +138,6 @@ ln -s tui-design-skill/plugins/tui-design/skills/tui-design tui-design
 
 ---
 
-## What the skill covers
-
-The skill is structured so its top-level `SKILL.md` carries the **universal principles** and routes to per-topic reference files on demand. Total: ~4,400 lines across 9 files, but Claude only loads what's relevant to the current question.
-
-**Top-level (`SKILL.md`):**
-- Seven canonical TUI layouts (multi-panel, miller columns, drill-down stack, widget dashboard, IDE three-panel, overlay, tabbed-within-panel) — when to use each, what to avoid
-- Visual hierarchy in monospace (color, weight, reverse video, borders, density)
-- Color as a semantic system, `NO_COLOR`, accessibility tradeoffs
-- Two reflexes applied to every layout review — the **clutter audit** (make "feels busy" countable) and **pressure-test the floor** (responsive behavior at 80×24 and narrower), even when the user didn't ask about them
-- Cross-app keybinding conventions (`q`, `?`, `/`, `Esc`, `hjkl`, `Tab`, `Ctrl+P`, ...)
-- The four non-negotiables: alt screen, panic-safe terminal restore, `SIGWINCH`, `SIGTSTP`
-- Testing & debugging: the three-layer test pyramid and the log-to-a-file rule, with per-ecosystem APIs (including performance profiling) in the references
-- Inline vs alt-screen as a first-class design decision (fzf-class tools vs apps you live in)
-- Decision flow for new TUI/CLI projects
-- Review checklist for existing TUIs
-
-**References (loaded as needed):**
-- `ecosystem-go.md` — Bubble Tea, Lipgloss, Bubbles, Huh, tview, gocui, Cobra, Wish, gum
-- `ecosystem-rust.md` — Ratatui, Crossterm, color-eyre panic safety, Cursive, clap, cliclack, async with Tokio
-- `ecosystem-python.md` — Textual (TCSS, reactive, workers, Pilot testing, `textual serve`), Rich, prompt_toolkit, Typer, questionary
-- `ecosystem-typescript.md` — Ink (used by Claude Code, GitHub Copilot CLI, Gemini CLI), @clack/prompts, @inquirer/prompts, OpenTUI, color-library tradeoffs, argparse comparison
-- `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs, plus shell integration hooks, shipping/update/telemetry etiquette, and first-run auth flows
-- `visual-patterns.md` — deep dive on the 7 layouts, inline vs alt-screen (and the receipt-pattern exit contract), borders, color tiers, semantic tokens, density, the clutter audit, responsive design (the breakpoint ladder + the floor), tables, status bars, progress, disconnected/timeout states, theming, Nerd Font icon conventions
-- `interaction-patterns.md` — keybinding philosophies, focus management, forms and settings-screen design, OSC 8/52/9 (hyperlinks, clipboard-over-SSH, notifications), the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
-- `exemplar-apps.md` — case studies of lazygit, k9s, btop, fzf, helix, yazi, atuin, htop, Posting, Harlequin, Claude Code, starship, and others
-
----
-
-## When the skill triggers
-
-Once installed, Claude will reach for this skill automatically when you ask about:
-
-- **Building** a TUI or CLI ("build me a TUI for monitoring my docker containers")
-- **Reviewing or refactoring** existing terminal UIs ("here's my Ratatui code, what's wrong with it?")
-- **Library / framework choices** ("Bubble Tea vs Ratatui vs Textual vs Ink for a kanban app")
-- **Specific design questions** ("how should I lay out a multi-pane git client", "should I support mouse")
-- **Naming a known TUI app** as inspiration (lazygit, k9s, btop, helix, fzf, yazi, atuin)
-- **Phrases like** "terminal app," "ncurses-style," "interactive shell tool," "CLI dashboard," "fzf-like picker"
-
----
-
-## Example prompts
-
-**Build:**
-> "I want to build a TUI for monitoring my homelab — five docker hosts each running ~20 containers. I'd like to see CPU/mem/network at a glance and drill into any container's logs. I'm comfortable with Go and Rust. What would you build and how would you lay it out?"
-
-**Review:**
-> "Here's the layout of my Ratatui app: status bar at top with a progress bar, three panels horizontally split (file list 30%, diff 50%, commit log 20%), no footer. Keys are vim-style hjkl plus single letters. What's wrong with this from a UX perspective and what would you change?"
-
-**Library decision:**
-> "I'm starting a new TUI project in 2026 and torn between Bubble Tea, Ratatui, Textual, and Ink. It's a project management tool — kanban-board-style with multiple lists, drag-to-move, syncs to a backend, will be installed by ~5,000 internal users at our company. What would you pick and why?"
-
----
-
 ## Build
 
 Every published release automatically gets a `tui-design.skill` asset attached by CI (see `.github/workflows/release.yml`), so the [latest release](https://github.com/gfargo/tui-design-skill/releases/latest) is the easiest source.
@@ -174,9 +181,12 @@ tui-design-skill/
 │                   ├── visual-patterns.md
 │                   ├── interaction-patterns.md
 │                   └── exemplar-apps.md
-├── evals/                        # reproducible eval sets (design-review + build-task)
+├── evals/                        # reproducible eval sets (design-review, build-task, content, trigger-rate)
 │   ├── evals.json
-│   └── build-evals.json
+│   ├── build-evals.json
+│   ├── tier2-content-evals.json
+│   ├── tier3-content-evals.json
+│   └── trigger-evals.json
 ├── CHANGELOG.md
 ├── README.md
 ├── LICENSE

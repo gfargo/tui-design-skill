@@ -6,6 +6,19 @@ The Node.js ecosystem splits along two axes:
 
 **Ink has effectively won the high-end TUI space.** It powers Claude Code, GitHub Copilot CLI, Gemini CLI, Cloudflare Wrangler, Gatsby CLI, Prisma, Shopify CLI, Linear's internal CLI, Canva CLI, and tap. Anthropic's Claude Code is publicly TypeScript + React + Ink + Yoga + Bun.
 
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Ink](#ink-vadimdemedes-ink) — [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+- [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
+- [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+- [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
+- [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
+- [OpenTUI](#opentui-anomalyco-opentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
+- [Notable JS/TS TUI apps](#notable-js-ts-tui-apps-to-study)
+- [Pitfalls common to JS/TS](#pitfalls-common-to-js-ts-terminal-apps)
+- [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
+- [Idioms summary](#idioms-summary)
+
 ## Quick recommendation
 
 | If the user wants… | Use |
@@ -146,8 +159,9 @@ Plus `renderToString()` (Ink 6.8+) for synchronous render-to-string in tests.
 
 - **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*` calls, clears the live output, renders the message above it, and repaints the UI. If console output *is* garbling the screen, something bypassed the patch — direct `process.stdout.write` calls or child-process stdio inherited straight to the terminal.
 - **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place — the single best tool for answering "which frame went wrong".
-- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (documented for Ink 7; exit the CLI manually with Ctrl+C afterwards).
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (documented for Ink 7; exit the CLI manually with Ctrl+C afterwards). **This is for tree/props inspection only — don't reach for it to profile performance.** Ink's own docs never mention the Profiler/flame-chart tab, and its reconciler sets none of the flags React's Profiler mechanism needs; the Components tab genuinely works, but treat the Profiler tab as unsupported for Ink.
 - **High-volume tracing** goes to stderr — `useStderr().write()` preserves Ink's output — or to a file you `tail -f` in another terminal. Never stdout; Ink owns it.
+- **Profiling:** `node --cpu-prof` is the real path — it writes a `.cpuprofile` on process exit (no signal-forwarding gotcha to worry about, unlike Rust's `perf`-based tooling), loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink-specific cost sinks: unmemoized components re-rendering on every parent update (each one potentially triggers a fresh Yoga layout pass, pricier than a DOM diff); `<Static>` misuse — it exists for content written once and never revisited, and Ink 3 made it nearly 2x faster specifically because putting the wrong content in it (or leaving genuinely-static content out of it) was a known pain point; and a small always-animating leaf component (the standard `ink-spinner` is a named example) keeping the whole render cycle continuously active instead of idle between real state changes.
 
 ## Pastel — Next.js-style filesystem routing
 

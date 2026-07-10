@@ -13,6 +13,7 @@ A deep dive into how users interact with TUIs — keybinding philosophy, focus m
 - [Multi-select](#multi-select)
 - [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
 - [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+- [Forms and settings screens](#forms-and-settings-screens)
 - [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
 - Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
 - [Common interaction pitfalls](#common-interaction-pitfalls)
@@ -407,6 +408,42 @@ For nuclear actions. Used rarely.
 
 ---
 
+## Forms and settings screens
+
+### Validation timing — never per-keystroke
+
+huh, Clack, and Inquirer agree: validate on **blur** or **submit**, never mid-keystroke. huh's `Input` validates when a field loses focus and again on Next/Submit — there's no per-keystroke validation path in its implementation. Clack and Inquirer validate only on Enter (there's no blur concept in a single-prompt-at-a-time flow). Interrupting the user mid-type with an error is the thing to avoid.
+
+Textual's `Input.validate_on` is the exception worth calling out explicitly: it accepts `"blur"`, `"changed"`, `"submitted"`, and **defaults to all three** — meaning an unconfigured Textual form validates on every keystroke unless you narrow it. Pass `validate_on=["blur"]` or `["submitted"]` to match the cross-ecosystem norm.
+
+### Required-field marking — there is no framework convention
+
+None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual marker (no asterisk-for-required the way GUI toolkits do). **Don't assume one exists — this is an easy claim to get wrong by GUI pattern-matching.** In particular, huh's `" *"` suffix is its **error indicator**, shown after a validation failure, not a required-field marker; there's no `Required()` API. If a design needs required fields marked, do it manually (label text, a `(required)` suffix, a distinct color) — there's no framework default to lean on.
+
+### Dynamic/conditional fields
+
+huh's real mechanism is **`Group.WithHideFunc(func() bool)`** — it hides/shows an entire group (a step's worth of fields) based on a predicate re-evaluated as form state changes. This operates at *group* granularity; per-field hiding is not shipped (open feature requests only) — don't present it as available. For recomputing one field from another's value, huh has `OptionsFunc`/`TitleFunc`/`DescriptionFunc`, which take a callback plus the fields they depend on and re-run automatically:
+
+```go
+huh.NewSelect[string]().
+    OptionsFunc(func() []huh.Option[string] {
+        return huh.NewOptions(statesForCountry(country)...)
+    }, &country) // recomputed whenever `country` changes
+```
+
+Textual's equivalent is the `watch_<name>` convention on a `reactive()` attribute — when the reactive value changes, Textual calls `watch_<name>(old, new)`, and the idiomatic way to hide a dependent widget inside it is `widget.display = False` (removes from layout) or `.visible = False` (hides without reflowing).
+
+### Settings-screen behavior — be honest about what's settled
+
+There's no widely-adopted TUI convention for a GUI-style Save/Cancel-with-dirty-tracking settings form — don't invent one and present it as standard. What real tools actually do, and both are legitimate:
+
+- **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
+- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` to open the raw config file in the user's editor; changes require an app restart to take effect.
+
+Pick one of these two attested patterns rather than building a bespoke save/cancel/dirty-flag scheme with no precedent. Relatedly, there's no settled convention for Esc-to-discard-with-confirmation on a dirty form — if you want that behavior, design and document it explicitly rather than treating it as an established pattern.
+
+---
+
 ## Talking to the terminal emulator — OSC 8, 52, 9
 
 Some interactions aren't between the user and your app — they're between your app and the *terminal emulator*: open a link, set the clipboard, pop a desktop notification. OSC escape sequences carry these requests in-band, down the same byte stream as your output. That's their superpower: they traverse SSH, containers, and nested shells, because the emulator on the user's *local* machine interprets them — no X11 forwarding, no remote clipboard daemon.
@@ -466,6 +503,8 @@ Implementation rules:
 
 For Go: `sahilm/fuzzy` or `lithammer/fuzzysearch`. For Rust: `nucleo` (used by helix) or `skim`'s matcher. For Python: `rapidfuzz`. For TS/JS: `fuse.js` or `fzy.js`.
 
+**Case study:** `references/exemplar-apps.md` → *fzf*.
+
 ---
 
 ## The lazygit pattern — multi-pane with numeric tabs
@@ -482,6 +521,8 @@ Used by: lazygit, lazydocker (and inspired by mc / Norton Commander).
 **The bet:** users tolerate context-sensitive single letters in exchange for dense bindings, *because the footer always shows what each key does in the current context.*
 
 **The trade-off:** higher cognitive load — `c` does N different things. The footer hint bar is what makes it work.
+
+**Case study:** `references/exemplar-apps.md` → *lazygit*.
 
 ---
 
@@ -502,6 +543,8 @@ Used by: k9s, helix (`:` ex-commands), weechat (`/` slash-commands), aerc.
 
 **When to use:** when there are many resource types or actions, and users will repeat them often.
 
+**Case study:** `references/exemplar-apps.md` → *k9s*.
+
 ---
 
 ## The helix pattern — selection-first modal editing
@@ -514,6 +557,8 @@ Helix's bet against vim: select first, then act. `wd` selects-word-then-deletes 
 - **Which-key for leader keys** is a discoverability pattern any modal app should consider.
 
 You probably won't build a modal editor, but the *visual-feedback-before-action* principle is widely applicable: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited.
+
+**Case study:** `references/exemplar-apps.md` → *helix*.
 
 ---
 

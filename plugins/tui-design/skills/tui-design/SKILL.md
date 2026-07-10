@@ -18,11 +18,12 @@ Use this skill's body for the **universal principles** below. Then load referenc
 | User picked Python / mentioned Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
 | User picked TS/JS / mentioned Ink, blessed, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
 | Building a non-interactive CLI (no full-screen UI) | `references/cli-basics.md` |
-| Designing layout, borders, color, typography, density | `references/visual-patterns.md` |
-| Designing keybindings, focus, navigation, modal vs modeless | `references/interaction-patterns.md` |
+| Designing layout, borders, color, typography, density, theming, icons, progress/loading/disconnected states | `references/visual-patterns.md` |
+| Designing keybindings, focus, navigation, modal vs modeless, forms/settings screens | `references/interaction-patterns.md` |
 | Studying what makes specific apps great (lazygit, k9s, fzf, btop, helix, yazi, atuin) | `references/exemplar-apps.md` |
 | Testing or debugging a TUI | that ecosystem's `references/ecosystem-*.md` (Testing / Debugging sections) |
 | Inline vs full-screen; clipboard, hyperlinks, notifications (OSC) | `references/visual-patterns.md` → *Inline, alt-screen, or overlay*; `references/interaction-patterns.md` → *Talking to the terminal emulator* |
+| Capturing a screenshot or demo GIF of the finished app | Not this skill — use the separate `vhs-cli-demos` skill |
 
 If the user hasn't named a language, ask which ecosystem before diving into framework specifics. The universal principles below apply regardless.
 
@@ -47,7 +48,7 @@ Most successful TUIs use one of these. Choose by workflow shape, not by aestheti
 - **Drill-down stack** — Browser-style: navigate deeper with a back-stack, `Esc` returns. Often paired with command-mode navigation (`:pods`, `:nodes`). Used by **k9s, lazydocker**. Best when there are many resource types and the user needs to pivot between them.
 - **Widget dashboard** — Independent widgets in a grid, each owning its data lifecycle. Layout configurable via TOML/YAML. Used by **bottom, btop, glances**. Best for monitoring/observability where users want to compose their own view.
 - **IDE three-panel** — Sidebar → main content → detail/output, often with tabs in the main panel. Used by **Posting, Harlequin, helix**. Best for editor-like workflows.
-- **Overlay / popup** — Appears over the shell, does one thing, exits. Used by **fzf, atuin, zoxide+fzf**. Best for "summon → choose → output" interactions. Render either full-screen on the alternate screen or inline with a bounded height (fzf's `--height`); either way, clean up on exit and print the result to stdout. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
+- **Overlay / popup** — Appears over the shell, does one thing, exits. Used by **fzf, atuin, zoxide+fzf**. Best for "summon → choose → output" interactions. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay* for the buffer choice and exit contract.
 - **Tabbed within panel** — Tab bars cycled with `[`/`]`. Used inside larger layouts (lazygit's Local/Remotes/Tags, lazydocker's Logs/Stats/Env tabs). Best when one panel needs multiple personalities without changing the global layout.
 
 The universal rule: **panels never move without explicit user action.**
@@ -181,7 +182,7 @@ Other essentials:
 
 - **Never block the UI thread on I/O.** All network/disk/subprocess work happens in goroutines/tasks/promises; results flow back via messages/channels/events.
 - **Don't redraw on a fixed timer.** Redraw on events. Most apps idle at 0 fps until something happens. Cap animations at 30–60 fps.
-- **Logging can't go to stdout.** Alt-screen + raw mode would corrupt the UI. Log to a file (`tea.LogToFile`, `~/.cache/myapp/log`), use a separate console (Textual's `textual console`), or render an in-app log pane (lazygit, k9s).
+- **Logging can't go to stdout.** Alt-screen + raw mode would corrupt the UI — see *Testing and debugging* below for the file-log + `tail -f` workflow and per-ecosystem APIs.
 - **Cell width ≠ string length.** CJK ideographs are width 2; emoji should be width 2 (legacy `wcwidth` lies). Use `unicode-segmentation` (Rust), `golang.org/x/text` + `mattn/go-runewidth` (Go), `wcwidth` (Python), `string-width` (JS — Ink uses this) — never `len()` or `.length`.
 - **Clipboard, hyperlinks, and desktop notifications go through OSC escapes** (52 / 8 / 9) — the *local* emulator interprets them, so they work over SSH where shelling out to `pbcopy`/`xclip` can't. Support matrices and tmux caveats: `references/interaction-patterns.md` → *Talking to the terminal emulator*.
 
@@ -231,17 +232,15 @@ Community palettes you should be able to support: Catppuccin (Latte/Frappé/Macc
 
 ## Patterns worth naming
 
-Refer users to these by name when you spot them:
+Recognize these and refer to them by name. Implementation recipes live in `references/interaction-patterns.md`; case studies of the apps that exemplify them live in `references/exemplar-apps.md`.
 
-- **The fzf pattern** — instant fuzzy filter as core interaction. Filter must be sub-100ms; show result count; offer `--exact`; `--preview` pane; `Tab` for multi-select. Used by fzf, skim, telescope.nvim, atuin, zoxide, helix, Textual command palette.
-- **The lazygit pattern** — multi-pane with numeric tab navigation. 5+ panels, `1-5` jumps, `Tab` cycles, single letters trigger panel-specific actions, context-sensitive footer. Trade-off: cognitive load — `c` does different things in each panel.
-- **The k9s pattern** — command-driven via vim-style ex-commands (`:pods`, `:nodes`, `:svc`) with tab-completion and aliases. Fast for power users; demands tab-completion or aliases listing for discovery.
-- **The helix pattern** — selection-first modal editing (select-then-act vs vim's act-on-motion); multi-cursor as primary; Tree-sitter integration; `Space` opens which-key popup.
-- **The miller-columns pattern** — three columns (parent / current / preview), `h` ascend, `l` descend. ranger, lf, nnn, yazi, broot.
-- **The command palette pattern** — `Ctrl+P` modal with fuzzy-matched action list. Every action that has a binding should also be a palette command; show keybinding next to command name.
-- **Dual product** — ship CLI + TUI from the same core. helix, atuin, posting, gh all do this. The CLI handles scripts; the TUI handles exploration.
-
-For deeper coverage of any of these patterns and the specific apps that exemplify them, read `references/exemplar-apps.md`.
+- **The fzf pattern** — instant fuzzy filter as the core interaction. fzf, skim, telescope.nvim, atuin, zoxide, helix, Textual's command palette.
+- **The lazygit pattern** — multi-pane with numeric tab navigation and panel-specific letter actions.
+- **The k9s pattern** — command-driven via vim-style ex-commands with tab-completion.
+- **The helix pattern** — selection-first modal editing with multi-cursor as primary.
+- **The miller-columns pattern** — three columns (parent / current / preview). ranger, lf, nnn, yazi, broot.
+- **The command palette pattern** — `Ctrl+P` fuzzy-matched action list; every bound action should also be a palette command.
+- **Dual product** — ship CLI + TUI from the same core (helix, atuin, posting, gh); the CLI handles scripts, the TUI handles exploration.
 
 ## Common pitfalls
 
@@ -285,7 +284,7 @@ Then, with the ecosystem reference loaded, write the code. The non-negotiables (
 
 Walk through this checklist:
 
-- Does it use the alternate screen? Does it restore terminal state on panic?
+- **Should this even be full-screen?** A summon-choose-exit tool (picker, prompt, one-shot progress) belongs inline, not on the alt screen — see *Inline, alt-screen, or overlay*. If full-screen is right: does it use the alternate screen, and restore terminal state on panic?
 - Does it handle resize and suspend?
 - Are colors semantic tokens, or hardcoded? Is `NO_COLOR` honored?
 - Is the app usable in monochrome (color removed, layout still readable)?
@@ -298,6 +297,7 @@ Walk through this checklist:
 - Are long lists virtualized?
 - Does I/O block the UI thread anywhere?
 - Are reserved keys (Ctrl+C/Z/S/Q) bound to anything?
+- Does copy/yank go through OSC 52 so it survives SSH and tmux? Are OSC 8 links and OSC 9 notifications used where they'd help, and not overused?
 - Does it ship with at least one popular community theme support (Catppuccin, Gruvbox, etc.) or a way to define one?
 - Is the update/event layer unit-testable as pure functions? Are frame snapshots (if any) pinned to a size and color profile?
 

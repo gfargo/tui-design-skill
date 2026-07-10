@@ -1,0 +1,58 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Tier-3 content-gap evals (2026-07-10). Follow-up round to the v1.4.0 audit's remaining backlog plus a fresh structural/coverage review of the shipped v1.4.0 skill. Closes: shell integration hooks, forms/settings-screen design + CLI first-run auth flows, Nerd Font glyph conventions + degraded-state UX, and per-ecosystem performance profiling. Baseline = v1.4.0 skill (pre this round). Assertions graded against four web-verified research briefs in the workspace, each with per-claim sources and an explicit UNVERIFIED section. Two of the four briefs surfaced corrections to plausible-but-wrong assumptions (Textual's DataTable.add_rows() is not actually batched; React DevTools Profiler does not work with Ink's custom renderer) — these are the highest-value assertions in this set, since they test whether the skill prevents a specific, verified hallucination rather than just testing general strategy quality.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "shell-integration-cd-on-exit",
+      "prompt": "I'm building a Rust TUI file picker (like a specialized yazi) — when the user selects a directory and quits, I want their actual shell to `cd` into it, not just print the path. Is that possible, and if not, what's the real pattern people use for this?",
+      "files": [],
+      "assertions": [
+        "States plainly that a child process cannot change its parent shell's cwd directly — there is no IPC trick around this",
+        "Describes the cwd-file wrapper-function pattern: the program writes its final directory to a caller-specified file, and a shell function reads it and cd's after the program exits",
+        "Names a real precedent (yazi's --cwd-file + y() wrapper, or ranger's --choosedir + wrapper) rather than inventing a generic description",
+        "Recommends documenting the wrapper function for the user to add to their rc file themselves, not silently auto-installing it",
+        "Gives or describes a concrete, correct wrapper function shape (mktemp scratch file, run the program with a flag pointing at it, read it back, cd, clean up)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "forms-first-run-apikey",
+      "prompt": "My Go CLI needs an API key before it can do anything. What should happen the very first time someone runs it with no key configured — and once I have huh set up for the prompt, where should I store the key?",
+      "files": [],
+      "assertions": [
+        "Recommends checking isatty on both stdin and stdout before prompting, with a non-interactive fallback (env var short-circuits the flow) for CI/scripted use",
+        "Recommends OS keychain storage for the key, naming a real Go library (zalando/go-keyring or 99designs/keyring), not just 'store it securely'",
+        "Addresses the headless/CI gap honestly — keychains depend on a running Secret Service/D-Bus daemon on Linux, so an explicit plaintext fallback is needed, not a silent failure",
+        "If a plaintext fallback is shown, sets file permissions explicitly (e.g. chmod 0600) rather than relying on umask",
+        "Does NOT claim '--no-input' is a standard flag name across CLIs, and does not invent a required-field asterisk convention for the huh prompt that doesn't exist in huh's actual API"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "nerdfont-and-timeout-ux",
+      "prompt": "I want nice icons in my Ratatui app (Nerd Font glyphs) but I'm worried about users who don't have one installed — what's the right way to handle this, and separately: my app polls a remote API every few seconds and sometimes it times out — what should the UI do?",
+      "files": [],
+      "assertions": [
+        "States that no terminal exposes a way to detect whether a Nerd Font is installed/active — this must be explicit user opt-in, not auto-detected",
+        "Recommends an opt-in config/flag pattern citing a real precedent (lazygit's nerdFontsVersion, eza's --icons, or similar) rather than proposing a detection scheme",
+        "Recommends a plain-Unicode or ASCII fallback for users without a Nerd Font, not just 'fail to boxes'",
+        "For the timeout question, does NOT assert a specific universal 'give up after N seconds' number as an established TUI convention — either gives no fixed number or explicitly flags it as borrowed from general UI practice, not TUI-specific precedent",
+        "Recommends keeping last-known-good data visible (rather than blanking the screen) on a timeout/disconnect, and suggests showing elapsed time and/or a way to cancel"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "profiling-textual-and-ink",
+      "prompt": "My Textual app feels sluggish when the DataTable has 50k rows — how do I find out what's actually slow? And separately, for a different project, I have an Ink CLI where I want to profile render performance — can I just use the React DevTools I already have hooked up for debugging?",
+      "files": [],
+      "assertions": [
+        "Recommends py-spy (or equivalent sampling profiler) as the way to measure what's slow in the Textual app, not just logging/console tools",
+        "Does NOT claim DataTable.add_rows() is a meaningfully faster bulk-insert path than looping add_row() — either states they're equivalent or doesn't make a speed claim about add_rows() at all",
+        "For the Ink question, does NOT recommend the React DevTools Profiler/flame-chart tab for performance profiling of an Ink app — states or implies it doesn't work with Ink's custom renderer",
+        "Recommends node --cpu-prof (or equivalent, e.g. clinic.js/0x) as the actual path to profile an Ink app's CPU usage",
+        "Names at least one plausible Ink-specific cost sink (unmemoized re-renders, <Static> misuse, or an always-animating component like a spinner) rather than only generic React advice"
+      ]
+    }
+  ]
+}

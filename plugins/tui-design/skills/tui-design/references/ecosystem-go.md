@@ -2,6 +2,18 @@
 
 The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for traditional widget-rich apps. **gocui** is a third lineage powering lazygit/lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker) or `urfave/cli`.
 
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
+- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+- [tview](#tview-rivo-tview) · [gocui](#gocui-awesome-gocui-gocui) · [tcell](#lower-level-tcell)
+- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfave-cli)
+- [Output formatting](#output-formatting-non-tui)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Notable Go TUI apps](#notable-go-tui-apps-to-study)
+- [Cross-platform notes](#cross-platform-notes)
+- [Idioms summary](#idioms-summary)
+
 ## Quick recommendation
 
 | If the user wants… | Use |
@@ -438,6 +450,20 @@ if len(os.Getenv("DEBUG")) > 0 {
 Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; v2 adds `tea.LogToFileWith` for a custom logger.
 
 **Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless — `dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`, then `dlv connect 127.0.0.1:43000` from a second terminal.
+
+**Profiling a sluggish TUI:** Bubble Tea's README documents no profiling recipe of its own, so this is standard Go tooling — but the shape that actually works for a TUI is `net/http/pprof` on a loopback port, not file-based `pprof.StartCPUProfile`. A background goroutine serving on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there's no SIGINT/flush ceremony to get right. This is what Charm's own `crush` does, gated behind an env var:
+
+```go
+import (
+    "net/http"
+    _ "net/http/pprof"
+)
+if os.Getenv("MYAPP_PROFILE") != "" {
+    go func() { http.ListenAndServe("localhost:6060", nil) }()
+}
+```
+
+Then from a second terminal: `go tool pprof -http=:8080 http://localhost:6060/debug/pprof/profile`. Common cost sink to look for: work smuggled into `View()` that should be cached (recomputed `lipgloss.Width()` calls, string rebuilds) or an unbatched Bubbles `list`/`table` render — [bubbles#810](https://github.com/charmbracelet/bubbles/issues/810) is a real case of exactly this (per-frame string concatenation instead of `strings.Builder`), diagnosed with this same `net/http/pprof` technique.
 
 ---
 

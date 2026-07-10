@@ -12,9 +12,12 @@ The bar for a CLI to feel professional is lower than a TUI, but the principles a
 - [Error messages](#error-messages)
 - [Help and discoverability](#help-and-discoverability)
 - [Subcommands](#subcommands)
+- [Shell integration](#shell-integration)
 - [Configuration and state](#configuration-and-state)
 - [Performance and signals](#performance-and-signals)
-- [Future-proofing](#future-proofing) · [Naming](#naming)
+- [Future-proofing](#future-proofing)
+- [Shipping, updates, and telemetry](#shipping-updates-and-telemetry)
+- [Naming](#naming)
 - [Concrete exemplars to study](#concrete-exemplars-to-study)
 - [Final checklist](#final-checklist)
 
@@ -282,6 +285,36 @@ Noun-verb scales: adding `pr review` doesn't conflict with `issue review`. Verb-
 
 ---
 
+## Shell integration
+
+A child process cannot change its parent shell's working directory or environment variables — only the shell itself can do that. There's no IPC trick around this; two patterns cover everything real tools need.
+
+### cd-on-exit: the cwd-file wrapper function
+
+If your tool navigates directories and should `cd` the user's shell on exit (a file picker, a directory jumper), ship a flag that writes the final directory to a caller-specified file, and document a shell wrapper function that reads it and `cd`s after your program exits. yazi and ranger converge on the identical shape:
+
+```bash
+function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+    command rm -f -- "$tmp"
+}
+```
+
+ranger's `--choosedir` does the same thing under a different flag name. This is the pattern, not an implementation detail — there's no other way to get a "cd on exit" TUI.
+
+### The `eval "$(tool init shell)"` pattern
+
+For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits only a `precmd` prompt-regeneration hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits a keybinding (Ctrl-R by default) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
+
+### Never silently edit rc files
+
+Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+
+---
+
 ## Configuration and state
 
 ### Precedence (highest wins)
@@ -346,6 +379,19 @@ Never accept secrets via `--password=`, `--token=`, etc. on the command line. Th
 - OS keychains (gh uses macOS Keychain / libsecret / Windows Credential Manager).
 - `git-credential-*`-style helper protocols.
 
+### First-run authentication
+
+Two patterns dominate, and both are legitimate:
+
+1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or print a URL + code with `--no-browser`), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
+2. **Direct prompt for long-lived credentials**, written to a plaintext config file. Older but still standard for cloud-infra CLIs with long-lived access-key-style credentials (`aws configure`) — though even AWS is moving federated auth toward device-flow (`aws configure sso`).
+
+**Check both stdin and stdout are TTYs before prompting** (`isatty()` on both, not just stdin) — gh's own check does this. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow** — `GH_TOKEN`, `VERCEL_TOKEN` — not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all) — don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+
+**Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
+
+**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): absent a restrictive umask, `~/.aws/credentials` was written world-readable. `chmod 600` the file yourself at creation time.
+
 ---
 
 ## Performance and signals
@@ -399,6 +445,26 @@ Once shipped, your CLI is an API. Users script around it.
 - **Deprecation runway**: warn for at least one release cycle before removing.
 - **Output for humans is iterable**; **machine output (`--json`, `--plain`) must be stable** — that's the contract scripts depend on.
 - Document deprecations clearly. Print a notice to stderr: "`--old-flag` is deprecated; use `--new-flag` instead. Will be removed in v2.0."
+
+---
+
+## Shipping, updates, and telemetry
+
+### Distribution shape constrains your options
+
+- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency — the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser automates the release; its `homebrew_formulas` publisher is deprecated as of v2.10 in favor of `homebrew_casks`.
+- **npm with per-platform `optionalDependencies`**: the current pattern for shipping native binaries through npm (esbuild, `@swc/core`) — each platform gets its own scoped package (`@esbuild/darwin-arm64`), and the package manager installs only the matching one. This superseded the older, fragile `postinstall`-downloads-a-binary approach, which breaks under offline installs, custom registries, and `--ignore-scripts`.
+- **Pure npm / pipx**: needs the language runtime present, but is the cheapest to publish and update.
+
+### Update-check etiquette
+
+If you check for updates: check async, cache the result (once a day is the norm — both gh and the widely-used `update-notifier` npm package default to a 24-hour interval), and print the notice to stderr *after* your normal output, not interleaved with it. Auto-skip in CI and gate on stdout being a TTY. Provide an opt-out env var (gh's is `GH_NO_UPDATE_NOTIFIER`; the npm package's is `NO_UPDATE_NOTIFIER`).
+
+**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh disables its own update checker specifically in precompiled/package-manager-distributed binaries. Getting this wrong is a live bug class, not a hypothetical: gemini-cli's self-update logic has misattributed an npm install as Homebrew-managed and told users to run `brew upgrade`, which silently no-ops.
+
+### Telemetry, if you collect it
+
+`DO_NOT_TRACK=1` is a real, named convention with real prior art (Homebrew, Gatsby, Syncthing, .NET, Azure CLI) — but it is **not close to universal**: Next.js, Vercel CLI, Prisma, and Netlify CLI all decline or ignore it despite direct, still-open requests asking them to. The practical pattern: ship your own clearly-named opt-out (an env var plus a `tool telemetry disable` subcommand, following Next.js/Vercel's shape), auto-skip in CI, and honor `DO_NOT_TRACK=1` as a cheap courtesy on top — it costs nothing to check and it's the right thing to do even though most tools don't yet. Disclose before collecting: Homebrew shows its analytics notice before analytics are ever sent, so a user can opt out before any data leaves the machine. And never let an opt-out be silently overridden — Netlify CLI once fired a telemetry event *reporting that the user had disabled telemetry*, undermining the opt-out it was supposed to respect. Treat an opt-out flag as an absolute veto, checked first, no exceptions.
 
 ---
 

@@ -1,0 +1,151 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Trigger-rate eval set (2026-07-10). 12 should-trigger queries weighted toward the v1.4.0/v1.5.0 content areas (testing, debugging, profiling, OSC clipboard, shell integration, inline mode, forms, first-run, Nerd Fonts), several deliberately phrased WITHOUT framework names or TUI/terminal tokens; 12 near-miss negatives (same topics, web/GUI/editor context). Measured 2026-07-10 against the v1.5.0 description via the sequential-foreground harness (see memory: skill-trigger-eval-harness; the parallel optimizer is unreliable here): should-trigger 12/12 (n=2 each, all 2/2 \u2014 including every weak-anchor query), should-not-trigger 9/12 (N08 'nerd font for vscode' fired 2/2; N02 web-React profiling and N05 Next.js API keys fired 1/2 each). VERDICT: description left unchanged \u2014 no should-trigger misses to fix, and keyword additions would only feed the existing near-miss false positives; a restricting clause risks under-triggering, the costlier failure. Same conclusion as the May 2026 round: measure before rewriting.",
+  "harness": "cd <proj-with-.claude/commands/tui-design.md>; env -u CLAUDECODE ~/.local/bin/claude -p \"<query>\" --output-format stream-json --verbose --include-partial-messages --model <session-model> | grep -c '\"name\":\"Skill\"'  # nonzero = triggered; run sequentially, NOT in parallel",
+  "queries": [
+    {
+      "id": "T01",
+      "query": "how do i write automated tests for my bubble tea app? every refactor breaks the tab key and nobody notices",
+      "should_trigger": true,
+      "area": "testing, framework anchor"
+    },
+    {
+      "id": "T02",
+      "query": "whats the right way to test a terminal app in CI so the snapshots dont flake",
+      "should_trigger": true,
+      "area": "testing, weak anchor (only 'terminal app')"
+    },
+    {
+      "id": "T03",
+      "query": "my ratatui panel border overlaps the footer after resizing and println debugging corrupts the screen \u2014 how do i debug this properly",
+      "should_trigger": true,
+      "area": "debugging, framework anchor"
+    },
+    {
+      "id": "T04",
+      "query": "my textual datatable with 50k rows is super sluggish, how do i profile whats slow?",
+      "should_trigger": true,
+      "area": "profiling, framework anchor"
+    },
+    {
+      "id": "T05",
+      "query": "users want to press y to copy a request id to the clipboard but half of them run my log viewer over ssh inside tmux \u2014 how do i make copy work there?",
+      "should_trigger": true,
+      "area": "OSC clipboard, NO framework/TUI token"
+    },
+    {
+      "id": "T06",
+      "query": "when someone picks a directory in my file picker and quits, i want their shell to actually cd into it, not just print the path. possible?",
+      "should_trigger": true,
+      "area": "shell integration, NO framework/TUI token"
+    },
+    {
+      "id": "T07",
+      "query": "should my branch picker take over the whole screen like lazygit or render inline under the prompt like fzf? i want scrollback preserved",
+      "should_trigger": true,
+      "area": "inline mode, app-name anchors"
+    },
+    {
+      "id": "T08",
+      "query": "my go cli needs an api key before it can do anything \u2014 what should the first run look like and where do i store the key?",
+      "should_trigger": true,
+      "area": "first-run auth, 'cli' anchor only"
+    },
+    {
+      "id": "T09",
+      "query": "building a settings screen with ~10 fields in my terminal app, some fields depend on others \u2014 when should validation fire, on every keystroke?",
+      "should_trigger": true,
+      "area": "forms, weak anchor"
+    },
+    {
+      "id": "T10",
+      "query": "i want nerd font icons in my file manager but some users wont have the font \u2014 can i detect it and fall back?",
+      "should_trigger": true,
+      "area": "nerd fonts, NO framework/TUI token"
+    },
+    {
+      "id": "T11",
+      "query": "build me a k9s-style dashboard for monitoring our RabbitMQ queues, drill into a queue to see consumers",
+      "should_trigger": true,
+      "area": "legacy regression check: build request"
+    },
+    {
+      "id": "T12",
+      "query": "bubble tea or ratatui for a kanban board thing my team will use daily over ssh?",
+      "should_trigger": true,
+      "area": "legacy regression check: library choice"
+    },
+    {
+      "id": "N01",
+      "query": "how do i write jest tests for my react dashboard component? the data table rows dont update",
+      "should_trigger": false,
+      "area": "near-miss: testing but web react"
+    },
+    {
+      "id": "N02",
+      "query": "react devtools profiler shows my nextjs page re-rendering constantly, how do i find the cause",
+      "should_trigger": false,
+      "area": "near-miss: profiling but web react"
+    },
+    {
+      "id": "N03",
+      "query": "navigator.clipboard.writeText fails in safari on my web app \u2014 whats the right cross browser clipboard code",
+      "should_trigger": false,
+      "area": "near-miss: clipboard but browser"
+    },
+    {
+      "id": "N04",
+      "query": "my zsh script needs to parse json from an api and retry on failure, whats the cleanest way",
+      "should_trigger": false,
+      "area": "near-miss: shell scripting, no UI"
+    },
+    {
+      "id": "N05",
+      "query": "whats the best way to store api keys for my nextjs app, env vars or a secrets manager?",
+      "should_trigger": false,
+      "area": "near-miss: secrets but web app"
+    },
+    {
+      "id": "N06",
+      "query": "form validation in my vue app \u2014 validate on blur or on submit? fields depend on each other",
+      "should_trigger": false,
+      "area": "near-miss: forms but web"
+    },
+    {
+      "id": "N07",
+      "query": "ssh into my ec2 box times out after 60s idle, how do i keep the connection alive",
+      "should_trigger": false,
+      "area": "near-miss: ssh but networking"
+    },
+    {
+      "id": "N08",
+      "query": "which nerd font looks best in vscode? i want ligatures too",
+      "should_trigger": false,
+      "area": "near-miss: nerd fonts but editor config"
+    },
+    {
+      "id": "N09",
+      "query": "profile my python flask endpoint, it takes 3 seconds to respond",
+      "should_trigger": false,
+      "area": "near-miss: python profiling but web"
+    },
+    {
+      "id": "N10",
+      "query": "my electron app feels slow when the table has 50k rows, how do i virtualize it",
+      "should_trigger": false,
+      "area": "near-miss: desktop app perf"
+    },
+    {
+      "id": "N11",
+      "query": "write a bash one liner to find the 10 largest files under /var and print sizes human readable",
+      "should_trigger": false,
+      "area": "near-miss: terminal usage, not building a tool"
+    },
+    {
+      "id": "N12",
+      "query": "how should i lay out the dashboard page in my admin web app? sidebar plus cards or tabs?",
+      "should_trigger": false,
+      "area": "near-miss: dashboard layout but web"
+    }
+  ]
+}

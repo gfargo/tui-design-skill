@@ -70,7 +70,7 @@ Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FR
 
 ### Interactivity
 
-Only prompt when stdin is a TTY (`isatty(0)`). When piped or in CI, fail with a message naming the flag the user should pass. Honor `--no-input`. Confirm destructive actions; allow `-y`/`--yes` or `-f`/`--force` to override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
 
 **Never accept secrets via `--password=…`** — leaks via `ps`, shell history, `docker inspect`, debug logs. Use:
 - `--password-file path/to/secret`
@@ -151,7 +151,7 @@ Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard fl
 |---|---|
 | 0 | Success |
 | 1 | General failure |
-| 2 | Misuse / usage error (per BSD convention) |
+| 2 | Common usage/parse error in many tools; not a universal standard |
 
 ### Shell-defined
 
@@ -161,7 +161,7 @@ Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard fl
 | 127 | Command not found |
 | 128 + N | Terminated by signal N (130 = SIGINT/Ctrl-C, 143 = SIGTERM, 137 = SIGKILL) |
 
-### BSD `sysexits.h` (richer signaling)
+### BSD `sysexits.h` (legacy, nonportable richer signaling)
 
 | Code | Constant | Meaning |
 |---|---|---|
@@ -177,6 +177,8 @@ Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard fl
 | 78 | EX_CONFIG | Configuration error |
 
 Tool-specific overloads are common: `grep`/`rg` use `0` = match found, `1` = no match, `2` = error. Document your scheme in `--help`.
+
+Treat `sysexits.h` as a legacy compatibility vocabulary, not a cross-platform recommendation. Many modern tools use a smaller documented scheme instead.
 
 ---
 
@@ -386,7 +388,7 @@ Two patterns dominate, and both are legitimate:
 1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or print a URL + code with `--no-browser`), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
 2. **Direct prompt for long-lived credentials**, written to a plaintext config file. Older but still standard for cloud-infra CLIs with long-lived access-key-style credentials (`aws configure`) — though even AWS is moving federated auth toward device-flow (`aws configure sso`).
 
-**Check both stdin and stdout are TTYs before prompting** (`isatty()` on both, not just stdin) — gh's own check does this. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow** — `GH_TOKEN`, `VERCEL_TOKEN` — not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all) — don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
 
 **Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
 
@@ -530,7 +532,7 @@ A good CLI:
 
 **Interactivity**
 - Prompts only on TTY.
-- Honors `--no-input`.
+- Provides a documented non-interactive flag, environment variable, or stdin contract appropriate to the ecosystem.
 - Confirms destructive ops with `--yes` / `--force` override.
 - No secrets via flag.
 

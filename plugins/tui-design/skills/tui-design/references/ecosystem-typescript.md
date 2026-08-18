@@ -201,7 +201,7 @@ Each file exports a default React component plus optional `args`/`options` Zod s
 2. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
 3. **`ora` and Ink fight over the terminal.** Use `<Spinner>` from `@inkjs/ui` instead inside Ink.
 4. **`console.log` from Ink 3+ is intercepted** and displayed cleanly above the live UI. Don't fight it.
-5. **Ink 7 fixed Backspace reporting as `key.delete`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade — check `key.backspace`.
+5. **Ink 7 fixed Backspace reporting as `key.backspace`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade—check `key.backspace`.
 
 Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "Pitfalls common to JS/TS terminal apps" below.
 
@@ -376,7 +376,7 @@ Retained-mode classics, pre-Ink era.
 
 ## Pitfalls common to JS/TS terminal apps
 
-1. **ESM/CJS**. Almost the entire modern stack (chalk v5+, ora v6+, ink v4+, @inquirer/prompts, @clack/prompts, picocolors) is ESM-only at latest. For CJS, pin older majors or bundle.
+1. **ESM/CJS**. Much of the modern stack (chalk v5+, ora v6+, ink v4+, @inquirer/prompts, @clack/prompts) is ESM-only at latest. For CJS, pin older majors, bundle, or choose a dual/CommonJS-compatible dependency such as picocolors.
 2. **Restore terminal state on exit.** Ink: `unmount()`. blessed: `screen.destroy()`. Listen on SIGINT/SIGTERM.
 3. **Detect non-TTY and CI.** `process.stdout.isTTY === false` or `process.env.CI` — degrade to plain output. Spinners and prompts must not run in CI.
 4. **Raw mode requires `process.stdin.isTTY`.** Pipe input fails silently otherwise. Guard.

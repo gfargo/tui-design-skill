@@ -20,7 +20,7 @@
       "prompt": "In a current Ratatui app using color-eyre, should I install a terminal-restoring panic hook before color_eyre::install(), after it, or rely on ratatui::run/init? Show the correct ordering and explain when a custom hook is actually needed.",
       "files": [],
       "assertions": [
-        "Prefers Ratatui's managed run/init/try_init restoration behavior",
+        "Prefers Ratatui's managed run/init lifecycle and does not describe fallible try_init/try_restore as transactional cleanup",
         "Installs color_eyre before Ratatui initialization so Ratatui wraps the reporting hook and restores first",
         "Limits a custom restoration hook to manual terminal construction/setup",
         "Does not stack a redundant custom restoration wrapper on top of ratatui::run or ratatui::init"

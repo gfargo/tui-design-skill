@@ -490,7 +490,7 @@ The pattern:
 
 1. **Open** with a key (often `/` or `Ctrl+P`).
 2. **Type to filter** — shows results updating in real time.
-3. **Arrow / hjkl** to navigate filtered results.
+3. **Arrow / `Ctrl+J` / `Ctrl+K`** to navigate while the query owns printable input. Reserve bare `hjkl` for an explicit navigation mode or a view with no active text field.
 4. **Tab** to mark for multi-select (in `--multi` mode).
 5. **Enter** to confirm; **Esc** to cancel.
 6. **Optional preview pane** (right side) showing detail of hovered result.

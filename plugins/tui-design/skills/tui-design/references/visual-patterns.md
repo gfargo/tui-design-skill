@@ -421,7 +421,7 @@ This is why a **drill-down model degrades better than a fixed grid**: when only 
 
 ### Mechanics
 
-- **Lay out in relative units, never absolute positions:** percentages (Textual `width: 30%`), ratios (Ratatui `Ratio(num, den)`), `Min`/`Max`/`Fill` constraints (Ratatui), `fr` units (Textual `1fr`/`3fr`), flex (Ink/Yoga). Recompute the layout from the current frame size on every render — never cache pixel positions.
+- **Lay out in relative units, never absolute positions:** percentages (Textual `width: 30%`), ratios (Ratatui `Ratio(num, den)`), `Min`/`Max`/`Fill` constraints (Ratatui), `fr` units (Textual `1fr`/`3fr`), flex (Ink/Yoga). Derive geometry from the current frame or latest known window dimensions, and invalidate cached rectangles whenever those dimensions change.
 - **Decide what's load-bearing.** When width runs out, what hides *first*? Usually: preview pane → secondary columns → low-priority table columns. Keep the primary view and the controls needed to operate it; a dedicated footer can collapse if those controls remain discoverable elsewhere. **Detail-on-Enter** is the escape hatch — it lets you hide columns/fields at narrow widths without losing access to the data.
 - **Truncate, don't wrap, in cells**; reserve a cell for the ellipsis. Tail-truncate paths, middle-truncate when the basename matters.
 - **Handle the framework's resize event** and re-layout from the current frame/window size. On POSIX this usually begins with `SIGWINCH`; Windows and higher-level frameworks expose different events. Coalesce rapid events only when layout work is expensive so resizing still feels immediate.
@@ -497,7 +497,7 @@ Detail-on-Enter is the highest-leverage pattern: you can show fewer columns, and
 - **Textual `DataTable`** virtualizes by default.
 - **Ratatui `List` + `ListState`** handles offsetting efficiently.
 - **Bubbles `list`** virtualizes.
-- **Ink** + `<Static>` for append-only logs.
+- **Ink** needs an explicitly windowed slice or viewport for a changing collection. `<Static>` is only for finalized append-only history; it does not virtualize selectable, filtered, or otherwise mutable rows.
 
 The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ items.
 

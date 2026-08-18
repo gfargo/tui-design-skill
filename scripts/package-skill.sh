@@ -15,6 +15,43 @@ out_dir="${1:-$repo_root/dist}"
 [ -f "$skill_dir/agents/openai.yaml" ] || { echo "error: agents/openai.yaml not found at $skill_dir" >&2; exit 1; }
 [ -d "$skill_dir/references" ] || { echo "error: references not found at $skill_dir/references" >&2; exit 1; }
 
+expected_files=(
+  "SKILL.md"
+  "agents/openai.yaml"
+  "references/cli-basics.md"
+  "references/ecosystem-go.md"
+  "references/ecosystem-python.md"
+  "references/ecosystem-rust.md"
+  "references/ecosystem-typescript.md"
+  "references/exemplar-apps.md"
+  "references/interaction-patterns.md"
+  "references/visual-patterns.md"
+)
+
+# The installable artifact has an exact allowlist. Reject symlinks, caches,
+# generated files, and new resources until the release contract is updated.
+while IFS= read -r -d '' source_entry; do
+  relative="${source_entry#"$skill_dir"/}"
+  case "$relative" in
+    agents|references)
+      [ -d "$source_entry" ] && [ ! -L "$source_entry" ] || {
+        echo "error: expected a real directory in skill source: $relative" >&2
+        exit 1
+      }
+      ;;
+    SKILL.md|agents/openai.yaml|references/cli-basics.md|references/ecosystem-go.md|references/ecosystem-python.md|references/ecosystem-rust.md|references/ecosystem-typescript.md|references/exemplar-apps.md|references/interaction-patterns.md|references/visual-patterns.md)
+      [ -f "$source_entry" ] && [ ! -L "$source_entry" ] || {
+        echo "error: expected a regular, non-symlink skill file: $relative" >&2
+        exit 1
+      }
+      ;;
+    *)
+      echo "error: unexpected entry in skill source: $relative" >&2
+      exit 1
+      ;;
+  esac
+done < <(find "$skill_dir" -mindepth 1 -print0)
+
 # Resolve out_dir to an absolute path *before* the cd below, so a relative
 # argument (e.g. "dist") still works once the working directory changes.
 mkdir -p "$out_dir"
@@ -30,8 +67,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cp -R "$skill_dir" "$stage_root/$skill_name"
-find "$stage_root/$skill_name" -name '.DS_Store' -delete
+mkdir -p "$stage_root/$skill_name/agents" "$stage_root/$skill_name/references"
+for relative in "${expected_files[@]}"; do
+  cp "$skill_dir/$relative" "$stage_root/$skill_name/$relative"
+done
 find "$stage_root/$skill_name" -type d -exec chmod 755 {} +
 find "$stage_root/$skill_name" -type f -exec chmod 644 {} +
 find "$stage_root/$skill_name" -exec touch -t 198001010000.00 {} +

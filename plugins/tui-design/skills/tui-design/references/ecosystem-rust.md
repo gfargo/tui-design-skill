@@ -315,9 +315,9 @@ Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025
 
 - **ratatui-image** — image display in Ratatui apps via Sixel/kitty/iTerm2 protocols.
 
-## Panic safety — the critical pattern
+## Panic and error safety — the critical pattern
 
-A Ratatui app that panics without restoring the terminal can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer the managed entry points: `ratatui::run()`, `ratatui::init()`, and `ratatui::try_init()` install a restoration hook. Install any reporting hook first, then let Ratatui wrap it:
+A Ratatui app that exits badly can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer `ratatui::run()` for the complete managed lifecycle or `ratatui::init()` when the application needs to own the loop. Install any reporting hook first, then let Ratatui wrap it:
 
 ```rust
 fn main() -> color_eyre::Result<()> {
@@ -337,7 +337,7 @@ std::panic::set_hook(Box::new(move |info| {
 }));
 ```
 
-Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; the managed APIs already install it. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, verify both normal exit and panic restoration in a PTY.
+Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; those managed APIs already install it. The fallible helpers are not transactional: `try_init()` can return after an earlier setup step changed terminal state, and `try_restore()` stops at its first teardown error. If the caller requires fallible setup or teardown, handle an error with independent best-effort cleanup attempts (disable raw mode, leave the alternate screen, disable mouse/paste modes, show the cursor) rather than assuming one returned `Err` rolled everything back. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, inject setup/teardown failures and verify normal exit, returned errors, and panics in a PTY.
 
 ## Alternatives to Ratatui
 

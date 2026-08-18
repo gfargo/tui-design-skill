@@ -26,6 +26,40 @@ expected_tag = sys.argv[2]
 skill_dir = root / "plugins/tui-design/skills/tui-design"
 skill_file = skill_dir / "SKILL.md"
 agent_file = skill_dir / "agents/openai.yaml"
+expected_skill_files = {
+    "SKILL.md",
+    "agents/openai.yaml",
+    "references/cli-basics.md",
+    "references/ecosystem-go.md",
+    "references/ecosystem-python.md",
+    "references/ecosystem-rust.md",
+    "references/ecosystem-typescript.md",
+    "references/exemplar-apps.md",
+    "references/interaction-patterns.md",
+    "references/visual-patterns.md",
+}
+expected_skill_dirs = {"agents", "references"}
+
+actual_skill_files = set()
+actual_skill_dirs = set()
+for path in skill_dir.rglob("*"):
+    relative = path.relative_to(skill_dir).as_posix()
+    if path.is_symlink():
+        raise SystemExit(f"skill source must not contain symlinks: {relative}")
+    if path.is_file():
+        actual_skill_files.add(relative)
+    elif path.is_dir():
+        actual_skill_dirs.add(relative)
+    else:
+        raise SystemExit(f"skill source contains a non-file entry: {relative}")
+if actual_skill_files != expected_skill_files:
+    missing = sorted(expected_skill_files - actual_skill_files)
+    extra = sorted(actual_skill_files - expected_skill_files)
+    raise SystemExit(f"skill source file allowlist mismatch; missing={missing}, extra={extra}")
+if actual_skill_dirs != expected_skill_dirs:
+    missing = sorted(expected_skill_dirs - actual_skill_dirs)
+    extra = sorted(actual_skill_dirs - expected_skill_dirs)
+    raise SystemExit(f"skill source directory allowlist mismatch; missing={missing}, extra={extra}")
 
 plugin = json.loads((root / "plugins/tui-design/.claude-plugin/plugin.json").read_text())
 marketplace = json.loads((root / ".claude-plugin/marketplace.json").read_text())
@@ -173,8 +207,33 @@ while IFS= read -r entry; do
       ;;
   esac
 done <<< "$archive_entries"
-grep -Fxq 'tui-design/SKILL.md' <<< "$archive_entries"
-grep -Fxq 'tui-design/agents/openai.yaml' <<< "$archive_entries"
-grep -Eq '^tui-design/references/[^/]+\.md$' <<< "$archive_entries"
+python3 - "$build_a/tui-design.skill" <<'PY'
+import sys
+import zipfile
+from pathlib import Path
+
+archive = Path(sys.argv[1])
+expected = [
+    "tui-design/SKILL.md",
+    "tui-design/agents/openai.yaml",
+    "tui-design/references/cli-basics.md",
+    "tui-design/references/ecosystem-go.md",
+    "tui-design/references/ecosystem-python.md",
+    "tui-design/references/ecosystem-rust.md",
+    "tui-design/references/ecosystem-typescript.md",
+    "tui-design/references/exemplar-apps.md",
+    "tui-design/references/interaction-patterns.md",
+    "tui-design/references/visual-patterns.md",
+]
+with zipfile.ZipFile(archive) as package:
+    names = package.namelist()
+    if names != expected:
+        raise SystemExit(f"archive allowlist/order mismatch; expected={expected}, actual={names}")
+    for info in package.infolist():
+        if info.date_time != (1980, 1, 1, 0, 0, 0):
+            raise SystemExit(f"archive timestamp is not normalized: {info.filename} {info.date_time}")
+        if (info.external_attr >> 16) & 0o777 != 0o644:
+            raise SystemExit(f"archive mode is not 0644: {info.filename}")
+PY
 
 echo "Validated deterministic package output"

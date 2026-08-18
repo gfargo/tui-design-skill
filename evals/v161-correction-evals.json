@@ -1,0 +1,87 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.6.1 correctness regressions. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "evals": [
+    {
+      "id": "python-async-http",
+      "name": "textual-async-http-worker",
+      "prompt": "Show the smallest correct Textual @work example that fetches a URL with HTTPX without blocking the UI, checks HTTP errors, and updates a Static widget. Should I write `await httpx.get(url)`?",
+      "files": [],
+      "assertions": [
+        "Does not await the synchronous httpx.get convenience function",
+        "Uses httpx.AsyncClient and awaits client.get, or explicitly chooses a threaded worker for synchronous HTTP",
+        "Checks HTTP failure with raise_for_status or an equivalent explicit branch",
+        "Keeps network work outside the UI event/render path"
+      ]
+    },
+    {
+      "id": "ratatui-fallible-lifecycle",
+      "name": "ratatui-fallible-lifecycle",
+      "prompt": "I need Ratatui initialization and restoration to return errors instead of panic. Can I treat try_init and try_restore as transactional—either everything succeeds or the terminal is unchanged? Give me a safe lifecycle recommendation.",
+      "files": [],
+      "assertions": [
+        "Says try_init and try_restore are not transactional",
+        "Explains that a later setup failure can follow an earlier terminal-state change and that try_restore can stop at its first error",
+        "Prefers run/init for the managed path when their panic behavior is acceptable",
+        "For a fallible custom path, recommends independent best-effort teardown attempts and PTY failure-injection tests"
+      ]
+    },
+    {
+      "id": "fzf-query-navigation",
+      "name": "fzf-query-navigation",
+      "prompt": "I'm building an fzf-like picker where typing immediately filters results. Should bare j/k move the selection, and is fzf itself an inline picker by default? Define the screen and key contract.",
+      "files": [],
+      "assertions": [
+        "Says fzf defaults to full-screen and names --height for bounded inline mode",
+        "Does not bind bare printable j/k to navigation while the query field owns text",
+        "Uses arrows or Ctrl-J/Ctrl-K for navigation, or introduces an explicit separate navigation mode",
+        "Keeps interactive chrome separate from the selected stdout value for composable use"
+      ]
+    },
+    {
+      "id": "ink-static-backspace",
+      "name": "ink-static-backspace",
+      "prompt": "In Ink 7 I have a 50k-row selectable diff that changes as the query changes, plus a Backspace handler. Can I put the rows in <Static> as virtualization, and which key field represents Backspace?",
+      "files": [],
+      "assertions": [
+        "Rejects Static as virtualization for selectable, filtered, or mutable rows",
+        "Limits Static to finalized append-only history",
+        "Recommends a windowed slice, viewport, or equivalent virtualization strategy",
+        "Uses key.backspace rather than key.delete for Backspace in Ink 7"
+      ]
+    },
+    {
+      "id": "cobra-app-completion",
+      "name": "cobra-app-completion",
+      "prompt": "My generated Cobra application is named shipctl. What command should users run to produce Bash completion, and what role does cobra-cli play when I wire this up?",
+      "files": [],
+      "assertions": [
+        "Uses shipctl completion bash as the user-facing completion command",
+        "Explains that cobra-cli add completion can scaffold the application's completion command",
+        "Does not claim cobra-cli completion bash generates completions for shipctl"
+      ]
+    },
+    {
+      "id": "noninteractive-contract",
+      "name": "noninteractive-contract",
+      "prompt": "I'm documenting automation support for a new CLI. Is --no-input a universal convention that every CLI should implement? What contract should I promise instead?",
+      "files": [],
+      "assertions": [
+        "Says --no-input is not a universal cross-ecosystem standard",
+        "Requires a documented non-interactive mechanism appropriate to the tool, such as a flag, environment variable, or stdin contract",
+        "Explains non-TTY or CI behavior without assuming every interactive tool paints through stdout"
+      ]
+    },
+    {
+      "id": "portable-exit-codes",
+      "name": "portable-exit-codes",
+      "prompt": "Can I document exit code 2 as the BSD usage-error convention and sysexits EX_USAGE=64 as the portable richer alternative?",
+      "files": [],
+      "assertions": [
+        "Does not call exit code 2 the BSD usage convention",
+        "Identifies EX_USAGE as 64",
+        "Describes sysexits as legacy or nonportable and recommends documenting the tool's actual scheme"
+      ]
+    }
+  ]
+}

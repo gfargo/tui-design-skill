@@ -182,11 +182,14 @@ This is the heart of Textual's "reactive" claim — it's genuinely declarative s
 Handlers can be `async def`. The `@work` decorator turns methods into background workers:
 
 ```python
+import httpx
 from textual import work
 
 @work(exclusive=True)
 async def fetch_data(self, url: str) -> None:
-    response = await httpx.get(url)
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        response.raise_for_status()
     self.query_one("#result").update(response.text)
 
 # For blocking code:

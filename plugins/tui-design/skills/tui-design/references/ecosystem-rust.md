@@ -109,6 +109,8 @@ Ratatui owns rendering and terminal setup, but not the application event loop, s
 
 Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional. A successful redraw proves only that the renderer recovered; reload any file, process, or remote state the child could have changed.
 
+Concretely, store `child_result`, collect reentry failures without `?`, then match or aggregate the two outcomes. Calling `try_init()?`, `clear()?`, or `draw()?` before inspecting `child_result` can silently replace the original child failure and violates the handoff contract.
+
 ## Widgets
 
 **Built-in:**

@@ -195,6 +195,7 @@ The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a com
 
 ```
 tui-design-skill/
+├── AGENTS.md                      # repository and release-note conventions
 ├── .claude-plugin/
 │   └── marketplace.json          # plugin marketplace catalog
 ├── .github/

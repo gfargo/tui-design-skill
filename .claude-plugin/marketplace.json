@@ -4,15 +4,13 @@
     "name": "gfargo"
   },
   "description": "Skill for designing and building clean, professional, minimal terminal UI (TUI) applications and command-line tools across Go, Rust, Python, and TypeScript.",
-  "version": "1.5.0",
-  "repository": "https://github.com/gfargo/tui-design-skill",
-  "license": "MIT",
+  "version": "1.5.1",
   "plugins": [
     {
       "name": "tui-design",
       "source": "./plugins/tui-design",
       "description": "Design and build clean, professional, minimal terminal UI (TUI) applications and command-line tools — covers Bubble Tea, Ratatui, Textual, Ink, plus universal patterns for layout, color, keybindings, and discoverability.",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "author": {
         "name": "gfargo"
       },

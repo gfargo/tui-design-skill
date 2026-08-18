@@ -37,7 +37,7 @@ Three observations that drive everything else:
 
 1. **Spatial memory is the navigation.** Users learn where things live: the file list is left, the diff is right, the status bar is bottom. Once that's established, panels must never move without explicit action. Reordering panels on focus is among the worst sins a TUI can commit.
 2. **Color encodes meaning, not appearance.** Treat colors as semantic tokens (`status.error`, `text.muted`, `accent.primary`), not raw hex codes. The app should be *usable in monochrome* — color is enhancement, never the only signal. ~8% of males have red-green CVD; pair color with letters or symbols.
-3. **Keyboard is primary; mouse is augmentation.** Every action must be reachable from the keyboard. Mouse can speed things up but never gates functionality. Vim motions (`hjkl`, `/`, `?`, `Esc`, `q`, `gg`, `G`) are the lingua franca even for non-vim users — supporting them is a courtesy that costs nothing.
+3. **Keyboard is primary; mouse is augmentation.** Every action must be reachable from the keyboard. Mouse can speed things up but never gates functionality. In navigational full-screen surfaces, arrows plus compatible Vim-style aliases (`hjkl`, `/`, `Esc`, `q`, `gg`, `G`) are familiar power-user paths; do not steal printable keys from text-entry controls or force them into a tiny prompt that already has a complete keymap.
 
 ## The seven canonical layouts
 
@@ -74,7 +74,7 @@ Design in three tiers:
 2. **16 ANSI** — does it look right with the user's theme (Solarized, Gruvbox, whatever)? You don't control these; theme-coherent palettes do.
 3. **256 / truecolor** — fine-grained palette for designed themes (Catppuccin, Dracula, Nord). Detect via `$COLORTERM=truecolor`.
 
-**Always respect `NO_COLOR`** (no-color.org). `ripgrep`, `bat`, `eza`, `delta`, `fd` all do.
+**Always respect `NO_COLOR` in automatic color mode** (no-color.org). `ripgrep`, `bat`, `eza`, `delta`, `fd` all do. If an explicit `--color=always` may override it, document that precedence.
 
 Conventional meanings have crystallized:
 - **Green** → success, added, online
@@ -122,14 +122,14 @@ Always:
 
 ## Status bars, headers, footers
 
-The convention that has converged across nearly every modern TUI:
+For an action-rich full-screen TUI, a useful convention is:
 
 - **Header (top)** — persistent context: what app, what dataset, what mode. htop's CPU/mem meters; k9s's cluster/context/namespace; lazygit's branch and repo.
 - **Main area (middle)** — the panels. This is where the work happens.
 - **Status / mode line** — ephemeral feedback ("Saved", "3 files changed") with auto-fade. Vim-style mode indicators (NORMAL/INSERT/SELECT) with distinct cursor shapes.
-- **Footer hint bar (bottom)** — 3–5 most-useful shortcuts always visible, full reference behind `?`.
+- **Footer hint bar (bottom)** — 3–5 useful contextual shortcuts, with a full reference behind `?` when the action set warrants it.
 
-The footer hint bar is the single most important discoverability tool. htop's F1–F10 strip; lazygit's per-pane hints; Bubble Tea's `bubbles/help` auto-generates from the keymap; Textual's `Footer` widget renders bindings declared via `BINDINGS`. **Don't make users read docs to discover basic actions.**
+A contextual footer is the strongest discoverability tool for a complex full-screen app. htop's F1–F10 strip; lazygit's per-pane hints; Bubble Tea's `bubbles/help` auto-generates from the keymap; Textual's `Footer` widget renders bindings declared via `BINDINGS`. A bounded inline prompt can instead show its complete controls beside the prompt. **Don't make users read docs to discover basic actions.**
 
 ## Keys: discoverability and conventions
 
@@ -149,7 +149,7 @@ The footer hint bar is the single most important discoverability tool. htop's F1
 | `Tab` / `Shift+Tab` | switch focus |
 | `r` | refresh |
 | `1`–`9` | jump to panel / numbered tab |
-| `hjkl` *and* arrows | move (support both) |
+| `hjkl` *and* arrows | navigate when printable aliases do not conflict with text entry |
 
 **Never bind these — they belong to the terminal:**
 - `Ctrl+C` (SIGINT — should always quit cleanly)
@@ -157,12 +157,12 @@ The footer hint bar is the single most important discoverability tool. htop's F1
 - `Ctrl+\` (SIGQUIT)
 - `Ctrl+S` / `Ctrl+Q` (XON/XOFF flow control on legacy terminals)
 
-**Discoverability is layered:**
+**For a complex full-screen app, discoverability is layered:**
 
-1. Always-visible footer hints (3–5 most useful keys)
-2. `?` opens a help screen with all bindings
+1. Contextual footer hints (3–5 most useful keys)
+2. `?` or an equivalent opens a help screen with all bindings
 3. Leader-key prefixes show a which-key popup (helix's `Space-` menu is the gold standard)
-4. Command palette (`Ctrl+P`) — every action with a binding should also be a palette command
+4. Command palette (`Ctrl+P`) for apps with many or context-dependent actions — if the app has one, every bound action should also be searchable there
 5. Documentation as the last resort, not the first
 
 **Modal vs modeless** is a real choice. Modal apps (vim, helix, k9s ex-mode) get denser keybindings and need persistent mode indicators (status-bar color or label) plus distinct cursor shapes. Modeless apps (Textual, Bubble Tea, btop) lean on widget focus. Both are valid; pick one paradigm and stick with it.
@@ -174,14 +174,14 @@ The footer hint bar is the single most important discoverability tool. htop's F1
 These four are the difference between an app that feels professional and one that doesn't:
 
 1. **Use the alternate screen for full-screen TUIs.** Don't pollute the user's scrollback. On exit, the terminal returns to where it was.
-2. **Always restore terminal state on exit — even on panic.** Install panic/atexit handlers that disable raw mode, leave alt screen, and restore the cursor *before* printing the trace. A panicking TUI that leaves raw mode + alt screen is the worst possible UX. Ratatui's `color_eyre` integration, Bubble Tea's `defer p.RestoreTerminal()`, Textual's exception cleanup, Ink's `unmount()` all do this.
-3. **Handle resize (`SIGWINCH`).** Re-layout on every resize event; debounce rapid resizes. Define a minimum size (typically 80×24) and render a clear "terminal too small" message rather than crash. Use percentages, `fr` units, `min`/`max`, and ratios — never absolute positions.
-4. **Handle suspend (`Ctrl+Z` / `SIGTSTP`).** On suspend: disable raw mode, leave alt screen, restore cursor, then `kill(0, SIGTSTP)`. On `SIGCONT`: re-enter alt screen and force a full redraw. Windows lacks SIGTSTP; that's fine.
+2. **Always restore terminal state on exit — even on panic.** Prefer framework-managed cleanup: Bubble Tea catches panics and cleans up by default; Ratatui's `run()` / `init()` helpers install a restore hook; Textual cleans up around its app runner; Ink restores its alternate screen on unmount. Add a custom handler only when bypassing those paths, and restore raw mode, the screen buffer, and the cursor *before* printing the trace. Do **not** `defer p.RestoreTerminal()` in Bubble Tea — that method resumes the program after `ReleaseTerminal()` rather than returning the user to the shell.
+3. **Handle resize events.** Re-layout from the framework's current frame/window size; on POSIX the underlying event usually originates with `SIGWINCH`, while Windows and higher-level frameworks expose different events. Coalesce resize bursts when layout work is expensive. Test at 80×24, define a smaller application-specific hard minimum, and render a truthful "terminal too small" message below it. Use percentages, `fr` units, `min`/`max`, and ratios — never absolute positions.
+4. **Handle suspend where the platform supports it (`Ctrl+Z` / `SIGTSTP`).** On suspend: disable raw mode, leave alt screen, restore cursor, then suspend. On `SIGCONT`: re-enter alt screen and force a full redraw. Windows lacks `SIGTSTP`; framework-provided suspend/resume events are preferable to hand-rolled signal code.
 
 Other essentials:
 
 - **Never block the UI thread on I/O.** All network/disk/subprocess work happens in goroutines/tasks/promises; results flow back via messages/channels/events.
-- **Don't redraw on a fixed timer.** Redraw on events. Most apps idle at 0 fps until something happens. Cap animations at 30–60 fps.
+- **Don't run an unconditional redraw loop.** Redraw on input, data, resize, or intentional tick events; monitoring apps may need periodic ticks, but unchanged state should stay idle. Cap animations at 30–60 fps.
 - **Logging can't go to stdout.** Alt-screen + raw mode would corrupt the UI — see *Testing and debugging* below for the file-log + `tail -f` workflow and per-ecosystem APIs.
 - **Cell width ≠ string length.** CJK ideographs are width 2; emoji should be width 2 (legacy `wcwidth` lies). Use `unicode-segmentation` (Rust), `golang.org/x/text` + `mattn/go-runewidth` (Go), `wcwidth` (Python), `string-width` (JS — Ink uses this) — never `len()` or `.length`.
 - **Clipboard, hyperlinks, and desktop notifications go through OSC escapes** (52 / 8 / 9) — the *local* emulator interprets them, so they work over SSH where shelling out to `pbcopy`/`xclip` can't. Support matrices and tmux caveats: `references/interaction-patterns.md` → *Talking to the terminal emulator*.
@@ -190,7 +190,7 @@ Other essentials:
 
 TUIs are testable; teams that skip tests usually just don't know the shape. Three layers, bottom-heavy:
 
-1. **Unit-test the update/event layer as pure functions.** Every modern framework separates state change from rendering — feed a synthetic key event in, assert on state out. Cheapest, least flaky, and catches the "Tab silently stopped working" class of regression. Even Charm's own apps lean on this layer over harnesses.
+1. **Unit-test state transitions at the cheapest available layer.** In MVU/immediate-mode architectures, feed a synthetic event into pure update logic and assert on state out. In retained/widget frameworks, drive the smallest widget or app harness that owns the behavior. This catches the "Tab silently stopped working" class of regression without making every test a PTY test.
 2. **Golden/snapshot the rendered frame** at a *pinned terminal size and color profile* — unpinned size or profile is the #1 cause of snapshot tests that flap in CI. Harnesses: teatest/v2 golden files (Go), `TestBackend` + insta (Rust), Pilot + pytest-textual-snapshot (Python), ink-testing-library frame assertions (TS).
 3. **PTY end-to-end sparingly** — one or two smoke flows at most; it's slow and the tooling is thin in every ecosystem.
 
@@ -198,7 +198,7 @@ Debugging follows one rule: **never write debug output to the terminal the TUI o
 
 ## Performance and compatibility
 
-**Truecolor is now safe to assume** in 2026. Detect via `$COLORTERM=truecolor`; fall back to 256 then 16 then monochrome. The Kitty keyboard protocol (CSI u) is supported by kitty, foot, WezTerm, Alacritty, iTerm2, Ghostty, Rio, and Windows Terminal — opt-in for advanced bindings (Ctrl+I distinct from Tab, Shift+Enter distinct from Enter), always with legacy fallback.
+**Prefer truecolor when it is detected; never require it.** Detect via `$COLORTERM=truecolor` and terminal capabilities, then fall back to 256, 16, and monochrome. The Kitty keyboard protocol (CSI u) is supported by kitty, foot, WezTerm, Alacritty, iTerm2, Ghostty, Rio, and Windows Terminal — opt in for advanced bindings (Ctrl+I distinct from Tab, Shift+Enter distinct from Enter), always with a legacy fallback.
 
 **SSH and tmux** strip features unless explicitly enabled. For tmux:
 ```
@@ -214,7 +214,7 @@ set -g set-clipboard on                        # OSC 52 clipboard
 
 ## Accessibility — the honest take
 
-TUIs are inherently inaccessible to screen readers. NVDA, JAWS, VoiceOver, and Orca read the visible buffer like a textbox, with no concept of widgets or focus. Best current practices when accessibility matters:
+Terminal UIs expose far less screen-reader structure than web or native GUI apps, and support varies by framework and emulator. Many combinations still expose only the visible buffer rather than widgets or focus. Best current practices when accessibility matters:
 
 - Linear left-to-right, top-to-bottom layouts where possible.
 - Never color-alone signals; pair with words (`[ERROR]`, `[OK]`, `[!]`).
@@ -228,7 +228,7 @@ If a11y matters seriously, ship a web alternative or a plain-CLI mode alongside 
 
 Most production TUIs support themes via TOML/YAML config (lazygit, bottom, btop, helix, delta, bat, fzf), TCSS files (Textual), or composable styles (Lipgloss). Light/dark detection via OSC `]11;?` query or `$COLORFGBG`; Lipgloss's `LightDark` and Textual's runtime theme switching are the cleanest implementations.
 
-Community palettes you should be able to support: Catppuccin (Latte/Frappé/Macchiato/Mocha), Dracula, Nord, Gruvbox, Tokyo Night, Rose Pine, Solarized, base16. Build your theme via semantic tokens, then map tokens → palette colors. Adding a new theme should be one config file, not a code change.
+For a broadly distributed app that presents itself as themeable, support or document imports for popular palettes such as Catppuccin (Latte/Frappé/Macchiato/Mocha), Dracula, Nord, Gruvbox, Tokyo Night, Rose Pine, Solarized, or base16. A small single-purpose tool does not need to ship a theme catalog. In either case, build styles from semantic tokens so adding a theme is data/config rather than a code rewrite.
 
 ## Patterns worth naming
 
@@ -247,7 +247,7 @@ Recognize these and refer to them by name. Implementation recipes live in `refer
 Ranked by real-world complaint frequency:
 
 1. **Hardcoded colors clashing with user themes.** Use semantic tokens.
-2. **Crash on resize.** Subscribe to `SIGWINCH`; debounce; never assume fixed dimensions.
+2. **Crash on resize.** Handle the framework's resize event, recompute from the current dimensions, and never assume a fixed terminal size.
 3. **Blocking the UI thread on I/O.** Async everything.
 4. **Color-only signaling.** Add letters or symbols.
 5. **Unicode glyphs failing on minimal SSH or Windows conhost.** Provide ASCII fallback.
@@ -262,8 +262,8 @@ Ranked by real-world complaint frequency:
 When the user asks you to build something:
 
 1. **Is this a one-shot command, a summon-choose-exit tool, or a full-screen app?**
-   - One-shot CLI (no UI, exits when done) → load `references/cli-basics.md`. Apply argparse + color + maybe a spinner and you're done.
-   - Summon–choose–exit tool (fzf-class picker, prompt, wizard, live progress) → render **inline**, not on the alt screen: bounded height, machine-readable result to stdout, a one-line receipt left in scrollback. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
+   - One-shot CLI (no live UI, exits when done) → load `references/cli-basics.md` and follow its argument, stream, error, exit-code, and automation contracts.
+   - Summon–choose–exit tool (fzf-class picker, prompt, wizard, live progress) → **prefer inline** when the interaction is bounded and preserving shell context matters. Use a full-screen buffer when a large preview or dataset genuinely needs stable space. Keep UI chrome on stderr or `/dev/tty` and machine-readable results on stdout. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
    - Full-screen interactive (a session you live in) → alt screen; continue.
 
 2. **What ecosystem?**
@@ -272,23 +272,23 @@ When the user asks you to build something:
 
 3. **What's the workflow shape?** Match to one of the seven canonical layouts above before writing any code. Sketch the panels in ASCII first.
 
-4. **What are the 5–8 most common actions?** Those become the always-visible footer hints. Everything else lives behind `?` or the command palette.
+4. **What are the 5–8 most common actions?** In a complex full-screen app, show a compact subset as footer hints and put the rest behind `?`. Add a command palette only when the action set is large or context-dependent; bounded inline tools can keep controls beside the prompt instead.
 
 5. **What's the data model?** Lists, trees, tables, forms, free-text? This determines which widgets you need and whether to virtualize.
 
-6. **What's the responsive plan across sizes?** Don't design for one window. Walk the breakpoint ladder (wide >120 / standard 80–120 / narrow 60–80 / too-small below) and decide what gets hidden, collapsed, or stacked at each — and the "terminal too small" message below the 80×24 floor. A fixed grid that can't fold to a single pane is a design smell; drill-down degrades more gracefully. See `references/visual-patterns.md` → *Responsive design*.
+6. **What's the responsive plan across sizes?** Don't design for one window. Walk the breakpoint ladder (wide >120 / standard 80–120 / narrow 60–80 / application-specific minimum below) and decide what gets hidden, collapsed, or stacked at each. Test 80×24 as a baseline, then define and test the smaller hard minimum named by the "terminal too small" message. A fixed grid that can't fold to a single pane is a design smell; drill-down degrades more gracefully. See `references/visual-patterns.md` → *Responsive design*.
 
-Then, with the ecosystem reference loaded, write the code. The non-negotiables (alt screen, terminal restoration, resize, suspend, async I/O, no UI-thread blocking) apply regardless of language.
+Then, with the ecosystem reference loaded, write the code. Full-screen apps need the alt-screen lifecycle; inline tools need a clean exit contract. Terminal restoration, resize handling, suspend behavior where supported, and non-blocking I/O apply in either shape.
 
 ## When reviewing or refactoring an existing TUI
 
 Walk through this checklist:
 
-- **Should this even be full-screen?** A summon-choose-exit tool (picker, prompt, one-shot progress) belongs inline, not on the alt screen — see *Inline, alt-screen, or overlay*. If full-screen is right: does it use the alternate screen, and restore terminal state on panic?
+- **Should this even be full-screen?** Prefer inline for a bounded picker, prompt, or one-shot progress UI when shell context matters; use full-screen when the working set needs the space. See *Inline, alt-screen, or overlay*. If full-screen is right: does it use the alternate screen and a correct framework-managed or custom cleanup path?
 - Does it handle resize and suspend?
 - Are colors semantic tokens, or hardcoded? Is `NO_COLOR` honored?
 - Is the app usable in monochrome (color removed, layout still readable)?
-- Are there always-visible footer hints? Does `?` show full help?
+- For a complex full-screen app, are contextual hints visible and is the full keymap discoverable? For a bounded inline tool, are its complete controls clear without a separate footer/modal?
 - Is every action keyboard-reachable? Are `q` and `Esc` consistent?
 - Are panels in fixed positions? Or do they jump around on focus?
 - **Clutter audit** — border-nesting depth (>1 inside a panel?), duplicate signals encoding one state, markers on every row, chrome-vs-data ratio. Name specific cuts, not "simplify."
@@ -298,7 +298,7 @@ Walk through this checklist:
 - Does I/O block the UI thread anywhere?
 - Are reserved keys (Ctrl+C/Z/S/Q) bound to anything?
 - Does copy/yank go through OSC 52 so it survives SSH and tmux? Are OSC 8 links and OSC 9 notifications used where they'd help, and not overused?
-- Does it ship with at least one popular community theme support (Catppuccin, Gruvbox, etc.) or a way to define one?
+- If it presents itself as themeable or is broadly distributed, does it support a popular palette (Catppuccin, Gruvbox, etc.) or document how to define one?
 - Is the update/event layer unit-testable as pure functions? Are frame snapshots (if any) pinned to a size and color profile?
 
 Most existing TUIs fail 3–5 of these. Calling them out specifically gives the user a concrete improvement path.
@@ -307,7 +307,7 @@ Most existing TUIs fail 3–5 of these. Calling them out specifically gives the 
 
 ## Style of help to give
 
-When the user asks "should I do X or Y?" — give a recommendation. The terminal renaissance has produced enough convergent design that many questions have a clear best answer (use the alternate screen, support `hjkl`+arrows, honor `NO_COLOR`, use semantic color tokens). Don't hedge on settled questions. Hedge on real tradeoffs (modal vs modeless, mouse support, single-key destructive actions vs always-confirm).
+When the user asks "should I do X or Y?" — give a recommendation. The terminal renaissance has produced enough convergent design that many questions have a clear best answer (use the alternate screen for full-screen apps, honor `NO_COLOR`, use semantic color tokens, and offer familiar navigation aliases when they do not conflict with text entry). Don't hedge on settled questions. Hedge on real tradeoffs (inline vs full-screen, modal vs modeless, mouse support, single-key destructive actions vs always-confirm).
 
 When showing code, prefer the idiom of the chosen ecosystem — don't translate Bubble Tea's MVU into Ratatui's immediate-mode and call it good. Each ecosystem has converged on a style; meet it where it is. The reference files document each one in detail.
 

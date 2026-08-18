@@ -1,0 +1,66 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused regression prompts for correctness fixes in v1.5.1. These are versioned prompts and grading assertions, not claims of a completed comparative benchmark.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "bubble-tea-cleanup-review",
+      "prompt": "Review this Bubble Tea shutdown pattern before I ship it: `p := tea.NewProgram(model); defer p.RestoreTerminal(); _, err := p.Run(); return err`. I added the defer to make sure a panic cannot leave the terminal broken. Is this correct, and what should I use instead?",
+      "files": [],
+      "assertions": [
+        "Says the defer is incorrect and should be removed",
+        "Explains that RestoreTerminal resumes Bubble Tea terminal mode after ReleaseTerminal rather than performing final shell cleanup",
+        "Explains that Bubble Tea's normal Run lifecycle and default panic handling clean up the terminal",
+        "Only recommends a custom outer cleanup boundary when bypassing or disabling the framework-managed path"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "ratatui-color-eyre-hook-order",
+      "prompt": "In a current Ratatui app using color-eyre, should I install a terminal-restoring panic hook before color_eyre::install(), after it, or rely on ratatui::run/init? Show the correct ordering and explain when a custom hook is actually needed.",
+      "files": [],
+      "assertions": [
+        "Prefers Ratatui's managed run/init/try_init restoration behavior",
+        "Installs color_eyre before Ratatui initialization so Ratatui wraps the reporting hook and restores first",
+        "Limits a custom restoration hook to manual terminal construction/setup",
+        "Does not stack a redundant custom restoration wrapper on top of ratatui::run or ratatui::init"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "responsive-minimum-contract",
+      "prompt": "My TUI supports a useful single-pane mode at 60 columns, but our docs say every terminal below 80 columns should show `Terminal too small — need 80x24`. Should I keep that as the standard minimum?",
+      "files": [],
+      "assertions": [
+        "Treats 80x24 as a compatibility test baseline rather than a universal hard minimum",
+        "Recommends an application-specific minimum derived from the smallest usable layout",
+        "Requires the too-small message to name the actual tested minimum",
+        "Describes a concrete degradation path from multi-pane to single-pane before refusing to render"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "fzf-inline-default-correction",
+      "prompt": "I'm citing fzf as proof that fuzzy pickers render inline by default. Is that accurate? I want a bounded picker that preserves the invoking command and prints the chosen item for command substitution.",
+      "files": [],
+      "assertions": [
+        "Corrects the claim: fzf defaults to full-screen rendering",
+        "Names fzf --height as the explicit bounded inline pattern",
+        "Recommends inline rendering for this requested receipt/scrollback contract without making it universal",
+        "Separates UI output from the selected value so command substitution remains scriptable"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "owo-colors-no-color-policy",
+      "prompt": "I'm using owo-colors directly in a Rust CLI. Can I state that it automatically honors NO_COLOR, or do I need to do something?",
+      "files": [],
+      "assertions": [
+        "Does not claim direct owo-colors styling automatically suppresses color",
+        "Names the supports-colors feature and if_supports_color path or recommends an explicit equivalent policy",
+        "Accounts for NO_COLOR and non-TTY output",
+        "Keeps an explicit force-color override as an application-level policy decision and defines precedence when force and disable signals conflict"
+      ]
+    }
+  ]
+}

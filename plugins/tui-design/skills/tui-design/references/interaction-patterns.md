@@ -80,7 +80,7 @@ There are four major schools. Most apps blend them.
 
 ### 4. Hybrid (modeless + vim motions)
 
-**Identity:** support arrows AND `hjkl` simultaneously. Vim shortcuts as power-user paths but never required.
+**Identity:** on navigational surfaces, support arrows and compatible `hjkl` aliases simultaneously. Vim shortcuts are power-user paths, never requirements, and printable aliases yield while a text field owns input.
 
 **Examples:** lazygit, k9s, yazi, gh dash, most modern TUIs.
 
@@ -93,7 +93,7 @@ There are four major schools. Most apps blend them.
 - Slightly more code (handle both).
 - Risk of inconsistency between which keys do what.
 
-**When to use:** **default for new TUIs.** This has become the dominant pattern.
+**When to use:** a strong default for new navigational, full-screen TUIs. A bounded prompt or form can keep a smaller conventional keymap.
 
 ---
 
@@ -116,8 +116,8 @@ These have crystallized across the ecosystem. Use them unless you have a strong 
 | `Tab` / `Shift+Tab` | switch focus |
 | `r` | refresh |
 | `1`–`9` | jump to panel / numbered tab |
-| `hjkl` *and* arrows | move (support both) |
-| `Ctrl+P` | command palette |
+| `hjkl` *and* arrows | move in navigational views when text entry does not conflict |
+| `Ctrl+P` | command palette, when the app includes one |
 | `y` | yank / copy |
 | `p` | paste / push |
 | `d` | delete (often confirms first) |
@@ -151,9 +151,9 @@ Every action a user can take should be discoverable through *at least one* of th
 
 ### Layer 1: Always-visible footer hints
 
-3–5 most-useful shortcuts, always visible at the bottom of the screen. Update based on context.
+For a full-screen app, keep the 3–5 most-useful shortcuts visible at the bottom and update them by context. A one-step inline prompt can show its controls beside the prompt instead of reserving a footer row.
 
-**This is the single most important discoverability tool.** Most users will never read your docs; they read the footer.
+For a complex full-screen app, this is usually the strongest discoverability tool. Most users will not begin in the docs; they read what is visible in context.
 
 Examples:
 - htop's F1–F10 strip.
@@ -172,7 +172,7 @@ Define keys *once*, derive the footer.
 
 Pressing `?` opens a modal or full-screen help with **all** keybindings, grouped by context.
 
-This is universal — every TUI should have it. lazygit's `?` shows a categorized list of keys, with sections per panel. Textual's `?` (when implemented) typically shows a key table.
+Every full-screen app with more than a handful of actions should provide this or an equivalent discoverable help view. A tiny picker whose complete keymap is already visible does not need a separate modal. lazygit's `?` shows a categorized list of keys, with sections per panel. Textual's `?` (when implemented) typically shows a key table.
 
 Format: `key  action  context`. Group by mode/panel/category.
 
@@ -191,7 +191,7 @@ When to add: when your keymap exceeds ~20 distinct actions. Below that, `?` help
 
 `Ctrl+P` (or similar) opens a fuzzy-matched action list. The user types to filter.
 
-**The principle:** *every action that has a keybinding should also be a palette command.* The keybinding is the shortcut; the palette is the long-form name + searchable description.
+Add a palette when the action set is large, spans multiple contexts, or benefits from search; a small app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description.
 
 Examples:
 - Textual's built-in command palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT).
@@ -410,15 +410,15 @@ For nuclear actions. Used rarely.
 
 ## Forms and settings screens
 
-### Validation timing — never per-keystroke
+### Validation timing — avoid premature errors
 
-huh, Clack, and Inquirer agree: validate on **blur** or **submit**, never mid-keystroke. huh's `Input` validates when a field loses focus and again on Next/Submit — there's no per-keystroke validation path in its implementation. Clack and Inquirer validate only on Enter (there's no blur concept in a single-prompt-at-a-time flow). Interrupting the user mid-type with an error is the thing to avoid.
+Default to validation on **blur** or **submit** so an incomplete value is not treated as an error while the user is still typing. huh's `Input` validates when a field loses focus and again on Next/Submit — there's no per-keystroke validation path in its implementation. Clack and Inquirer validate only on Enter (there's no blur concept in a single-prompt-at-a-time flow). After an error has been shown, live revalidation can help it disappear as soon as the value becomes valid; expensive or remote checks should be debounced or reserved for submit.
 
-Textual's `Input.validate_on` is the exception worth calling out explicitly: it accepts `"blur"`, `"changed"`, `"submitted"`, and **defaults to all three** — meaning an unconfigured Textual form validates on every keystroke unless you narrow it. Pass `validate_on=["blur"]` or `["submitted"]` to match the cross-ecosystem norm.
+Textual's `Input.validate_on` accepts `"blur"`, `"changed"`, and `"submitted"`, and **defaults to all three**. Narrow it to `validate_on=["blur"]` or `["submitted"]` when errors should wait; keep `"changed"` only when immediate feedback is useful and non-disruptive.
 
 ### Required-field marking — there is no framework convention
 
-None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual marker (no asterisk-for-required the way GUI toolkits do). **Don't assume one exists — this is an easy claim to get wrong by GUI pattern-matching.** In particular, huh's `" *"` suffix is its **error indicator**, shown after a validation failure, not a required-field marker; there's no `Required()` API. If a design needs required fields marked, do it manually (label text, a `(required)` suffix, a distinct color) — there's no framework default to lean on.
+None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual marker (no asterisk-for-required the way GUI toolkits do). **Don't assume one exists — this is an easy claim to get wrong by GUI pattern-matching.** In particular, huh's `" *"` suffix is its **error indicator**, shown after a validation failure, not a required-field marker; there's no `Required()` API. If a design needs required fields marked, do it manually with label text such as `(required)` or an explained `*`; color may reinforce the marker but must not carry the meaning alone.
 
 ### Dynamic/conditional fields
 
@@ -435,12 +435,13 @@ Textual's equivalent is the `watch_<name>` convention on a `reactive()` attribut
 
 ### Settings-screen behavior — be honest about what's settled
 
-There's no widely-adopted TUI convention for a GUI-style Save/Cancel-with-dirty-tracking settings form — don't invent one and present it as standard. What real tools actually do, and both are legitimate:
+There's no single widely adopted TUI convention for settings persistence. Choose from the behavior of the underlying operation rather than presenting one pattern as universal:
 
 - **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
+- **Explicit Apply / Save / Cancel**: appropriate when changes must be validated together, committed atomically, trigger an expensive reload, or update a remote system. Show dirty state, make `Esc` behavior explicit, and confirm before discarding meaningful edits.
 - **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` to open the raw config file in the user's editor; changes require an app restart to take effect.
 
-Pick one of these two attested patterns rather than building a bespoke save/cancel/dirty-flag scheme with no precedent. Relatedly, there's no settled convention for Esc-to-discard-with-confirmation on a dirty form — if you want that behavior, design and document it explicitly rather than treating it as an established pattern.
+There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
 
 ---
 
@@ -567,9 +568,9 @@ You probably won't build a modal editor, but the *visual-feedback-before-action*
 1. **Reserved-key binding** (Ctrl+C, Ctrl+Z, Ctrl+S/Q). Don't.
 2. **No focus indication.** Users tab around guessing which panel is active.
 3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
-4. **`q` doesn't quit.** Universal expectation.
-5. **`Esc` doesn't back up.** Universal expectation.
-6. **No `?` help.** Universal expectation.
+4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.
+5. **`Esc` doesn't back up or dismiss** where the UI establishes a navigation stack or modal.
+6. **No discoverable key help** in an action-rich app; `?` is conventional, but an equivalent visible route is fine.
 7. **Filter that's slow** (>100ms updates).
 8. **Destructive single-letter without confirmation or undo.** Either confirm or implement undo.
 9. **Inconsistent meanings for the same key across panels** without a footer hint bar to explain.

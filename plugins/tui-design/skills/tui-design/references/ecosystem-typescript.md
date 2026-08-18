@@ -285,7 +285,7 @@ const role = await select({
 | **kleur** | Small | Fast | Chainable | Middle ground |
 | **ansis** | Small | Fastest when chaining 2+ | Chainable + truecolor | Performance-critical with chained styles |
 
-**All modern libraries respect `NO_COLOR`** automatically. **chalk v5+ is ESM-only**; pin v4 for CJS or use a bundler.
+Color-disable behavior varies by library and version. Treat `NO_COLOR`, non-TTY output, and an explicit `--color` override as an application-level output policy, then configure or bypass the styling library accordingly. **chalk v5+ is ESM-only**; pin v4 for CJS or use a bundler.
 
 Recommendation: **picocolors for libraries / internal tools, chalk for user-facing CLIs.**
 

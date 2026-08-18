@@ -4,6 +4,10 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-08-18
+
+Reliability release focused on framework-native terminal lifecycle boundaries and reproducible evaluation provenance.
+
 ### Added
 - **Schema-v3 evaluation provenance:** new runs declare stable machine-readable schema anchors and record an exact runner version, exposed seed and temperature, plus a privacy-preserving system-prompt status or SHA-256/length pair.
 - **Grader provenance:** schema-v3 grades anchor the exact grading prompt by version and SHA-256; model graders also identify their provider, model, runner version, and generation settings.

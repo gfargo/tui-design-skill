@@ -2,6 +2,17 @@
 
 All notable changes to the `tui-design` skill are documented here. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), and the project follows semantic versioning.
 
+## [Unreleased]
+
+### Added
+- **Schema-v3 evaluation provenance:** new runs declare stable machine-readable schema anchors and record an exact runner version, exposed seed and temperature, plus a privacy-preserving system-prompt status or SHA-256/length pair.
+- **Grader provenance:** schema-v3 grades anchor the exact grading prompt by version and SHA-256; model graders also identify their provider, model, runner version, and generation settings.
+- **Contributor evidence contract:** `evals/README.md` documents privacy boundaries, reproducibility limits, run review steps, schema evolution, and the complete evidence bundle.
+
+### Changed
+- **Summary verification:** validation now requires grades alongside a summary and recomputes aggregate and per-case results, detecting tampered totals instead of checking only file hashes.
+- **Historical compatibility:** the harness emits schema v3 while continuing to score and validate schema-v2 artifacts from v1.6.1.
+
 ## [1.6.1] — 2026-08-18
 
 Correctness and release-integrity patch following an adversarial review of the complete v1.6.0 source, artifact, evaluation evidence, and framework guidance.

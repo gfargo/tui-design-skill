@@ -158,18 +158,20 @@ The committed eval sets contain prompts and assertion rubrics. `scripts/eval_har
 python3 scripts/eval_harness.py run \
   --eval-set evals/v151-correction-evals.json \
   --condition baseline --provider "provider-name" --model "exact-model-id" \
-  --repeat 2 -- path/to/model-runner --its-arguments
+  --runner-version "runner 1.2.3" --repeat 2 \
+  -- path/to/model-runner --its-arguments
 
 # Run it with a clean-context instruction pointing at this skill.
 python3 scripts/eval_harness.py run \
   --eval-set evals/v151-correction-evals.json \
   --condition with-skill --provider "provider-name" --model "exact-model-id" \
-  --repeat 2 -- path/to/model-runner --its-arguments
+  --runner-version "runner 1.2.3" --temperature 0 --repeat 2 \
+  -- path/to/model-runner --its-arguments
 ```
 
-Each schema-v2 `run.json` records the caller-supplied exact provider/model identifiers, repetitions, runner executable name and argv hash, git commit and dirty state, host metadata, eval-set and skill hashes, prompt and response hashes, timings, exit codes, and raw artifact paths. Exact runner arguments are private by default; add `--record-runner-argv` only when they contain no credentials or signed URLs and the evidence needs full command reproduction. Generated work stays under ignored `evals/runs/`; copy only reviewed evidence intended for the repository into `evals/results/`. Keep credentials in the runner's environment.
+Each schema-v3 `run.json` declares a machine-readable schema URI and records the caller-supplied exact provider/model identifiers, runner version, exposed seed and temperature, system-prompt status or hash, repetitions, runner executable name and argv hash, git commit and dirty state, host metadata, eval-set and skill hashes, prompt and response hashes, timings, exit codes, and raw artifact paths. Use `--system-prompt-file` to record only a known prompt's SHA-256 and byte length, `--no-system-prompt` when there truly is none, or neither when the runner does not expose it. Exact runner arguments are private by default; add `--record-runner-argv` only when they contain no credentials or signed URLs and the evidence needs full command reproduction. Generated work stays under ignored `evals/runs/`; copy only reviewed evidence intended for the repository into `evals/results/`. Keep credentials in the runner's environment.
 
-Grades are a separate schema-v2 JSON artifact with a grader kind, name, prompt version, and one ordered boolean result per rubric assertion and trial. The scoring command reconstructs the complete expected trial set from the eval source and rejects missing trials or assertions before calculating aggregate and per-case pass rates:
+Grades are a separate schema-v3 JSON artifact with a grader kind, name, prompt version and SHA-256, plus one ordered boolean result per rubric assertion and trial. Model graders also record provider, model, runner version, and generation metadata. The scoring command reconstructs the complete expected trial set from the eval source and rejects missing trials or assertions before calculating aggregate and per-case pass rates. Summary validation requires the grades and recomputes every aggregate rather than trusting recorded totals:
 
 ```bash
 python3 scripts/eval_harness.py score \
@@ -183,7 +185,7 @@ python3 scripts/eval_harness.py validate \
   --require-completed
 ```
 
-Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. See `python3 scripts/eval_harness.py --help` and the integration tests for the artifact contract.
+Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. The validator continues to accept schema-v2 artifacts; revalidate historical evidence from the clean source commit recorded in its `run.json` when eval or skill inputs have since changed. See [`evals/README.md`](evals/README.md), `python3 scripts/eval_harness.py --help`, and the integration tests for the complete artifact contract.
 
 The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
 
@@ -204,7 +206,8 @@ tui-design-skill/
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
 │   └── validate-release.sh       # checks metadata, content, eval JSON, and package output
 ├── tests/
-│   └── test_eval_harness.py      # runner/scoring/integrity integration tests
+│   ├── test_eval_harness.py      # runner/scoring/integrity integration tests
+│   └── test_packaging.py         # exact package-contract regression tests
 ├── plugins/
 │   └── tui-design/
 │       ├── .claude-plugin/
@@ -224,12 +227,15 @@ tui-design-skill/
 │                   ├── interaction-patterns.md
 │                   └── exemplar-apps.md
 ├── evals/                        # versioned prompt/assertion sets and curated results
+│   ├── README.md                 # evidence, privacy, and schema contract
+│   ├── schema/v3/                # run, grade, and summary JSON Schemas
 │   ├── evals.json
 │   ├── build-evals.json
 │   ├── tier2-content-evals.json
 │   ├── tier3-content-evals.json
 │   ├── v151-correction-evals.json
 │   ├── v160-structural-evals.json
+│   ├── v161-correction-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md
@@ -255,7 +261,7 @@ Issues and pull requests welcome. Particularly useful contributions:
 - **Clarifications** where the skill's advice produced unexpected results in real use
 - **Translations** of the skill into other languages
 
-When opening a PR that changes skill behavior, include the eval set, exact provider/model metadata, repetitions, grading method, and the generated summary. Do not claim an improvement from prompts and assertions alone.
+When opening a PR that changes skill behavior, follow the [`evals/README.md`](evals/README.md) evidence contract and include the eval set, exact provider/model/runner metadata, exposed generation settings, repetitions, grading provenance, and validated summary. Do not claim an improvement from prompts and assertions alone.
 
 ## Acknowledgements
 

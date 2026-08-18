@@ -17,7 +17,7 @@
     {
       "id": "ratatui-editor-reader",
       "name": "ratatui-editor-reader-handoff",
-      "prompt": "A Ratatui 0.30 app has a Tokio task continuously reading Crossterm events. When I launch Vim, the child sometimes starts with garbage and the TUI is corrupted afterward, especially when Vim exits nonzero. What exact ownership sequence should surround the child, and how should SIGTERM reach shutdown?",
+      "prompt": "A Ratatui 0.30 app has a Tokio task continuously reading Crossterm events. When I launch Vim, the child sometimes starts with garbage and the TUI is corrupted afterward, especially when Vim exits nonzero. What exact ownership sequence should surround the child, how should SIGTERM reach shutdown, and which hard-termination path cannot run cleanup?",
       "files": [],
       "assertions": [
         "Pauses or stops the Crossterm input task before terminal restoration so it cannot steal child input or terminal capability responses",
@@ -56,7 +56,7 @@
     {
       "id": "cross-framework-signal-boundaries",
       "name": "cross-framework-signal-boundaries",
-      "prompt": "I maintain Bubble Tea, Ratatui, Textual, and Ink implementations of one terminal dashboard. Can I share a generic SIGINT/SIGTERM handler that immediately restores raw mode and calls the framework's final exit API for Ctrl+Z, external editors, and process shutdown? Define the safe common policy and the framework-specific exceptions.",
+      "prompt": "I maintain Bubble Tea, Ratatui, Textual, and Ink implementations of one terminal dashboard. Can I share a generic SIGINT/SIGTERM handler that immediately restores raw mode and calls the framework's final exit API for Ctrl+Z, external editors, and process shutdown? Define the safe common policy, the framework-specific exceptions, what must be refreshed after an editor returns, and what SIGKILL means for cleanup.",
       "files": [],
       "assertions": [
         "Rejects one signal-handler cleanup helper and distinguishes final shutdown from temporary handoff and resume",

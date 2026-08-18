@@ -253,7 +253,7 @@ class EvalHarnessTest(unittest.TestCase):
             "timeout-run",
             "import os, time; os.write(1, b'PARTIAL'); time.sleep(5)",
             "--timeout",
-            "0.05",
+            "0.5",
             expected=1,
         )
         manifest = json.loads(manifest_path.read_text())

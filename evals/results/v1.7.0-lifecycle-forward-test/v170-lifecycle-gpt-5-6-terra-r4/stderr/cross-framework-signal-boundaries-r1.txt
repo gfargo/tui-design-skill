@@ -1,0 +1,1800 @@
+2026-08-18T23:23:01.528927Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T23:23:01.534381Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T23:23:01.549284Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/gfargo/dev/gfargo/tui-design-skill
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a0172f-75f6-76e2-989a-66e65d097aad
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+I maintain Bubble Tea, Ratatui, Textual, and Ink implementations of one terminal dashboard. Can I share a generic SIGINT/SIGTERM handler that immediately restores raw mode and calls the framework's final exit API for Ctrl+Z, external editors, and process shutdown? Define the safe common policy, the framework-specific exceptions, what must be refreshed after an editor returns, and what SIGKILL means for cleanup.
+
+codex
+I’m using the requested TUI-design guidance and checking each framework’s current lifecycle semantics, since signal and terminal restoration behavior is one area where a shared abstraction can be dangerously misleading.
+exec
+/bin/zsh -lc "pwd && rg --files plugins/tui-design/skills/tui-design /Users/gfargo/.agents/skills/tui-design | rg 'SKILL\\.md|ecosystem-(go|rust|python|typescript)\\.md'" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 72ms:
+/Users/gfargo/dev/gfargo/tui-design-skill
+/Users/gfargo/.agents/skills/tui-design/SKILL.md
+/Users/gfargo/.agents/skills/tui-design/references/ecosystem-typescript.md
+/Users/gfargo/.agents/skills/tui-design/references/ecosystem-python.md
+/Users/gfargo/.agents/skills/tui-design/references/ecosystem-rust.md
+/Users/gfargo/.agents/skills/tui-design/references/ecosystem-go.md
+plugins/tui-design/skills/tui-design/SKILL.md
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md
+
+exec
+/bin/zsh -lc "sed -n '1,240p' plugins/tui-design/skills/tui-design/SKILL.md && sed -n '1,260p' plugins/tui-design/skills/tui-design/references/ecosystem-go.md && sed -n '1,280p' plugins/tui-design/skills/tui-design/references/ecosystem-rust.md && sed -n '1,280p' plugins/tui-design/skills/tui-design/references/ecosystem-python.md && sed -n '1,280p' plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 39ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | Use the separate `vhs-cli-demos` skill |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve terminal-reserved behavior such as interrupt, suspend, and flow control.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+# Go ecosystem — Bubble Tea, tview, gocui, Cobra
+
+The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for traditional widget-rich apps. **gocui** is a third lineage powering lazygit/lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker) or `urfave/cli`.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
+- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+- [tview](#tview-rivo-tview) · [gocui](#gocui-awesome-gocui-gocui) · [tcell](#lower-level-tcell)
+- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfave-cli)
+- [Output formatting](#output-formatting-non-tui)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Notable Go TUI apps](#notable-go-tui-apps-to-study)
+- [Cross-platform notes](#cross-platform-notes)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI with clean architecture and Charm aesthetic | **Bubble Tea + Lipgloss + Bubbles** |
+| Multi-pane vim-keybinding "lazy*"-style app | **gocui** (`awesome-gocui/gocui` or `jesseduffield/gocui`) |
+| Heavy data exploration with tables, trees, forms | **tview** (callback-style, retained-mode) |
+| One-shot fancy CLI prompts only | **Huh** (Go form library) or **gum** (shell wrapper) |
+| Markdown rendering in terminal | **Glamour** |
+| Pretty CLI output, no full-screen | **pterm** |
+| Subcommand framing for any of the above | **Cobra** or **urfave/cli** |
+| TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
+
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps, `gh`, and most new Go TUIs use.
+
+---
+
+## Bubble Tea (charmbracelet/bubbletea)
+
+The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
+
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.0.x). What changed and why it matters:
+- **New "Cursed Renderer"** — rewritten from scratch on the ncurses diffing algorithm; faster and more accurate redraws. Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
+- **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback.
+- **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish — keep them on the same major.
+
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched: `View()` now returns `tea.View` instead of `string`, key handling moves to `tea.KeyPressMsg`, and the alt-screen/mouse program options moved onto the view. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
+
+**The mental model:**
+- **Model**: a single struct holding all state.
+- **Init**: returns the initial Cmd (or `nil`).
+- **Update(msg)**: pure function returning `(newModel, Cmd)`. The only place state changes.
+- **View()**: pure function returning the entire frame as a `tea.View` — content plus frame-level declarations (alt screen, mouse mode, cursor). Bubble Tea diffs against the previous frame and emits minimal ANSI.
+- **Cmds and Msgs**: side effects live in `tea.Cmd` (a `func() tea.Msg`); messages flow back through Update.
+
+**Canonical structure:**
+
+```go
+type model struct {
+    count int
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyPressMsg:  // KeyMsg is an interface in v2; msg.Code/msg.Text replace Type/Runes
+        switch msg.String() {
+        case "q", "ctrl+c":
+            return m, tea.Quit
+        case "+", "right", "l":
+            m.count++
+        case "-", "left", "h":
+            m.count--
+        }
+    }
+    return m, nil
+}
+
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
+}
+
+func main() {
+    p := tea.NewProgram(model{})
+    if _, err := p.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+### Lifecycle and terminal handoff
+
+Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+
+| Boundary | Bubble Tea v2 contract |
+|---|---|
+| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler converts external SIGINT/SIGTERM into managed loop termination. Do not call `os.Exit` from `Update`. |
+| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error or, after child success, a restoration error through the callback message. If both fail, the callback exposes the child error. In the callback-message branch, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+| Foreground suspend | Return `tea.Suspend`; after the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
+
+The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
+
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
+
+**Important options:**
+- `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
+- `tea.WithColorProfile(p)` — force a specific color profile; the testing hook for golden-file output.
+
+**Async via Cmds:**
+```go
+func fetchData() tea.Msg {
+    data, err := http.Get(...)
+    if err != nil { return errMsg{err} }
+    return dataMsg{data}
+}
+
+// In Update, when you want to fetch:
+return m, fetchData
+```
+
+`tea.Cmd` is `func() tea.Msg`. The runtime calls them in goroutines and routes the returned `Msg` back through `Update`. **Never block in `Update`** — anything I/O goes in a Cmd.
+
+**`tea.Batch(cmds...)`** for parallel commands; **`tea.Sequence(cmds...)`** for ordered.
+
+**Pitfalls:**
+- `len(string)` ≠ display width. Use `lipgloss.Width()`.
+- Goroutines never call `View()` directly — send via `program.Send(msg)`.
+- CJK/emoji width in the v2 stack goes through `charmbracelet/x/ansi` (uniseg-based grapheme clustering) — trust `lipgloss.Width()`, never `len()`.
+- Don't `fmt.Println` — corrupts the screen. Use `tea.LogToFile("debug.log", "DEBUG")` (see **Debugging** below).
+- Cobra + Bubble Tea: don't write to stdout from `PreRun` (alt-screen eats it).
+
+---
+
+## Lipgloss (charmbracelet/lipgloss)
+
+CSS-in-Go declarative styling — immutable `Style` values rendered to ANSI strings. The companion to Bubble Tea, but usable standalone.
+
+**Canonical use:**
+
+```go
+var titleStyle = lipgloss.NewStyle().
+    Bold(true).
+    Foreground(lipgloss.Color("#FAFAFA")).
+    Background(lipgloss.Color("#7D56F4")).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder()).
+    BorderForeground(lipgloss.Color("63"))
+
+fmt.Println(titleStyle.Render("Hello, world"))
+```
+
+**Layout helpers:**
+- `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` — side-by-side.
+- `lipgloss.JoinVertical(lipgloss.Left, top, middle, bottom)` — stacked.
+- `lipgloss.Place(width, height, hPos, vPos, content)` — center/anchor in a box.
+- `lipgloss.Width(s)` / `lipgloss.Height(s)` — measure rendered output (handles ANSI and runewidth correctly).
+
+**No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
+
+```go
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.leftPaneWidth = msg.Width / 3
+    m.rightPaneWidth = msg.Width - m.leftPaneWidth
+```
+
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants:
+```go
+hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+lightDark := lipgloss.LightDark(hasDark)
+fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
+```
+The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
+
+**Sub-packages:**
+- `lipgloss/table` — bordered, styled tables with column alignment.
+- `lipgloss/list` — bullet/numbered/tree lists with custom enumerators.
+- `lipgloss/tree` — hierarchical trees with custom indenters.
+
+**Testing tip:** `SetColorProfile` is gone in v2. Downsampling now happens at write time — `lipgloss.Print`/`Println`/`Sprint` detect the output's profile via the `colorprofile` package. In Bubble Tea programs, force ASCII for CI/golden-file tests with `tea.WithColorProfile(colorprofile.Ascii)`.
+
+---
+
+## Bubbles (charmbracelet/bubbles)
+
+The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you embed and forward messages to.
+
+**Components shipped:**
+- **`textinput`** — single-line input with placeholder, suggestions, validation.
+- **`textarea`** — multi-line input with line numbers.
+- **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering.
+- **`table`** — virtualized table with selection, sorting.
+- **`viewport`** — scrollable region for long content.
+- **`spinner`** — Braille/Meter/MiniDot/Dot/Line/Pulse/Points/Globe/Moon spinner styles.
+- **`progress`** — gradient-filled progress bar with percent.
+- **`paginator`** — page indicators.
+- **`filepicker`** — file system browser.
+- **`help`** — auto-rendered footer hint bar from a `key.KeyMap`.
+- **`key`** — declarative key bindings.
+- **`cursor`**, **`stopwatch`**, **`timer`** — utilities.
+
+**Embedding pattern:**
+
+```go
+type model struct {
+    list list.Model
+    keys keyMap
+    help help.Model
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg)  // forward to child
+    return m, cmd
+}
+
+func (m model) View() string {
+    return m.list.View() + "\n" + m.help.View(m.keys)
+}
+```
+
+**Declarative keys with `key.Binding`:**
+
+```go
+type keyMap struct {
+    Up   key.Binding
+    Down key.Binding
+    Quit key.Binding
+}
+
+var keys = keyMap{
+    Up:   key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
+    Down: key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
+    Quit: key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+}
+
+// In Update:
+case tea.KeyMsg:
+    switch {
+    case key.Matches(msg, keys.Quit):
+        return m, tea.Quit
+    case key.Matches(msg, keys.Up):
+        // ...
+    }
+```
+
+The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free.
+
+---
+
+## Huh (charmbracelet/huh)
+
+Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — themes now take an `isDark` bool (e.g. `huh.ThemeCharm(isDark)`) instead of self-detecting.
+
+```go
+form := huh.NewForm(
+    huh.NewGroup(
+        huh.NewSelect[string]().
+            Title("Choose your country").
+# Rust ecosystem — Ratatui, crossterm, Cursive, clap
+
+Ratatui dominates Rust TUI development — thousands of crates build on it. Forked from `tui-rs` in February 2023. Notable production users: **gitui, bottom, yazi, atuin, bandwhich, oha, tokio-console, csvlens, gpg-tui, systemctl-tui, tenere, kdash**. Helix uses its own custom renderer but follows similar patterns.
+
+**Current line: 0.30** (0.30.0 stable since December 2025; 0.30.2 current). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Ratatui](#ratatui-ratatui-ratatui) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+- [Backends](#backends-crossterm-vs-termion-vs-termwiz)
+- [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Companion crates](#companion-crates)
+- [Panic safety](#panic-safety--the-critical-pattern)
+- [Alternatives to Ratatui](#alternatives-to-ratatui)
+- [Pitfalls](#pitfalls)
+- [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
+- [CLI design in Rust](#cli-design-in-rust)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI in Rust | **Ratatui + Crossterm** |
+| Form-heavy app with dialogs/menus | **Cursive** (callback-driven, retained-mode) |
+| React-like declarative TUI | **iocraft** (newer, hooks + JSX-style + taffy flexbox) |
+| Argparse for CLI | **clap** (derive API) |
+| Pretty terminal colors | **owo-colors** (zero-allocation, recommended) |
+| Non-TUI progress bars | **indicatif** |
+| Interactive prompts (one-shot) | **inquire** (modern) or **dialoguer** (stable) |
+| Rich panic/error reports | **color-eyre** |
+| Fancy modern wizards (Clack-style) | **cliclack** |
+
+**Default: Ratatui + Crossterm + clap + color-eyre.** Use `ratatui/templates` as a starting point — it includes Tokio integration, panic hooks, and the component pattern.
+
+---
+
+## Ratatui (ratatui/ratatui)
+
+**Architectural model: immediate-mode rendering.** Every frame, the application redraws the entire UI from current state. The library handles diffing between intermediate buffers and emits only changed cells — "a video codec for text."
+
+The mental model is **"UI = f(state)"**. You manage app state, the event loop, and timing yourself. Ratatui handles the rendering math.
+
+**Canonical app structure:**
+
+```rust
+use ratatui::{prelude::*, widgets::*};
+use color_eyre::Result;
+
+fn main() -> Result<()> {
+    color_eyre::install()?;            // install reporting before Ratatui wraps the hook
+    let mut terminal = ratatui::init();
+    let result = App::default().run(&mut terminal);
+    ratatui::restore();
+    result
+}
+
+#[derive(Default)]
+struct App {
+    counter: i32,
+    should_quit: bool,
+}
+
+impl App {
+    fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        while !self.should_quit {
+            terminal.draw(|frame| self.draw(frame))?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+    fn draw(&self, frame: &mut Frame) {
+        frame.render_widget(
+            Paragraph::new(format!("Counter: {}", self.counter))
+                .block(Block::bordered().title("Demo")),
+            frame.area(),
+        );
+    }
+
+    fn handle_events(&mut self) -> Result<()> {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => self.should_quit = true,
+                    KeyCode::Char('+') | KeyCode::Right => self.counter += 1,
+                    KeyCode::Char('-') | KeyCode::Left => self.counter -= 1,
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
+}
+```
+
+`ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
+
+### Lifecycle and terminal handoff
+
+Ratatui owns rendering and terminal setup, but not the application event loop, subprocesses, or general process-signal policy. Prefer the managed API and make every external lifecycle event converge on the loop boundary.
+
+| Boundary | Ratatui 0.30 contract |
+|---|---|
+| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
+| SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
+| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Retain the child result while attempting every reentry step independently; if child and reentry both fail, report both instead of letting `?` discard one. A still-running input task can consume terminal capability responses during reinitialization. |
+| Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
+
+Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional. A successful redraw proves only that the renderer recovered; reload any file, process, or remote state the child could have changed.
+
+Concretely, store `child_result`, collect reentry failures without `?`, then match or aggregate the two outcomes. Calling `try_init()?`, `clear()?`, or `draw()?` before inspecting `child_result` can silently replace the original child failure and violates the handoff contract.
+
+## Widgets
+
+**Built-in:**
+- **`Block`** — borders, title, padding. The container for almost everything.
+- **`Paragraph`** — text with wrap, alignment, scroll offset.
+- **`List`** + **`ListState`** — selectable list with virtualized rendering.
+- **`Table`** + **`TableState`** — selectable table, virtualized.
+- **`Tabs`** — tab bar.
+- **`Chart`** — line/scatter chart with X/Y axes.
+- **`BarChart`** — horizontal or vertical bars.
+- **`Gauge`** / **`LineGauge`** — progress indicator.
+- **`Sparkline`** — compact trend visualization.
+- **`Canvas`** — sub-cell drawing using Braille markers; great for maps, plots, custom shapes.
+- **`Scrollbar`** — pair with any scrollable widget.
+- **`Clear`** — paints over an area; use for popup hole-punching.
+- **`Calendar`** — monthly calendar.
+
+**Custom widgets** implement the `Widget` trait (one-shot) or `StatefulWidget` (with associated state). Both are zero-cost — they're just `(area, buf)` consumers.
+
+**Third-party widgets worth knowing:**
+- **`tui-textarea`** — multi-line editor with vim/emacs bindings.
+- **`tui-input`** — single-line input.
+- **`tui-tree-widget`** — hierarchical tree.
+- **`tui-big-text`** — banner text.
+- **`tui-popup`** — modal popups.
+- **`tui-logger`** — in-app log pane.
+- **`throbber-widgets-tui`** — spinners.
+
+## Layout
+
+Constraint-based using Cassowary (the same algorithm as iOS Auto Layout):
+
+```rust
+use ratatui::layout::{Layout, Constraint};
+
+let [header, body, status] = Layout::vertical([
+    Constraint::Length(3),    // 3 rows for header
+    Constraint::Min(0),       // body fills remaining
+    Constraint::Length(1),    // 1 row for status
+]).areas(frame.area());
+
+let [sidebar, main] = Layout::horizontal([
+    Constraint::Percentage(30),
+    Constraint::Percentage(70),
+]).areas(body);
+```
+
+Constraint variants:
+- `Length(n)` — exactly n cells.
+- `Min(n)` — at least n cells (grows to fill).
+- `Max(n)` — at most n cells.
+- `Percentage(p)` — p% of available.
+- `Ratio(num, den)` — fraction.
+- `Fill(weight)` — proportional to weight (prefer over `Percentage` when ratios are simple).
+
+Layouts cache by default — split once and reuse the resulting `Rect`s in the same frame.
+
+## Styling
+
+```rust
+use ratatui::style::{Color, Modifier, Style, Stylize};
+
+// Direct API
+let style = Style::default()
+    .fg(Color::Yellow)
+    .bg(Color::Black)
+    .add_modifier(Modifier::BOLD);
+
+// Stylize extension trait (preferred for brevity)
+let span = "Hello".bold().yellow().on_black();
+```
+
+**Colors:** 16 ANSI named colors (`Color::Red`, `Color::LightRed`, …), `Color::Indexed(u8)` for 256-color, `Color::Rgb(r, g, b)` for truecolor. Detect terminal capability via `crossterm::style::available_color_count()` if you want to gate features.
+
+**Modifiers:** `BOLD`, `DIM`, `ITALIC`, `UNDERLINED`, `SLOW_BLINK`, `RAPID_BLINK`, `REVERSED`, `HIDDEN`, `CROSSED_OUT`. Avoid blink and crossed-out — poorly supported.
+
+## Backends: Crossterm vs Termion vs Termwiz
+
+- **Crossterm** — default, cross-platform (Linux/macOS/Windows), pure Rust, MIT. Use this unless you have a specific reason not to.
+- **Termion** — Unix-only, older, smaller. Choose only if you want Unix-only and minimal dependencies.
+- **Termwiz** — cross-platform, advanced features (Sixel, kitty image protocol). Choose if you need terminal graphics protocols. Authored by the WezTerm developer.
+- **mousefood** — `embedded-graphics` backend over `ratatui-core`, taking Ratatui's `no_std` support to embedded hardware displays.
+
+**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Crossterm 0.29 (April 2025) is the current stable; 0.28 is the legacy pin. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps — prefer `crossterm_0_29`, pick only the flag matching your Crossterm, and don't enable both.
+
+## State management patterns
+
+**1. Monolithic App struct** (simplest, used in most examples):
+
+```rust
+struct App {
+    items: Vec<Item>,
+    list_state: ListState,
+    input: String,
+    mode: Mode,
+    // ...
+}
+```
+
+**2. Elm Architecture** (Model + Message + update + view):
+
+```rust
+enum Msg { Increment, Decrement, Quit }
+
+fn update(model: &mut Model, msg: Msg) -> Option<Cmd> { /* ... */ }
+fn view(model: &Model, frame: &mut Frame) { /* ... */ }
+```
+
+Useful when state is complex and you want testable update logic.
+
+**3. Component pattern** — each component implements an `init`/`handle_events`/`update`/`draw` interface and communicates via `mpsc::UnboundedSender<Action>`. The official `ratatui/templates` repo uses this with Tokio. Best for larger apps. If you'd rather adopt a framework than roll your own, **tui-realm** formalizes this pattern on top of Ratatui (components, subscriptions, message-based events).
+
+## Async with Tokio
+
+The standard pattern: one task reads `crossterm::event::EventStream` into an `mpsc` channel; another task emits ticks at fixed intervals; the main loop `select!`s and calls `terminal.draw` on tick or input.
+
+```rust
+use tokio::sync::mpsc;
+use crossterm::event::{Event, EventStream};
+use futures::StreamExt;
+
+let (tx, mut rx) = mpsc::unbounded_channel::<AppEvent>();
+
+// Input task
+let input_tx = tx.clone();
+tokio::spawn(async move {
+    let mut events = EventStream::new();
+    while let Some(Ok(event)) = events.next().await {
+        let _ = input_tx.send(AppEvent::Crossterm(event));
+    }
+});
+
+// Tick task
+let tick_tx = tx.clone();
+tokio::spawn(async move {
+    let mut interval = tokio::time::interval(Duration::from_millis(250));
+    loop {
+        interval.tick().await;
+        let _ = tick_tx.send(AppEvent::Tick);
+    }
+});
+
+// Main loop
+loop {
+    terminal.draw(|f| app.draw(f))?;
+    if let Some(event) = rx.recv().await {
+        app.handle(event);
+        if app.should_quit { break; }
+    }
+}
+```
+
+For sync-only apps, `event::poll(Duration::from_millis(250))` then `event::read()` works without Tokio.
+
+## Testing
+
+`TestBackend` lets you assert against rendered output:
+
+```rust
+use ratatui::{backend::TestBackend, Terminal};
+
+let backend = TestBackend::new(20, 5);
+let mut terminal = Terminal::new(backend)?;
+terminal.draw(|f| app.draw(f))?;
+terminal.backend().assert_buffer_lines([
+    "┌─ Demo ───────────┐",
+    "│Counter: 0        │",
+# Python ecosystem — Textual, Rich, prompt_toolkit
+
+Three tools occupy distinct niches: **Textual** (the modern reactive TUI framework — async-first, CSS-styled, web-deployable), **Rich** (output formatting — the rendering engine inside Textual, excellent standalone), and **prompt_toolkit** (input-focused REPLs and shells — powers IPython, ptpython, mycli/pgcli/litecli). They solve different problems. Pick by what the program *is*, not just by Python familiarity.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Textual](#textual-textualize-textual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
+- [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
+- [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
+- [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
+- [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Full-screen TUI app | **Textual** |
+| CLI tool with pretty output (tables, panels, syntax) | **Rich** |
+| Interactive REPL or shell-like tool | **prompt_toolkit** |
+| One or two prompts inside a CLI | **questionary** (built on prompt_toolkit) or **InquirerPy** |
+| Argparse with type hints | **Typer** (decorator API on Click) |
+| Argparse decorator-style (no type hints) | **Click** |
+| Simple progress bar | **tqdm** (max performance) or **alive-progress** (polished, redirect-safe) |
+
+**Default for full TUI: Textual.** It's the only modern Python TUI framework and is genuinely well-designed. **Default for fancy CLI output: Rich.**
+
+---
+
+## Textual (Textualize/textual)
+
+**Architectural model: reactive, async-first, message-passing.** Strongly inspired by web frameworks. App subclass + Widgets in a DOM-like tree (App → Screen → Widgets) + TCSS for layout/style + reactive attributes for state + Messages/Events for communication, all on asyncio.
+
+**Status:** Textualize the company wound down in mid-2025; Will McGugan maintains Textual and Rich as open source. If the user asks "isn't Textual dead?" — no. The release cadence says otherwise: four major versions since the announcement, with 8.x current as of mid-2026. Those majors did carry breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
+
+**Canonical structure:**
+
+```python
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Button, Label
+
+class HelloApp(App):
+    CSS_PATH = "hello.tcss"
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+        ("d", "toggle_dark", "Toggle dark mode"),
+    ]
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Label("Hello, world!", id="greeting")
+        yield Button("Click me", id="go", variant="success")
+        yield Footer()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.query_one("#greeting", Label).update("Button pressed!")
+
+    def action_toggle_dark(self) -> None:
+        self.theme = "textual-light" if self.theme == "textual-dark" else "textual-dark"
+
+if __name__ == "__main__":
+    HelloApp().run()
+```
+
+`compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+
+### Lifecycle and terminal handoff
+
+Textual's driver restores application mode from `App.run()` / `run_async()` cleanup. Use App actions and messages for exit or handoff so widgets do not manipulate raw mode themselves.
+
+| Boundary | Textual 8 contract |
+|---|---|
+| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+| SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
+| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+
+These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
+
+## Widgets
+
+Textual ships dozens. Categories:
+
+**Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`.
+
+**Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+
+**Container/structure:** `Header`, `Footer`, `LoadingIndicator`, `ProgressBar`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
+
+**Data:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`.
+
+`DataTable` is excellent — it's what you should use for any tabular display. Add columns with `add_columns`, rows with `add_rows`, configure cursor type (`cell`/`row`/`column`/`none`), enable `zebra_stripes`, hook into `on_data_table_row_selected`.
+
+## Layout — TCSS
+
+Layout is CSS:
+
+```css
+Screen {
+    layout: vertical;
+}
+
+#sidebar {
+    width: 30;
+    border: tall $accent;
+}
+
+#main {
+    width: 1fr;
+    layout: vertical;
+}
+
+DataTable {
+    height: 1fr;
+}
+
+.error {
+    color: $error;
+    text-style: bold;
+}
+```
+
+Concepts:
+- **`layout`** — `vertical | horizontal | grid`.
+- **Containers**: `Vertical`, `Horizontal`, `Grid`, `VerticalScroll`, `Center`, `Middle`.
+- **Sizing**: cells (`width: 30`), percentages (`width: 50%`), `auto`, fractional units (`width: 1fr`).
+- **Grid**: `grid-size: 3 4`, `grid-columns`, `grid-rows`, `grid-gutter`, `column-span`, `row-span`.
+- **Docking**: `dock: top | right | bottom | left` for sticky edges. Used for `Header` and `Footer`.
+- **Overflow**: `overflow-x: auto` adds scrollbars.
+
+**Selectors**: type (`Button { ... }` matches subclasses too — different from web CSS), id (`#dialog`), class (`.error`), pseudo (`:focus`, `:hover`, `:disabled`, `:dark`, `:light`). Nesting works. **Theme variables** (`$primary`, `$panel`, `$text`, `$accent`, `$error`, etc.) — semantic tokens that change with the active theme.
+
+**Live edit reloads instantly** with `textual run --dev`. Edit your `.tcss` in another window and see changes immediately.
+
+## Events and messages
+
+Two ways to handle events:
+
+**1. Name convention:**
+```python
+def on_button_pressed(self, event: Button.Pressed) -> None:
+    if event.button.id == "submit":
+        ...
+```
+
+**2. `@on` decorator with CSS selector** (preferred when you have many of the same widget type):
+```python
+from textual import on
+
+@on(Button.Pressed, "#submit")
+def handle_submit(self) -> None:
+    ...
+
+@on(Button.Pressed, ".danger")
+def handle_danger(self, event: Button.Pressed) -> None:
+    ...
+```
+
+Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: **"attributes down, messages up"** — parents set state on children via attributes; children notify parents via messages.
+
+## Reactive state
+
+```python
+from textual.reactive import reactive
+
+class Counter(Widget):
+    count: reactive[int] = reactive(0)
+
+    def watch_count(self, old: int, new: int) -> None:
+        # called automatically when count changes
+        self.refresh()
+
+    def validate_count(self, value: int) -> int:
+        # called before assignment; can clamp or transform
+        return max(0, min(10, value))
+
+    def compute_display(self) -> str:
+        # derived attribute; auto-updates when count changes
+        return f"Count: {self.count}"
+
+    def render(self) -> str:
+        return self.display
+```
+
+Execution order on assignment: **validate → assign → compute → watch**. Modifiers on `reactive(...)`:
+- `init=False` — don't fire watcher on initial assignment.
+- `always_update=True` — fire even when value didn't change.
+- `layout=True` — trigger a re-layout, not just a re-render.
+- `bindings=True` — re-evaluate `BINDINGS` (useful for context-sensitive bindings).
+- `recompose=True` — re-run `compose()` (rebuild children).
+
+This is the heart of Textual's "reactive" claim — it's genuinely declarative state-driven UI.
+
+## Async and workers
+
+Handlers can be `async def`. The `@work` decorator turns methods into background workers:
+
+```python
+import httpx
+from textual import work
+
+@work(exclusive=True)
+async def fetch_data(self, url: str) -> None:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        response.raise_for_status()
+    self.query_one("#result").update(response.text)
+
+# For blocking code:
+@work(thread=True)
+def compute_heavy(self) -> None:
+    result = expensive_sync_thing()
+    self.call_from_thread(self.update_result, result)
+```
+
+`call_from_thread(fn, *args)` is required when modifying UI from a thread (vs an asyncio task). `set_interval(secs, callable)` schedules periodic UI updates without blocking.
+
+## Modal screens
+
+Push a screen on top for dialogs/modals:
+
+```python
+from textual.screen import ModalScreen
+
+class ConfirmDialog(ModalScreen[bool]):
+    def compose(self) -> ComposeResult:
+        yield Label("Are you sure?")
+        yield Button("Yes", id="yes", variant="error")
+        yield Button("No", id="no")
+
+    @on(Button.Pressed, "#yes")
+    def confirm(self) -> None:
+        self.dismiss(True)
+
+    @on(Button.Pressed, "#no")
+    def cancel(self) -> None:
+        self.dismiss(False)
+
+# In your app — must run in a worker:
+@work
+async def action_delete(self) -> None:
+    if await self.push_screen_wait(ConfirmDialog()):
+        await self.do_delete()
+```
+
+`push_screen_wait` is the await-able way; results come back via `dismiss(value)`. It only works inside a worker — the `@work` decorator is mandatory, so waiting for the screen doesn't block the app. Calling it from a plain handler raises `NoActiveWorker`.
+
+## Testing — Pilot + pytest-textual-snapshot
+
+Textual has the best testing story of any TUI framework:
+
+```python
+async def test_button_click():
+    app = HelloApp()
+    async with app.run_test(size=(80, 24)) as pilot:
+        await pilot.press("tab", "enter")
+        await pilot.click("#submit")
+        await pilot.pause()
+        assert app.query_one("#result", Static).content == "Done"
+```
+
+For SVG snapshots:
+```python
+def test_homepage(snap_compare):
+    assert snap_compare("path/to/app.py", press=["tab", "enter", "a"])
+```
+
+Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. This is genuinely production-grade testing — in our view still the most complete story of any TUI framework, though Ratatui's `TestBackend` and Bubble Tea's `teatest` have matured.
+
+Gotchas worth knowing:
+
+- **`run_test()` runs headless at `size=(80, 24)` and disables notifications and tooltips by default.** A test asserting on a `notify()` toast will silently see nothing — pass `notifications=True` (and `tooltips=True` if relevant) to `run_test`.
+- **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
+- **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded `Input.Submitted`/`Changed` message's `event.validation_result` (`is_valid`, `failure_descriptions`) — or on `input.is_valid` / the auto-applied `-invalid`/`-valid` CSS classes.
+
+## Debugging
+
+The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
+
+Never `print()` inside a running Textual app — raw mode + the live display corrupt on any direct stdout write. Instead:
+
+# TypeScript / JavaScript ecosystem — Ink, Clack, Inquirer
+
+The Node.js ecosystem splits along two axes:
+- **Pretty CLI** (argparse + color + prompts/spinners) vs **full TUI**.
+- **Imperative/retained-mode** vs **declarative/React-style**.
+
+**Ink has effectively won the high-end TUI space.** It powers Claude Code, GitHub Copilot CLI, Gemini CLI, Cloudflare Wrangler, Gatsby CLI, Prisma, Shopify CLI, Linear's internal CLI, Canva CLI, and tap. Anthropic's Claude Code is publicly TypeScript + React + Ink + Yoga + Bun.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Ink](#ink-vadimdemedes-ink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+- [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
+- [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+- [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
+- [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
+- [OpenTUI](#opentui-anomalyco-opentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
+- [Notable JS/TS TUI apps](#notable-js-ts-tui-apps-to-study)
+- [Pitfalls common to JS/TS](#pitfalls-common-to-js-ts-terminal-apps)
+- [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Full-screen TUI app | **Ink** (React-flexbox) |
+| Modern Clack-style wizard prompts | **@clack/prompts** |
+| Prompt-heavy CLI (many questions) | **@inquirer/prompts** (the modern modular rewrite) |
+| Single elegant spinner | **ora** |
+| Hierarchical task runner | **listr2** |
+| Argparse, simple | **commander** (de facto default) |
+| Argparse, validation-heavy | **yargs** |
+| Heroku-class plugin CLI | **oclif** (Salesforce's framework) |
+| Argparse, TS-first, lightweight | **citty** (UnJS) |
+| Tiny argparse | **cac** (~7K) or `node:util.parseArgs` |
+| Terminal colors, performance-critical | **picocolors** |
+| Terminal colors, classic API | **chalk** |
+| Single boxed message | **boxen** |
+| Beyond Ink's perf ceiling | **OpenTUI** (Zig-backed, v0.x) |
+| Image rendering in terminal | **terminal-kit** |
+
+**Default full-TUI stack: Ink + @inkjs/ui + zustand + commander + ink-testing-library.** For other project shapes, see "Stack recommendations by project shape" at the end.
+
+---
+
+## Ink (vadimdemedes/ink)
+
+**Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, diffs against the previous frame, and emits ANSI patches in a single buffered terminal write.
+
+Current major: **Ink 7** (7.1.x as of mid-2026), which requires **Node ≥ 22 and React 19** — deployment-relevant if your users are on Node 20 LTS; stay on Ink 6 there.
+
+**Hello world:**
+
+```tsx
+import React, {useState} from 'react';
+import {render, Text, Box, useInput, useApp} from 'ink';
+
+const App = () => {
+  const [n, setN] = useState(0);
+  const {exit} = useApp();
+
+  useInput((input, key) => {
+    if (key.upArrow) setN(c => c + 1);
+    if (key.downArrow) setN(c => c - 1);
+    if (input === 'q') exit();
+  });
+
+  return (
+    <Box borderStyle="round" padding={1}>
+      <Text color="green">Counter: {n}</Text>
+    </Box>
+  );
+};
+
+render(<App />);
+```
+
+### Lifecycle and terminal handoff
+
+Ink 7 distinguishes permanent React-tree unmounting from a resumable terminal suspension. Keep process-level signal policy at the render boundary and temporary ownership changes inside `useApp()`.
+
+| Boundary | Ink 7 contract |
+|---|---|
+| Normal exit | Use `useApp().exit(...)` inside the tree or the render handle's `unmount()` outside it. At the top level, await `waitUntilExit()` before post-run output or process termination so pending terminal writes finish. |
+| SIGINT / SIGTERM | `exitOnCtrlC` handles Ctrl+C bytes while stdin is raw; it is not an operating-system SIGTERM handler. If the host requires graceful signals, register them once at the process boundary, unmount, await `waitUntilExit()`, set the intended exit status, and remove listeners. Do not call `process.exit()` before cleanup flushes. |
+| Interactive child | Use `await suspendTerminal(async () => runChild())`. Ink pauses input and rendering, restores cursor/input/screen modes, runs the callback even without an interactive TTY, and re-enters with a full redraw in `finally`. Reload child-mutated data afterward because redraw preserves the existing React state. For the manual form, always `await suspension.resume()` in `finally` or use `await using`. Do not unmount. |
+| Foreground suspend | Ink has no separate high-level job-control action. If a Unix-only Ctrl+Z feature is necessary, perform SIGTSTP inside `suspendTerminal` and let its resume path re-enter and redraw; expose a different action on Windows. |
+
+The tagged [`suspendTerminal` documentation](https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback) includes callback, manual, non-interactive, and nesting behavior. A second overlapping suspension is an error, so centralize ownership rather than letting arbitrary components suspend independently.
+
+## Primitives
+
+Ink ships only a handful of components — everything else composes from these:
+
+- **`<Text>`** — only place strings can live. Props: `color`, `backgroundColor`, `bold`, `italic`, `underline`, `inverse`, `dimColor`, `wrap`, `strikethrough`. Strings as direct children of `<Box>` will throw — they must be wrapped.
+- **`<Box>`** — flexbox container. Props: `padding`, `paddingX/Y/Top/Right/Bottom/Left`, `margin*`, `borderStyle`, `borderColor`, `borderTop`/`Bottom`/`Left`/`Right` (selective borders), `width`, `height`, `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `justifyContent`, `alignItems`, `gap`, `display: 'flex' | 'none'`.
+- **`<Newline>`** — vertical spacing.
+- **`<Spacer>`** — flex-grow filler in a flex layout.
+- **`<Static>`** — renders items permanently above the live UI; once rendered, never re-renders. Used for log streaming (Jest, Listr2) so the live UI doesn't have to repaint thousands of historical log lines.
+- **`<Transform>`** — wraps children and transforms their rendered string. Used for gradients, OSC 8 hyperlinks, custom effects.
+
+## Layout
+
+Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, plus custom char strings.
+
+```tsx
+<Box flexDirection="column" height="100%">
+  <Box borderStyle="single">
+    <Text>Header</Text>
+  </Box>
+  <Box flexGrow={1} flexDirection="row">
+    <Box width={30} borderStyle="single">
+      <Text>Sidebar</Text>
+    </Box>
+    <Box flexGrow={1} borderStyle="single">
+      <Text>Main content</Text>
+    </Box>
+  </Box>
+</Box>
+```
+
+## Hooks
+
+Ink-specific:
+- **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, ctrl, shift, meta, pageUp, pageDown}`.
+- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush, suspendTerminal}`. Pass an `Error` to `exit` to reject the render handle's `waitUntilExit()`; there is no separate error variant. Use `suspendTerminal` for a resumable interactive child, not final shutdown.
+- **`useStdin()`** — `{stdin, setRawMode, isRawModeSupported}`.
+- **`useStdout()`** / **`useStderr()`** — write outside the live UI.
+- **`useFocus({autoFocus, isActive, id})`** — Tab-focusable component.
+- **`useFocusManager()`** — `{focus(id), focusNext, focusPrevious, enableFocus, disableFocus}`.
+- **`useWindowSize()`** — `{columns, rows}`, updates on resize.
+- **`usePaste(callback)`** — bracketed-paste events (Ink 7), so pasted text arrives as one chunk instead of spraying through `useInput` character by character.
+- **`useCursor()`** — position the real terminal cursor (IME-friendly input).
+- **`useAnimation()`** — frame ticker with pause/resume.
+- **`useBoxMetrics()`** — measured dimensions of a box at runtime.
+
+Plus all standard React hooks (`useState`, `useEffect`, `useReducer`, `useContext`, `useMemo`).
+
+State management for larger apps: **Zustand** (recommended), **Jotai**, or just `useReducer` + Context.
+
+## ink-ui (vadimdemedes/ink-ui)
+
+The companion component library — themeable widgets you don't want to write yourself:
+
+- `<TextInput>`, `<EmailInput>`, `<PasswordInput>` — input fields with controlled state.
+- `<Select>`, `<MultiSelect>` — choose from options.
+- `<ConfirmInput>` — y/n prompt.
+- `<Spinner>` — animated spinner (use this inside Ink, not `ora`).
+- `<ProgressBar>` — determinate progress.
+- `<Badge>` — colored status pill.
+- `<StatusMessage>` — `success`/`info`/`warning`/`error` variants.
+- `<Alert>` — bordered alert box.
+
+Theming via theme objects passed at the root.
+
+## Testing — ink-testing-library
+
+```tsx
+import {render} from 'ink-testing-library';
+
+const {lastFrame, rerender, stdin, frames, unmount} = render(<App />);
+expect(lastFrame()).toBe('Counter: 0');
+stdin.write('\u001B[A');  // up arrow
+expect(lastFrame()).toBe('Counter: 1');
+```
+
+Plus `renderToString()` (Ink 6.8+) for synchronous render-to-string in tests.
+
+**Staleness caveat.** ink-testing-library's last release is v4.0.0 (May 2024); its own devDeps still pin `ink ^5` / React 18, and open issues track Ink 6/7 compatibility — including "stdin.write() does not trigger useInput callbacks". `lastFrame()`/`frames` render assertions still work (it just injects fake streams, and it doesn't render styles — text only), but **input simulation via `stdin.write` is unreliable on Ink ≥5**, which matters given Ink 7's rewritten input handling. For input-driven tests on Ink 6/7, the proven pattern is Gemini CLI's: a custom vitest harness that wraps Ink's own `render` with your app's context providers and exposes `lastFrame()`-style helpers, assertions as plain string checks — plus PTY-level integration tests (**node-pty** + `strip-ansi`) that drive the built CLI in a real pseudo-terminal for actual keyboard flows. Both `ink` and `ink-testing-library` are ESM-only, so vitest is the path of least resistance over Jest.
+
+## Debugging
+
+- **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*` calls, clears the live output, renders the message above it, and repaints the UI. If console output *is* garbling the screen, something bypassed the patch — direct `process.stdout.write` calls or child-process stdio inherited straight to the terminal.
+- **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place — the single best tool for answering "which frame went wrong".
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (documented for Ink 7; exit the CLI manually with Ctrl+C afterwards). **This is for tree/props inspection only — don't reach for it to profile performance.** Ink's own docs never mention the Profiler/flame-chart tab, and its reconciler sets none of the flags React's Profiler mechanism needs; the Components tab genuinely works, but treat the Profiler tab as unsupported for Ink.
+- **High-volume tracing** goes to stderr — `useStderr().write()` preserves Ink's output — or to a file you `tail -f` in another terminal. Never stdout; Ink owns it.
+- **Profiling:** `node --cpu-prof` is the real path — it writes a `.cpuprofile` on process exit (no signal-forwarding gotcha to worry about, unlike Rust's `perf`-based tooling), loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink-specific cost sinks: unmemoized components re-rendering on every parent update (each one potentially triggers a fresh Yoga layout pass, pricier than a DOM diff); `<Static>` misuse — it exists for content written once and never revisited, and Ink 3 made it nearly 2x faster specifically because putting the wrong content in it (or leaving genuinely-static content out of it) was a known pain point; and a small always-animating leaf component (the standard `ink-spinner` is a named example) keeping the whole render cycle continuously active instead of idle between real state changes.
+
+## Pastel — Next.js-style filesystem routing
+
+`vadimdemedes/pastel` builds CLI command structure from filesystem layout, with Zod schemas for argument validation. Like Next.js for CLIs:
+
+```
+commands/
+  index.tsx        // "myapp"
+  create.tsx       // "myapp create"
+  list.tsx         // "myapp list"
+  user/
+    add.tsx        // "myapp user add"
+    remove.tsx     // "myapp user remove"
+```
+
+Each file exports a default React component plus optional `args`/`options` Zod schemas.
+
+## Strengths and weaknesses
+
+**Strengths:**
+- Declarative, full React ecosystem available (use any state library, any hooks).
+- Yoga flexbox is genuinely good for terminal layout.
+- Excellent testing story.
+- React Devtools work (`DEV=true` env var).
+- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
+- Used by some of the most-deployed CLIs in the world.
+
+**Weaknesses:**
+- **Heavy startup**: React + Yoga + reconciler ≈ 80–150ms cold start. Bad for one-shot scripts where users expect instant response. For frequently-invoked commands (`mycli --version`, `mycli completion`), provide a fast path that bypasses Ink.
+- **ESM-only since Ink 4** (March 2023). For CJS, pin Ink 3 or use a bundler.
+- **Node 22 floor on Ink 7** (plus React 19). Many teams are still on Node 20 LTS — Ink 6 is the last major that supports them.
+- **High-frequency re-renders used to flicker.** Ink 6.7+ ships synchronized updates (plus an opt-in Kitty keyboard protocol), which largely fixed this. When streaming LLM tokens or tailing logs, still prefer `useDeferredValue` or manual debounce; `<Static>` exists specifically to handle large append-only logs without re-rendering them.
+- **Screen-reader support is improving but terminal-bound.** Ink 7 added `aria-label` / `aria-hidden` / `aria-role` / `aria-state` props on `<Box>`/`<Text>` and screen-reader-aware rendering — a real step past the old `INK_SCREEN_READER` env-var subset — but a browser UI remains the stronger accessibility story.
+
+## Pitfalls
+
+1. **Strings as direct children of `<Box>` throw.** Wrap in `<Text>`.
+2. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
+3. **`ora` and Ink fight over the terminal.** Use `<Spinner>` from `@inkjs/ui` instead inside Ink.
+4. **`console.log` from Ink 3+ is intercepted** and displayed cleanly above the live UI. Don't fight it.
+5. **Ink 7 fixed Backspace reporting as `key.backspace`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade—check `key.backspace`.
+
+Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "Pitfalls common to JS/TS terminal apps" below.
+
+---
+
+## Modern prompts: @clack/prompts
+
+`@clack/prompts` (~4 KB gzipped) has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (clack.cc) and actively released. Used by **create-vite, create-astro, create-svelte, create-t3-app**, and inspired the Rust port `cliclack`.
+
+```ts
+import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
+
+intro('create-my-app');
+
+const name = await text({
+  message: 'Project name',
+  validate: v => v.length === 0 ? 'Required' : undefined,
+});
+if (isCancel(name)) {
+  cancel('Cancelled');
+  process.exit(0);
+}
+
+const framework = await select({
+  message: 'Pick a framework',
+  options: [
+    {value: 'react', label: 'React'},
+    {value: 'vue', label: 'Vue'},
+    {value: 'svelte', label: 'Svelte'},
+  ],
+});
+
+const s = spinner();
+s.start('Installing dependencies');
+await install();
+s.stop('Dependencies installed');
+
+outro(`You're all set!`);
+```
+
+**Components:** `intro`/`outro`, `text`, `password`, `confirm`, `select`, `multiselect`, `groupMultiselect`, `selectKey`, `spinner`, `progress`, `taskLog`, `note`, `log.info/.warn/.error/.success`, `stream`, `group`.
+
+**`isCancel(value)`** is critical — it detects Ctrl+C per prompt and lets you clean up gracefully.
+
+The visual style — blue-bordered connectors between prompts, single Unicode glyph progress markers — has become a recognizable aesthetic. If the user's building a `create-*`-style scaffolder, this is the right choice.
+
+---
+
+## @inquirer/prompts
+
+The modern modular rewrite of Inquirer — TypeScript-first packages that replaced the legacy monolithic `inquirer`. The workhorse for prompt-heavy CLIs:
+
+```ts
+import {input, select, confirm, password} from '@inquirer/prompts';
+
+const name = await input({message: 'What is your name?'});
+const role = await select({
+  message: 'Choose a role',
+  choices: [
+    {name: 'Admin', value: 'admin'},
+    {name: 'User', value: 'user'},
+  ],
+});
+
+exec
+/bin/zsh -lc "rg -n -C 5 'Lifecycle and terminal handoff|SIGINT|SIGTERM|SIGTSTP|SIGCONT|suspend|editor|external|raw mode|raw_mode|restore' plugins/tui-design/skills/tui-design/references/ecosystem-{go,rust,python,typescript}.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-2-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-3-Three tools occupy distinct niches: **Textual** (the modern reactive TUI framework — async-first, CSS-styled, web-deployable), **Rich** (output formatting — the rendering engine inside Textual, excellent standalone), and **prompt_toolkit** (input-focused REPLs and shells — powers IPython, ptpython, mycli/pgcli/litecli). They solve different problems. Pick by what the program *is*, not just by Python familiarity.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-4-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-5-**Contents:**
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-6-- [Quick recommendation](#quick-recommendation)
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:7:- [Textual](#textual-textualize-textual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-8-- [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-9-- [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-10-- [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-11-- [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-12-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-61-    HelloApp().run()
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-62-```
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-63-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-64-`compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-65-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:66:### Lifecycle and terminal handoff
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-67-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:68:Textual's driver restores application mode from `App.run()` / `run_async()` cleanup. Use App actions and messages for exit or handoff so widgets do not manipulate raw mode themselves.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-69-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-70-| Boundary | Textual 8 contract |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-71-|---|---|
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-72-| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:73:| SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:74:| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:75:| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-76-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:77:These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-78-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-79-## Widgets
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-80-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-81-Textual ships dozens. Categories:
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-82-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-274-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-275-## Debugging
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-276-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-277-The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-278-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:279:Never `print()` inside a running Textual app — raw mode + the live display corrupt on any direct stdout write. Instead:
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-280-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-281-- **`textual console`** — a separate process that receives logs and `print()`/`self.log(...)` output. Run it in another terminal, then `textual run --dev myapp.py` in the app's terminal.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-282-- **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-283-- **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-284-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-6-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-7-**Ink has effectively won the high-end TUI space.** It powers Claude Code, GitHub Copilot CLI, Gemini CLI, Cloudflare Wrangler, Gatsby CLI, Prisma, Shopify CLI, Linear's internal CLI, Canva CLI, and tap. Anthropic's Claude Code is publicly TypeScript + React + Ink + Yoga + Bun.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-8-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-9-**Contents:**
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-10-- [Quick recommendation](#quick-recommendation)
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:11:- [Ink](#ink-vadimdemedes-ink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-12-- [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-13-- [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-14-- [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-15-- [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-16-- [OpenTUI](#opentui-anomalyco-opentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-72-};
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-73-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-74-render(<App />);
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-75-```
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-76-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:77:### Lifecycle and terminal handoff
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-78-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-79-Ink 7 distinguishes permanent React-tree unmounting from a resumable terminal suspension. Keep process-level signal policy at the render boundary and temporary ownership changes inside `useApp()`.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-80-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-81-| Boundary | Ink 7 contract |
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-82-|---|---|
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-83-| Normal exit | Use `useApp().exit(...)` inside the tree or the render handle's `unmount()` outside it. At the top level, await `waitUntilExit()` before post-run output or process termination so pending terminal writes finish. |
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:84:| SIGINT / SIGTERM | `exitOnCtrlC` handles Ctrl+C bytes while stdin is raw; it is not an operating-system SIGTERM handler. If the host requires graceful signals, register them once at the process boundary, unmount, await `waitUntilExit()`, set the intended exit status, and remove listeners. Do not call `process.exit()` before cleanup flushes. |
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:85:| Interactive child | Use `await suspendTerminal(async () => runChild())`. Ink pauses input and rendering, restores cursor/input/screen modes, runs the callback even without an interactive TTY, and re-enters with a full redraw in `finally`. Reload child-mutated data afterward because redraw preserves the existing React state. For the manual form, always `await suspension.resume()` in `finally` or use `await using`. Do not unmount. |
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:86:| Foreground suspend | Ink has no separate high-level job-control action. If a Unix-only Ctrl+Z feature is necessary, perform SIGTSTP inside `suspendTerminal` and let its resume path re-enter and redraw; expose a different action on Windows. |
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-87-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:88:The tagged [`suspendTerminal` documentation](https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback) includes callback, manual, non-interactive, and nesting behavior. A second overlapping suspension is an error, so centralize ownership rather than letting arbitrary components suspend independently.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-89-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-90-## Primitives
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-91-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-92-Ink ships only a handful of components — everything else composes from these:
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-93-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-120-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-121-## Hooks
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-122-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-123-Ink-specific:
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-124-- **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, ctrl, shift, meta, pageUp, pageDown}`.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:125:- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush, suspendTerminal}`. Pass an `Error` to `exit` to reject the render handle's `waitUntilExit()`; there is no separate error variant. Use `suspendTerminal` for a resumable interactive child, not final shutdown.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-126-- **`useStdin()`** — `{stdin, setRawMode, isRawModeSupported}`.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-127-- **`useStdout()`** / **`useStderr()`** — write outside the live UI.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-128-- **`useFocus({autoFocus, isActive, id})`** — Tab-focusable component.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-129-- **`useFocusManager()`** — `{focus(id), focusNext, focusPrevious, enableFocus, disableFocus}`.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-130-- **`useWindowSize()`** — `{columns, rows}`, updates on resize.
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-196-**Strengths:**
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-197-- Declarative, full React ecosystem available (use any state library, any hooks).
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-198-- Yoga flexbox is genuinely good for terminal layout.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-199-- Excellent testing story.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-200-- React Devtools work (`DEV=true` env var).
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:201:- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-202-- Used by some of the most-deployed CLIs in the world.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-203-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-204-**Weaknesses:**
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-205-- **Heavy startup**: React + Yoga + reconciler ≈ 80–150ms cold start. Bad for one-shot scripts where users expect instant response. For frequently-invoked commands (`mycli --version`, `mycli completion`), provide a fast path that bypasses Ink.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-206-- **ESM-only since Ink 4** (March 2023). For CJS, pin Ink 3 or use a bundler.
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-278-    {name: 'User', value: 'user'},
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-279-  ],
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-280-});
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-281-```
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-282-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:283:**Modular packages:** `@inquirer/input`, `@inquirer/select`, `@inquirer/checkbox`, `@inquirer/confirm`, `@inquirer/password`, `@inquirer/editor`, `@inquirer/expand`, `@inquirer/rawlist`, `@inquirer/search`, `@inquirer/number`. Pull only what you use.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-284-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-285-**i18n** via `@inquirer/i18n`.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-286-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-287-**When to choose Inquirer over Clack:** complex prompt flows with conditional questions, validation chains, custom prompt types (extensible plugin architecture), i18n requirements. **When to choose Clack over Inquirer:** modern aesthetic, minimal API, you're scaffolding (a `create-*` tool).
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-288-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-388----
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-389-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-390-## Pitfalls common to JS/TS terminal apps
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-391-
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-392-1. **ESM/CJS**. Much of the modern stack (chalk v5+, ora v6+, ink v4+, @inquirer/prompts, @clack/prompts) is ESM-only at latest. For CJS, pin older majors, bundle, or choose a dual/CommonJS-compatible dependency such as picocolors.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md:393:2. **Restore terminal state on exit.** Ink: `exit()` or `unmount()`, then await `waitUntilExit()`; blessed: `screen.destroy()`. Treat OS signal listeners as an application boundary because Ink's Ctrl+C input handling does not cover SIGTERM.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-394-3. **Detect non-TTY and CI.** `process.stdout.isTTY === false` or `process.env.CI` — degrade to plain output. Spinners and prompts must not run in CI.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-395-4. **Raw mode requires `process.stdin.isTTY`.** Pipe input fails silently otherwise. Guard.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-396-5. **Cell width**. Use `string-width` (Ink does); never `.length` for terminal width math.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-397-6. **Frequently-invoked CLI startup**. Lazy-load subcommand modules. Have a fast path for `--version`/`--help`.
+plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md-398-7. **Don't mix raw-mode libraries.** Ink + ora, Ink + blessed → broken.
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-2-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-3-The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for traditional widget-rich apps. **gocui** is a third lineage powering lazygit/lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker) or `urfave/cli`.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-4-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-5-**Contents:**
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-6-- [Quick recommendation](#quick-recommendation)
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:7:- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-8-- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-9-- [tview](#tview-rivo-tview) · [gocui](#gocui-awesome-gocui-gocui) · [tcell](#lower-level-tcell)
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-10-- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfave-cli)
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-11-- [Output formatting](#output-formatting-non-tui)
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-12-- [Testing](#testing) · [Debugging](#debugging)
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-86-}
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-87-```
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-88-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-89-`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-90-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:91:### Lifecycle and terminal handoff
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-92-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-93-Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-94-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-95-| Boundary | Bubble Tea v2 contract |
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-96-|---|---|
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-97-| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:98:| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler converts external SIGINT/SIGTERM into managed loop termination. Do not call `os.Exit` from `Update`. |
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:99:| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error or, after child success, a restoration error through the callback message. If both fail, the callback exposes the child error. In the callback-message branch, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:100:| Foreground suspend | Return `tea.Suspend`; after the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-101-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:102:The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-103-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-104-**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-105-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-106-**Important options:**
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-107-- `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-450-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-451----
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-452-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-453-## Debugging
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-454-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:455:**stdout is off-limits while the program runs** — Bubble Tea holds the terminal in raw mode on the alternate screen, so `fmt.Println` output gets swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-456-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-457-```go
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-458-if len(os.Getenv("DEBUG")) > 0 {
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-459-    f, _ := tea.LogToFile("debug.log", "debug")
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-460-    defer f.Close()
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-463-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-464-Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; v2 adds `tea.LogToFileWith` for a custom logger.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-465-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-466-**Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless — `dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`, then `dlv connect 127.0.0.1:43000` from a second terminal.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-467-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:468:**Profiling a sluggish TUI:** Bubble Tea's README documents no profiling recipe of its own, so this is standard Go tooling — but the shape that actually works for a TUI is `net/http/pprof` on a loopback port, not file-based `pprof.StartCPUProfile`. A background goroutine serving on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there's no SIGINT/flush ceremony to get right. This is what Charm's own `crush` does, gated behind an env var:
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-469-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-470-```go
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-471-import (
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-472-    "net/http"
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-473-    _ "net/http/pprof"
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-501-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-502-## Cross-platform notes
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-503-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-504-Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows (Terminal, conhost, ConEmu). Windows quirks:
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-505-- Older `cmd.exe` doesn't support all ANSI; target Windows Terminal (Windows 10+).
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md:506:- `Ctrl+Z` (SIGTSTP) doesn't exist on Windows; that's fine, just don't rely on suspend behavior universally.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-507-- Mouse events differ slightly; libraries abstract this but test on Windows if it's a target.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-508-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-509-For SSH-served TUIs, **Wish** is the right answer — it handles per-session terminal capabilities (the client's truecolor support, not the server's) and gives you middleware for auth, logging, rate limiting.
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-510-
+plugins/tui-design/skills/tui-design/references/ecosystem-go.md-511----
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-4-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-5-**Current line: 0.30** (0.30.0 stable since December 2025; 0.30.2 current). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-6-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-7-**Contents:**
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-8-- [Quick recommendation](#quick-recommendation)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:9:- [Ratatui](#ratatui-ratatui-ratatui) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-10-- [Backends](#backends-crossterm-vs-termion-vs-termwiz)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-11-- [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-12-- [Testing](#testing) · [Debugging](#debugging)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-13-- [Companion crates](#companion-crates)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-14-- [Panic safety](#panic-safety--the-critical-pattern)
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-49-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-50-fn main() -> Result<()> {
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-51-    color_eyre::install()?;            // install reporting before Ratatui wraps the hook
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-52-    let mut terminal = ratatui::init();
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-53-    let result = App::default().run(&mut terminal);
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:54:    ratatui::restore();
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-55-    result
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-56-}
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-57-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-58-#[derive(Default)]
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-59-struct App {
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-92-        Ok(())
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-93-    }
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-94-}
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-95-```
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-96-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:97:`ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-98-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:99:### Lifecycle and terminal handoff
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-100-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:101:Ratatui owns rendering and terminal setup, but not the application event loop, subprocesses, or general process-signal policy. Prefer the managed API and make every external lifecycle event converge on the loop boundary.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-102-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-103-| Boundary | Ratatui 0.30 contract |
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-104-|---|---|
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:105:| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:106:| SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:107:| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Retain the child result while attempting every reentry step independently; if child and reentry both fail, report both instead of letting `?` discard one. A still-running input task can consume terminal capability responses during reinitialization. |
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:108:| Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-109-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:110:Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional. A successful redraw proves only that the renderer recovered; reload any file, process, or remote state the child could have changed.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-111-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-112-Concretely, store `child_result`, collect reentry failures without `?`, then match or aggregate the two outcomes. Calling `try_init()?`, `clear()?`, or `draw()?` before inspecting `child_result` can silently replace the original child failure and violates the handoff contract.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-113-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-114-## Widgets
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-115-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-129-- **`Calendar`** — monthly calendar.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-130-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-131-**Custom widgets** implement the `Widget` trait (one-shot) or `StatefulWidget` (with associated state). Both are zero-cost — they're just `(area, buf)` consumers.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-132-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-133-**Third-party widgets worth knowing:**
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:134:- **`tui-textarea`** — multi-line editor with vim/emacs bindings.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-135-- **`tui-input`** — single-line input.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-136-- **`tui-tree-widget`** — hierarchical tree.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-137-- **`tui-big-text`** — banner text.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-138-- **`tui-popup`** — modal popups.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-139-- **`tui-logger`** — in-app log pane.
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-290-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-291-Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025 — and had to revert and re-land them over a startup-latency issue, a useful caution that snapshot tests over a full async app need deterministic wait points, not sleeps. **openai/codex** makes insta snapshot coverage *mandatory* for any change that affects visible TUI output (workflow: `cargo insta pending-snapshots`, `cargo insta accept`).
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-292-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-293-## Debugging
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-294-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:295:`println!` and `dbg!` are broken inside a running TUI: raw mode stops newline processing — crossterm's docs say it directly, "`println!` can't be used, use `write!` instead" — and anything printed is stomped by the next draw or hidden entirely under the alt screen. The working options:
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-296-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-297-- **Log to a file and tail it** (official recipe): `tracing` + `tracing-subscriber` (env-filter) writing to a plain file with ANSI disabled, then `tail -f app.log` in a second terminal.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-298-- **In-app debug pane** (official recipe): keep `show_debug: bool` in app state, split off a column when toggled, and render `format!("{state:#?}")` into it.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-299-- **tui-logger** (0.18.x, actively maintained) — the ready-made in-app log widget, with `log`/`slog`/`tracing` support behind feature flags; the official debug recipe points to it as an alternative.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:300:- **Debuggers:** attach from a *second* terminal (`lldb -p <pid>` / `gdb -p`) or use an IDE debugger so the debug console is separate from the app's terminal — stopping the process in its own terminal leaves you at a prompt that's still in raw mode + alt screen. (Convention rather than official doctrine, but it follows directly from the raw-mode behavior.)
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-301-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:302:**Profiling:** `cargo flamegraph` is the standard tool — ratatui.rs's own Recipes and FAQ have no profiling entry, so there's no official recipe to follow here. One real gotcha worth knowing: `cargo flamegraph` stops recording by forwarding Ctrl+C as SIGINT to the wrapped `perf`/`dtrace` process, but `crossterm::terminal::enable_raw_mode()` intercepts Ctrl+C before it becomes a signal — it arrives as an ordinary key event your app's loop has to interpret instead. In practice, either give your app a quit key that calls `disable_raw_mode()` and exits normally (a clean process exit works fine with `flamegraph`'s wrapper), or bypass the wrapper entirely and run `perf record -p $(pgrep app) -- sleep 30` against an already-running process. For async task time in a Ratatui+Tokio app, `tokio-console` (via the `console-subscriber` crate) shows per-task poll/wake/busy time live. The recurring real-world slow path, seen across several ratatui GitHub issues (high CPU in `terminal.draw`, a `Table` widget laggy at 15k rows): it's rarely widget construction itself — Ratatui's immediate-mode model rebuilding widgets every frame is by design and meant to be cheap — the actual cost is accidental O(n) work smuggled into the render closure, like eagerly collecting a large `Vec` or recomputing string widths on every draw instead of caching outside the loop.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-303-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-304-## Companion crates
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-305-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-306-- **clap** — argument parsing. Derive API:
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-307-  ```rust
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-314-      command: Commands,
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-315-  }
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-316-  ```
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-317-  Best-in-class argparse with auto-generated help, shell completions, and validation.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-318-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:319:- **color-eyre** — installs a panic hook that prints rich error reports with source spans. Install it before `ratatui::init()` or `ratatui::run()`; Ratatui then wraps the reporting hook and restores terminal state before delegating to it.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-320-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-321-- **owo-colors** — zero-allocation color formatting. Direct styling emits color; opt into its `supports-colors` feature and use `if_supports_color`, or add your own policy, when output must account for TTY capability and `NO_COLOR`. Recommended over `colored` (older, allocates) and `ansi_term` (unmaintained).
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-322-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-323-- **indicatif** — progress bars for non-TUI CLIs. Auto-hides on non-TTY.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-324-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-330-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-331-- **ratatui-image** — image display in Ratatui apps via Sixel/kitty/iTerm2 protocols.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-332-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-333-## Panic and error safety — the critical pattern
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-334-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:335:A Ratatui app that exits badly can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer `ratatui::run()` for the complete managed lifecycle or `ratatui::init()` when the application needs to own the loop. Install any reporting hook first, then let Ratatui wrap it:
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-336-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-337-```rust
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-338-fn main() -> color_eyre::Result<()> {
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-339-    color_eyre::install()?;
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-340-    ratatui::run(|terminal| App::default().run(terminal))
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-345-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-346-```rust
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-347-color_eyre::install()?;
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-348-let report_hook = std::panic::take_hook();
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-349-std::panic::set_hook(Box::new(move |info| {
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:350:    let _ = ratatui::restore();
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-351-    report_hook(info);
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-352-}));
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-353-```
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-354-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:355:Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; those managed APIs already install it. The fallible helpers are not transactional: `try_init()` can return after an earlier setup step changed terminal state, and `try_restore()` stops at its first teardown error. If the caller requires fallible setup or teardown, handle an error with independent best-effort cleanup attempts (disable raw mode, leave the alternate screen, disable mouse/paste modes, show the cursor) rather than assuming one returned `Err` rolled everything back. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, inject setup/teardown failures and verify normal exit, returned errors, and panics in a PTY.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-356-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-357-## Alternatives to Ratatui
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-358-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-359-**Cursive** (`cursive`) — callback-driven, retained-mode, ncurses-like. Widget-rich (Dialog, EditView, SelectView, TextArea, LinearLayout, StackView, etc.). Best for form-heavy apps with dialogs and menus where you want a higher-level API. Less popular than Ratatui but stable and well-documented.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-360-
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-375-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-376-**Original `tui-rs`** — the predecessor to Ratatui, archived. Migrate to Ratatui.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-377-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-378-## Pitfalls
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-379-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:380:1. **Panic without terminal restore.** Use the panic hook pattern above.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-381-2. **Crossterm version skew.** Run `cargo tree -p crossterm`; ensure one version.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-382-3. **Naive redraw loop.** Don't busy-loop calling `draw`. Use `event::poll(timeout)` for sync, `tokio::select!` for async.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-383-4. **On Windows, both Press and Release events fire.** Filter with `key.kind == KeyEventKind::Press`.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-384-5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` are `StatefulWidget`s — you pass `&mut ListState` / `TableState` / `ScrollbarState` at render time; the state lives in your App struct, not the widget.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-385-6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
+--
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-400-- **tokio-console** — async runtime debugger; powered by Tokio's tracing.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-401-- **systemctl-tui** — systemd manager.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-402-- **gpg-tui** — GPG key manager.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-403-- **kdash** — Kubernetes TUI.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-404-- **tenere** — chatGPT TUI.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:405:- **helix** — modal editor; custom renderer but Ratatui-adjacent patterns.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-406-- **zellij** — terminal multiplexer.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-407-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-408-When the user is building something similar, point them at the relevant repo. Ratatui's own `examples/` directory is also gold.
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-409-
+plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-410----
+
+exec
+/bin/zsh -lc "sed -n '66,118p' plugins/tui-design/skills/tui-design/references/ecosystem-go.md
+sed -n '96,114p' plugins/tui-design/skills/tui-design/references/ecosystem-rust.md
+sed -n '64,80p' plugins/tui-design/skills/tui-design/references/ecosystem-python.md
+sed -n '76,90p' plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+        case "+", "right", "l":
+            m.count++
+        case "-", "left", "h":
+            m.count--
+        }
+    }
+    return m, nil
+}
+
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
+}
+
+func main() {
+    p := tea.NewProgram(model{})
+    if _, err := p.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+### Lifecycle and terminal handoff
+
+Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+
+| Boundary | Bubble Tea v2 contract |
+|---|---|
+| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler converts external SIGINT/SIGTERM into managed loop termination. Do not call `os.Exit` from `Update`. |
+| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error or, after child success, a restoration error through the callback message. If both fail, the callback exposes the child error. In the callback-message branch, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+| Foreground suspend | Return `tea.Suspend`; after the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
+
+The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
+
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
+
+**Important options:**
+- `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
+- `tea.WithColorProfile(p)` — force a specific color profile; the testing hook for golden-file output.
+
+**Async via Cmds:**
+```go
+func fetchData() tea.Msg {
+    data, err := http.Get(...)
+    if err != nil { return errMsg{err} }
+    return dataMsg{data}
+}
+
+// In Update, when you want to fetch:
+
+`ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
+
+### Lifecycle and terminal handoff
+
+Ratatui owns rendering and terminal setup, but not the application event loop, subprocesses, or general process-signal policy. Prefer the managed API and make every external lifecycle event converge on the loop boundary.
+
+| Boundary | Ratatui 0.30 contract |
+|---|---|
+| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
+| SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
+| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Retain the child result while attempting every reentry step independently; if child and reentry both fail, report both instead of letting `?` discard one. A still-running input task can consume terminal capability responses during reinitialization. |
+| Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
+
+Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional. A successful redraw proves only that the renderer recovered; reload any file, process, or remote state the child could have changed.
+
+Concretely, store `child_result`, collect reentry failures without `?`, then match or aggregate the two outcomes. Calling `try_init()?`, `clear()?`, or `draw()?` before inspecting `child_result` can silently replace the original child failure and violates the handoff contract.
+
+## Widgets
+`compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+
+### Lifecycle and terminal handoff
+
+Textual's driver restores application mode from `App.run()` / `run_async()` cleanup. Use App actions and messages for exit or handoff so widgets do not manipulate raw mode themselves.
+
+| Boundary | Textual 8 contract |
+|---|---|
+| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+| SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
+| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+
+These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
+
+## Widgets
+
+
+### Lifecycle and terminal handoff
+
+Ink 7 distinguishes permanent React-tree unmounting from a resumable terminal suspension. Keep process-level signal policy at the render boundary and temporary ownership changes inside `useApp()`.
+
+| Boundary | Ink 7 contract |
+|---|---|
+| Normal exit | Use `useApp().exit(...)` inside the tree or the render handle's `unmount()` outside it. At the top level, await `waitUntilExit()` before post-run output or process termination so pending terminal writes finish. |
+| SIGINT / SIGTERM | `exitOnCtrlC` handles Ctrl+C bytes while stdin is raw; it is not an operating-system SIGTERM handler. If the host requires graceful signals, register them once at the process boundary, unmount, await `waitUntilExit()`, set the intended exit status, and remove listeners. Do not call `process.exit()` before cleanup flushes. |
+| Interactive child | Use `await suspendTerminal(async () => runChild())`. Ink pauses input and rendering, restores cursor/input/screen modes, runs the callback even without an interactive TTY, and re-enters with a full redraw in `finally`. Reload child-mutated data afterward because redraw preserves the existing React state. For the manual form, always `await suspension.resume()` in `finally` or use `await using`. Do not unmount. |
+| Foreground suspend | Ink has no separate high-level job-control action. If a Unix-only Ctrl+Z feature is necessary, perform SIGTSTP inside `suspendTerminal` and let its resume path re-enter and redraw; expose a different action on Windows. |
+
+The tagged [`suspendTerminal` documentation](https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback) includes callback, manual, non-interactive, and nesting behavior. A second overlapping suspension is an error, so centralize ownership rather than letting arbitrary components suspend independently.
+
+## Primitives
+
+codex
+The common abstraction should be a small lifecycle state machine—`final exit`, `temporary terminal handoff`, and `resume`—not a shared raw-mode/signal handler. I’m verifying the edge cases against the frameworks’ own lifecycle APIs.
+web search: 
+web search: https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go
+web search: 
+web search: 'with self.suspend()'
+codex
+No. Share a **lifecycle policy**, not a generic handler that manipulates raw mode or calls a final-exit API.
+
+`Ctrl+Z` and an external editor are *temporary handoffs*: the dashboard must resume. `SIGINT`/`SIGTERM` are *final shutdown requests*. A final exit/unmount for the former destroys the event loop or component tree you need to resume.
+
+## Safe common policy
+
+1. Have exactly one terminal-lifecycle owner: the framework.
+2. Convert OS signals into an idempotent application event at the runtime/event-loop boundary; do not perform terminal I/O, rendering, or framework APIs inside a true low-level signal handler.
+3. Handle three distinct intents:
+
+| Intent | Terminal action | App action |
+|---|---|---|
+| Final shutdown | Framework cleanup once | End the run loop / unmount |
+| Editor or shell | Temporarily yield terminal | Wait, then resume |
+| Job-control suspend | Yield terminal, then suspend process | On `SIGCONT`, resume |
+
+4. Treat a second termination request as escalation only after your documented grace period; never race multiple cleanup paths.
+5. On all resumptions, force a full repaint **and reload/reconcile mutable domain state**.
+
+`Ctrl+C` may be delivered as a raw input byte rather than OS `SIGINT`, so route it through each framework’s input model. `Ctrl+Z` likewise needs the framework’s job-control path; don’t bind it to “quit.”
+
+## Framework-specific policy
+
+| Framework | Final shutdown | Editor / temporary handoff | Ctrl+Z |
+|---|---|---|---|
+| Bubble Tea v2 | Return `tea.Quit` (or `tea.Interrupt` when caller needs `ErrInterrupted`). Its program lifecycle handles normal cleanup and its managed external-signal path. | `tea.ExecProcess(...)`; do not manually use final cleanup. | Return `tea.Suspend`; on `tea.ResumeMsg`, synchronize state. |
+| Ratatui | Ratatui does **not** translate signals into events. Your signal integration sends quit/cancellation to the loop, which returns through `ratatui::run` or `restore`. | Pause the input reader, restore terminal, run editor, reinitialize, clear, redraw. | Same handoff sequence, then send `SIGTSTP`; reinitialize after `SIGCONT`. |
+| Textual | Call `self.exit(...)` on the app/event loop. Schedule it from signal integration; don’t restore terminal state in a signal handler. | `with self.suspend(): run_editor()` | Bind/invoke `suspend_process`; unsupported/no-op on Windows and Textual Web. |
+| Ink 7 | `exitOnCtrlC` handles Ctrl+C input only. For `SIGTERM`, register one process-boundary listener, `unmount()`, await `waitUntilExit()`, then set status. Do not call `process.exit()` first. | `await suspendTerminal(async () => runEditor())` | No high-level job-control API; on Unix, suspend within `suspendTerminal`, then resume through it. |
+
+Bubble Tea’s `ExecProcess` deliberately pauses and resumes the program for interactive children; it is not equivalent to quitting. [Bubble Tea source](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go)  
+Ratatui’s editor recipe shows the required temporary leave-alt-screen/raw-off → child → restore sequence. [Ratatui recipe](https://ratatui.rs/recipes/apps/spawn-vim/)  
+Textual provides separate APIs for editor suspension and foreground-process suspension. [Textual guide](https://textual.textualize.io/guide/app/#suspending-the-application)  
+Ink’s suspension restores shell-facing modes and then performs a full redraw on resume. [Ink docs](https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback)
+
+## Refresh after an editor returns
+
+A redraw alone is insufficient. Refresh:
+
+- The edited file’s content, metadata, parse/validation results, and dirty/conflict status.
+- Filesystem, Git, config, task/process, or remote data the editor or shell could have changed.
+- Derived lists, filters, counts, previews, and caches; preserve selection by stable ID, then clamp it if the item disappeared.
+- Current terminal dimensions; invalidate layout and do a complete redraw.
+- Ratatui specifically: ensure the old input-reader task is paused/stopped before re-entry, otherwise it can steal input.
+
+The framework should restore raw mode, cursor, alternate screen, mouse/paste/input modes; your dashboard must restore **its model’s truth**.
+
+## SIGKILL
+
+`SIGKILL` cannot be caught, deferred, awaited, or cleaned up. No `defer`, `Drop`, `finally`, `atexit`, or framework exit path runs, so raw mode or the alternate screen may remain until the parent terminal/multiplexer recovers—or the user runs `stty sane` / `reset`.
+
+For managed shutdown, send `SIGTERM`, allow a bounded grace period, then use `SIGKILL` only as forced termination. Never promise terminal cleanup after it.
+tokens used
+56,919

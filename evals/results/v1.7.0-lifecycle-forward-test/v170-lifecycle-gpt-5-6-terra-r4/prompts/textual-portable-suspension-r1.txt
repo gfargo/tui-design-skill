@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+In a Textual 8 app I need an Edit action that opens a local editor, plus Ctrl+Z support. The same app may run on Windows or Textual Web. Should I call os.system after self.exit and relaunch the app? Give me a portable lifecycle and exit-code contract.

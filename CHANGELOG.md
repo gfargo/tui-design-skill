@@ -10,6 +10,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - **Contributor evidence contract:** `evals/README.md` documents privacy boundaries, reproducibility limits, run review steps, schema evolution, and the complete evidence bundle.
 - **Framework lifecycle matrix:** the Go, Rust, Python, and TypeScript references now distinguish final exit, OS termination, interactive-child handoff, foreground suspension, and resume behavior using current framework-native APIs.
 - **Lifecycle regression evals:** `evals/v170-lifecycle-evals.json` covers Bubble Tea editor handoff, Ratatui input-reader coordination, Textual suspension portability, Ink's resumable terminal API, and cross-framework signal boundaries.
+- **Single-snapshot lifecycle evidence:** all five lifecycle cases ran once against clean commit `19e77052c3dc07ee1620e2bac8e42d74c0f82d3c` with OpenAI Codex desktop CLI `0.147.0-alpha.6.5`, exact model `gpt-5.6-terra`, and high reasoning. The human-graded schema-v3 bundle scored 25/25 and preserves the hashed grading protocol, raw prompts, answers, stderr, grades, and recomputed summary under `evals/results/v1.7.0-lifecycle-forward-test/`.
 
 ### Changed
 - **Summary verification:** validation now requires grades alongside a summary and recomputes aggregate and per-case results, detecting tampered totals instead of checking only file hashes.

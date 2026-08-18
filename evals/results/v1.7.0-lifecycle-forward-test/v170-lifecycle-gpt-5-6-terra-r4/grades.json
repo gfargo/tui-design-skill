@@ -1,0 +1,64 @@
+{
+  "schema_version": 3,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v170-lifecycle-gpt-5-6-terra-r4",
+  "grader": {
+    "kind": "human",
+    "name": "Primary Codex release reviewer",
+    "prompt_version": "v170-lifecycle-direct-rubric-v1",
+    "prompt_sha256": "d1b867f551a1ec75485db3013af4af6b0531fdc67e86c2f84563e9cc0143665b"
+  },
+  "trials": [
+    {
+      "trial_id": "bubble-tea-editor-handoff-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses ExecProcess and accurately describes release, attached child streams, wait, restore, and redraw."},
+        {"index": 1, "passed": true, "notes": "Routes release, child, and restoration failures through editorDoneMsg and explains the child-error precedence edge case."},
+        {"index": 2, "passed": true, "notes": "Explicitly rejects manual Run inside Update and deferred RestoreTerminal final cleanup."},
+        {"index": 3, "passed": true, "notes": "Maps q to tea.Quit and raw Ctrl+C to tea.Interrupt with ErrInterrupted and status 130 handling."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Cancels and joins EventStream before restoring so it cannot consume Vim input or terminal replies."},
+        {"index": 1, "passed": true, "notes": "Orders shell restoration, inherited-terminal child wait, reinitialization, clear, reload, and full draw."},
+        {"index": 2, "passed": true, "notes": "Stores child and reentry outcomes independently, rejects intervening question-mark returns, and aggregates simultaneous failures."},
+        {"index": 3, "passed": true, "notes": "Uses a Tokio signal listener to send shutdown into the application loop and return through managed cleanup."},
+        {"index": 4, "passed": true, "notes": "States default SIGTERM does not unwind cleanup and SIGKILL cannot run handlers, Drop, hooks, or restoration."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Runs an argv-based subprocess inside self.suspend without exiting or relaunching the app."},
+        {"index": 1, "passed": true, "notes": "Catches SuspendNotSupported and supplies in-app or transfer-based web alternatives."},
+        {"index": 2, "passed": true, "notes": "Uses suspend_process for Unix job control and calls out the Windows and Textual Web no-op."},
+        {"index": 3, "passed": true, "notes": "Reloads and validates the document after editor return and again after foreground resume."},
+        {"index": 4, "passed": true, "notes": "Reserves self.exit(return_code) for final shutdown and propagates app.return_code with SystemExit."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses useApp().suspendTerminal and explicitly rejects unmount for resumable editor ownership."},
+        {"index": 1, "passed": true, "notes": "Explains that callback rejection still restores and redraws before propagating the error."},
+        {"index": 2, "passed": true, "notes": "Requires awaited resume in finally or await using and rejects overlapping ownership."},
+        {"index": 3, "passed": true, "notes": "States that non-TTY mode still runs the callback without terminal handoff and recommends a noninteractive fallback."},
+        {"index": 4, "passed": true, "notes": "Limits exit or unmount plus waitUntilExit to permanent shutdown and output flushing."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Rejects a generic cleanup handler and separates final shutdown, temporary child handoff, and job-control suspend."},
+        {"index": 1, "passed": true, "notes": "Uses Bubble Tea's managed final lifecycle, ExecProcess, Suspend, and ResumeMsg without direct final restoration."},
+        {"index": 2, "passed": true, "notes": "Routes Ratatui and Textual shutdown requests onto their owning event loops."},
+        {"index": 3, "passed": true, "notes": "Distinguishes Ink raw Ctrl+C input from SIGTERM and places unmount and waitUntilExit at the render boundary."},
+        {"index": 4, "passed": true, "notes": "Requires terminal reentry plus explicit model reload/reconciliation and explains why repaint alone is insufficient."},
+        {"index": 5, "passed": true, "notes": "Scopes SIGTSTP to supported platforms, names Windows limitations, and states SIGKILL cannot be cleaned up."}
+      ]
+    }
+  ]
+}

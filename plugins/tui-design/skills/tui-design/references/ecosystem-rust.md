@@ -49,7 +49,7 @@ use ratatui::{prelude::*, widgets::*};
 use color_eyre::Result;
 
 fn main() -> Result<()> {
-    color_eyre::install()?;            // panic hook restores terminal first
+    color_eyre::install()?;            // install reporting before Ratatui wraps the hook
     let mut terminal = ratatui::init();
     let result = App::default().run(&mut terminal);
     ratatui::restore();
@@ -95,7 +95,7 @@ impl App {
 }
 ```
 
-`ratatui::init()` enables raw mode, enters the alt screen, and constructs a `Terminal<CrosstermBackend>`. `ratatui::restore()` reverses it. **`color_eyre::install()` first** so panics restore the terminal before printing.
+`ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
 
 ## Widgets
 
@@ -302,9 +302,9 @@ Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025
   ```
   Best-in-class argparse with auto-generated help, shell completions, and validation.
 
-- **color-eyre** — installs a panic hook that prints rich error reports with source spans. Critical pairing for Ratatui — your panic handler should restore terminal state *first*, then color-eyre prints the report.
+- **color-eyre** — installs a panic hook that prints rich error reports with source spans. Install it before `ratatui::init()` or `ratatui::run()`; Ratatui then wraps the reporting hook and restores terminal state before delegating to it.
 
-- **owo-colors** — zero-allocation color formatting. Recommended over `colored` (older, allocates) and `ansi_term` (unmaintained).
+- **owo-colors** — zero-allocation color formatting. Direct styling emits color; opt into its `supports-colors` feature and use `if_supports_color`, or add your own policy, when output must account for TTY capability and `NO_COLOR`. Recommended over `colored` (older, allocates) and `ansi_term` (unmaintained).
 
 - **indicatif** — progress bars for non-TUI CLIs. Auto-hides on non-TTY.
 
@@ -318,22 +318,27 @@ Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025
 
 ## Panic safety — the critical pattern
 
-A Ratatui app that panics without restoring the terminal leaves the user in raw mode + alt screen + no cursor. Awful. The fix:
+A Ratatui app that panics without restoring the terminal can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer the managed entry points: `ratatui::run()`, `ratatui::init()`, and `ratatui::try_init()` install a restoration hook. Install any reporting hook first, then let Ratatui wrap it:
 
 ```rust
-fn install_hooks() -> Result<()> {
-    let panic_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = ratatui::restore();   // restore FIRST
-        panic_hook(info);              // then print panic message
-    }));
-
+fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
-    Ok(())
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 ```
 
-Call `install_hooks()` before `ratatui::init()`. The official templates do this. **This is non-negotiable for production apps.**
+If you construct `Terminal` and configure Crossterm raw/alternate-screen state manually, you own both normal and panic cleanup. In that case, wrap the existing reporting hook yourself:
+
+```rust
+color_eyre::install()?;
+let report_hook = std::panic::take_hook();
+std::panic::set_hook(Box::new(move |info| {
+    let _ = ratatui::restore();
+    report_hook(info);
+}));
+```
+
+Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; the managed APIs already install it. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, verify both normal exit and panic restoration in a PTY.
 
 ## Alternatives to Ratatui
 
@@ -396,7 +401,7 @@ For non-TUI CLIs:
 
 - **clap** for argparse.
 - **indicatif** for progress bars and spinners (auto-hides on non-TTY).
-- **owo-colors** for terminal colors (respects `NO_COLOR` automatically).
+- **owo-colors** for terminal colors; use its `supports-colors` feature plus `if_supports_color`, or an explicit app policy, to honor terminal capability and `NO_COLOR`.
 - **anyhow** or **color-eyre** for error reporting.
 - **env_logger** or **tracing** + **tracing-subscriber** for logging.
 
@@ -406,14 +411,14 @@ Pair with the principles in `references/cli-basics.md` for argument design, exit
 
 ## Idioms summary
 
-- Always install a panic hook that restores terminal **before** color-eyre runs.
-- Use `color_eyre::install()` after the panic hook.
+- Prefer `ratatui::run()`/`init()` for managed restoration. Install `color_eyre` first so Ratatui can wrap its reporting hook.
+- If you manually construct the terminal, add your own restoration hook and normal-exit cleanup instead.
 - Filter `KeyEventKind::Press` to avoid double-firing on Windows.
 - For async apps, use the EventStream + tick channel + `tokio::select!` pattern.
 - Layout once per frame; reuse the `Rect`s.
 - Use `Stylize` extension trait for brevity (`.bold().yellow()`).
 - For complex apps, copy from the official template rather than starting from scratch.
-- Respect `NO_COLOR` — owo-colors and most modern crates do automatically.
+- Respect `NO_COLOR` explicitly. Color crates vary; direct `owo-colors` styling does not suppress itself unless you use its capability-aware path or your own policy.
 - Use `unicode_width` for cell-width math; don't trust `String::len()`.
 
 For deeper patterns shared across apps, see `references/visual-patterns.md` and `references/interaction-patterns.md`.

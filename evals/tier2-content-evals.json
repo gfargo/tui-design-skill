@@ -60,7 +60,7 @@
       "prompt": "I'm building a small 'pick one of your recent git branches' helper in Go \u2014 like fzf but specialized. Two design questions before I start: should it take over the whole screen the way lazygit does, and what should the terminal look like after it exits? I want the command a user ran and the branch they picked to still be visible in scrollback afterwards.",
       "files": [],
       "assertions": [
-        "Recommends inline (non-alt-screen) rendering for a summon-choose-exit picker, with the explicit reasoning (alt screen erases context; overlay tools like fzf render inline)",
+        "Recommends inline (non-alt-screen) rendering for this bounded summon-choose-exit picker, with the explicit reasoning that the alt screen would erase the context the user wants to preserve",
         "Explains the mechanics in current Bubble Tea (v2: a View without AltScreen set / v1: omit tea.WithAltScreen) \u2014 no stale or invented API",
         "Describes the exit contract: UI cleans up after itself and prints the selection to stdout so it survives in scrollback and is pipeable",
         "Mentions the fzf --height pattern (bounded inline viewport) as the model for this class of tool",

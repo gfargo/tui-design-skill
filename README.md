@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/gfargo/tui-design-skill?label=release&color=2da44e)](https://github.com/gfargo/tui-design-skill/releases)
 [![Skills](https://www.skills.sh/b/gfargo/tui-design-skill)](https://www.skills.sh/gfargo/tui-design-skill)
-[![Build](https://github.com/gfargo/tui-design-skill/actions/workflows/release.yml/badge.svg)](https://github.com/gfargo/tui-design-skill/actions/workflows/release.yml)
+[![Validate](https://github.com/gfargo/tui-design-skill/actions/workflows/validate.yml/badge.svg)](https://github.com/gfargo/tui-design-skill/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A Claude Skill for designing and building **clean, professional, minimal terminal UI (TUI) applications and command-line tools** — across Go, Rust, Python, and TypeScript.
@@ -36,7 +36,7 @@ The skill is structured so its top-level `SKILL.md` carries the **universal prin
 - Color as a semantic system, `NO_COLOR`, accessibility tradeoffs
 - Two reflexes applied to every layout review — the **clutter audit** (make "feels busy" countable) and **pressure-test the floor** (responsive behavior at 80×24 and narrower), even when the user didn't ask about them
 - Cross-app keybinding conventions (`q`, `?`, `/`, `Esc`, `hjkl`, `Tab`, `Ctrl+P`, ...)
-- The four non-negotiables: alt screen, panic-safe terminal restore, `SIGWINCH`, `SIGTSTP`
+- Terminal lifecycle: deliberate inline/alternate-screen choice, framework-managed panic-safe restoration, resize events across platforms, and suspend/resume where supported
 - Testing & debugging: the three-layer test pyramid and the log-to-a-file rule, with per-ecosystem APIs (including performance profiling) in the references
 - Inline vs alt-screen as a first-class design decision (fzf-class tools vs apps you live in)
 - Decision flow for new TUI/CLI projects
@@ -150,7 +150,7 @@ cd tui-design-skill
 ./scripts/package-skill.sh        # writes dist/tui-design.skill
 ```
 
-The output is `dist/tui-design.skill` — a zip whose root is the `tui-design/` skill folder (`SKILL.md` + `references/`), ready to upload to Claude.ai. Only `bash` and `zip` are required.
+The output is `dist/tui-design.skill` — a deterministic zip whose root is the `tui-design/` skill folder (`SKILL.md` + `references/`), ready to upload to Claude.ai. Packaging requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Markdown structure, eval JSON, archive integrity, and repeatable output; that validator also requires Python 3.
 
 ---
 
@@ -162,9 +162,11 @@ tui-design-skill/
 │   └── marketplace.json          # plugin marketplace catalog
 ├── .github/
 │   └── workflows/
-│       └── release.yml           # builds + attaches tui-design.skill on each release
+│       ├── release.yml           # validates + attaches the tagged .skill release asset
+│       └── validate.yml          # validates pull requests and main
 ├── scripts/
-│   └── package-skill.sh          # builds dist/tui-design.skill locally
+│   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
+│   └── validate-release.sh       # checks metadata, content, eval JSON, and package output
 ├── plugins/
 │   └── tui-design/
 │       ├── .claude-plugin/
@@ -181,11 +183,12 @@ tui-design-skill/
 │                   ├── visual-patterns.md
 │                   ├── interaction-patterns.md
 │                   └── exemplar-apps.md
-├── evals/                        # reproducible eval sets (design-review, build-task, content, trigger-rate)
+├── evals/                        # versioned prompt/assertion sets (design, build, content, trigger-rate)
 │   ├── evals.json
 │   ├── build-evals.json
 │   ├── tier2-content-evals.json
 │   ├── tier3-content-evals.json
+│   ├── v151-correction-evals.json
 │   └── trigger-evals.json
 ├── CHANGELOG.md
 ├── README.md

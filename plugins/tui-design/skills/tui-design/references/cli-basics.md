@@ -120,7 +120,7 @@ For multi-step work: hide noisy logs behind a progress indicator while things su
 
 **Force color** when `FORCE_COLOR=1` is set or `--color=always` is passed.
 
-Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`.
+Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Document any different policy.
 
 Use color sparingly: red for errors, dim for secondary text, bold for headings, cyan/blue for paths. **Never color-only** signaling — pair with a word or symbol.
 

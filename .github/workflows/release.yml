@@ -21,21 +21,64 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Build the .skill
-        run: ./scripts/package-skill.sh dist
-
       - name: Determine target tag
         id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            printf 'tag=%s\n' "$DISPATCH_TAG" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+            printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Validate release source
+        env:
+          TARGET_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if [ -x ./scripts/validate-release.sh ]; then
+            ./scripts/validate-release.sh "$TARGET_TAG"
+          else
+            # Older tags predate the full validator. Still verify that the
+            # checked-out manifests match the requested tag before backfilling.
+            if [ -f ./scripts/package-skill.sh ]; then
+              bash -n ./scripts/package-skill.sh
+            fi
+            python3 - "$TARGET_TAG" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          expected = sys.argv[1][1:] if sys.argv[1].startswith("v") else sys.argv[1]
+          plugin = json.loads(Path("plugins/tui-design/.claude-plugin/plugin.json").read_text())
+          marketplace = json.loads(Path(".claude-plugin/marketplace.json").read_text())
+          versions = {plugin["version"], marketplace["version"], marketplace["plugins"][0]["version"]}
+          if versions != {expected}:
+              raise SystemExit(f"requested tag {sys.argv[1]!r} does not match checked-out manifests: {sorted(versions)}")
+          print(f"Validated legacy release source for {sys.argv[1]}")
+          PY
+          fi
+
+      - name: Build the .skill
+        run: |
+          if [ -x ./scripts/package-skill.sh ]; then
+            ./scripts/package-skill.sh dist
+          else
+            # v1.0.0–v1.2.0 predate the packaging script.
+            mkdir -p dist
+            output="$GITHUB_WORKSPACE/dist/tui-design.skill"
+            (cd plugins/tui-design/skills && zip -r -X -q "$output" tui-design -x '*/.DS_Store' '*/.*')
+          fi
+          unzip -tq dist/tui-design.skill
 
       - name: Upload asset to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ steps.tag.outputs.tag }}" dist/tui-design.skill --clobber
+          TARGET_TAG: ${{ steps.tag.outputs.tag }}
+        run: gh release upload "$TARGET_TAG" dist/tui-design.skill --clobber

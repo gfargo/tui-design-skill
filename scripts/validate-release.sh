@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# Validate release metadata, skill structure, eval JSON, and deterministic output.
+# Usage: ./scripts/validate-release.sh [expected-tag]
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+expected_tag="${1:-}"
+
+for command_name in python3 zip unzip cmp; do
+  command -v "$command_name" >/dev/null || {
+    echo "error: required command not found: $command_name" >&2
+    exit 1
+  }
+done
+
+bash -n "$repo_root/scripts/package-skill.sh"
+
+python3 - "$repo_root" "$expected_tag" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+expected_tag = sys.argv[2]
+skill_dir = root / "plugins/tui-design/skills/tui-design"
+skill_file = skill_dir / "SKILL.md"
+
+plugin = json.loads((root / "plugins/tui-design/.claude-plugin/plugin.json").read_text())
+marketplace = json.loads((root / ".claude-plugin/marketplace.json").read_text())
+marketplace_plugins = marketplace.get("plugins", [])
+if len(marketplace_plugins) != 1:
+    raise SystemExit("marketplace must contain exactly one plugin")
+marketplace_plugin = marketplace_plugins[0]
+versions = {
+    plugin["version"],
+    marketplace["version"],
+    marketplace_plugin["version"],
+}
+if len(versions) != 1:
+    raise SystemExit(f"manifest versions disagree: {sorted(versions)}")
+version = versions.pop()
+if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", version):
+    raise SystemExit(f"manifest version is not valid semver: {version!r}")
+if marketplace_plugin.get("name") != plugin.get("name") or marketplace_plugin.get("source") != "./plugins/tui-design":
+    raise SystemExit("marketplace plugin identity/source does not match the plugin manifest")
+expected_version = expected_tag[1:] if expected_tag.startswith("v") else expected_tag
+if expected_tag and expected_version != version:
+    raise SystemExit(f"tag {expected_tag!r} does not match manifest version {version!r}")
+
+changelog = (root / "CHANGELOG.md").read_text()
+if f"## [{version}]" not in changelog:
+    raise SystemExit(f"CHANGELOG.md has no section for {version}")
+
+text = skill_file.read_text()
+match = re.match(r"\A---\n(.*?)\n---\n", text, flags=re.DOTALL)
+if not match:
+    raise SystemExit("SKILL.md must begin with YAML frontmatter")
+frontmatter_keys = [line.split(":", 1)[0] for line in match.group(1).splitlines() if ":" in line]
+if frontmatter_keys != ["name", "description"]:
+    raise SystemExit(f"SKILL.md frontmatter keys must be name, description; got {frontmatter_keys}")
+if not re.search(r"^name:\s+tui-design$", match.group(1), flags=re.MULTILINE):
+    raise SystemExit("SKILL.md frontmatter name must match its directory")
+
+for relative in sorted(set(re.findall(r"`(references/[^`]+\.md)`", text))):
+    if any(marker in relative for marker in "*?["):
+        exists = any(skill_dir.glob(relative))
+    else:
+        exists = (skill_dir / relative).is_file()
+    if not exists:
+        raise SystemExit(f"SKILL.md references missing file or pattern: {relative}")
+
+markdown_files = [skill_file, *sorted((skill_dir / "references").glob("*.md"))]
+for path in markdown_files:
+    body = path.read_text()
+    if sum(line.startswith("```") for line in body.splitlines()) % 2:
+        raise SystemExit(f"unbalanced fenced code block: {path.relative_to(root)}")
+    if path != skill_file and len(body.splitlines()) >= 100:
+        has_navigation = "**Contents:**" in body[:2500] or "## How to use this file" in body[:2500]
+        if not has_navigation:
+            raise SystemExit(f"long reference lacks an early contents/index section: {path.relative_to(root)}")
+
+for path in sorted((root / "evals").glob("*.json")):
+    data = json.loads(path.read_text())
+    if data.get("skill_name") != "tui-design":
+        raise SystemExit(f"invalid eval-set skill name: {path.relative_to(root)}")
+    if isinstance(data.get("queries"), list):
+        query_ids = [case.get("id") for case in data["queries"]]
+        if len(query_ids) != len(set(query_ids)):
+            raise SystemExit(f"trigger eval ids must be unique: {path.relative_to(root)}")
+        for case in data["queries"]:
+            if not isinstance(case.get("query"), str) or not isinstance(case.get("should_trigger"), bool):
+                raise SystemExit(f"invalid trigger eval: {path.relative_to(root)} id={case.get('id')!r}")
+        continue
+    if not isinstance(data.get("evals"), list):
+        raise SystemExit(f"invalid eval-set envelope: {path.relative_to(root)}")
+    ids = []
+    names = []
+    for case in data["evals"]:
+        ids.append(case.get("id"))
+        names.append(case.get("name"))
+        if not isinstance(case.get("prompt"), str) or not case["prompt"].strip():
+            raise SystemExit(f"eval has no prompt: {path.relative_to(root)} id={case.get('id')!r}")
+        assertions = case.get("assertions")
+        if not isinstance(assertions, list) or not assertions or not all(isinstance(item, str) and item.strip() for item in assertions):
+            raise SystemExit(f"eval has invalid assertions: {path.relative_to(root)} id={case.get('id')!r}")
+    if len(ids) != len(set(ids)) or len(names) != len(set(names)):
+        raise SystemExit(f"eval ids/names must be unique: {path.relative_to(root)}")
+
+if any(path.name == ".DS_Store" for path in skill_dir.rglob(".DS_Store")):
+    raise SystemExit("skill source contains .DS_Store cruft")
+
+print(f"Validated skill metadata and content for {version}")
+PY
+
+build_a="$(mktemp -d "${TMPDIR:-/tmp}/tui-design-validate-a.XXXXXX")"
+build_b="$(mktemp -d "${TMPDIR:-/tmp}/tui-design-validate-b.XXXXXX")"
+cleanup() {
+  rm -rf "$build_a" "$build_b"
+}
+trap cleanup EXIT
+
+"$repo_root/scripts/package-skill.sh" "$build_a" >/dev/null
+"$repo_root/scripts/package-skill.sh" "$build_b" >/dev/null
+cmp "$build_a/tui-design.skill" "$build_b/tui-design.skill"
+unzip -tq "$build_a/tui-design.skill" >/dev/null
+
+archive_entries="$(unzip -Z1 "$build_a/tui-design.skill")"
+while IFS= read -r entry; do
+  case "$entry" in
+    tui-design/*) ;;
+    *)
+      echo "error: archive entry is outside tui-design/: $entry" >&2
+      exit 1
+      ;;
+  esac
+done <<< "$archive_entries"
+grep -Fxq 'tui-design/SKILL.md' <<< "$archive_entries"
+grep -Eq '^tui-design/references/[^/]+\.md$' <<< "$archive_entries"
+
+echo "Validated deterministic package output"

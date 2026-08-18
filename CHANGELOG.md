@@ -2,6 +2,24 @@
 
 All notable changes to the `tui-design` skill are documented here. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), and the project follows semantic versioning.
 
+## [1.5.1] — 2026-08-18
+
+Correctness and release-engineering patch for the 1.5 line. This release removes unsafe or over-broad guidance found in a full review of 1.5.0, updates the assertions that guard those behaviors, and makes the published `.skill` artifact reproducible and tag-accurate.
+
+### Fixed
+- **Terminal cleanup:** removed the harmful Bubble Tea `defer p.RestoreTerminal()` pattern and now prefers each framework's managed lifecycle. Ratatui guidance correctly installs `color_eyre` before `run()`/`init()` so Ratatui's restoration hook wraps the reporting hook; custom hooks are limited to manual `Terminal` setup.
+- **Color guidance:** current Lipgloss examples use v2 `LightDark` (with `AdaptiveColor` identified only as v1/compat), truecolor is detected rather than assumed, and blanket claims that `owo-colors` or JavaScript color libraries automatically honor `NO_COLOR` are replaced with an explicit output policy and force/disable precedence.
+- **Screen-mode and responsive guidance:** fzf is accurately described as full-screen by default with explicit bounded `--height` mode. Inline rendering is a strong default for bounded pickers, not a universal rule. `80×24` is a test baseline rather than a universal minimum, with application-specific truthful minimums.
+- **Interaction guidance:** command palettes, persistent footers, `hjkl`, live validation, and theme/community-palette support are scoped to apps that benefit from them. Settings may validly use Apply/Save/Cancel when changes are atomic, expensive, or remote.
+- **Portability and accessibility:** resize handling is expressed through framework events rather than universal `SIGWINCH`; suspend behavior is capability-aware; redraw guidance permits intentional tick-driven updates; accessibility language no longer treats every TUI as categorically inaccessible.
+- **Eval assertions:** cleanup assertions now accept framework-managed behavior and explicitly reject the Bubble Tea restoration misuse; the fzf assertion now names `--height` rather than claiming fzf renders inline by default. Added `evals/v151-correction-evals.json` for the corrected edge cases.
+
+### Changed
+- `.skill` packaging now normalizes archive order, timestamps, and permissions for byte-for-byte repeatability.
+- Added `scripts/validate-release.sh` and pull-request/main validation CI for manifest parity, changelog/version agreement, skill structure, reference links, Markdown fences, eval JSON, archive integrity, and deterministic packaging.
+- Release-asset CI now checks out and validates the exact release tag, including manual backfills, before building or uploading the asset.
+- Removed ignored top-level marketplace metadata fields so the marketplace passes strict schema validation without warnings.
+
 ## [1.5.0] — 2026-07-10
 
 Tier-3 round: a fresh structural/coverage audit of the shipped v1.4.0 skill (post-expansion consistency, the remaining content-gap backlog, and a 12-question user-lens routing review), followed by fixes and four new content areas — shell integration, forms/settings-screen design + CLI first-run auth flows, Nerd Font glyph conventions + degraded-state UX, and per-ecosystem performance profiling. Content written from six web-verified research briefs (`tui-design-workspace/tier3/research/`, gitignored). Validated with a four-eval with/without comparison (`evals/tier3-content-evals.json`): baseline **55%** vs with-skill **95%** — a real, consequential lift this round (unlike v1.4.0's statistical wash), because this content targets areas where plausible-sounding reasoning was verifiably *wrong*, not just under-specific. Two standout catches: the baseline confidently recommended Textual's `DataTable.add_rows()` as a bulk-insert optimization (it's just a loop over `add_row()`, per Textual's own source) and told a user building "a specialized yazi" to skip yazi's own real `--cwd-file` mechanism, calling it "strictly worse."

@@ -162,7 +162,7 @@ Tab bars inside a larger layout, cycled with `[`/`]` or `Ctrl+Tab`.
 
 Before choosing a layout, choose a screen buffer. The **alternate screen** is a separate buffer with no scrollback; on exit the terminal restores whatever was there before. **Inline** rendering paints in the normal buffer, below the shell prompt, and scrolls with everything else.
 
-**The rule: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, dashboards — long-lived, navigational, full-screen — belong on the alt screen precisely so they don't pollute scrollback (vim's reason for using it). One-shot pickers, prompts, confirmations, and progress for a single command belong inline. Scrollback is the user's working memory: taking over the whole screen — erasing their context — to pick one item from a list is rude. An inline tool behaves like a command, not an application.
+**Default heuristic: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, and dashboards — long-lived, navigational, full-screen — usually belong on the alt screen so they do not pollute scrollback. Prefer inline for bounded pickers, prompts, confirmations, and progress when preserving shell context matters. A picker with a large preview or unusually deep workflow may still earn a full-screen buffer; choose from the working set and exit contract, not the label alone.
 
 ### Mechanics per framework
 
@@ -173,7 +173,7 @@ Before choosing a layout, choose a screen buffer. The **alternate screen** is a 
 
 ### The fzf model — bounded inline viewport
 
-`fzf --height 40%` renders the finder below the cursor instead of taking the full screen. The UI paints on `/dev/tty` (stderr as fallback) so stdout stays clean — that's why `vim $(fzf)` works. This hybrid — inline, height-capped, scrollback intact above — is the right shape for anything fzf-like.
+fzf itself defaults to full-screen mode. Its explicit `--height 40%` mode renders the finder below the cursor so previous commands remain visible; fzf's shell keybindings commonly opt into this bounded mode. The UI paints on `/dev/tty` (stderr as fallback) so stdout stays clean — that's why `vim $(fzf)` works. Treat height-capped inline rendering as a strong option for fzf-like tools, not as a fact about every picker or fzf's default.
 
 ### The exit contract — the receipt pattern
 
@@ -185,7 +185,7 @@ On exit, do one of two respectable things: erase the transient UI completely (fz
 
 | Workflow | Mode |
 |---|---|
-| One-shot pick / confirm / progress | Inline; exit with a receipt |
+| One-shot pick / confirm / progress | Prefer inline; erase cleanly or leave a concise receipt |
 | Explore / monitor / edit session | Alt screen; restore on exit |
 | Hybrid (fzf-like; logs + live status) | Inline with a height cap (`--height 40%`, `Viewport::Inline`) |
 
@@ -286,7 +286,7 @@ git.added         → green (foreground)
 git.deleted       → red (foreground)
 ```
 
-Then map tokens to palette colors. **Lipgloss's `AdaptiveColor`**, **Textual's CSS variables**, and **Ratatui's palette indirection** all implement this.
+Then map tokens to palette colors. **Lipgloss v2's `LightDark`** (`AdaptiveColor` in v1/compat), **Textual's CSS variables**, and **Ratatui's palette indirection** all implement this.
 
 This indirection earns its keep when adding themes (Catppuccin Latte + Frappé + Macchiato + Mocha is one config file, not four code changes) or when supporting light/dark modes.
 
@@ -321,11 +321,11 @@ Avoid red + green as the only distinction. If you must use them, add letters or 
 
 ### Honor `NO_COLOR`
 
-[no-color.org](https://no-color.org) is a 2018 informal standard. Respect it: when `NO_COLOR` env var is set (any value), suppress all color output.
+[no-color.org](https://no-color.org) is a 2018 informal standard. Respect it: when `NO_COLOR` is present with a non-empty value, suppress automatic color output. An explicit user choice such as `--color=always` may override that default if the tool documents the precedence.
 
-`ripgrep`, `bat`, `eza`, `delta`, `fd`, `gh`, `cargo`, all major modern tools honor it. Most language ecosystems' color libraries (chalk, picocolors, owo-colors, rich, lipgloss) handle it automatically.
+`ripgrep`, `bat`, `eza`, `delta`, `fd`, `gh`, and `cargo` honor it. Library behavior varies: some detect it automatically, while others require an optional capability feature or an application-level gate. For example, `owo-colors` only consults terminal and environment support when its `supports-colors` feature and `if_supports_color` path are used. Make `NO_COLOR` part of the app's semantic color policy instead of assuming a styling dependency will enforce it.
 
-Provide tool-specific `MYAPP_NO_COLOR` and `MYAPP_FORCE_COLOR` for finer control.
+Provide tool-specific `MYAPP_NO_COLOR` and `MYAPP_FORCE_COLOR` for finer control. Keep precedence consistent with the policy in `references/cli-basics.md` → *Color*.
 
 ---
 
@@ -415,19 +415,19 @@ Decide behavior per width band, widest to narrowest. Exact thresholds depend on 
 - **Wide (>120 cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
 - **Standard (80–120)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
 - **Narrow (60–80)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here. (lazygit's `--screen-mode full` is a related single-panel mode — but it's a user-selectable escape hatch, not automatic responsive behavior.)
-- **Too small (<60 cols or <24 rows)** — don't render garbage or panic. Show a clean `terminal too small — need 80×24` message until the user resizes.
+- **Below the application-specific minimum** — don't render garbage or panic. Show a clean message naming the dimensions the app actually requires, such as `terminal too small — need 48×12`, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
 
 This is why a **drill-down model degrades better than a fixed grid**: when only one primary thing is ever on screen, narrowing just shrinks it; a fixed 2×2 grid has nowhere to go and turns to mush. If you find yourself unable to make a grid responsive, that's often a sign the layout should have been drill-down in the first place.
 
 ### Mechanics
 
 - **Lay out in relative units, never absolute positions:** percentages (Textual `width: 30%`), ratios (Ratatui `Ratio(num, den)`), `Min`/`Max`/`Fill` constraints (Ratatui), `fr` units (Textual `1fr`/`3fr`), flex (Ink/Yoga). Recompute the layout from the current frame size on every render — never cache pixel positions.
-- **Decide what's load-bearing.** When width runs out, what hides *first*? Usually: preview pane → secondary columns → low-priority table columns. Keep the primary view and the footer hints. **Detail-on-Enter** is the escape hatch — it lets you hide columns/fields at narrow widths without losing access to the data.
+- **Decide what's load-bearing.** When width runs out, what hides *first*? Usually: preview pane → secondary columns → low-priority table columns. Keep the primary view and the controls needed to operate it; a dedicated footer can collapse if those controls remain discoverable elsewhere. **Detail-on-Enter** is the escape hatch — it lets you hide columns/fields at narrow widths without losing access to the data.
 - **Truncate, don't wrap, in cells**; reserve a cell for the ellipsis. Tail-truncate paths, middle-truncate when the basename matters.
-- **Handle `SIGWINCH`** and re-layout on every resize, debounced (100–200ms) so dragging a tmux divider doesn't thrash.
-- **Define the minimum size explicitly** (80×24 is the conventional floor) and *test there* — not just at your own resolution. `tmux split-window -h` is a free narrow-terminal test rig.
+- **Handle the framework's resize event** and re-layout from the current frame/window size. On POSIX this usually begins with `SIGWINCH`; Windows and higher-level frameworks expose different events. Coalesce rapid events only when layout work is expensive so resizing still feels immediate.
+- **Use 80×24 as a compatibility test baseline, not a universal hard minimum.** Define a smaller application-specific minimum from the content that must remain usable and test both sizes. `tmux split-window -h` is a free narrow-terminal test rig.
 
-When reviewing a layout, state the degradation plan concretely: "at 80×24 the preview drops and you get parent│current; below 60 it's a single pane; below that, a too-small message." **A review that doesn't name what happens at the floor hasn't finished.**
+When reviewing a layout, state the degradation plan concretely: "at 80×24 the preview drops and you get parent│current; at 60 columns it's a single pane; below the tested minimum, show a message naming that minimum." **A review that doesn't name what happens at the floor hasn't finished.**
 
 ---
 
@@ -505,7 +505,7 @@ The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ 
 
 ## Status bars, headers, footers
 
-### The canonical four-section layout
+### A common full-screen four-section layout
 
 ```
 ┌─────────────────────────────────────────┐
@@ -516,11 +516,11 @@ The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ 
 │                                         │
 ├─────────────────────────────────────────┤
 │ Status / mode line                      │ ← ephemeral feedback
-│ Footer hint bar                         │ ← always-visible shortcuts
+│ Footer hint bar                         │ ← contextual shortcuts
 └─────────────────────────────────────────┘
 ```
 
-Some apps merge status and footer into one line. Some skip the header. The principle stays: persistent context up top, work in the middle, keys at the bottom.
+Some apps merge status and footer into one line. Some skip the header. Complex full-screen apps benefit from persistent context around the work area; bounded inline tools often need neither a header nor a dedicated footer.
 
 ### Header content
 
@@ -538,7 +538,7 @@ Some apps merge status and footer into one line. Some skip the header. The princ
 
 ### Footer hint bar
 
-Visual format: `key action · key action · key action`. Use `·` (middle dot) or `|` as separator. 3–5 shortcuts, updated per context (panel, mode).
+For an action-rich full-screen app, use `key action · key action · key action`. Use `·` (middle dot) or `|` as separator. Show 3–5 shortcuts, updated per context (panel, mode). A small inline prompt can show its complete controls adjacent to the prompt instead.
 
 Examples:
 - htop: `F1Help F2Setup F3Search F4Filter F5Tree F6SortBy F7Nice- F8Nice+ F9Kill F10Quit`
@@ -625,9 +625,9 @@ Most production TUIs support themes. The canonical approach:
 - **TCSS (Textual CSS)** — Textual apps; live-reloads.
 - **JSON** — VS Code-style; less common in TUIs.
 
-### Community palettes you should support
+### Community palettes for themeable, broadly distributed apps
 
-Either ship them or document how to import them:
+If theming is part of the product, either ship popular palettes or document how to import them:
 
 - **Catppuccin** (Latte, Frappé, Macchiato, Mocha).
 - **Dracula**.
@@ -638,7 +638,7 @@ Either ship them or document how to import them:
 - **Solarized** (light, dark).
 - **base16** umbrella spec — many themes follow this.
 
-The community has built theme repos for most popular tools; users expect plug-and-play.
+The community has built theme repos for most popular tools; users of highly themeable apps expect plug-and-play. Small single-purpose tools still need semantic colors and light/dark safety, but do not need to bundle every palette.
 
 ### Icons and Nerd Fonts — there is no detection, only opt-in
 
@@ -656,7 +656,7 @@ The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII —
 
 - OSC `]11;?` query — many terminals respond with their background color.
 - `$COLORFGBG` env var — set by some terminals (rxvt-derivatives).
-- Lipgloss's `AdaptiveColor` and Textual's runtime theme switching abstract this.
+- Lipgloss v2's `LightDark` (`AdaptiveColor` in v1/compat) and Textual's runtime theme switching abstract this.
 
 If you support both light and dark, default to "auto" and let users override with `--theme dark`.
 

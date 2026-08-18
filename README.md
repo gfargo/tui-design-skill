@@ -5,11 +5,11 @@
 [![Validate](https://github.com/gfargo/tui-design-skill/actions/workflows/validate.yml/badge.svg)](https://github.com/gfargo/tui-design-skill/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A Claude Skill for designing and building **clean, professional, minimal terminal UI (TUI) applications and command-line tools** — across Go, Rust, Python, and TypeScript.
+An agent skill for designing and building **clean, professional, minimal terminal UI (TUI) applications and command-line tools** — for Codex, Claude, and compatible skill-aware agents, across Go, Rust, Python, and TypeScript.
 
 Use it for greenfield builds, design reviews, refactors, library decisions, and "should I use Bubble Tea or Ratatui?"-class questions. Covers the universal patterns (layouts, color, keybindings, discoverability) plus per-ecosystem deep-dives for Bubble Tea, Ratatui, Textual, and Ink.
 
-**[What it covers](#what-the-skill-covers) · [When it triggers](#when-the-skill-triggers) · [Example prompts](#example-prompts) · [Install](#install) · [Build](#build) · [Repo layout](#repository-layout) · [Contributing](#contributing)**
+**[What it covers](#what-the-skill-covers) · [When it triggers](#when-the-skill-triggers) · [Example prompts](#example-prompts) · [Install](#install) · [Build](#build) · [Evaluate](#evaluation) · [Repo layout](#repository-layout) · [Contributing](#contributing)**
 
 ---
 
@@ -28,19 +28,14 @@ Use it for greenfield builds, design reviews, refactors, library decisions, and 
 
 ## What the skill covers
 
-The skill is structured so its top-level `SKILL.md` carries the **universal principles** and routes to per-topic reference files on demand. Total: ~4,400 lines across 9 files, but Claude only loads what's relevant to the current question.
+The skill uses progressive disclosure: its 139-line `SKILL.md` carries the workflow, routing table, and cross-cutting contracts, then loads one authoritative reference per topic on demand. The nine Markdown files total about 4,160 lines, but the agent does not need all of that context for every question.
 
 **Top-level (`SKILL.md`):**
-- Seven canonical TUI layouts (multi-panel, miller columns, drill-down stack, widget dashboard, IDE three-panel, overlay, tabbed-within-panel) — when to use each, what to avoid
-- Visual hierarchy in monospace (color, weight, reverse video, borders, density)
-- Color as a semantic system, `NO_COLOR`, accessibility tradeoffs
+- Product classification: one-shot CLI, summon–choose–exit tool, or full-screen session
+- Single-source routing for layouts, visual systems, interactions, ecosystem APIs, CLI contracts, and case studies
 - Two reflexes applied to every layout review — the **clutter audit** (make "feels busy" countable) and **pressure-test the floor** (responsive behavior at 80×24 and narrower), even when the user didn't ask about them
-- Cross-app keybinding conventions (`q`, `?`, `/`, `Esc`, `hjkl`, `Tab`, `Ctrl+P`, ...)
-- Terminal lifecycle: deliberate inline/alternate-screen choice, framework-managed panic-safe restoration, resize events across platforms, and suspend/resume where supported
-- Testing & debugging: the three-layer test pyramid and the log-to-a-file rule, with per-ecosystem APIs (including performance profiling) in the references
-- Inline vs alt-screen as a first-class design decision (fzf-class tools vs apps you live in)
-- Decision flow for new TUI/CLI projects
-- Review checklist for existing TUIs
+- Cross-cutting contracts for lifecycle, non-blocking work, redraws, cell width, output streams, semantic color, keyboard access, and plain-mode fallbacks
+- A build workflow, bottom-heavy test pyramid, verification matrix, and prioritized review checklist
 
 **References (loaded as needed):**
 - `ecosystem-go.md` — Bubble Tea, Lipgloss, Bubbles, Huh, tview, gocui, Cobra, Wish, gum
@@ -56,7 +51,7 @@ The skill is structured so its top-level `SKILL.md` carries the **universal prin
 
 ## When the skill triggers
 
-Once installed, Claude will reach for this skill automatically when you ask about:
+Once installed, a compatible agent can reach for this skill automatically when you ask about:
 
 - **Building** a TUI or CLI ("build me a TUI for monitoring my docker containers")
 - **Reviewing or refactoring** existing terminal UIs ("here's my Ratatui code, what's wrong with it?")
@@ -150,7 +145,43 @@ cd tui-design-skill
 ./scripts/package-skill.sh        # writes dist/tui-design.skill
 ```
 
-The output is `dist/tui-design.skill` — a deterministic zip whose root is the `tui-design/` skill folder (`SKILL.md` + `references/`), ready to upload to Claude.ai. Packaging requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Markdown structure, eval JSON, archive integrity, and repeatable output; that validator also requires Python 3.
+The output is `dist/tui-design.skill` — a deterministic zip whose root is the complete `tui-design/` skill folder (`SKILL.md`, `agents/openai.yaml`, and `references/`), ready to install in a compatible agent. Packaging requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer.
+
+## Evaluation
+
+The committed eval sets contain prompts and assertion rubrics. `scripts/eval_harness.py` turns them into auditable runs while staying provider-neutral: the runner command reads a prompt from stdin and writes one response to stdout, and it is invoked directly without a shell.
+
+```bash
+# Run the same set without skill injection.
+python3 scripts/eval_harness.py run \
+  --eval-set evals/v151-correction-evals.json \
+  --condition baseline --provider "provider-name" --model "exact-model-id" \
+  --repeat 2 -- path/to/model-runner --its-arguments
+
+# Run it with a clean-context instruction pointing at this skill.
+python3 scripts/eval_harness.py run \
+  --eval-set evals/v151-correction-evals.json \
+  --condition with-skill --provider "provider-name" --model "exact-model-id" \
+  --repeat 2 -- path/to/model-runner --its-arguments
+```
+
+Each generated `run.json` records the caller-supplied exact provider/model identifiers, repetitions, runner argv, git commit and dirty state, host metadata, eval-set and skill hashes, prompt and response hashes, timings, exit codes, and raw artifact paths. Generated work stays under ignored `evals/runs/`; copy only reviewed evidence intended for the repository into `evals/results/`. Keep credentials in the runner's environment—never put secrets in the recorded command arguments.
+
+Grades are a separate JSON artifact with a grader identity and one ordered boolean result per rubric assertion and trial. The scoring command rejects missing trials or assertions before calculating the aggregate and per-case pass rates:
+
+```bash
+python3 scripts/eval_harness.py score \
+  --run evals/runs/RUN_ID/run.json \
+  --grades evals/runs/RUN_ID/grades.json
+
+python3 scripts/eval_harness.py validate \
+  --run evals/runs/RUN_ID/run.json \
+  --grades evals/runs/RUN_ID/grades.json \
+  --summary evals/runs/RUN_ID/summary.json \
+  --require-completed
+```
+
+Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. See `python3 scripts/eval_harness.py --help` and the integration tests for the artifact contract.
 
 ---
 
@@ -165,15 +196,20 @@ tui-design-skill/
 │       ├── release.yml           # validates + attaches the tagged .skill release asset
 │       └── validate.yml          # validates pull requests and main
 ├── scripts/
+│   ├── eval_harness.py           # records, scores, and validates model eval runs
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
 │   └── validate-release.sh       # checks metadata, content, eval JSON, and package output
+├── tests/
+│   └── test_eval_harness.py      # runner/scoring/integrity integration tests
 ├── plugins/
 │   └── tui-design/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # plugin manifest
 │       └── skills/
 │           └── tui-design/
-│               ├── SKILL.md      # top-level skill (~315 lines)
+│               ├── SKILL.md      # slim routing + cross-cutting core (139 lines)
+│               ├── agents/
+│               │   └── openai.yaml # Codex UI and invocation metadata
 │               └── references/
 │                   ├── ecosystem-go.md
 │                   ├── ecosystem-rust.md
@@ -183,20 +219,22 @@ tui-design-skill/
 │                   ├── visual-patterns.md
 │                   ├── interaction-patterns.md
 │                   └── exemplar-apps.md
-├── evals/                        # versioned prompt/assertion sets (design, build, content, trigger-rate)
+├── evals/                        # versioned prompt/assertion sets and curated results
 │   ├── evals.json
 │   ├── build-evals.json
 │   ├── tier2-content-evals.json
 │   ├── tier3-content-evals.json
 │   ├── v151-correction-evals.json
-│   └── trigger-evals.json
+│   ├── v160-structural-evals.json
+│   ├── trigger-evals.json
+│   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md
 ├── README.md
 ├── LICENSE
 └── .gitignore
 ```
 
-The nesting (`plugins/tui-design/skills/tui-design/`) is the official Claude Code plugin format. It looks redundant for a single-skill plugin but matches the schema and lets the marketplace infrastructure work uniformly.
+The nesting (`plugins/tui-design/skills/tui-design/`) is the Claude Code plugin format used by the marketplace. The optional `agents/openai.yaml` follows OpenAI's skill metadata format so Codex can present and invoke the same skill cleanly.
 
 ---
 
@@ -213,7 +251,7 @@ Issues and pull requests welcome. Particularly useful contributions:
 - **Clarifications** where the skill's advice produced unexpected results in real use
 - **Translations** of the skill into other languages
 
-When opening a PR that changes the skill content, please describe the prompt you tested it on and what changed in the output.
+When opening a PR that changes skill behavior, include the eval set, exact provider/model metadata, repetitions, grading method, and the generated summary. Do not claim an improvement from prompts and assertions alone.
 
 ## Acknowledgements
 

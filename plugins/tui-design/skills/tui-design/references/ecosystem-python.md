@@ -9,7 +9,6 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 - [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
 - [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
 - [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
-- [Idioms summary](#idioms-summary)
 
 ## Quick recommendation
 
@@ -419,12 +418,3 @@ if __name__ == "__main__":
 **Trogon** auto-generates a Textual TUI from any Click or Typer CLI — drop in `from trogon import Trogon` and your CLI gets an interactive form mode for free.
 
 ---
-
-## Idioms summary
-
-- **Textual**: "Attributes down, messages up." Use `@on(Message, "#selector")` for many-of-same-type. `can_focus = True` on custom widgets that need keys. CSS classes + `add_class`/`remove_class` for state-driven styling. Don't `print()` — use `self.log()` + `textual console`. Inside Textual, use `ProgressBar`, not Rich's `Progress`.
-- **Rich**: Use markup (`[bold red]…[/]`) over manual style API. Use `Console()` once at module level. Call `rich.install()` for pretty tracebacks. Use `track()` for simple loops, `Progress` for complex multi-task work.
-- **prompt_toolkit**: Use **questionary** for simple prompts; full prompt_toolkit only for shell-like tools.
-- **Typer + Rich + questionary** is the modern Python CLI stack. **Textual** is the modern TUI stack.
-
-For deeper patterns shared across apps, see `references/visual-patterns.md` and `references/interaction-patterns.md`.

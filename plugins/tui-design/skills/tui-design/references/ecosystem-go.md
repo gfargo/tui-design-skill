@@ -12,7 +12,6 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 - [Testing](#testing) · [Debugging](#debugging)
 - [Notable Go TUI apps](#notable-go-tui-apps-to-study)
 - [Cross-platform notes](#cross-platform-notes)
-- [Idioms summary](#idioms-summary)
 
 ## Quick recommendation
 
@@ -86,6 +85,8 @@ func main() {
     }
 }
 ```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
 
 **Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
 
@@ -495,14 +496,3 @@ Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows (Terminal, co
 For SSH-served TUIs, **Wish** is the right answer — it handles per-session terminal capabilities (the client's truecolor support, not the server's) and gives you middleware for auth, logging, rate limiting.
 
 ---
-
-## Idioms summary
-
-- **Bubble Tea**: All I/O in `tea.Cmd`s. Cache `WindowSizeMsg` for layout. Forward messages to child Bubbles. Use `tea.Batch` for parallel, `tea.Sequence` for ordered. Use `key.Binding` + `key.Matches` for declarative keys. Use `tea.LogToFile` for debug — never `fmt.Println`.
-- **Lipgloss**: Define styles once at package level (they're immutable). Use `JoinHorizontal`/`JoinVertical`/`Place` for layout. Use `LightDark` for theme support. Use `Width()`/`Height()` to measure, not `len()`.
-- **Bubbles**: Embed components in your model. Forward `Update` calls. Use `key.KeyMap` + `help.Model` for the footer hint bar.
-- **tview**: Use `app.QueueUpdateDraw` for goroutine-originated changes — never `app.Draw` directly off-thread.
-- **gocui**: Layout is your `Manager` function. Each view is an `io.Writer`. Use `gocui.ErrQuit` to exit.
-- **Cobra**: Wire up shell completions. Don't print to stdout in `PreRun` if entering alt-screen.
-
-For deeper patterns shared across Go apps, see `references/visual-patterns.md` and `references/interaction-patterns.md`.

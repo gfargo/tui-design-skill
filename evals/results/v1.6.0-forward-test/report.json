@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "artifact_type": "tui-design-forward-test-report",
+  "created_at": "2026-08-18T17:57:20Z",
+  "release_candidate": "1.6.0",
+  "method": {
+    "runner": "OpenAI Codex desktop clean-context collaboration subagents",
+    "prompt_prefix": "Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:",
+    "provider": "OpenAI Codex desktop",
+    "model": null,
+    "model_metadata_complete": false,
+    "repetitions": 1,
+    "grader": "primary Codex agent against evals/v160-structural-evals.json",
+    "limitation": "The collaboration API did not expose the exact inherited model identifier. This report is transparent forward-test evidence, not a reproducible comparative benchmark. Future benchmark claims must use scripts/eval_harness.py with an exact provider and model identifier."
+  },
+  "source": {
+    "base_commit": "5165baffd8b9a5415b0a682b2e16185181e4e6a6",
+    "branch": "codex/v1.6.0-structural",
+    "dirty_worktree": true,
+    "eval_set": "evals/v160-structural-evals.json",
+    "eval_set_sha256": "15c4b1fd03a5a9e808b60996f70a0cadf0515057e50f9be5f5b52a48d036329c",
+    "skill_sha256": "1cd74640562a8e661a98f563f9b7937439ad26664461d9260f2e319f1e076c2a"
+  },
+  "initial_pass": {
+    "passed": 12,
+    "total": 14,
+    "pass_rate": 0.8571428571428571,
+    "cases": [
+      {
+        "case_id": "0",
+        "agent_task": "/root/v160_lifecycle_check",
+        "response_file": "0-lifecycle.md",
+        "response_sha256": "cc5802989d33ba257915b4a4c5161fcf036412d53ff6bc1163d468196ab8e5f0",
+        "assertions": [true, true, true, true],
+        "passed": 4,
+        "total": 4
+      },
+      {
+        "case_id": "1",
+        "agent_task": "/root/v160_ux_check",
+        "response_file": "1-ux-review.md",
+        "response_sha256": "dec46ca93a22fa43fe749314966b1d09f846ce505e4299cd3a6dc2bc998dc85f",
+        "assertions": [true, true, true, true, true],
+        "passed": 5,
+        "total": 5
+      },
+      {
+        "case_id": "2",
+        "agent_task": "/root/v160_build_check",
+        "response_file": "2-build-initial.md",
+        "response_sha256": "2b4e736870b18447f6feea1007d26b539f61162fe1cbeb40b720831425a29140",
+        "assertions": [true, true, false, false, true],
+        "passed": 3,
+        "total": 5,
+        "notes": "The answer chose inline mode and preserved the output contract but did not name the current View.AltScreen field or explicitly route asynchronous Git work through a Bubble Tea command."
+      }
+    ]
+  },
+  "refinement": {
+    "change": "The core now requires loading a named framework's ecosystem reference before API, lifecycle, implementation, or testing claims.",
+    "case_id": "2",
+    "agent_task": "/root/v160_build_recheck",
+    "response_file": "2-build-recheck.md",
+    "response_sha256": "59090dfa7948ba844243dd2ac170d709825a01169cfbb784417905c506625066",
+    "assertions": [true, true, true, true, true],
+    "passed": 5,
+    "total": 5
+  },
+  "final_candidate": {
+    "passed": 14,
+    "total": 14,
+    "pass_rate": 1.0,
+    "case_results": {
+      "0": "initial_pass",
+      "1": "initial_pass",
+      "2": "refinement"
+    }
+  }
+}

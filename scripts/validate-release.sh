@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Validate release metadata, skill structure, eval JSON, and deterministic output.
+# Validate release metadata, skill structure, eval tooling, and deterministic output.
 # Usage: ./scripts/validate-release.sh [expected-tag]
 set -euo pipefail
 
@@ -25,6 +25,7 @@ root = Path(sys.argv[1])
 expected_tag = sys.argv[2]
 skill_dir = root / "plugins/tui-design/skills/tui-design"
 skill_file = skill_dir / "SKILL.md"
+agent_file = skill_dir / "agents/openai.yaml"
 
 plugin = json.loads((root / "plugins/tui-design/.claude-plugin/plugin.json").read_text())
 marketplace = json.loads((root / ".claude-plugin/marketplace.json").read_text())
@@ -61,6 +62,24 @@ if frontmatter_keys != ["name", "description"]:
     raise SystemExit(f"SKILL.md frontmatter keys must be name, description; got {frontmatter_keys}")
 if not re.search(r"^name:\s+tui-design$", match.group(1), flags=re.MULTILINE):
     raise SystemExit("SKILL.md frontmatter name must match its directory")
+if len(text.splitlines()) > 200:
+    raise SystemExit(f"SKILL.md exceeds the 200-line core budget: {len(text.splitlines())}")
+
+if not agent_file.is_file():
+    raise SystemExit("skill is missing agents/openai.yaml")
+agent_text = agent_file.read_text()
+agent_fields = re.findall(r'^  ([a-z_]+): "((?:[^"\\]|\\.)*)"$', agent_text, flags=re.MULTILINE)
+if not agent_text.startswith("interface:\n") or [key for key, _ in agent_fields] != [
+    "display_name",
+    "short_description",
+    "default_prompt",
+]:
+    raise SystemExit("agents/openai.yaml must contain only the generated interface fields")
+agent_values = {key: json.loads(f'"{value}"') for key, value in agent_fields}
+if not 25 <= len(agent_values["short_description"]) <= 64:
+    raise SystemExit("agents/openai.yaml short_description must be 25-64 characters")
+if "$tui-design" not in agent_values["default_prompt"]:
+    raise SystemExit("agents/openai.yaml default_prompt must explicitly invoke $tui-design")
 
 for relative in sorted(set(re.findall(r"`(references/[^`]+\.md)`", text))):
     if any(marker in relative for marker in "*?["):
@@ -79,6 +98,23 @@ for path in markdown_files:
         has_navigation = "**Contents:**" in body[:2500] or "## How to use this file" in body[:2500]
         if not has_navigation:
             raise SystemExit(f"long reference lacks an early contents/index section: {path.relative_to(root)}")
+
+# Exact long paragraphs should have one owner. This is deliberately limited to
+# long prose outside code fences so shared labels and short contracts stay legal.
+paragraph_owners = {}
+for path in markdown_files:
+    without_code = re.sub(r"```.*?```", "", path.read_text(), flags=re.DOTALL)
+    for paragraph in re.split(r"\n\s*\n", without_code):
+        normalized = re.sub(r"\s+", " ", paragraph).strip().lower()
+        if len(normalized) < 160:
+            continue
+        previous = paragraph_owners.get(normalized)
+        if previous is not None and previous != path:
+            raise SystemExit(
+                "duplicated long paragraph across skill files: "
+                f"{previous.relative_to(root)} and {path.relative_to(root)}"
+            )
+        paragraph_owners[normalized] = path
 
 for path in sorted((root / "evals").glob("*.json")):
     data = json.loads(path.read_text())
@@ -113,6 +149,8 @@ if any(path.name == ".DS_Store" for path in skill_dir.rglob(".DS_Store")):
 print(f"Validated skill metadata and content for {version}")
 PY
 
+python3 -m unittest discover -s "$repo_root/tests" -v
+
 build_a="$(mktemp -d "${TMPDIR:-/tmp}/tui-design-validate-a.XXXXXX")"
 build_b="$(mktemp -d "${TMPDIR:-/tmp}/tui-design-validate-b.XXXXXX")"
 cleanup() {
@@ -136,6 +174,7 @@ while IFS= read -r entry; do
   esac
 done <<< "$archive_entries"
 grep -Fxq 'tui-design/SKILL.md' <<< "$archive_entries"
+grep -Fxq 'tui-design/agents/openai.yaml' <<< "$archive_entries"
 grep -Eq '^tui-design/references/[^/]+\.md$' <<< "$archive_entries"
 
 echo "Validated deterministic package output"

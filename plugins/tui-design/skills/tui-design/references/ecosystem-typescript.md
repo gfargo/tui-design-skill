@@ -17,7 +17,6 @@ The Node.js ecosystem splits along two axes:
 - [Notable JS/TS TUI apps](#notable-js-ts-tui-apps-to-study)
 - [Pitfalls common to JS/TS](#pitfalls-common-to-js-ts-terminal-apps)
 - [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
-- [Idioms summary](#idioms-summary)
 
 ## Quick recommendation
 
@@ -421,14 +420,3 @@ oclif + ink + chalk + listr2
 ```
 
 ---
-
-## Idioms summary
-
-- **Ink**: Strings only inside `<Text>`. Use Yoga flexbox properties on `<Box>`. Use ink-ui components rather than reinventing. Use `<Static>` for log streams. Use `useDeferredValue` for streaming text. Test render output with ink-testing-library (`lastFrame()` assertions); for input-driven tests on Ink 6/7, wrap Ink's own `render` in a vitest harness and use node-pty for real keyboard flows.
-- **Clack**: Always `isCancel`-check every prompt. Use `intro`/`outro` to frame the flow. Use `spinner` for async work, `taskLog` for streaming output.
-- **Inquirer**: Use modular `@inquirer/*` imports, not the legacy monolithic `inquirer` package.
-- **picocolors** for tooling, **chalk** for user CLIs.
-- **commander** unless you have a reason to use something else.
-- For SSH-served Node apps, use **ssh2** + a custom shell handler — Ink doesn't have a direct equivalent to Charm's Wish, but the pattern works.
-
-For deeper patterns shared across apps, see `references/visual-patterns.md` and `references/interaction-patterns.md`.

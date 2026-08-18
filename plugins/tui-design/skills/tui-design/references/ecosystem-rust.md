@@ -16,7 +16,6 @@ Ratatui dominates Rust TUI development — thousands of crates build on it. Fork
 - [Pitfalls](#pitfalls)
 - [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
 - [CLI design in Rust](#cli-design-in-rust)
-- [Idioms summary](#idioms-summary)
 
 ## Quick recommendation
 
@@ -408,17 +407,3 @@ For non-TUI CLIs:
 Pair with the principles in `references/cli-basics.md` for argument design, exit codes, and stream handling.
 
 ---
-
-## Idioms summary
-
-- Prefer `ratatui::run()`/`init()` for managed restoration. Install `color_eyre` first so Ratatui can wrap its reporting hook.
-- If you manually construct the terminal, add your own restoration hook and normal-exit cleanup instead.
-- Filter `KeyEventKind::Press` to avoid double-firing on Windows.
-- For async apps, use the EventStream + tick channel + `tokio::select!` pattern.
-- Layout once per frame; reuse the `Rect`s.
-- Use `Stylize` extension trait for brevity (`.bold().yellow()`).
-- For complex apps, copy from the official template rather than starting from scratch.
-- Respect `NO_COLOR` explicitly. Color crates vary; direct `owo-colors` styling does not suppress itself unless you use its capability-aware path or your own policy.
-- Use `unicode_width` for cell-width math; don't trust `String::len()`.
-
-For deeper patterns shared across apps, see `references/visual-patterns.md` and `references/interaction-patterns.md`.

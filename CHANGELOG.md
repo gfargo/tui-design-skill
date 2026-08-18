@@ -2,6 +2,21 @@
 
 All notable changes to the `tui-design` skill are documented here. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), and the project follows semantic versioning.
 
+## [1.6.0] — 2026-08-18
+
+Structural release focused on efficient context use, single-source guidance, Codex presentation metadata, and reproducible evaluation evidence. The trigger description remains unchanged because the v1.5 trigger set showed no positive misses; this release changes what loads after activation, not when activation occurs.
+
+### Changed
+- **Slim procedural core:** `SKILL.md` is now a 139-line routing, workflow, and cross-cutting-contract layer (down from 314 lines). Detailed layouts, visual rules, interactions, framework APIs, and case studies stay in their authoritative references and load only when the task needs them.
+- **Single-source ownership:** the core now names which reference owns each topic, and the four ecosystem-local “Idioms summary” sections were removed because they repeated guidance already present in the same files. Release validation rejects exact long-paragraph duplication across the core and references and enforces a 200-line core budget.
+- **Bubble Tea safety placement:** the `RestoreTerminal` correction now lives beside the Go lifecycle example, preventing the framework-specific warning from becoming a misleading universal rule.
+
+### Added
+- **Codex metadata:** generated `agents/openai.yaml` with a concise UI description and a default prompt that explicitly invokes `$tui-design`; the validator checks its shape and the packaged archive now requires it.
+- **Reproducible eval harness:** `scripts/eval_harness.py` prepares baseline or clean-context with-skill prompts, runs any stdin/stdout model command without a shell, and records exact provider/model labels, repetitions, git state, host data, input hashes, raw outputs, timing, and exit status. Separate scoring and validation phases enforce full rubric coverage and detect artifact tampering.
+- **Harness tests:** standard-library integration tests cover prompt injection, repeated trials, scoring, manifest integrity, and tamper detection. They run inside `validate-release.sh` and CI.
+- **Structural forward tests:** added `evals/v160-structural-evals.json` and preserved the raw clean-context answers in `evals/results/v1.6.0-forward-test/`. The first pass scored 12/14; tightening named-framework routing fixed both misses, and the final candidate scored 14/14. The report explicitly records that the in-app runner did not expose its exact inherited model identifier, so this evidence is not presented as a reproducible comparative benchmark.
+
 ## [1.5.1] — 2026-08-18
 
 Correctness and release-engineering patch for the 1.5 line. This release removes unsafe or over-broad guidance found in a full review of 1.5.0, updates the assertions that guard those behaviors, and makes the published `.skill` artifact reproducible and tag-accurate.

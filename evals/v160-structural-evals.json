@@ -1,0 +1,44 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused forward-test set for the v1.6.0 structural refactor. These prompts verify that progressive disclosure preserves a framework-specific lifecycle correction, the two proactive UX review reflexes, and the output contract for a bounded picker. Assertions define the grading rubric; comparative results require a recorded harness run with provider/model metadata.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "bubble-tea-cleanup-after-slimming",
+      "prompt": "Review this Bubble Tea shutdown pattern before I ship it: `p := tea.NewProgram(model); defer p.RestoreTerminal(); _, err := p.Run(); return err`. I added the defer to make sure a panic cannot leave the terminal broken. Is this correct, and what should I use instead?",
+      "files": [],
+      "assertions": [
+        "Says the defer is incorrect and should be removed",
+        "Explains that RestoreTerminal resumes Bubble Tea terminal mode after ReleaseTerminal rather than performing final shell cleanup",
+        "Explains that Bubble Tea's normal Run lifecycle and default panic handling clean up the terminal",
+        "Does not recommend redundant custom cleanup on the managed path; any custom outer boundary is limited to bypassing or disabling framework-managed cleanup"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "kubernetes-browser-clutter-and-floor",
+      "prompt": "Review my Kubernetes resource browser layout. At 140 columns it has a double-line outer frame around the whole terminal, then three bordered panes: namespaces, resources, and YAML. Every resource row begins with a bullet and ends with a green `[READY]` plus a checkmark. The bottom two rows list 18 keyboard shortcuts. There is no responsive behavior yet because most of us use wide monitors. What would you change before release?",
+      "files": [],
+      "assertions": [
+        "Runs a concrete clutter audit: identifies the redundant outer frame or border nesting and recommends a specific cut",
+        "Counts the duplicate readiness signals and recognizes that a marker on every row marks nothing",
+        "Replaces the 18-key wall with a small contextual hint set plus discoverable full help",
+        "Raises responsive behavior unprompted and gives concrete behavior at 80x24, 60 columns, and an application-specific minimum",
+        "Requires a single-pane or drill-down fallback rather than merely shrinking three columns"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "branch-picker-output-contract",
+      "prompt": "I need a small Go tool that lets someone pick one of their recent git branches with fuzzy search, then use it in `git checkout $(branchpick)`. I want the invoking command and chosen branch to remain visible in scrollback. Should this be a full-screen Bubble Tea app? Describe the output contract, terminal mode, and the most important implementation and test choices.",
+      "files": [],
+      "assertions": [
+        "Recommends a bounded inline picker rather than a full-screen alternate-screen session because scrollback should remain visible",
+        "Places the selected branch alone on stdout and interactive UI or diagnostics on stderr or /dev/tty so command substitution remains safe",
+        "Uses current Bubble Tea v2 mechanics by leaving View.AltScreen false or unset, without recommending removed v1-only options as current API",
+        "Keeps git/subprocess work outside Update and returns results through a tea.Cmd or message",
+        "Tests state transitions and a pinned small rendered size, plus an integration check that stdout contains only the selected value and cancel/failure returns a meaningful nonzero status"
+      ]
+    }
+  ]
+}

@@ -7,6 +7,8 @@
 *.swp
 *.swo
 *~
+__pycache__/
+*.pyc
 
 # Build artifacts
 *.skill
@@ -17,3 +19,6 @@ Thumbs.db
 
 # Skill workspace (local testing)
 *-workspace/
+
+# Generated evaluation runs (commit curated artifacts under evals/results/)
+evals/runs/

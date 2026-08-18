@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Package the tui-design skill into an installable `.skill` file (a zip whose
-# root is the skill directory: tui-design/SKILL.md + tui-design/references/*).
+# root is the complete skill directory: SKILL.md, agents metadata, and references.
 # Output: dist/tui-design.skill
 #
 # Usage: ./scripts/package-skill.sh [output-dir]   (default: dist)
@@ -12,6 +12,7 @@ skill_name="tui-design"
 out_dir="${1:-$repo_root/dist}"
 
 [ -f "$skill_dir/SKILL.md" ] || { echo "error: SKILL.md not found at $skill_dir" >&2; exit 1; }
+[ -f "$skill_dir/agents/openai.yaml" ] || { echo "error: agents/openai.yaml not found at $skill_dir" >&2; exit 1; }
 [ -d "$skill_dir/references" ] || { echo "error: references not found at $skill_dir/references" >&2; exit 1; }
 
 # Resolve out_dir to an absolute path *before* the cd below, so a relative

@@ -26,6 +26,7 @@ Correctness and release-integrity patch following an adversarial review of the c
 ### Added
 - **Regression coverage:** expanded the harness/package suite from two tests to thirteen, covering traversal, sanitized-name collisions by rejection, exact trial coverage, state consistency, empty output, partial timeout output, missing runners, private argv, grader metadata, exact archives, symlinks, and unexpected package files.
 - **Correction evals:** added `evals/v161-correction-evals.json` for Python async HTTP, Ratatui fallible lifecycle handling, fzf key/screen contracts, Ink virtualization and Backspace, Cobra completion, noninteractive CLI behavior, and portable exit-code guidance.
+- **Single-snapshot forward evidence:** ran all seven correction cases against clean commit `7d68d6080ba7772febfad315e042d717b4804c37` with OpenAI Codex desktop CLI `0.147.0-alpha.6.5`, exact model `gpt-5.6-terra`, high reasoning, and one repetition. The separately graded schema-v2 run scored 25/25; raw prompts, answers, stderr traces, hashes, grades, and summary are preserved under `evals/results/v1.6.1-forward-test/`.
 
 ## [1.6.0] — 2026-08-18
 

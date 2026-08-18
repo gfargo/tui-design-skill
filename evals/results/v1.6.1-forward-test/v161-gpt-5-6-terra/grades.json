@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v161-gpt-5-6-terra",
+  "grader": {
+    "kind": "agent",
+    "name": "Primary Codex release reviewer",
+    "prompt_version": "v161-rubric-direct-v1",
+    "notes": "Each boolean was graded directly against the ordered assertions in evals/v161-correction-evals.json; no aggregate score was known while grading individual cases."
+  },
+  "trials": [
+    {
+      "trial_id": "python-async-http-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Explicitly rejects awaiting synchronous httpx.get."},
+        {"index": 1, "passed": true, "notes": "Uses AsyncClient with awaited client.get."},
+        {"index": 2, "passed": true, "notes": "Calls raise_for_status and handles HTTPError."},
+        {"index": 3, "passed": true, "notes": "Places the network request in a Textual worker."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-fallible-lifecycle-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "States both fallible helpers are operations, not transactions."},
+        {"index": 1, "passed": true, "notes": "Explains partial setup and early-stop teardown failure modes."},
+        {"index": 2, "passed": true, "notes": "Prefers ratatui::run for the managed path."},
+        {"index": 3, "passed": true, "notes": "Provides independent best-effort cleanup and PTY fault-injection tests."}
+      ]
+    },
+    {
+      "trial_id": "fzf-query-navigation-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Corrects fzf to full-screen by default and names --height."},
+        {"index": 1, "passed": true, "notes": "Keeps printable j/k in the active query."},
+        {"index": 2, "passed": true, "notes": "Uses arrows and Ctrl-J/Ctrl-K, with modal hjkl only as an explicit alternative."},
+        {"index": 3, "passed": true, "notes": "Separates /dev/tty or stderr chrome from selected stdout."}
+      ]
+    },
+    {
+      "trial_id": "ink-static-backspace-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Rejects Static for changing selectable rows."},
+        {"index": 1, "passed": true, "notes": "Limits Static to append-only logs/history."},
+        {"index": 2, "passed": true, "notes": "Recommends a terminal-height windowed slice."},
+        {"index": 3, "passed": true, "notes": "Uses key.backspace and distinguishes forward Delete."}
+      ]
+    },
+    {
+      "trial_id": "cobra-app-completion-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses shipctl completion bash."},
+        {"index": 1, "passed": true, "notes": "Uses cobra-cli add completion only for scaffolding."},
+        {"index": 2, "passed": true, "notes": "Explicitly rejects cobra-cli completion as shipctl generation."}
+      ]
+    },
+    {
+      "trial_id": "noninteractive-contract-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Says --no-input is recognizable but not universal."},
+        {"index": 1, "passed": true, "notes": "Defines flags, environment, files, and stdin as documented alternatives."},
+        {"index": 2, "passed": true, "notes": "Defines behavior from the input channel and keeps stdout result-only without making stdout the prompt precondition."}
+      ]
+    },
+    {
+      "trial_id": "portable-exit-codes-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Calls code 2 common, not a universal BSD standard."},
+        {"index": 1, "passed": true, "notes": "Identifies EX_USAGE as 64."},
+        {"index": 2, "passed": true, "notes": "Calls sysexits legacy/nonportable and recommends a documented scheme."}
+      ]
+    }
+  ]
+}

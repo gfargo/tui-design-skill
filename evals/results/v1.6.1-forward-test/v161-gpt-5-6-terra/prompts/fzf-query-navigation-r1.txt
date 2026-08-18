@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building an fzf-like picker where typing immediately filters results. Should bare j/k move the selection, and is fzf itself an inline picker by default? Define the screen and key contract.

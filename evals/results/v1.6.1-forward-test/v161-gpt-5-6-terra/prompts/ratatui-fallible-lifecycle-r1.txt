@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+I need Ratatui initialization and restoration to return errors instead of panic. Can I treat try_init and try_restore as transactional—either everything succeeds or the terminal is unchanged? Give me a safe lifecycle recommendation.

@@ -185,6 +185,8 @@ python3 scripts/eval_harness.py validate \
 
 Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. See `python3 scripts/eval_harness.py --help` and the integration tests for the artifact contract.
 
+The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
+
 ---
 
 ## Repository layout

@@ -1,0 +1,1180 @@
+2026-08-18T19:14:51.477484Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T19:14:51.478525Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T19:14:51.479581Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/gfargo/dev/gfargo/tui-design-skill
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a0164c-41ce-7200-82a3-9e95022e5fc5
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+My generated Cobra application is named shipctl. What command should users run to produce Bash completion, and what role does cobra-cli play when I wire this up?
+
+codex
+I’m using the requested `tui-design` skill to follow its guidance before answering.
+exec
+/bin/zsh -lc "sed -n '1,240p' /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/SKILL.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | Use the separate `vhs-cli-demos` skill |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Where supported, suspend only after restoring the shell-facing terminal, then re-enter modes and force a full redraw on resume. Do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve terminal-reserved behavior such as interrupt, suspend, and flow control.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "sed -n '1,260p' /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md && sed -n '1,260p' /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+# Go ecosystem — Bubble Tea, tview, gocui, Cobra
+
+The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for traditional widget-rich apps. **gocui** is a third lineage powering lazygit/lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker) or `urfave/cli`.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
+- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+- [tview](#tview-rivo-tview) · [gocui](#gocui-awesome-gocui-gocui) · [tcell](#lower-level-tcell)
+- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfave-cli)
+- [Output formatting](#output-formatting-non-tui)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Notable Go TUI apps](#notable-go-tui-apps-to-study)
+- [Cross-platform notes](#cross-platform-notes)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI with clean architecture and Charm aesthetic | **Bubble Tea + Lipgloss + Bubbles** |
+| Multi-pane vim-keybinding "lazy*"-style app | **gocui** (`awesome-gocui/gocui` or `jesseduffield/gocui`) |
+| Heavy data exploration with tables, trees, forms | **tview** (callback-style, retained-mode) |
+| One-shot fancy CLI prompts only | **Huh** (Go form library) or **gum** (shell wrapper) |
+| Markdown rendering in terminal | **Glamour** |
+| Pretty CLI output, no full-screen | **pterm** |
+| Subcommand framing for any of the above | **Cobra** or **urfave/cli** |
+| TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
+
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps, `gh`, and most new Go TUIs use.
+
+---
+
+## Bubble Tea (charmbracelet/bubbletea)
+
+The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
+
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.0.x). What changed and why it matters:
+- **New "Cursed Renderer"** — rewritten from scratch on the ncurses diffing algorithm; faster and more accurate redraws. Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
+- **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback.
+- **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish — keep them on the same major.
+
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched: `View()` now returns `tea.View` instead of `string`, key handling moves to `tea.KeyPressMsg`, and the alt-screen/mouse program options moved onto the view. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
+
+**The mental model:**
+- **Model**: a single struct holding all state.
+- **Init**: returns the initial Cmd (or `nil`).
+- **Update(msg)**: pure function returning `(newModel, Cmd)`. The only place state changes.
+- **View()**: pure function returning the entire frame as a `tea.View` — content plus frame-level declarations (alt screen, mouse mode, cursor). Bubble Tea diffs against the previous frame and emits minimal ANSI.
+- **Cmds and Msgs**: side effects live in `tea.Cmd` (a `func() tea.Msg`); messages flow back through Update.
+
+**Canonical structure:**
+
+```go
+type model struct {
+    count int
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyPressMsg:  // KeyMsg is an interface in v2; msg.Code/msg.Text replace Type/Runes
+        switch msg.String() {
+        case "q", "ctrl+c":
+            return m, tea.Quit
+        case "+", "right", "l":
+            m.count++
+        case "-", "left", "h":
+            m.count--
+        }
+    }
+    return m, nil
+}
+
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
+}
+
+func main() {
+    p := tea.NewProgram(model{})
+    if _, err := p.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
+
+**Important options:**
+- `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
+- `tea.WithColorProfile(p)` — force a specific color profile; the testing hook for golden-file output.
+
+**Async via Cmds:**
+```go
+func fetchData() tea.Msg {
+    data, err := http.Get(...)
+    if err != nil { return errMsg{err} }
+    return dataMsg{data}
+}
+
+// In Update, when you want to fetch:
+return m, fetchData
+```
+
+`tea.Cmd` is `func() tea.Msg`. The runtime calls them in goroutines and routes the returned `Msg` back through `Update`. **Never block in `Update`** — anything I/O goes in a Cmd.
+
+**`tea.Batch(cmds...)`** for parallel commands; **`tea.Sequence(cmds...)`** for ordered.
+
+**Pitfalls:**
+- `len(string)` ≠ display width. Use `lipgloss.Width()`.
+- Goroutines never call `View()` directly — send via `program.Send(msg)`.
+- CJK/emoji width in the v2 stack goes through `charmbracelet/x/ansi` (uniseg-based grapheme clustering) — trust `lipgloss.Width()`, never `len()`.
+- Don't `fmt.Println` — corrupts the screen. Use `tea.LogToFile("debug.log", "DEBUG")` (see **Debugging** below).
+- Cobra + Bubble Tea: don't write to stdout from `PreRun` (alt-screen eats it).
+
+---
+
+## Lipgloss (charmbracelet/lipgloss)
+
+CSS-in-Go declarative styling — immutable `Style` values rendered to ANSI strings. The companion to Bubble Tea, but usable standalone.
+
+**Canonical use:**
+
+```go
+var titleStyle = lipgloss.NewStyle().
+    Bold(true).
+    Foreground(lipgloss.Color("#FAFAFA")).
+    Background(lipgloss.Color("#7D56F4")).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder()).
+    BorderForeground(lipgloss.Color("63"))
+
+fmt.Println(titleStyle.Render("Hello, world"))
+```
+
+**Layout helpers:**
+- `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` — side-by-side.
+- `lipgloss.JoinVertical(lipgloss.Left, top, middle, bottom)` — stacked.
+- `lipgloss.Place(width, height, hPos, vPos, content)` — center/anchor in a box.
+- `lipgloss.Width(s)` / `lipgloss.Height(s)` — measure rendered output (handles ANSI and runewidth correctly).
+
+**No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
+
+```go
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.leftPaneWidth = msg.Width / 3
+    m.rightPaneWidth = msg.Width - m.leftPaneWidth
+```
+
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants:
+```go
+hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+lightDark := lipgloss.LightDark(hasDark)
+fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
+```
+The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
+
+**Sub-packages:**
+- `lipgloss/table` — bordered, styled tables with column alignment.
+- `lipgloss/list` — bullet/numbered/tree lists with custom enumerators.
+- `lipgloss/tree` — hierarchical trees with custom indenters.
+
+**Testing tip:** `SetColorProfile` is gone in v2. Downsampling now happens at write time — `lipgloss.Print`/`Println`/`Sprint` detect the output's profile via the `colorprofile` package. In Bubble Tea programs, force ASCII for CI/golden-file tests with `tea.WithColorProfile(colorprofile.Ascii)`.
+
+---
+
+## Bubbles (charmbracelet/bubbles)
+
+The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you embed and forward messages to.
+
+**Components shipped:**
+- **`textinput`** — single-line input with placeholder, suggestions, validation.
+- **`textarea`** — multi-line input with line numbers.
+- **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering.
+- **`table`** — virtualized table with selection, sorting.
+- **`viewport`** — scrollable region for long content.
+- **`spinner`** — Braille/Meter/MiniDot/Dot/Line/Pulse/Points/Globe/Moon spinner styles.
+- **`progress`** — gradient-filled progress bar with percent.
+- **`paginator`** — page indicators.
+- **`filepicker`** — file system browser.
+- **`help`** — auto-rendered footer hint bar from a `key.KeyMap`.
+- **`key`** — declarative key bindings.
+- **`cursor`**, **`stopwatch`**, **`timer`** — utilities.
+
+**Embedding pattern:**
+
+```go
+type model struct {
+    list list.Model
+    keys keyMap
+    help help.Model
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg)  // forward to child
+    return m, cmd
+}
+
+func (m model) View() string {
+    return m.list.View() + "\n" + m.help.View(m.keys)
+}
+```
+
+**Declarative keys with `key.Binding`:**
+
+```go
+type keyMap struct {
+    Up   key.Binding
+    Down key.Binding
+    Quit key.Binding
+}
+
+var keys = keyMap{
+    Up:   key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
+    Down: key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
+    Quit: key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+}
+
+// In Update:
+case tea.KeyMsg:
+    switch {
+    case key.Matches(msg, keys.Quit):
+        return m, tea.Quit
+    case key.Matches(msg, keys.Up):
+        // ...
+    }
+```
+
+The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free.
+
+---
+
+## Huh (charmbracelet/huh)
+
+Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — themes now take an `isDark` bool (e.g. `huh.ThemeCharm(isDark)`) instead of self-detecting.
+
+```go
+form := huh.NewForm(
+    huh.NewGroup(
+        huh.NewSelect[string]().
+            Title("Choose your country").
+            Options(huh.NewOptions("USA", "Germany", "Japan")...).
+            Value(&country),
+        huh.NewInput().
+            Title("What's your name?").
+            Value(&name).
+            Validate(func(s string) error {
+                if len(s) == 0 { return errors.New("required") }
+                return nil
+            }),
+        huh.NewConfirm().
+            Title("Submit?").
+            Value(&confirm),
+    ),
+# Simple CLI design — non-TUI command-line tools
+
+For programs that don't have a full-screen UI: read args, do work, print output, exit. This document synthesizes [clig.dev](https://clig.dev), the [12-Factor CLI](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) principles, POSIX.1-2017 utility conventions, GNU coding standards, the XDG Base Directory Specification, BSD `sysexits.h`, and the design of widely admired CLIs (`gh`, `rg`, `fd`, `bat`, `jq`, `httpie`, `kubectl`, `docker`, `starship`).
+
+The bar for a CLI to feel professional is lower than a TUI, but the principles are settled. Most "this CLI is bad" reactions trace to violating items on this checklist.
+
+**Contents:**
+- [Foundational principles](#foundational-principles)
+- [Input and arguments](#input-and-arguments)
+- [Output design](#output-design)
+- [Exit codes](#exit-codes)
+- [Error messages](#error-messages)
+- [Help and discoverability](#help-and-discoverability)
+- [Subcommands](#subcommands)
+- [Shell integration](#shell-integration)
+- [Configuration and state](#configuration-and-state)
+- [Performance and signals](#performance-and-signals)
+- [Future-proofing](#future-proofing)
+- [Shipping, updates, and telemetry](#shipping-updates-and-telemetry)
+- [Naming](#naming)
+- [Concrete exemplars to study](#concrete-exemplars-to-study)
+- [Final checklist](#final-checklist)
+
+---
+
+## Foundational principles
+
+**Human-first, machine-friendly.** Default output is readable; machine output is opt-in (`--json`, `--plain`, `-o yaml`).
+
+**Composable.** Honor stdin/stdout/stderr, exit codes, signals, and line-based text. Doug McIlroy: *"expect the output of every program to become the input to another, as yet unknown, program."*
+
+**Discoverable.** GUIs put options on screen; CLIs compensate with help text, examples, "did you mean…?" suggestions, and shell completions.
+
+**Conversational and consistent** across tools — same flag names mean the same things.
+
+**Robust and empathetic** — validate input early, fail fast, never lie about state.
+
+**Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
+
+---
+
+## Input and arguments
+
+### Argument syntax
+
+POSIX utility argument syntax:
+- Lowercase 2–9 char names.
+- Options begin with `-` and a single alphanumeric character.
+- `-abc` ≡ `-a -b -c` (combined boolean flags).
+- `-o file` or `-ofile` (optionally combined with arg).
+- `--` ends option parsing (rest are positional).
+- Bare `-` means stdin/stdout.
+
+GNU extensions (now near-universal):
+- Long options (`--verbose`, `--output=foo.txt`).
+- Every short option has a long counterpart.
+
+**Reserve single letters for the most common flags only.** `-f`/`--file`, `-o`/`--output`, `-v`/`--verbose`, `-q`/`--quiet`, `-h`/`--help`. If users will type it daily, give it a short form. If they'll type it monthly, long-only is fine. Beware `-f`: real-world tools split between `--file` (tar, make) and `--force` (rm, git push) — pick one meaning per tool and never use it for both.
+
+### Flags vs positional args
+
+Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. The clig.dev rule: *"Two or more args of different types is suspect; three is never good."*
+
+### Stdin / stdout / stderr discipline
+
+- **stdout** = primary output (the result; machine-readable when piped).
+- **stderr** = secondary channel (logs, progress, prompts, errors).
+- Support `-` for stdin/stdout where it makes sense.
+- If stdin is a TTY but your program expects piped input, **show help instead of hanging** (avoid `cat` UX).
+
+### Interactivity
+
+Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+
+**Never accept secrets via `--password=…`** — leaks via `ps`, shell history, `docker inspect`, debug logs. Use:
+- `--password-file path/to/secret`
+- `--password-stdin` (read from stdin)
+- OS keychains (macOS Keychain, libsecret, Windows Credential Manager)
+- `git-credential-*` helpers
+
+---
+
+## Output design
+
+### Tables for humans
+
+- One record per line.
+- **No ASCII borders** — they break `wc -l` and `grep` pipelines.
+- Headers by default, with `--no-headers` toggle.
+- Truncate to terminal width with `--no-truncate` toggle.
+- Allow `--columns col1,col2`, `--sort col`, `--filter`.
+- Recommend `--csv` or `--json` for machines.
+
+### JSON / NDJSON
+
+`--json` for structured output. **NDJSON** (one JSON object per line) is more pipe-friendly than a single array — downstream tools can `jq` line-by-line.
+
+`kubectl`'s `-o {wide,json,yaml,name,jsonpath=…,go-template=…,custom-columns=…}` is the gold standard projection system. Adopt it for tools with structured data.
+
+### Verbosity
+
+- `-q` / `--quiet` — suppress non-essential output (errors still print).
+- `-v` / `--verbose` — chatty mode.
+- `-vv` / `-vvv` — progressive debug levels.
+- `--debug` (or `DEBUG=1` env var) for stack traces — never appear by default.
+
+### Progress
+
+Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Show progress within ~100ms of starting work — earlier feels twitchy, later feels frozen.
+
+For multi-step work: hide noisy logs behind a progress indicator while things succeed; print them if something fails (Docker Compose pattern). This keeps the success case clean and the failure case debuggable.
+
+### Color
+
+**Disable color when:**
+- stdout/stderr is not a TTY, or
+- `NO_COLOR` env var is set ([no-color.org](https://no-color.org)), or
+- `TERM=dumb`, or
+- `--no-color` / `--color=never` is passed.
+
+**Force color** when `FORCE_COLOR=1` is set or `--color=always` is passed.
+
+Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Document any different policy.
+
+Use color sparingly: red for errors, dim for secondary text, bold for headings, cyan/blue for paths. **Never color-only** signaling — pair with a word or symbol.
+
+### Unicode and emoji
+
+Glyphs like ✅, ❌, ⚠ clarify state — yubikey-agent and starship use them well. But:
+- Detect locale and `TERM`; fall back to ASCII (`[ok]`, `[!]`, `[X]`) when piped or unsupported.
+- Never use emoji as the only signal — pair with words.
+- Newer Windows Terminal and macOS/Linux terminals handle emoji fine; older terminals don't.
+
+### Paging
+
+Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard flags: `LESS=FIRX` (or `less -FIRX`):
+- `F` — exit immediately if content fits one screen.
+- `I` — case-insensitive search.
+- `R` — pass through ANSI color codes.
+- `X` — don't clear the screen on exit (leaves content in scrollback).
+
+`bat`, `git`, `gh` all do this. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
+
+---
+
+## Exit codes
+
+### Universal conventions
+
+| Code | Meaning |
+|---|---|
+| 0 | Success |
+| 1 | General failure |
+| 2 | Common usage/parse error in many tools; not a universal standard |
+
+### Shell-defined
+
+| Code | Meaning |
+|---|---|
+| 126 | Found but not executable |
+| 127 | Command not found |
+| 128 + N | Terminated by signal N (130 = SIGINT/Ctrl-C, 143 = SIGTERM, 137 = SIGKILL) |
+
+### BSD `sysexits.h` (legacy, nonportable richer signaling)
+
+| Code | Constant | Meaning |
+|---|---|---|
+| 64 | EX_USAGE | Bad command-line usage |
+| 65 | EX_DATAERR | Bad input data |
+| 66 | EX_NOINPUT | Cannot open input file |
+| 69 | EX_UNAVAILABLE | Service unavailable |
+| 70 | EX_SOFTWARE | Internal software error |
+| 73 | EX_CANTCREAT | Cannot create output |
+| 74 | EX_IOERR | I/O error |
+| 75 | EX_TEMPFAIL | Temporary failure (retryable) |
+| 77 | EX_NOPERM | Permission denied |
+| 78 | EX_CONFIG | Configuration error |
+
+Tool-specific overloads are common: `grep`/`rg` use `0` = match found, `1` = no match, `2` = error. Document your scheme in `--help`.
+
+Treat `sysexits.h` as a legacy compatibility vocabulary, not a cross-platform recommendation. Many modern tools use a smaller documented scheme instead.
+
+---
+
+## Error messages
+
+The 12-Factor anatomy:
+
+1. **State what was attempted.**
+2. **State what failed and why.**
+3. **Suggest how to fix it** — give a command if possible.
+4. **Link to docs.**
+
+Example:
+
+```
+$ myapp dump -o myfile.out
+Error: EPERM — invalid permissions on myfile.out
+Cannot write to myfile.out; the file is read-only.
+Fix with: chmod +w myfile.out
+See: https://github.com/jdxcode/myapp#permissions
+```
+
+**Catch expected errors and rewrite** — never expose raw stack traces by default. Stack traces only on `--debug` or `DEBUG=1`.
+
+**Put the most important info last.** The eye lands at the bottom of the output. The fix command should be the last line.
+
+**Group repeated errors.** If 100 files fail to parse, summarize: "100 files failed to parse — first three: …; pass `--show-all-errors` to list all."
+
+**"Did you mean…?"** suggestions on typos. Brew, Heroku, Cargo, Git, npm all do this. Suggest, don't auto-execute.
+
+---
+
+## Help and discoverability
+
+### What must show help
+
+All of these must show help:
+- `mycli` (no args, when there's no sensible default action)
+- `mycli -h`
+- `mycli --help`
+- `mycli help`
+- `mycli sub -h`, `mycli help sub`
+
+`-h` / `--help` is reserved. Don't use it for anything else.
+
+### Concise help by default
+
+When run with no args (and no sensible default action), show:
+- One-sentence description.
+- 1–2 examples.
+- Top-level flags / subcommands list.
+- "Run `mycli --help` for more."
+
+`jq`'s no-arg behavior is canonical.
+
+### Full help (`--help`)
+
+- **Synopsis** with POSIX notation: `mycli [-v] [--output FILE] FILE...`.
+- **Description** — 1–3 paragraphs.
+- **Flags grouped by purpose.** `gh` and Heroku group: General, Output, Filtering, Auth. This scales much better than one alphabetical list.
+- **Examples at the end**, building from simple to complex. Examples are the most-read part of help text.
+- Link to docs, man page, or `mycli help <topic>`.
+
+### Man pages
+
+Power users love them. Generate from Markdown via `ronn` or `pandoc`. Route `git help foo` and `npm help foo` to the corresponding man page.
+
+### Versioning
+
+Support `--version`, `-V`, and `version` subcommand. Output:
+- Semver version.
+- Git commit (short SHA).
+- Build date.
+- Runtime info (Go/Node/Python version).
+
+These end up in bug reports — make them easy to copy. If your tool talks to a server, send the version in the `User-Agent` header.
+
+### Shell completions
+
+
+exec
+/bin/zsh -lc "rg -n -A 110 -B 4 'Shell completions|completion' /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-374-```
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-375-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-376-**Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. Don't write to stdout from `PreRun` if you'll enter alt-screen (output gets eaten). For commands that take pipe input, check `isatty.IsTerminal(os.Stdin.Fd())` before launching the TUI; if piped, run in non-interactive mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-377-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md:378:Cobra supports generated shell completions. Add a `completion` command to the application (or scaffold one with `cobra-cli add completion`), then users generate a script with `myapp completion bash|zsh|fish|powershell`; `cobra-cli completion ...` completes the generator itself, not the generated application.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-379-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-380-**Fang** (`charmbracelet/fang`) — the CLI starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation. The idiomatic Cobra companion in a Charm-stack app.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-381-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-382-**urfave/cli** (`urfave/cli/v2`) — alternative subcommand framework, simpler API, less popular but used by syncthing and others.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-383-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-384-For one-shot `flag` parsing only, the stdlib `flag` package is fine.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-385-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-386----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-387-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-388-## Output formatting (non-TUI)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-389-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-390-When the user wants pretty CLI output (no full-screen UI):
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-391-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-392-- **lipgloss** — yes, you can use it standalone for `fmt.Println(style.Render(...))`. This is what most Charm CLI tools do.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-393-- **pterm** — color, tables, spinners, progress bars, charts, prompts. All-in-one. Less elegant API than Lipgloss but has more built-in.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-394-- **fatih/color** — simple ANSI color wrapper. Used by countless tools. `color.Red("hello")`, `color.New(color.FgYellow, color.Bold).Println(...)`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-395-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-396----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-397-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-398-## Testing
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-399-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-400-**Test in layers, bottom-heavy.** Even Charm's flagship v2 app (crush, 163 test files) uses zero teatest — it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base of the pyramid; the harness is the thin top.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-401-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-402-**Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-403-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-404-```go
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-405-func TestQuitKey(t *testing.T) {
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-406-    m := newModel()
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-407-    updated, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"}) // v2 rune key
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-408-    m = updated.(model)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-409-    if cmd == nil { t.Fatal("expected quit cmd") }
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-410-}
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-411-```
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-412-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-413-v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials are `tea.KeyPressMsg{Code: tea.KeyEnter}`, modifiers use `Mod: tea.ModCtrl`. To test a returned Cmd, just call it — `tea.Cmd` is `func() Msg` — and assert on the message (`tea.QuitMsg` for quit; `tea.BatchMsg` is an exported `[]Cmd` you can unpack and run).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-414-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-415-**Layer 2 — teatest** runs the real program against in-memory buffers (no PTY, works in bare CI containers). For Bubble Tea v2 import `github.com/charmbracelet/x/exp/teatest/v2` — teatest did **not** move to charm.land; plain `x/exp/teatest` is the v1 line. Both are pseudo-versioned experiments, but teatest/v2 is what maintainers point to as the official harness.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-416-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-417-```go
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-418-tm := teatest.NewTestModel(t, newModel(),
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-419-    teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-420-    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)), // v2 only
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-421-)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-422-teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-423-    return bytes.Contains(b, []byte("ready"))
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-424-}, teatest.WithDuration(5*time.Second)) // defaults (1s timeout, 50ms poll) are tight for CI
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-425-tm.Type("hello")                        // v2: emits one KeyPressMsg per rune
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-426-tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-427-tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-428-out, _ := io.ReadAll(tm.FinalOutput(t))
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-429-teatest.RequireEqualOutput(t, out) // golden file: testdata/<TestName>.golden
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-430-```
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-431-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-432-Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` block forever without it. Goldens are stored escaped (diffable text) and refreshed with `go test ./... -update`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-433-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-434-**Determinism in CI:** the #1 golden-file flake is color-profile detection — v2 wraps output in a `colorprofile.Writer`, and the emitted escapes vary with `TERM`/`COLORTERM`/`NO_COLOR`. Pin the profile (`tea.WithColorProfile(colorprofile.Ascii)` — v2-only; on v1 use `lipgloss.SetColorProfile(termenv.Ascii)`) and the term size, or goldens will flap. Bubble Tea's own teatest example is currently skipped over exactly this.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-435-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-436-**E2E:** PTY/expect practice is thin in Go — teatest deliberately avoids PTYs. For real-terminal visual regression, VHS golden output (`Output golden.ascii` in a tape) is the blessed heavyweight option; needs `ttyd` + `ffmpeg`, with `charmbracelet/vhs-action` for CI.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-437-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-438----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-439-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-440-## Debugging
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-441-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-442-**stdout is off-limits while the program runs** — Bubble Tea holds the terminal in raw mode on the alternate screen, so `fmt.Println` output gets swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-443-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-444-```go
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-445-if len(os.Getenv("DEBUG")) > 0 {
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-446-    f, _ := tea.LogToFile("debug.log", "debug")
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-447-    defer f.Close()
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-448-}
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-449-```
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-450-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-451-Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; v2 adds `tea.LogToFileWith` for a custom logger.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-452-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-453-**Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless — `dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`, then `dlv connect 127.0.0.1:43000` from a second terminal.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-454-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-455-**Profiling a sluggish TUI:** Bubble Tea's README documents no profiling recipe of its own, so this is standard Go tooling — but the shape that actually works for a TUI is `net/http/pprof` on a loopback port, not file-based `pprof.StartCPUProfile`. A background goroutine serving on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there's no SIGINT/flush ceremony to get right. This is what Charm's own `crush` does, gated behind an env var:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-456-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-457-```go
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-458-import (
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-459-    "net/http"
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-460-    _ "net/http/pprof"
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-461-)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-462-if os.Getenv("MYAPP_PROFILE") != "" {
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-463-    go func() { http.ListenAndServe("localhost:6060", nil) }()
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-464-}
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-465-```
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-466-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-467-Then from a second terminal: `go tool pprof -http=:8080 http://localhost:6060/debug/pprof/profile`. Common cost sink to look for: work smuggled into `View()` that should be cached (recomputed `lipgloss.Width()` calls, string rebuilds) or an unbatched Bubbles `list`/`table` render — [bubbles#810](https://github.com/charmbracelet/bubbles/issues/810) is a real case of exactly this (per-frame string concatenation instead of `strings.Builder`), diagnosed with this same `net/http/pprof` technique.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-468-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-469----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-470-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-471-## Notable Go TUI apps to study
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-472-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-473-- **lazygit** (gocui) — multi-pane git TUI; the canonical "lazy*" aesthetic.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-474-- **lazydocker** (gocui) — same paradigm for Docker.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-475-- **k9s** (tview) — Kubernetes TUI; command-mode navigation, drill-down stack.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-476-- **gh** (Cobra + Lipgloss) — GitHub CLI; not a full TUI, but excellent CLI design.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-477-- **Crush** (Bubble Tea v2) — Charm's AI coding agent; the flagship production v2 app.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-478-- **glow** (Bubble Tea) — markdown reader.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-479-- **soft serve** (Wish + Bubble Tea) — SSH-served git UI.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-480-- **circumflex** — Hacker News reader (Bubble Tea).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-481-- **gh dash** (Bubble Tea) — GitHub dashboard.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-482-- **superfile** (Bubble Tea) — file manager.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-483-- **wishlist** (Wish) — SSH directory.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-484-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-485-When the user is building something similar to one of these, point them at it as a reference. The repos are open and idiomatic.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-486-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-487----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/ecosystem-go.md-488-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-28-**Human-first, machine-friendly.** Default output is readable; machine output is opt-in (`--json`, `--plain`, `-o yaml`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-29-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-30-**Composable.** Honor stdin/stdout/stderr, exit codes, signals, and line-based text. Doug McIlroy: *"expect the output of every program to become the input to another, as yet unknown, program."*
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-31-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md:32:**Discoverable.** GUIs put options on screen; CLIs compensate with help text, examples, "did you mean…?" suggestions, and shell completions.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-33-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-34-**Conversational and consistent** across tools — same flag names mean the same things.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-35-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-36-**Robust and empathetic** — validate input early, fail fast, never lie about state.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-37-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-38-**Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-39-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-40----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-41-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-42-## Input and arguments
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-43-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-44-### Argument syntax
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-45-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-46-POSIX utility argument syntax:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-47-- Lowercase 2–9 char names.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-48-- Options begin with `-` and a single alphanumeric character.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-49-- `-abc` ≡ `-a -b -c` (combined boolean flags).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-50-- `-o file` or `-ofile` (optionally combined with arg).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-51-- `--` ends option parsing (rest are positional).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-52-- Bare `-` means stdin/stdout.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-53-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-54-GNU extensions (now near-universal):
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-55-- Long options (`--verbose`, `--output=foo.txt`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-56-- Every short option has a long counterpart.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-57-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-58-**Reserve single letters for the most common flags only.** `-f`/`--file`, `-o`/`--output`, `-v`/`--verbose`, `-q`/`--quiet`, `-h`/`--help`. If users will type it daily, give it a short form. If they'll type it monthly, long-only is fine. Beware `-f`: real-world tools split between `--file` (tar, make) and `--force` (rm, git push) — pick one meaning per tool and never use it for both.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-59-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-60-### Flags vs positional args
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-61-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-62-Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. The clig.dev rule: *"Two or more args of different types is suspect; three is never good."*
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-63-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-64-### Stdin / stdout / stderr discipline
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-65-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-66-- **stdout** = primary output (the result; machine-readable when piped).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-67-- **stderr** = secondary channel (logs, progress, prompts, errors).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-68-- Support `-` for stdin/stdout where it makes sense.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-69-- If stdin is a TTY but your program expects piped input, **show help instead of hanging** (avoid `cat` UX).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-70-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-71-### Interactivity
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-72-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-73-Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-74-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-75-**Never accept secrets via `--password=…`** — leaks via `ps`, shell history, `docker inspect`, debug logs. Use:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-76-- `--password-file path/to/secret`
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-77-- `--password-stdin` (read from stdin)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-78-- OS keychains (macOS Keychain, libsecret, Windows Credential Manager)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-79-- `git-credential-*` helpers
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-80-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-81----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-82-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-83-## Output design
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-84-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-85-### Tables for humans
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-86-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-87-- One record per line.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-88-- **No ASCII borders** — they break `wc -l` and `grep` pipelines.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-89-- Headers by default, with `--no-headers` toggle.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-90-- Truncate to terminal width with `--no-truncate` toggle.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-91-- Allow `--columns col1,col2`, `--sort col`, `--filter`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-92-- Recommend `--csv` or `--json` for machines.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-93-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-94-### JSON / NDJSON
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-95-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-96-`--json` for structured output. **NDJSON** (one JSON object per line) is more pipe-friendly than a single array — downstream tools can `jq` line-by-line.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-97-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-98-`kubectl`'s `-o {wide,json,yaml,name,jsonpath=…,go-template=…,custom-columns=…}` is the gold standard projection system. Adopt it for tools with structured data.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-99-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-100-### Verbosity
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-101-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-102-- `-q` / `--quiet` — suppress non-essential output (errors still print).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-103-- `-v` / `--verbose` — chatty mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-104-- `-vv` / `-vvv` — progressive debug levels.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-105-- `--debug` (or `DEBUG=1` env var) for stack traces — never appear by default.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-106-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-107-### Progress
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-108-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-109-Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Show progress within ~100ms of starting work — earlier feels twitchy, later feels frozen.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-110-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-111-For multi-step work: hide noisy logs behind a progress indicator while things succeed; print them if something fails (Docker Compose pattern). This keeps the success case clean and the failure case debuggable.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-112-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-113-### Color
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-114-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-115-**Disable color when:**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-116-- stdout/stderr is not a TTY, or
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-117-- `NO_COLOR` env var is set ([no-color.org](https://no-color.org)), or
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-118-- `TERM=dumb`, or
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-119-- `--no-color` / `--color=never` is passed.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-120-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-121-**Force color** when `FORCE_COLOR=1` is set or `--color=always` is passed.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-122-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-123-Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Document any different policy.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-124-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-125-Use color sparingly: red for errors, dim for secondary text, bold for headings, cyan/blue for paths. **Never color-only** signaling — pair with a word or symbol.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-126-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-127-### Unicode and emoji
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-128-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-129-Glyphs like ✅, ❌, ⚠ clarify state — yubikey-agent and starship use them well. But:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-130-- Detect locale and `TERM`; fall back to ASCII (`[ok]`, `[!]`, `[X]`) when piped or unsupported.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-131-- Never use emoji as the only signal — pair with words.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-132-- Newer Windows Terminal and macOS/Linux terminals handle emoji fine; older terminals don't.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-133-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-134-### Paging
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-135-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-136-Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard flags: `LESS=FIRX` (or `less -FIRX`):
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-137-- `F` — exit immediately if content fits one screen.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-138-- `I` — case-insensitive search.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-139-- `R` — pass through ANSI color codes.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-140-- `X` — don't clear the screen on exit (leaves content in scrollback).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-141-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-142-`bat`, `git`, `gh` all do this. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-255-- Runtime info (Go/Node/Python version).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-256-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-257-These end up in bug reports — make them easy to copy. If your tool talks to a server, send the version in the `User-Agent` header.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-258-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md:259:### Shell completions
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-260-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-261-Generate for bash, zsh, fish, pwsh. Most modern frameworks (Cobra, Click/Typer, clap, commander, yargs, oclif, picocli) emit them automatically. Wire them up.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-262-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-263-Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-264-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-265----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-266-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-267-## Subcommands
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-268-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-269-Two patterns:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-270-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-271-1. **Single-command** — `grep`, `cp`, `rg`. Simple tools.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-272-2. **Multi-command** — `git foo`, `gh foo`, `docker foo`. Tools with many objects.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-273-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-274-For multi-command, **clig.dev recommends noun-verb**:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-275-- `docker container create` (noun-verb), not `docker create container`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-276-- `gh pr list`, `gh issue close`, `gh repo clone`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-277-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-278-Noun-verb scales: adding `pr review` doesn't conflict with `issue review`. Verb-first runs out of namespace.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-279-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-280-**Same flag = same meaning across subcommands.** `-o` should always mean output file (or always output format), never both.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-281-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-282-**No catch-all default subcommand.** Don't make `mycli foo` silently mean `mycli run foo` — it's a footgun when you add a future `foo` subcommand.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-283-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-284-**No prefix-matching.** `mycli ins` → `install` becomes a breaking change when you add a future `instance` command. Define explicit aliases instead.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-285-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-286-**Avoid near-synonyms.** `update` vs `upgrade` confuses users. Pick one.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-287-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-288----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-289-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-290-## Shell integration
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-291-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-292-A child process cannot change its parent shell's working directory or environment variables — only the shell itself can do that. There's no IPC trick around this; two patterns cover everything real tools need.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-293-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-294-### cd-on-exit: the cwd-file wrapper function
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-295-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-296-If your tool navigates directories and should `cd` the user's shell on exit (a file picker, a directory jumper), ship a flag that writes the final directory to a caller-specified file, and document a shell wrapper function that reads it and `cd`s after your program exits. yazi and ranger converge on the identical shape:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-297-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-298-```bash
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-299-function y() {
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-300-    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-301-    command yazi "$@" --cwd-file="$tmp"
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-302-    IFS= read -r -d '' cwd < "$tmp"
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-303-    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-304-    command rm -f -- "$tmp"
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-305-}
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-306-```
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-307-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-308-ranger's `--choosedir` does the same thing under a different flag name. This is the pattern, not an implementation detail — there's no other way to get a "cd on exit" TUI.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-309-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-310-### The `eval "$(tool init shell)"` pattern
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-311-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md:312:For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits only a `precmd` prompt-regeneration hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits a keybinding (Ctrl-R by default) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-313-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-314-### Never silently edit rc files
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-315-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-316-Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-317-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-318----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-319-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-320-## Configuration and state
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-321-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-322-### Precedence (highest wins)
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-323-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-324-1. Command-line flags.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-325-2. Environment variables.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-326-3. Project-local config (`./mytool.toml`, `./.mytoolrc`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-327-4. User config (`$XDG_CONFIG_HOME/mytool/`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-328-5. System config (`/etc/mytool/`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-329-6. Built-in defaults.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-330-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-331-This is what `git`, `docker`, `kubectl` all use. Predictable.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-332-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-333-### XDG Base Directory Specification
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-334-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-335-| Variable | Default | Purpose |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-336-|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-337-| `XDG_CONFIG_HOME` | `~/.config` | User config |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-338-| `XDG_DATA_HOME` | `~/.local/share` | Persistent user data |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-339-| `XDG_STATE_HOME` | `~/.local/state` | Logs, history, ephemeral state |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-340-| `XDG_CACHE_HOME` | `~/.cache` | Regenerable cache |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-341-| `XDG_RUNTIME_DIR` | (no default) | Sockets, pipes, mode 0700 |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-342-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-343-**Use `~/.config/mytool/`, not `~/.mytool/`.** Older "dotfile in $HOME" pollution is being phased out — adopt XDG for new tools.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-344-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-345-On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On macOS, prefer XDG (`~/.config/mytool/`) for developer CLIs — it keeps dotfiles portable across machines; reserve `~/Library/Application Support/` for GUI-style apps.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-346-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-347-### Environment variables
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-348-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-349-- Prefix `TOOL_FOO_BAR` (uppercase, underscores).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-350-- Single-line values only.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-351-- Honor general-purpose vars:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-352-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-353-| Variable | Purpose |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-354-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-355-| `NO_COLOR` | Disable color |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-356-| `FORCE_COLOR` | Force color |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-357-| `DEBUG` | Enable debug output |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-358-| `EDITOR` / `VISUAL` | Preferred text editor |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-359-| `PAGER` | Preferred pager |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-360-| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Proxy settings |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-361-| `TMPDIR` | Temp directory |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-362-| `HOME` | User home |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-363-| `SHELL` | Login shell |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-364-| `TERM` | Terminal type |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-365-| `LINES` / `COLUMNS` | Terminal size |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-366-| `LANG` / `LC_*` | Locale |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-367-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-368-### Secrets — what NOT to do
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-369-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-370-Never accept secrets via `--password=`, `--token=`, etc. on the command line. They leak through:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-371-- `ps` output.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-372-- Shell history files.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-373-- `docker inspect`, `systemctl show`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-374-- Crash dumps and debug logs.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-375-- Process accounting.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-376-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-377-**Use instead:**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-378-- Credential files with restrictive permissions.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-379-- Stdin (`--password-stdin`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-380-- AF_UNIX sockets.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-381-- OS keychains (gh uses macOS Keychain / libsecret / Windows Credential Manager).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-382-- `git-credential-*`-style helper protocols.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-383-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-384-### First-run authentication
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-385-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-386-Two patterns dominate, and both are legitimate:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-387-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-388-1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or print a URL + code with `--no-browser`), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-389-2. **Direct prompt for long-lived credentials**, written to a plaintext config file. Older but still standard for cloud-infra CLIs with long-lived access-key-style credentials (`aws configure`) — though even AWS is moving federated auth toward device-flow (`aws configure sso`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-390-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-391-**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-392-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-393-**Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-394-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-395-**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): absent a restrictive umask, `~/.aws/credentials` was written world-readable. `chmod 600` the file yourself at creation time.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-396-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-397----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-398-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-399-## Performance and signals
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-400-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-401-### Startup time
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-402-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-403-- **<100ms** — feels instant. `starship` is obsessive about this; it has to be (runs on every prompt).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-404-- **100–500ms** — fast.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-405-- **500ms–2s** — annoying.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-406-- **2s+** — users avoid the tool.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-407-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-408-Tactics:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-409-- Lazy-load subcommand modules (oclif's architecture).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-410-- Skip auto-update checks except occasionally (e.g., once a day on a background goroutine).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-411-- Cache parsed config.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-412-- Prefer compiled languages (Go, Rust) over Python/Node for shell-prompt-tier performance.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-413-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-414-### Streaming
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-415-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-416-Stream line-by-line where possible (`grep`, `jq`, `rg`). Don't read whole input before outputting. Flush stdout on newlines so piped consumers see data immediately.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-417-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-418-### Signals
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-419-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-420-| Signal | Convention |
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-421-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-422-| **SIGINT** (Ctrl-C, exit 130) | Acknowledge immediately, bound cleanup with timeout, exit. **Second Ctrl-C should force-exit.** |
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-487-- **fd** — regex by default, colorized, gitignore-aware; `-x cmd {}` simpler than `find -exec`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-488-- **bat** — TTY-aware (colorizes/pages on terminal, plain `cat` when piped); `--plain`/`-p`; honors `$BAT_PAGER`/`$PAGER`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-489-- **jq** — tiny startup; `-r` raw output, `-c` compact NDJSON, `-s` slurp; help-on-empty-invocation.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-490-- **httpie / xh** — human-friendly HTTP; pretty on TTY, raw on pipe; xh exists specifically to fix httpie's startup latency.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md:491:- **kubectl** — rich `-o` (`json`, `yaml`, `wide`, `name`, `jsonpath`, `go-template`, `custom-columns`); tab completion from API; `--dry-run=client|server`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-492-- **docker** — multi-level subcommands; parallel per-layer progress bars during pulls; backward-compat aliases (`docker ps` ≡ `docker container ls`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-493-- **delta** — side-by-side diff via git's `core.pager`; demonstrates plug-in via stdin.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-494-- **eza** (formerly exa) — defaults closer to `ls -lh --color`; git status integration; `--tree`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-495-- **starship** — cross-shell prompt; sub-100ms hard requirement; single TOML config.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-496-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-497----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-498-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-499-## Final checklist
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-500-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-501-A good CLI:
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-502-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-503-**Exit & streams**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-504-- Returns 0 on success, non-zero on failure.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-505-- Sends primary output to stdout, messages and errors to stderr.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-506-- Reads `-` as stdin; honors `--`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-507-- Exits cleanly on SIGPIPE (no stack trace).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-508-- First Ctrl-C graceful, second force.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-509-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-510-**Help & versioning**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-511-- Shows help on no-arg / `-h` / `--help` / `help` (subcommand or global).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-512-- Help has synopsis, grouped flags, and examples at the end.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md:513:- Ships shell completions and `--version` with semver + commit.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-514-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-515-**Flags**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-516-- Every short flag has a long form.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-517-- Uses standard names (`--quiet`, `--verbose`, `--output`, `--force`, `--dry-run`, `--json`, `--no-color`).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-518-- Prefers flags to args when ambiguous.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-519-- Distinct exit codes for distinct failure classes.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-520-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-521-**Output**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-522-- Human-friendly by default; `--json` / `--plain` for scripts.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-523-- Tables have no borders and toggleable headers.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-524-- Color auto-detects TTY and honors `NO_COLOR` / `FORCE_COLOR` / `TERM=dumb`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-525-- No animations when not a TTY.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-526-- No log-level prefixes in default mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-527-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-528-**Errors**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-529-- State what / why / how-to-fix.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-530-- Suggests "did you mean…?" without auto-running.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-531-- No stack traces unless `--debug`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-532-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-533-**Interactivity**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-534-- Prompts only on TTY.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-535-- Provides a documented non-interactive flag, environment variable, or stdin contract appropriate to the ecosystem.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-536-- Confirms destructive ops with `--yes` / `--force` override.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-537-- No secrets via flag.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-538-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-539-**Configuration**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-540-- Precedence: flag > env > config > default.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-541-- Uses XDG dirs.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-542-- Env vars prefixed `MYTOOL_…`.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-543-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-544-**Performance**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-545-- Cold start <500ms (ideally <100ms for shell-prompt-tier).
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-546-- Streams output line-by-line.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-547-- `--dry-run` for destructive ops.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-548-- Atomic writes; idempotent re-runs.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-549-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-550-**Subcommands**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-551-- No catch-all default subcommand.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-552-- No prefix-matching.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-553-- Same flags mean the same things across subcommands.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-554-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-555-**Future-proofing**
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-556-- Machine output is stable.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-557-- Deprecations carry a release-cycle warning before removal.
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-558-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-559----
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-560-
+/Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/references/cli-basics.md-561-If the tool grows to need a full-screen UI later, that's a TUI — return to the main `SKILL.md` and pick an ecosystem reference. Many great tools (`gh`, `helix`, `atuin`, `posting`) ship both a CLI and a TUI from the same core, with the CLI handling scripts and the TUI handling exploration.
+
+codex
+Users run:
+
+```bash
+shipctl completion bash
+```
+
+It prints the Bash completion script to stdout, so they can source or install it, e.g. `shipctl completion bash > /etc/bash_completion.d/shipctl`.
+
+`cobra-cli` is the development-time scaffolding tool. Use `cobra-cli add completion` to add the `completion` subcommand to `shipctl`; it does not generate completions for `shipctl` when users run `cobra-cli completion bash`—that only completes `cobra-cli` itself.
+tokens used
+23,839

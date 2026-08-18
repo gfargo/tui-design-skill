@@ -6,7 +6,7 @@ Ratatui dominates Rust TUI development — thousands of crates build on it. Fork
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Ratatui](#ratatui-ratatui-ratatui) — [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+- [Ratatui](#ratatui-ratatui-ratatui) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
 - [Backends](#backends-crossterm-vs-termion-vs-termwiz)
 - [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
 - [Testing](#testing) · [Debugging](#debugging)
@@ -95,6 +95,19 @@ impl App {
 ```
 
 `ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
+
+### Lifecycle and terminal handoff
+
+Ratatui owns rendering and terminal setup, but not the application event loop, subprocesses, or general process-signal policy. Prefer the managed API and make every external lifecycle event converge on the loop boundary.
+
+| Boundary | Ratatui 0.30 contract |
+|---|---|
+| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
+| SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
+| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Reenter even when the child fails. A still-running input task can consume the terminal's capability responses during reinitialization. |
+| Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
+
+Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional.
 
 ## Widgets
 

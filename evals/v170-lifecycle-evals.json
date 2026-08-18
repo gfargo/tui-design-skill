@@ -1,0 +1,71 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.7.0 lifecycle regressions. The rubrics distinguish final shutdown from temporary terminal handoff using primary behavior from Bubble Tea v2.0.8, Ratatui 0.30.2, Textual v8.2.8, and Ink v7.1.1. Prompts and assertions are specifications, not evidence of model lift; comparative claims require a completed schema-v3 run against one immutable source snapshot.",
+  "evals": [
+    {
+      "id": "bubble-tea-editor-handoff",
+      "name": "bubble-tea-editor-handoff",
+      "prompt": "My Bubble Tea v2 app opens $EDITOR from Update. I was going to call Program.ReleaseTerminal, run exec.Command directly, defer Program.RestoreTerminal, and then keep using the model. Show the correct lifecycle, including how child or restoration failures return to Update and what should happen for q versus raw-mode Ctrl+C.",
+      "files": [],
+      "assertions": [
+        "Uses tea.ExecProcess for the interactive editor and explains that it pauses, releases, waits, restores, and repaints",
+        "Returns the child or restoration error through the ExecProcess callback message and handles it in Update",
+        "Does not use a deferred RestoreTerminal as final cleanup or manually run the interactive child inside Update",
+        "Distinguishes an intentional tea.Quit from tea.Interrupt when Ctrl+C should surface ErrInterrupted"
+      ]
+    },
+    {
+      "id": "ratatui-editor-reader",
+      "name": "ratatui-editor-reader-handoff",
+      "prompt": "A Ratatui 0.30 app has a Tokio task continuously reading Crossterm events. When I launch Vim, the child sometimes starts with garbage and the TUI is corrupted afterward, especially when Vim exits nonzero. What exact ownership sequence should surround the child, and how should SIGTERM reach shutdown?",
+      "files": [],
+      "assertions": [
+        "Pauses or stops the Crossterm input task before terminal restoration so it cannot steal child input or terminal capability responses",
+        "Restores shell modes before starting Vim, waits for it, then reinitializes, clears, and forces a full redraw",
+        "Ensures reentry cleanup runs even when the child fails and preserves child and restoration errors deliberately",
+        "Routes SIGTERM through the runtime into the application loop so the managed closure returns rather than restoring from a low-level signal handler",
+        "States that default SIGTERM or SIGKILL does not unwind ordinary Rust cleanup"
+      ]
+    },
+    {
+      "id": "textual-portable-suspension",
+      "name": "textual-portable-suspension",
+      "prompt": "In a Textual 8 app I need an Edit action that opens a local editor, plus Ctrl+Z support. The same app may run on Windows or Textual Web. Should I call os.system after self.exit and relaunch the app? Give me a portable lifecycle and exit-code contract.",
+      "files": [],
+      "assertions": [
+        "Uses with self.suspend around an argv-based child without exiting and relaunching the Textual app",
+        "Handles SuspendNotSupported with a non-terminal fallback because Textual Web cannot lend out a local terminal",
+        "Uses suspend_process for Unix foreground job control and identifies it as a no-op on Windows and Textual Web",
+        "Reloads externally mutable state after resume when needed",
+        "Uses self.exit with return_code for app shutdown and propagates app.return_code to the process explicitly"
+      ]
+    },
+    {
+      "id": "ink-suspend-terminal",
+      "name": "ink-suspend-terminal",
+      "prompt": "My Ink 7 component needs to run an interactive editor and then continue rendering. Is unmount plus render again the right approach? Cover callback failure, manual ownership, non-TTY behavior, and what waitUntilExit is for.",
+      "files": [],
+      "assertions": [
+        "Uses useApp().suspendTerminal for temporary editor ownership and rejects unmount-and-rerender as the handoff mechanism",
+        "Explains that the callback form resumes in finally when the child throws",
+        "For manual ownership, requires await resume in finally or await using and does not permit overlapping suspensions",
+        "Explains that the callback still runs in non-interactive mode even though no terminal handoff is needed",
+        "Reserves unmount or exit plus the render handle's waitUntilExit for final shutdown and output flushing"
+      ]
+    },
+    {
+      "id": "cross-framework-signal-boundaries",
+      "name": "cross-framework-signal-boundaries",
+      "prompt": "I maintain Bubble Tea, Ratatui, Textual, and Ink implementations of one terminal dashboard. Can I share a generic SIGINT/SIGTERM handler that immediately restores raw mode and calls the framework's final exit API for Ctrl+Z, external editors, and process shutdown? Define the safe common policy and the framework-specific exceptions.",
+      "files": [],
+      "assertions": [
+        "Rejects one signal-handler cleanup helper and distinguishes final shutdown from temporary handoff and resume",
+        "Uses Bubble Tea's managed signal lifecycle and ExecProcess or Suspend rather than restoring terminal state directly",
+        "Routes Ratatui and required Textual desktop termination into their event loops instead of performing terminal I/O in a low-level signal handler",
+        "Explains that Ink's exitOnCtrlC handles raw input rather than OS SIGTERM and places graceful signal policy around the render instance",
+        "Requires pause input, shell restoration, wait, reentry, stale-state refresh, and full redraw for resumable handoffs",
+        "Scopes SIGTSTP job control to Unix, provides another Windows path, and says SIGKILL cannot be cleaned up"
+      ]
+    }
+  ]
+}

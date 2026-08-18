@@ -8,10 +8,13 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - **Schema-v3 evaluation provenance:** new runs declare stable machine-readable schema anchors and record an exact runner version, exposed seed and temperature, plus a privacy-preserving system-prompt status or SHA-256/length pair.
 - **Grader provenance:** schema-v3 grades anchor the exact grading prompt by version and SHA-256; model graders also identify their provider, model, runner version, and generation settings.
 - **Contributor evidence contract:** `evals/README.md` documents privacy boundaries, reproducibility limits, run review steps, schema evolution, and the complete evidence bundle.
+- **Framework lifecycle matrix:** the Go, Rust, Python, and TypeScript references now distinguish final exit, OS termination, interactive-child handoff, foreground suspension, and resume behavior using current framework-native APIs.
+- **Lifecycle regression evals:** `evals/v170-lifecycle-evals.json` covers Bubble Tea editor handoff, Ratatui input-reader coordination, Textual suspension portability, Ink's resumable terminal API, and cross-framework signal boundaries.
 
 ### Changed
 - **Summary verification:** validation now requires grades alongside a summary and recomputes aggregate and per-case results, detecting tampered totals instead of checking only file hashes.
 - **Historical compatibility:** the harness emits schema v3 while continuing to score and validate schema-v2 artifacts from v1.6.1.
+- **Terminal handoff contract:** the procedural core now makes temporary release/reentry a separate boundary from final unmount, including stale-state refresh and full redraw requirements.
 
 ## [1.6.1] — 2026-08-18
 

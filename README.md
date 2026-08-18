@@ -237,6 +237,7 @@ tui-design-skill/
 │   ├── v151-correction-evals.json
 │   ├── v160-structural-evals.json
 │   ├── v161-correction-evals.json
+│   ├── v170-lifecycle-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

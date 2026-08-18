@@ -4,7 +4,7 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
+- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
 - [Other Charm libraries](#other-charm-libraries-worth-knowing)
 - [tview](#tview-rivo-tview) · [gocui](#gocui-awesome-gocui-gocui) · [tcell](#lower-level-tcell)
 - [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfave-cli)
@@ -87,6 +87,19 @@ func main() {
 ```
 
 `Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+### Lifecycle and terminal handoff
+
+Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+
+| Boundary | Bubble Tea v2 contract |
+|---|---|
+| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler converts external SIGINT/SIGTERM into managed loop termination. Do not call `os.Exit` from `Update`. |
+| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports either the child or restoration error through the callback message. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+| Foreground suspend | Return `tea.Suspend`; after the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
+
+The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.0.8/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
 
 **Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
 

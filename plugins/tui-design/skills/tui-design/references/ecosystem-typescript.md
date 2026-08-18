@@ -8,7 +8,7 @@ The Node.js ecosystem splits along two axes:
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Ink](#ink-vadimdemedes-ink) — [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+- [Ink](#ink-vadimdemedes-ink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
 - [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
 - [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
 - [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
@@ -74,6 +74,19 @@ const App = () => {
 render(<App />);
 ```
 
+### Lifecycle and terminal handoff
+
+Ink 7 distinguishes permanent React-tree unmounting from a resumable terminal suspension. Keep process-level signal policy at the render boundary and temporary ownership changes inside `useApp()`.
+
+| Boundary | Ink 7 contract |
+|---|---|
+| Normal exit | Use `useApp().exit(...)` inside the tree or the render handle's `unmount()` outside it. At the top level, await `waitUntilExit()` before post-run output or process termination so pending terminal writes finish. |
+| SIGINT / SIGTERM | `exitOnCtrlC` handles Ctrl+C bytes while stdin is raw; it is not an operating-system SIGTERM handler. If the host requires graceful signals, register them once at the process boundary, unmount, await `waitUntilExit()`, set the intended exit status, and remove listeners. Do not call `process.exit()` before cleanup flushes. |
+| Interactive child | Use `await suspendTerminal(async () => runChild())`. Ink pauses input and rendering, restores cursor/input/screen modes, runs the callback even without an interactive TTY, and re-enters with a full redraw in `finally`. For the manual form, always `await suspension.resume()` in `finally` or use `await using`. Do not unmount. |
+| Foreground suspend | Ink has no separate high-level job-control action. If a Unix-only Ctrl+Z feature is necessary, perform SIGTSTP inside `suspendTerminal` and let its resume path re-enter and redraw; expose a different action on Windows. |
+
+The tagged [`suspendTerminal` documentation](https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback) includes callback, manual, non-interactive, and nesting behavior. A second overlapping suspension is an error, so centralize ownership rather than letting arbitrary components suspend independently.
+
 ## Primitives
 
 Ink ships only a handful of components — everything else composes from these:
@@ -109,7 +122,7 @@ Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no class
 
 Ink-specific:
 - **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, ctrl, shift, meta, pageUp, pageDown}`.
-- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush}`. Pass an `Error` to `exit` to reject `waitUntilExit()`; there is no separate error variant.
+- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush, suspendTerminal}`. Pass an `Error` to `exit` to reject the render handle's `waitUntilExit()`; there is no separate error variant. Use `suspendTerminal` for a resumable interactive child, not final shutdown.
 - **`useStdin()`** — `{stdin, setRawMode, isRawModeSupported}`.
 - **`useStdout()`** / **`useStderr()`** — write outside the live UI.
 - **`useFocus({autoFocus, isActive, id})`** — Tab-focusable component.
@@ -377,7 +390,7 @@ Retained-mode classics, pre-Ink era.
 ## Pitfalls common to JS/TS terminal apps
 
 1. **ESM/CJS**. Much of the modern stack (chalk v5+, ora v6+, ink v4+, @inquirer/prompts, @clack/prompts) is ESM-only at latest. For CJS, pin older majors, bundle, or choose a dual/CommonJS-compatible dependency such as picocolors.
-2. **Restore terminal state on exit.** Ink: `unmount()`. blessed: `screen.destroy()`. Listen on SIGINT/SIGTERM.
+2. **Restore terminal state on exit.** Ink: `exit()` or `unmount()`, then await `waitUntilExit()`; blessed: `screen.destroy()`. Treat OS signal listeners as an application boundary because Ink's Ctrl+C input handling does not cover SIGTERM.
 3. **Detect non-TTY and CI.** `process.stdout.isTTY === false` or `process.env.CI` — degrade to plain output. Spinners and prompts must not run in CI.
 4. **Raw mode requires `process.stdin.isTTY`.** Pipe input fails silently otherwise. Guard.
 5. **Cell width**. Use `string-width` (Ink does); never `.length` for terminal width math.

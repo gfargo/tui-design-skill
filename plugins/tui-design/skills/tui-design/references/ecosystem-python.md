@@ -4,7 +4,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Textual](#textual-textualize-textual) — [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
+- [Textual](#textual-textualize-textual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
 - [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
 - [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
 - [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
@@ -62,6 +62,19 @@ if __name__ == "__main__":
 ```
 
 `compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+
+### Lifecycle and terminal handoff
+
+Textual's driver restores application mode from `App.run()` / `run_async()` cleanup. Use App actions and messages for exit or handoff so widgets do not manipulate raw mode themselves.
+
+| Boundary | Textual 8 contract |
+|---|---|
+| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+| SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
+| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+
+These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
 
 ## Widgets
 

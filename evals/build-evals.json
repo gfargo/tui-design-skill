@@ -46,7 +46,7 @@
         "Uses Ink's framework cleanup or a correct custom crash boundary so exceptions do not leave the terminal in raw/alternate-screen state before the trace is printed",
         "Cleans up on normal exit through Ink's lifecycle (useApp().exit / unmount) or an equivalent finally boundary",
         "Runs git via async child_process (spawn/execFile), not a blocking execSync on the render path",
-        "Handles large diff output without re-rendering it every frame (e.g. <Static>, memo, or a scroll viewport)",
+        "Handles large changing diff output with a windowed/virtualized viewport or equivalent; does not treat Ink <Static> as virtualization for mutable rows",
         "File status paired with letters/symbols (M/A/D/??) so status survives in monochrome, not color alone",
         "Honors NO_COLOR via an explicit semantic-token/theme indirection (tokens resolve to undefined/no color under NO_COLOR), not merely relying on chalk's built-in default",
         "A footer hint bar shows the key bindings",

@@ -1,8 +1,9 @@
 name: Attach .skill to release
 
 # Builds the installable `tui-design.skill` and uploads it as a release asset.
-# Runs automatically when a release is published, and can be run manually
-# (workflow_dispatch) to backfill the asset onto an existing tag.
+# Preferred flow: create a draft release, run this workflow manually for its
+# tag, verify the asset, then publish. The published event is a repair/idempotency
+# path and manual dispatch also supports backfilling older releases.
 
 on:
   release:
@@ -34,9 +35,29 @@ jobs:
             printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ steps.tag.outputs.tag }}
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22.20.0
+
+      - name: Lint release scripts
+        run: |
+          scripts=()
+          for script in scripts/package-skill.sh scripts/validate-release.sh; do
+            if [ -f "$script" ]; then scripts+=("$script"); fi
+          done
+          if [ "${#scripts[@]}" -gt 0 ]; then shellcheck "${scripts[@]}"; fi
+
+      - name: Validate Claude plugin metadata
+        run: |
+          if [ -x ./scripts/validate-release.sh ]; then
+            npx --yes @anthropic-ai/claude-code@2.1.233 plugin validate --strict .
+          else
+            echo "Skipping strict plugin validation for a legacy tag"
+          fi
 
       - name: Validate release source
         env:

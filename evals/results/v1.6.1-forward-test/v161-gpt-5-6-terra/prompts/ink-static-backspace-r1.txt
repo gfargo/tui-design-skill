@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+In Ink 7 I have a 50k-row selectable diff that changes as the query changes, plus a Backspace handler. Can I put the rows in <Static> as virtualization, and which key field represents Backspace?

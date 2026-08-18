@@ -20,9 +20,11 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SKILL_DIR = REPO_ROOT / "plugins/tui-design/skills/tui-design"
+CASE_ID_PATTERN = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,127})\Z")
+TERMINAL_TRIAL_STATUSES = {"completed", "failed", "timed_out", "error", "aborted"}
 
 
 class HarnessError(RuntimeError):
@@ -89,7 +91,14 @@ def load_eval_set(path: Path) -> dict[str, Any]:
         raise HarnessError(f"{path} must contain a non-empty 'evals' list; trigger query sets are not response evals")
     seen: set[str] = set()
     for case in cases:
-        case_id = str(case.get("id"))
+        if not isinstance(case, dict) or case.get("id") is None or isinstance(case.get("id"), bool):
+            raise HarnessError(f"eval case in {path} has no valid id")
+        case_id = str(case["id"])
+        if not CASE_ID_PATTERN.fullmatch(case_id) or case_id in {".", ".."}:
+            raise HarnessError(
+                f"eval id {case_id!r} must be 1-128 ASCII letters, digits, dots, underscores, or hyphens, "
+                "starting with a letter or digit"
+            )
         if case_id in seen:
             raise HarnessError(f"duplicate eval id {case_id!r} in {path}")
         seen.add(case_id)
@@ -106,6 +115,36 @@ def safe_label(value: str) -> str:
     if not label:
         raise HarnessError(f"value cannot form a safe path label: {value!r}")
     return label
+
+
+def resolve_run_artifact(run_dir: Path, value: str, label: str) -> Path:
+    """Resolve a recorded run artifact and prove it remains under run_dir."""
+    if not isinstance(value, str) or not value:
+        raise HarnessError(f"{label} must be a non-empty relative path")
+    recorded = Path(value)
+    if recorded.is_absolute():
+        raise HarnessError(f"{label} must be relative to the run directory: {value!r}")
+    run_root = run_dir.resolve()
+    resolved = (run_root / recorded).resolve()
+    try:
+        resolved.relative_to(run_root)
+    except ValueError as exc:
+        raise HarnessError(f"{label} escapes the run directory: {value!r}") from exc
+    return resolved
+
+
+def process_text(value: Any) -> str:
+    """Normalize subprocess output, including TimeoutExpired's possible bytes."""
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
+def runner_fingerprint(runner: Sequence[str]) -> str:
+    encoded = json.dumps(list(runner), ensure_ascii=False, separators=(",", ":")).encode()
+    return sha256_bytes(encoded)
 
 
 def git_metadata() -> dict[str, Any]:
@@ -181,11 +220,10 @@ def command_run(args: argparse.Namespace) -> int:
     trials: list[dict[str, Any]] = []
     for case in eval_set["evals"]:
         case_id = str(case["id"])
-        case_label = safe_label(case.get("name") or case_id)
         for repetition in range(1, args.repeat + 1):
             trial_id = f"{case_id}-r{repetition}"
             prompt = invocation_prompt(case["prompt"], args.condition, skill_dir)
-            prompt_path = prompt_dir / f"{safe_label(case_id)}-{case_label}-r{repetition}.txt"
+            prompt_path = prompt_dir / f"{trial_id}.txt"
             prompt_path.write_text(prompt)
             trials.append(
                 {
@@ -214,7 +252,10 @@ def command_run(args: argparse.Namespace) -> int:
         "provider": args.provider,
         "model": args.model,
         "repetitions": args.repeat,
-        "runner_argv": runner or None,
+        "runner_executable": Path(runner[0]).name if runner else None,
+        "runner_argv": runner if runner and args.record_runner_argv else None,
+        "runner_argv_recorded": bool(runner and args.record_runner_argv),
+        "runner_argv_sha256": runner_fingerprint(runner) if runner else None,
         "timeout_seconds": args.timeout,
         "git": git_metadata(),
         "host": host_metadata(),
@@ -227,12 +268,39 @@ def command_run(args: argparse.Namespace) -> int:
         print(manifest_path)
         return 0
 
-    failures = 0
-    for trial in trials:
-        prompt_path = run_dir / trial["prompt_file"]
+    def finish_trial(
+        trial: dict[str, Any],
+        *,
+        status: str,
+        started: dt.datetime,
+        stdout: Any,
+        stderr: Any,
+        exit_code: Optional[int],
+        failure_kind: Optional[str] = None,
+    ) -> None:
         response_path = response_dir / f"{trial['trial_id']}.md"
         stderr_path = stderr_dir / f"{trial['trial_id']}.txt"
+        response_path.write_text(process_text(stdout))
+        stderr_path.write_text(process_text(stderr))
+        values: dict[str, Any] = {
+            "status": status,
+            "exit_code": exit_code,
+            "duration_seconds": round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 6),
+            "response_file": response_path.relative_to(run_dir).as_posix(),
+            "response_sha256": sha256_file(response_path),
+            "stderr_file": stderr_path.relative_to(run_dir).as_posix(),
+            "stderr_sha256": sha256_file(stderr_path),
+        }
+        if failure_kind:
+            values["failure_kind"] = failure_kind
+        trial.update(values)
+
+    failures = 0
+    for index, trial in enumerate(trials):
+        prompt_path = resolve_run_artifact(run_dir, trial["prompt_file"], "prompt_file")
         started = dt.datetime.now(dt.timezone.utc)
+        trial["status"] = "running"
+        write_json(manifest_path, manifest)
         environment = os.environ.copy()
         environment.update(
             {
@@ -252,36 +320,65 @@ def command_run(args: argparse.Namespace) -> int:
                 check=False,
                 env=environment,
             )
-            response_path.write_text(completed.stdout)
-            stderr_path.write_text(completed.stderr)
-            trial.update(
-                {
-                    "status": "completed" if completed.returncode == 0 else "failed",
-                    "exit_code": completed.returncode,
-                    "duration_seconds": round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 6),
-                    "response_file": response_path.relative_to(run_dir).as_posix(),
-                    "response_sha256": sha256_file(response_path),
-                    "stderr_file": stderr_path.relative_to(run_dir).as_posix(),
-                    "stderr_sha256": sha256_file(stderr_path),
-                }
+            empty_output = completed.returncode == 0 and not completed.stdout.strip()
+            finish_trial(
+                trial,
+                status="completed" if completed.returncode == 0 and not empty_output else "failed",
+                started=started,
+                stdout=completed.stdout,
+                stderr=completed.stderr,
+                exit_code=completed.returncode,
+                failure_kind="empty_output" if empty_output else ("nonzero_exit" if completed.returncode else None),
             )
-            if completed.returncode:
+            if completed.returncode or empty_output:
                 failures += 1
         except subprocess.TimeoutExpired as exc:
-            response_path.write_text(exc.stdout or "")
-            stderr_path.write_text(exc.stderr or "")
-            trial.update(
-                {
-                    "status": "timed_out",
-                    "exit_code": None,
-                    "duration_seconds": round((dt.datetime.now(dt.timezone.utc) - started).total_seconds(), 6),
-                    "response_file": response_path.relative_to(run_dir).as_posix(),
-                    "response_sha256": sha256_file(response_path),
-                    "stderr_file": stderr_path.relative_to(run_dir).as_posix(),
-                    "stderr_sha256": sha256_file(stderr_path),
-                }
+            finish_trial(
+                trial,
+                status="timed_out",
+                started=started,
+                stdout=exc.stdout,
+                stderr=exc.stderr,
+                exit_code=None,
+                failure_kind="timeout",
             )
             failures += 1
+        except OSError as exc:
+            finish_trial(
+                trial,
+                status="error",
+                started=started,
+                stdout="",
+                stderr=f"{type(exc).__name__}: {exc}\n",
+                exit_code=None,
+                failure_kind="runner_os_error",
+            )
+            failures += 1
+        except KeyboardInterrupt:
+            finish_trial(
+                trial,
+                status="aborted",
+                started=started,
+                stdout="",
+                stderr="evaluation interrupted\n",
+                exit_code=None,
+                failure_kind="interrupted",
+            )
+            for remaining in trials[index + 1 :]:
+                finish_trial(
+                    remaining,
+                    status="aborted",
+                    started=dt.datetime.now(dt.timezone.utc),
+                    stdout="",
+                    stderr="not started because evaluation was interrupted\n",
+                    exit_code=None,
+                    failure_kind="not_started",
+                )
+            manifest["completed_at"] = utc_now()
+            manifest["status"] = "aborted"
+            write_json(manifest_path, manifest)
+            print(manifest_path)
+            return 130
         write_json(manifest_path, manifest)
 
     manifest["completed_at"] = utc_now()
@@ -291,11 +388,37 @@ def command_run(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
-def expected_trial_assertions(manifest: dict[str, Any]) -> dict[str, int]:
+def expected_trials(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
     eval_path = resolve_recorded_path(manifest["eval_set"])
     eval_set = load_eval_set(eval_path)
-    counts = {str(case["id"]): len(case["assertions"]) for case in eval_set["evals"]}
-    return {trial["trial_id"]: counts[trial["case_id"]] for trial in manifest["trials"]}
+    repetitions = manifest.get("repetitions")
+    if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
+        raise HarnessError("run manifest repetitions must be a positive integer")
+    condition = manifest.get("condition")
+    if condition not in {"baseline", "with-skill"}:
+        raise HarnessError("run manifest has an invalid condition")
+    skill_dir = resolve_recorded_path(manifest["skill_dir"])
+    expected: dict[str, dict[str, Any]] = {}
+    for case in eval_set["evals"]:
+        case_id = str(case["id"])
+        for repetition in range(1, repetitions + 1):
+            trial_id = f"{case_id}-r{repetition}"
+            expected[trial_id] = {
+                "trial_id": trial_id,
+                "case_id": case_id,
+                "case_name": case.get("name"),
+                "repetition": repetition,
+                "assertion_count": len(case["assertions"]),
+                "prompt_file": f"prompts/{trial_id}.txt",
+                "prompt": invocation_prompt(case["prompt"], condition, skill_dir),
+                "response_file": f"responses/{trial_id}.md",
+                "stderr_file": f"stderr/{trial_id}.txt",
+            }
+    return expected
+
+
+def expected_trial_assertions(manifest: dict[str, Any]) -> dict[str, int]:
+    return {trial_id: trial["assertion_count"] for trial_id, trial in expected_trials(manifest).items()}
 
 
 def validate_grades(manifest: dict[str, Any], grades: dict[str, Any]) -> None:
@@ -306,6 +429,8 @@ def validate_grades(manifest: dict[str, Any], grades: dict[str, Any]) -> None:
     grader = grades.get("grader")
     if not isinstance(grader, dict) or not grader.get("kind") or not grader.get("name"):
         raise HarnessError("grades must record grader.kind and grader.name")
+    if not grader.get("prompt_version"):
+        raise HarnessError("grades must record grader.prompt_version")
     if grader.get("kind") == "model" and not grader.get("model"):
         raise HarnessError("model grading must record grader.model")
 
@@ -383,10 +508,25 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
     for key in ("run_id", "condition", "provider", "model", "eval_set", "eval_set_sha256", "skill_dir", "skill_sha256"):
         if not manifest.get(key):
             raise HarnessError(f"run manifest is missing {key}")
-    if manifest["condition"] not in {"baseline", "with-skill"}:
-        raise HarnessError("run manifest has an invalid condition")
+    if manifest.get("run_id") != path.parent.name:
+        raise HarnessError("run manifest run_id does not match its directory name")
     if require_completed and manifest.get("status") != "completed":
         raise HarnessError(f"run is not completed successfully: {manifest.get('status')!r}")
+    if manifest.get("status") not in {"prepared", "running", "completed", "failed", "aborted"}:
+        raise HarnessError(f"run manifest has an invalid status: {manifest.get('status')!r}")
+    if not isinstance(manifest.get("runner_argv_recorded"), bool):
+        raise HarnessError("run manifest must record runner_argv_recorded")
+    if manifest["runner_argv_recorded"] != (manifest.get("runner_argv") is not None):
+        raise HarnessError("runner_argv_recorded does not match runner_argv presence")
+    if manifest["runner_argv_recorded"] and (
+        not isinstance(manifest["runner_argv"], list)
+        or not all(isinstance(value, str) for value in manifest["runner_argv"])
+    ):
+        raise HarnessError("runner_argv must be a list of strings when recorded")
+    if manifest.get("status") != "prepared" and not manifest.get("runner_argv_sha256"):
+        raise HarnessError("executed runs must record runner_argv_sha256")
+    if manifest.get("runner_argv_sha256") and not re.fullmatch(r"[0-9a-f]{64}", manifest["runner_argv_sha256"]):
+        raise HarnessError("runner_argv_sha256 must be a lowercase SHA-256 digest")
 
     eval_path = resolve_recorded_path(manifest["eval_set"])
     skill_dir = resolve_recorded_path(manifest["skill_dir"])
@@ -399,20 +539,58 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
     trials = manifest.get("trials")
     if not isinstance(trials, list) or not trials:
         raise HarnessError("run manifest has no trials")
+    if not all(isinstance(trial, dict) for trial in trials):
+        raise HarnessError("every run trial must be an object")
     trial_ids = [trial.get("trial_id") for trial in trials]
+    if not all(isinstance(trial_id, str) for trial_id in trial_ids):
+        raise HarnessError("every run trial must have a string trial_id")
     if len(trial_ids) != len(set(trial_ids)):
         raise HarnessError("run manifest contains duplicate trial ids")
-    for trial in trials:
-        prompt = run_dir / trial["prompt_file"]
+    expected = expected_trials(manifest)
+    if set(trial_ids) != set(expected):
+        missing = sorted(set(expected) - set(trial_ids))
+        extra = sorted(set(trial_ids) - set(expected))
+        raise HarnessError(f"run trial coverage mismatch; missing={missing}, extra={extra}")
+    actual = {trial["trial_id"]: trial for trial in trials}
+    for trial_id, specification in expected.items():
+        trial = actual[trial_id]
+        for field in ("case_id", "case_name", "repetition", "prompt_file"):
+            if trial.get(field) != specification[field]:
+                raise HarnessError(f"{field} mismatch for {trial_id}")
+        prompt = resolve_run_artifact(run_dir, trial["prompt_file"], f"prompt_file for {trial_id}")
+        if prompt.read_text() != specification["prompt"]:
+            raise HarnessError(f"prompt content mismatch for {trial_id}")
         if sha256_file(prompt) != trial["prompt_sha256"]:
-            raise HarnessError(f"prompt hash mismatch for {trial['trial_id']}")
-        if trial.get("status") in {"completed", "failed", "timed_out"}:
-            response = run_dir / trial["response_file"]
-            stderr = run_dir / trial["stderr_file"]
+            raise HarnessError(f"prompt hash mismatch for {trial_id}")
+        status = trial.get("status")
+        if status not in {"prepared", "running", *TERMINAL_TRIAL_STATUSES}:
+            raise HarnessError(f"invalid trial status for {trial_id}: {status!r}")
+        if status in TERMINAL_TRIAL_STATUSES:
+            if trial.get("response_file") != specification["response_file"]:
+                raise HarnessError(f"response_file mismatch for {trial_id}")
+            if trial.get("stderr_file") != specification["stderr_file"]:
+                raise HarnessError(f"stderr_file mismatch for {trial_id}")
+            response = resolve_run_artifact(run_dir, trial["response_file"], f"response_file for {trial_id}")
+            stderr = resolve_run_artifact(run_dir, trial["stderr_file"], f"stderr_file for {trial_id}")
             if sha256_file(response) != trial["response_sha256"]:
-                raise HarnessError(f"response hash mismatch for {trial['trial_id']}")
+                raise HarnessError(f"response hash mismatch for {trial_id}")
             if sha256_file(stderr) != trial["stderr_sha256"]:
-                raise HarnessError(f"stderr hash mismatch for {trial['trial_id']}")
+                raise HarnessError(f"stderr hash mismatch for {trial_id}")
+            if status == "completed" and not response.read_text().strip():
+                raise HarnessError(f"completed trial has an empty response: {trial_id}")
+            if status == "completed" and trial.get("exit_code") != 0:
+                raise HarnessError(f"completed trial must have exit_code 0: {trial_id}")
+
+    statuses = {trial["status"] for trial in trials}
+    run_status = manifest["status"]
+    if run_status == "prepared" and statuses != {"prepared"}:
+        raise HarnessError("prepared run must contain only prepared trials")
+    if run_status == "completed" and statuses != {"completed"}:
+        raise HarnessError("completed run must contain only completed trials")
+    if run_status in {"failed", "aborted"} and not statuses.issubset(TERMINAL_TRIAL_STATUSES):
+        raise HarnessError(f"{run_status} run must contain only terminal trials")
+    if run_status in {"completed", "failed", "aborted"} and not manifest.get("completed_at"):
+        raise HarnessError(f"{run_status} run must record completed_at")
 
 
 def command_validate(args: argparse.Namespace) -> int:
@@ -456,6 +634,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--repeat", type=int, default=1)
     run.add_argument("--timeout", type=float, default=600.0)
     run.add_argument("--prepare-only", action="store_true", help="write prompts and manifest without executing a runner")
+    run.add_argument(
+        "--record-runner-argv",
+        action="store_true",
+        help="store exact runner arguments in run.json; off by default because arguments may contain secrets",
+    )
     run.add_argument("runner", nargs=argparse.REMAINDER, help="command after --; reads prompt on stdin, writes response on stdout")
     run.set_defaults(handler=command_run)
 
@@ -483,7 +666,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         parser.error("--timeout must be positive")
     try:
         return args.handler(args)
-    except (HarnessError, KeyError, OSError) as exc:
+    except (HarnessError, KeyError, OSError, TypeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

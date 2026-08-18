@@ -1,0 +1,650 @@
+2026-08-18T19:14:32.144627Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T19:14:32.145750Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T19:14:32.146763Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/gfargo/dev/gfargo/tui-design-skill
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a0164b-f638-7c41-9db0-1b23ca1dedd8
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+In Ink 7 I have a 50k-row selectable diff that changes as the query changes, plus a Backspace handler. Can I put the rows in <Static> as virtualization, and which key field represents Backspace?
+
+codex
+I’ll use the local `tui-design` skill to check Ink-specific guidance, then answer the virtualization and key-handling parts precisely.
+exec
+/bin/zsh -lc "sed -n '1,240p' /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design/SKILL.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | Use the separate `vhs-cli-demos` skill |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Where supported, suspend only after restoring the shell-facing terminal, then re-enter modes and force a full redraw on resume. Do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve terminal-reserved behavior such as interrupt, suspend, and flow control.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "sed -n '1,260p' plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md && sed -n '1,200p' plugins/tui-design/skills/tui-design/references/interaction-patterns.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+# TypeScript / JavaScript ecosystem — Ink, Clack, Inquirer
+
+The Node.js ecosystem splits along two axes:
+- **Pretty CLI** (argparse + color + prompts/spinners) vs **full TUI**.
+- **Imperative/retained-mode** vs **declarative/React-style**.
+
+**Ink has effectively won the high-end TUI space.** It powers Claude Code, GitHub Copilot CLI, Gemini CLI, Cloudflare Wrangler, Gatsby CLI, Prisma, Shopify CLI, Linear's internal CLI, Canva CLI, and tap. Anthropic's Claude Code is publicly TypeScript + React + Ink + Yoga + Bun.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Ink](#ink-vadimdemedes-ink) — [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+- [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
+- [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+- [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
+- [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
+- [OpenTUI](#opentui-anomalyco-opentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
+- [Notable JS/TS TUI apps](#notable-js-ts-tui-apps-to-study)
+- [Pitfalls common to JS/TS](#pitfalls-common-to-js-ts-terminal-apps)
+- [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Full-screen TUI app | **Ink** (React-flexbox) |
+| Modern Clack-style wizard prompts | **@clack/prompts** |
+| Prompt-heavy CLI (many questions) | **@inquirer/prompts** (the modern modular rewrite) |
+| Single elegant spinner | **ora** |
+| Hierarchical task runner | **listr2** |
+| Argparse, simple | **commander** (de facto default) |
+| Argparse, validation-heavy | **yargs** |
+| Heroku-class plugin CLI | **oclif** (Salesforce's framework) |
+| Argparse, TS-first, lightweight | **citty** (UnJS) |
+| Tiny argparse | **cac** (~7K) or `node:util.parseArgs` |
+| Terminal colors, performance-critical | **picocolors** |
+| Terminal colors, classic API | **chalk** |
+| Single boxed message | **boxen** |
+| Beyond Ink's perf ceiling | **OpenTUI** (Zig-backed, v0.x) |
+| Image rendering in terminal | **terminal-kit** |
+
+**Default full-TUI stack: Ink + @inkjs/ui + zustand + commander + ink-testing-library.** For other project shapes, see "Stack recommendations by project shape" at the end.
+
+---
+
+## Ink (vadimdemedes/ink)
+
+**Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, diffs against the previous frame, and emits ANSI patches in a single buffered terminal write.
+
+Current major: **Ink 7** (7.1.x as of mid-2026), which requires **Node ≥ 22 and React 19** — deployment-relevant if your users are on Node 20 LTS; stay on Ink 6 there.
+
+**Hello world:**
+
+```tsx
+import React, {useState} from 'react';
+import {render, Text, Box, useInput, useApp} from 'ink';
+
+const App = () => {
+  const [n, setN] = useState(0);
+  const {exit} = useApp();
+
+  useInput((input, key) => {
+    if (key.upArrow) setN(c => c + 1);
+    if (key.downArrow) setN(c => c - 1);
+    if (input === 'q') exit();
+  });
+
+  return (
+    <Box borderStyle="round" padding={1}>
+      <Text color="green">Counter: {n}</Text>
+    </Box>
+  );
+};
+
+render(<App />);
+```
+
+## Primitives
+
+Ink ships only a handful of components — everything else composes from these:
+
+- **`<Text>`** — only place strings can live. Props: `color`, `backgroundColor`, `bold`, `italic`, `underline`, `inverse`, `dimColor`, `wrap`, `strikethrough`. Strings as direct children of `<Box>` will throw — they must be wrapped.
+- **`<Box>`** — flexbox container. Props: `padding`, `paddingX/Y/Top/Right/Bottom/Left`, `margin*`, `borderStyle`, `borderColor`, `borderTop`/`Bottom`/`Left`/`Right` (selective borders), `width`, `height`, `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `justifyContent`, `alignItems`, `gap`, `display: 'flex' | 'none'`.
+- **`<Newline>`** — vertical spacing.
+- **`<Spacer>`** — flex-grow filler in a flex layout.
+- **`<Static>`** — renders items permanently above the live UI; once rendered, never re-renders. Used for log streaming (Jest, Listr2) so the live UI doesn't have to repaint thousands of historical log lines.
+- **`<Transform>`** — wraps children and transforms their rendered string. Used for gradients, OSC 8 hyperlinks, custom effects.
+
+## Layout
+
+Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, plus custom char strings.
+
+```tsx
+<Box flexDirection="column" height="100%">
+  <Box borderStyle="single">
+    <Text>Header</Text>
+  </Box>
+  <Box flexGrow={1} flexDirection="row">
+    <Box width={30} borderStyle="single">
+      <Text>Sidebar</Text>
+    </Box>
+    <Box flexGrow={1} borderStyle="single">
+      <Text>Main content</Text>
+    </Box>
+  </Box>
+</Box>
+```
+
+## Hooks
+
+Ink-specific:
+- **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, ctrl, shift, meta, pageUp, pageDown}`.
+- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush}`. Pass an `Error` to `exit` to reject `waitUntilExit()`; there is no separate error variant.
+- **`useStdin()`** — `{stdin, setRawMode, isRawModeSupported}`.
+- **`useStdout()`** / **`useStderr()`** — write outside the live UI.
+- **`useFocus({autoFocus, isActive, id})`** — Tab-focusable component.
+- **`useFocusManager()`** — `{focus(id), focusNext, focusPrevious, enableFocus, disableFocus}`.
+- **`useWindowSize()`** — `{columns, rows}`, updates on resize.
+- **`usePaste(callback)`** — bracketed-paste events (Ink 7), so pasted text arrives as one chunk instead of spraying through `useInput` character by character.
+- **`useCursor()`** — position the real terminal cursor (IME-friendly input).
+- **`useAnimation()`** — frame ticker with pause/resume.
+- **`useBoxMetrics()`** — measured dimensions of a box at runtime.
+
+Plus all standard React hooks (`useState`, `useEffect`, `useReducer`, `useContext`, `useMemo`).
+
+State management for larger apps: **Zustand** (recommended), **Jotai**, or just `useReducer` + Context.
+
+## ink-ui (vadimdemedes/ink-ui)
+
+The companion component library — themeable widgets you don't want to write yourself:
+
+- `<TextInput>`, `<EmailInput>`, `<PasswordInput>` — input fields with controlled state.
+- `<Select>`, `<MultiSelect>` — choose from options.
+- `<ConfirmInput>` — y/n prompt.
+- `<Spinner>` — animated spinner (use this inside Ink, not `ora`).
+- `<ProgressBar>` — determinate progress.
+- `<Badge>` — colored status pill.
+- `<StatusMessage>` — `success`/`info`/`warning`/`error` variants.
+- `<Alert>` — bordered alert box.
+
+Theming via theme objects passed at the root.
+
+## Testing — ink-testing-library
+
+```tsx
+import {render} from 'ink-testing-library';
+
+const {lastFrame, rerender, stdin, frames, unmount} = render(<App />);
+expect(lastFrame()).toBe('Counter: 0');
+stdin.write('\u001B[A');  // up arrow
+expect(lastFrame()).toBe('Counter: 1');
+```
+
+Plus `renderToString()` (Ink 6.8+) for synchronous render-to-string in tests.
+
+**Staleness caveat.** ink-testing-library's last release is v4.0.0 (May 2024); its own devDeps still pin `ink ^5` / React 18, and open issues track Ink 6/7 compatibility — including "stdin.write() does not trigger useInput callbacks". `lastFrame()`/`frames` render assertions still work (it just injects fake streams, and it doesn't render styles — text only), but **input simulation via `stdin.write` is unreliable on Ink ≥5**, which matters given Ink 7's rewritten input handling. For input-driven tests on Ink 6/7, the proven pattern is Gemini CLI's: a custom vitest harness that wraps Ink's own `render` with your app's context providers and exposes `lastFrame()`-style helpers, assertions as plain string checks — plus PTY-level integration tests (**node-pty** + `strip-ansi`) that drive the built CLI in a real pseudo-terminal for actual keyboard flows. Both `ink` and `ink-testing-library` are ESM-only, so vitest is the path of least resistance over Jest.
+
+## Debugging
+
+- **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*` calls, clears the live output, renders the message above it, and repaints the UI. If console output *is* garbling the screen, something bypassed the patch — direct `process.stdout.write` calls or child-process stdio inherited straight to the terminal.
+- **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place — the single best tool for answering "which frame went wrong".
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (documented for Ink 7; exit the CLI manually with Ctrl+C afterwards). **This is for tree/props inspection only — don't reach for it to profile performance.** Ink's own docs never mention the Profiler/flame-chart tab, and its reconciler sets none of the flags React's Profiler mechanism needs; the Components tab genuinely works, but treat the Profiler tab as unsupported for Ink.
+- **High-volume tracing** goes to stderr — `useStderr().write()` preserves Ink's output — or to a file you `tail -f` in another terminal. Never stdout; Ink owns it.
+- **Profiling:** `node --cpu-prof` is the real path — it writes a `.cpuprofile` on process exit (no signal-forwarding gotcha to worry about, unlike Rust's `perf`-based tooling), loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink-specific cost sinks: unmemoized components re-rendering on every parent update (each one potentially triggers a fresh Yoga layout pass, pricier than a DOM diff); `<Static>` misuse — it exists for content written once and never revisited, and Ink 3 made it nearly 2x faster specifically because putting the wrong content in it (or leaving genuinely-static content out of it) was a known pain point; and a small always-animating leaf component (the standard `ink-spinner` is a named example) keeping the whole render cycle continuously active instead of idle between real state changes.
+
+## Pastel — Next.js-style filesystem routing
+
+`vadimdemedes/pastel` builds CLI command structure from filesystem layout, with Zod schemas for argument validation. Like Next.js for CLIs:
+
+```
+commands/
+  index.tsx        // "myapp"
+  create.tsx       // "myapp create"
+  list.tsx         // "myapp list"
+  user/
+    add.tsx        // "myapp user add"
+    remove.tsx     // "myapp user remove"
+```
+
+Each file exports a default React component plus optional `args`/`options` Zod schemas.
+
+## Strengths and weaknesses
+
+**Strengths:**
+- Declarative, full React ecosystem available (use any state library, any hooks).
+- Yoga flexbox is genuinely good for terminal layout.
+- Excellent testing story.
+- React Devtools work (`DEV=true` env var).
+- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
+- Used by some of the most-deployed CLIs in the world.
+
+**Weaknesses:**
+- **Heavy startup**: React + Yoga + reconciler ≈ 80–150ms cold start. Bad for one-shot scripts where users expect instant response. For frequently-invoked commands (`mycli --version`, `mycli completion`), provide a fast path that bypasses Ink.
+- **ESM-only since Ink 4** (March 2023). For CJS, pin Ink 3 or use a bundler.
+- **Node 22 floor on Ink 7** (plus React 19). Many teams are still on Node 20 LTS — Ink 6 is the last major that supports them.
+- **High-frequency re-renders used to flicker.** Ink 6.7+ ships synchronized updates (plus an opt-in Kitty keyboard protocol), which largely fixed this. When streaming LLM tokens or tailing logs, still prefer `useDeferredValue` or manual debounce; `<Static>` exists specifically to handle large append-only logs without re-rendering them.
+- **Screen-reader support is improving but terminal-bound.** Ink 7 added `aria-label` / `aria-hidden` / `aria-role` / `aria-state` props on `<Box>`/`<Text>` and screen-reader-aware rendering — a real step past the old `INK_SCREEN_READER` env-var subset — but a browser UI remains the stronger accessibility story.
+
+## Pitfalls
+
+1. **Strings as direct children of `<Box>` throw.** Wrap in `<Text>`.
+2. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
+3. **`ora` and Ink fight over the terminal.** Use `<Spinner>` from `@inkjs/ui` instead inside Ink.
+4. **`console.log` from Ink 3+ is intercepted** and displayed cleanly above the live UI. Don't fight it.
+5. **Ink 7 fixed Backspace reporting as `key.backspace`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade—check `key.backspace`.
+
+Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "Pitfalls common to JS/TS terminal apps" below.
+
+---
+
+## Modern prompts: @clack/prompts
+
+`@clack/prompts` (~4 KB gzipped) has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (clack.cc) and actively released. Used by **create-vite, create-astro, create-svelte, create-t3-app**, and inspired the Rust port `cliclack`.
+
+```ts
+import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
+
+intro('create-my-app');
+
+const name = await text({
+  message: 'Project name',
+  validate: v => v.length === 0 ? 'Required' : undefined,
+});
+if (isCancel(name)) {
+  cancel('Cancelled');
+  process.exit(0);
+}
+
+const framework = await select({
+  message: 'Pick a framework',
+  options: [
+    {value: 'react', label: 'React'},
+    {value: 'vue', label: 'Vue'},
+    {value: 'svelte', label: 'Svelte'},
+  ],
+});
+
+const s = spinner();
+s.start('Installing dependencies');
+await install();
+s.stop('Dependencies installed');
+
+outro(`You're all set!`);
+```
+
+**Components:** `intro`/`outro`, `text`, `password`, `confirm`, `select`, `multiselect`, `groupMultiselect`, `selectKey`, `spinner`, `progress`, `taskLog`, `note`, `log.info/.warn/.error/.success`, `stream`, `group`.
+
+**`isCancel(value)`** is critical — it detects Ctrl+C per prompt and lets you clean up gracefully.
+
+The visual style — blue-bordered connectors between prompts, single Unicode glyph progress markers — has become a recognizable aesthetic. If the user's building a `create-*`-style scaffolder, this is the right choice.
+
+---
+
+## @inquirer/prompts
+
+The modern modular rewrite of Inquirer — TypeScript-first packages that replaced the legacy monolithic `inquirer`. The workhorse for prompt-heavy CLIs:
+
+```ts
+import {input, select, confirm, password} from '@inquirer/prompts';
+
+const name = await input({message: 'What is your name?'});
+# Interaction patterns — keybindings, focus, navigation, modal vs modeless
+
+A deep dive into how users interact with TUIs — keybinding philosophy, focus management, navigation patterns, mouse support, and discoverability. The top-level `SKILL.md` covers the principles; this file goes deeper into the *why* and the trade-offs.
+
+**Contents:**
+- [Keybinding philosophies](#keybinding-philosophies)
+- [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
+- [Reserved keys — never bind these](#reserved-keys--never-bind-these)
+- [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
+- [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
+- [Focus management](#focus-management)
+- [Search and filter](#search-and-filter)
+- [Multi-select](#multi-select)
+- [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
+- [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+- [Forms and settings screens](#forms-and-settings-screens)
+- [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
+- Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
+- [Common interaction pitfalls](#common-interaction-pitfalls)
+
+---
+
+## Keybinding philosophies
+
+There are four major schools. Most apps blend them.
+
+### 1. Vim-style (modal)
+
+**Identity:** modes (NORMAL, INSERT, VISUAL, COMMAND), single-letter motions and operators in NORMAL mode, leader keys for namespaces.
+
+**Examples:** vim, neovim, helix, kakoune, k9s (ex-mode), aerc, weechat (command mode).
+
+**Strengths:**
+- Densely expressive — `5dw` ("delete five words") is two operators applied to a count.
+- Hands stay on home row; minimal modifier-key gymnastics.
+- Power users get fast.
+
+**Weaknesses:**
+- Steep learning curve.
+- "What mode am I in?" confusion if mode indicator is weak.
+- Modal text input fights conventional editing (Ctrl+A, Ctrl+E, etc.).
+
+**When to use:** editor-like tools where keystrokes are the primary interaction, users are likely to be vim-familiar, you want dense expressivity. Not appropriate for general-purpose tools targeting non-vim users.
+
+### 2. Emacs-style (chord)
+
+**Identity:** modifier-prefixed bindings (`C-x C-s` to save, `M-x` for command), no modes, deeply nested key tables.
+
+**Examples:** emacs (the originator), readline-based shells, weechat (default), some bash bindings.
+
+**Strengths:**
+- No modes; what you press is what you get.
+- Rich modifier space (`C-`, `M-`, `S-`, combinations).
+- Discoverable with which-key.
+
+**Weaknesses:**
+- Modifier strain ("Emacs pinky").
+- Conflicts with terminal-reserved keys.
+- Less efficient than modal for repetitive editing.
+
+**When to use:** rarely from scratch in 2026. Most Emacs-style apps inherit the convention from a long history. New apps usually go modal or modeless.
+
+### 3. Arrow-key / GUI-like (modeless)
+
+**Identity:** arrow keys + Enter + Tab + Esc + single-letter shortcuts. Mouse-first or mouse-friendly.
+
+**Examples:** btop, htop (somewhat), fzf, gum, Posting, Harlequin, most modern Textual apps.
+
+**Strengths:**
+- Zero learning curve.
+- Inclusive — works for users who've never touched vim.
+- Pairs naturally with mouse support.
+
+**Weaknesses:**
+- Slower for power users.
+- Less expressive — fewer keys means fewer commands.
+- Modifier keys (Ctrl/Alt) for less-common actions.
+
+**When to use:** general-purpose tools, dashboards, monitors, anything where you want broad usability.
+
+### 4. Hybrid (modeless + vim motions)
+
+**Identity:** on navigational surfaces, support arrows and compatible `hjkl` aliases simultaneously. Vim shortcuts are power-user paths, never requirements, and printable aliases yield while a text field owns input.
+
+**Examples:** lazygit, k9s, yazi, gh dash, most modern TUIs.
+
+**Strengths:**
+- Best of both worlds — onboarding via arrows, speed via hjkl.
+- Inclusive without sacrificing power.
+- Familiar to users from many backgrounds.
+
+**Weaknesses:**
+- Slightly more code (handle both).
+- Risk of inconsistency between which keys do what.
+
+**When to use:** a strong default for new navigational, full-screen TUIs. A bounded prompt or form can keep a smaller conventional keymap.
+
+---
+
+## Cross-app keybinding conventions
+
+These have crystallized across the ecosystem. Use them unless you have a strong reason not to:
+
+| Key | Action |
+|---|---|
+| `q` | quit |
+| `?` | help |
+| `/` | search / filter |
+| `n` / `N` | next / prev match |
+| `Esc` | cancel / back / dismiss |
+| `Enter` / `Return` | confirm / drill in |
+| `Space` | toggle / mark for multi-select |
+| `:` | command mode |
+| `gg` | top |
+| `G` | bottom |
+| `Tab` / `Shift+Tab` | switch focus |
+| `r` | refresh |
+| `1`–`9` | jump to panel / numbered tab |
+| `hjkl` *and* arrows | move in navigational views when text entry does not conflict |
+| `Ctrl+P` | command palette, when the app includes one |
+| `y` | yank / copy |
+| `p` | paste / push |
+| `d` | delete (often confirms first) |
+| `e` | edit |
+| `o` | open |
+
+**Pick a paradigm and stay consistent.** Don't mix `Ctrl+S` and `:w` for save unless both clearly map to "write file."
+
+---
+
+## Reserved keys — never bind these
+
+These belong to the terminal or shell:
+
+| Key | Why |
+|---|---|
+| **Ctrl+C** | SIGINT — should always quit cleanly |
+| **Ctrl+Z** | SIGTSTP — suspend; you must restore terminal state on resume |
+| **Ctrl+\\** | SIGQUIT — abort with core dump |
+| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control on legacy serial terminals |
+
+If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is `Ctrl+S` for "save" in editors (vim, helix) — but those editors traditionally disable XON/XOFF before binding.
+
+Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
+
+---
+
+## Discoverability — the four-layer pattern
+
+Every action a user can take should be discoverable through *at least one* of these layers, in order of immediacy:
+
+### Layer 1: Always-visible footer hints
+
+For a full-screen app, keep the 3–5 most-useful shortcuts visible at the bottom and update them by context. A one-step inline prompt can show its controls beside the prompt instead of reserving a footer row.
+
+For a complex full-screen app, this is usually the strongest discoverability tool. Most users will not begin in the docs; they read what is visible in context.
+
+Examples:
+- htop's F1–F10 strip.
+- lazygit's per-pane hints (`space stage  ↵ commit  p push  P pull  r refresh  ?`).
+- helix's status line.
+
+Auto-generation is a force multiplier:
+- **Bubble Tea**: `bubbles/help` reads from `key.KeyMap`.
+- **Textual**: `Footer` widget renders `BINDINGS`.
+- **Ratatui**: not auto-generated; build a helper that reads from your keybinding map.
+- **Ink**: not auto-generated; build with `<Box>` + the same keymap source.
+
+Define keys *once*, derive the footer.
+
+### Layer 2: `?` help screen
+
+Pressing `?` opens a modal or full-screen help with **all** keybindings, grouped by context.
+
+Every full-screen app with more than a handful of actions should provide this or an equivalent discoverable help view. A tiny picker whose complete keymap is already visible does not need a separate modal. lazygit's `?` shows a categorized list of keys, with sections per panel. Textual's `?` (when implemented) typically shows a key table.
+
+Format: `key  action  context`. Group by mode/panel/category.
+
+### Layer 3: Leader-key / which-key
+
+After pressing a leader (Space, `,`, `\`), show a popup with available follow-up keys. The user can:
+- Read the list and pick.
+- Type the key to dismiss the popup and trigger the action.
+- Press Esc to cancel.
+
+**The gold standard:** helix's `Space-` menu. Press Space, see `f` (file picker), `b` (buffer picker), `s` (symbols), `a` (LSP actions), etc. `which-key.nvim` is near-universal in neovim.
+
+When to add: when your keymap exceeds ~20 distinct actions. Below that, `?` help is enough.
+
+### Layer 4: Command palette
+
+`Ctrl+P` (or similar) opens a fuzzy-matched action list. The user types to filter.
+
+Add a palette when the action set is large, spans multiple contexts, or benefits from search; a small app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description.
+
+Examples:
+- Textual's built-in command palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT).
+- VS Code's Ctrl+Shift+P (the conceptual ancestor for many TUIs).
+- helix's `:` (ex-style command, not strictly a palette but similar role).
+- k9s's `:` (resource-typing, but adopts the same "type to filter actions" model).
+
+codex
+No—`<Static>` is for append-only output (logs/history). Its contents never re-render, so filtered rows, selection, and diff updates would become stale.
+
+For a 50k-row selectable diff, implement a viewport:
+
+- Keep the full filtered model in state/memoized data.
+- Render only the visible slice based on `scrollOffset`, terminal height, and selection.
+- Update that slice normally as the query changes; use deferred/debounced filtering if needed.
+
+In Ink 7, Backspace is `key.backspace`:
+
+```tsx
+useInput((input, key) => {
+  if (key.backspace) {
+    setQuery(query => query.slice(0, -1));
+  }
+});
+```
+
+`key.delete` is the forward Delete key.
+tokens used
+14,423

@@ -104,12 +104,12 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > The fuzzy finder. Pattern-defining.
 
-**Layout:** overlay/popup — appears over the shell, does one thing, exits.
+**Layout:** full-screen by default; `--height` opts into a bounded picker below the cursor. Either form does one thing and exits.
 
 **What it does well:**
-- **Inline preview** with `--preview` — shows file contents, command output, anything, without leaving the picker.
+- **Preview pane** with `--preview` — shows file contents, command output, anything, without leaving the picker.
 - **Composable** — pipes to anywhere. `git branch | fzf | xargs git checkout` is the canonical pattern; even a full TUI can have a "summon fzf for picking" sub-flow.
-- Renders inline on `/dev/tty`, not the alt screen — see `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
+- Opens `/dev/tty` for its interactive UI while keeping the selected value on stdout. Use `--height` when shell context must remain visible; see `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
 
 **Pattern recipe:** the instant-fuzzy-filter interaction (sub-100ms updates, match count, smart-case, ranking) is dissected in `references/interaction-patterns.md` → *The fzf pattern in detail*.
 

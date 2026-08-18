@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+My generated Cobra application is named shipctl. What command should users run to produce Bash completion, and what role does cobra-cli play when I wire this up?

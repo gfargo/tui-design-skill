@@ -375,7 +375,7 @@ func init() {
 
 **Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. Don't write to stdout from `PreRun` if you'll enter alt-screen (output gets eaten). For commands that take pipe input, check `isatty.IsTerminal(os.Stdin.Fd())` before launching the TUI; if piped, run in non-interactive mode.
 
-Cobra ships shell completion generation (`cobra-cli completion bash|zsh|fish|powershell`) — wire it up; users expect it.
+Cobra supports generated shell completions. Add a `completion` command to the application (or scaffold one with `cobra-cli add completion`), then users generate a script with `myapp completion bash|zsh|fish|powershell`; `cobra-cli completion ...` completes the generator itself, not the generated application.
 
 **Fang** (`charmbracelet/fang`) — the CLI starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation. The idiomatic Cobra companion in a Charm-stack app.
 

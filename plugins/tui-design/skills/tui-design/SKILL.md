@@ -1,6 +1,6 @@
 ---
 name: tui-design
-description: Design and build clean, professional, minimal terminal UI (TUI) applications and command-line tools. Use this skill whenever the user is building, designing, refactoring, reviewing, or asking about terminal interfaces — full-screen TUIs (file managers, dashboards, monitors, git/k8s tools, REPLs), interactive CLI prompts, or simple command-line utilities. Use it for library questions ("Bubble Tea vs Ratatui vs Textual vs Ink"), design questions ("how should I lay out this dashboard"), and concrete build requests ("build me a TUI for X"), even when the user doesn't say "TUI" explicitly — phrases like "terminal app", "ncurses-style", "interactive shell tool", "CLI dashboard", "fzf-like picker", or naming a known TUI app (lazygit, k9s, btop, helix, yazi) all qualify.
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
 ---
 
 # TUI & CLI Design

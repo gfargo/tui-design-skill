@@ -1,0 +1,63 @@
+{
+  "schema_version": 2,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v161-gpt-5-6-terra",
+  "created_at": "2026-08-18T19:16:55Z",
+  "run_manifest_sha256": "d673ac27ee306acea4912a0b416f6b3937b9e22af9d57beb4420d23a48108429",
+  "grades_file": "grades.json",
+  "grades_sha256": "8ca054a1bb990f3efbb44f52da234e62d5fe88afeac118cad5a85e2181671b65",
+  "passed": 25,
+  "total": 25,
+  "pass_rate": 1.0,
+  "by_case": [
+    {
+      "case_id": "python-async-http",
+      "case_name": "textual-async-http-worker",
+      "passed": 4,
+      "total": 4,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-fallible-lifecycle",
+      "case_name": "ratatui-fallible-lifecycle",
+      "passed": 4,
+      "total": 4,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "fzf-query-navigation",
+      "case_name": "fzf-query-navigation",
+      "passed": 4,
+      "total": 4,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink-static-backspace",
+      "case_name": "ink-static-backspace",
+      "passed": 4,
+      "total": 4,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "cobra-app-completion",
+      "case_name": "cobra-app-completion",
+      "passed": 3,
+      "total": 3,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "noninteractive-contract",
+      "case_name": "noninteractive-contract",
+      "passed": 3,
+      "total": 3,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "portable-exit-codes",
+      "case_name": "portable-exit-codes",
+      "passed": 3,
+      "total": 3,
+      "pass_rate": 1.0
+    }
+  ]
+}

@@ -60,6 +60,8 @@ Once installed, a compatible agent can reach for this skill automatically when y
 - **Naming a known TUI app** as inspiration (lazygit, k9s, btop, helix, fzf, yazi, atuin)
 - **Phrases like** "terminal app," "ncurses-style," "interactive shell tool," "CLI dashboard," "fzf-like picker"
 
+It stays out of browser/web UI, native GUI, editor/font configuration, and backend or shell work when no terminal interface is part of the request.
+
 ---
 
 ## Example prompts
@@ -92,27 +94,27 @@ To update later when the skill improves:
 
 ### Option B — Vercel's `npx skills` (cross-agent, no Claude Code required)
 
-If you use Cursor, Codex CLI, Gemini CLI, Aider, Windsurf, or want to install at the project level rather than globally:
+The pinned CLI below requires Node.js 22.20 or newer. It auto-detects compatible agents, but the examples name the target explicitly so the destination is unambiguous:
 
 ```bash
-# Install for Claude Code (default)
-npx skills add gfargo/tui-design-skill
+# Install for Claude Code in the current project
+npx --yes skills@1.5.22 add gfargo/tui-design-skill -a claude-code
 
-# Install globally (~/.claude/skills/) instead of project-local
-npx skills add gfargo/tui-design-skill -g
+# Install into Claude Code's global skill directory
+npx --yes skills@1.5.22 add gfargo/tui-design-skill -a claude-code -g
 
-# Install for a different agent
-npx skills add gfargo/tui-design-skill -a cursor
-npx skills add gfargo/tui-design-skill -a codex
+# Install for another agent
+npx --yes skills@1.5.22 add gfargo/tui-design-skill -a cursor
+npx --yes skills@1.5.22 add gfargo/tui-design-skill -a codex
 
 # List skills installed via npx skills
-npx skills list
+npx --yes skills@1.5.22 list
 
 # Update later
-npx skills update tui-design
+npx --yes skills@1.5.22 update tui-design
 ```
 
-`npx skills` discovers this skill via the same `marketplace.json` used by Option A, so no extra setup is needed on the repo side.
+`npx skills` discovers this skill via the same `marketplace.json` used by Option A. `-g` means the selected agent's global skill directory; the exact path depends on that agent. Upgrade the pinned CLI deliberately after checking its Node requirement and install behavior.
 
 ### Option C — Claude.ai (upload the .skill file)
 
@@ -145,7 +147,7 @@ cd tui-design-skill
 ./scripts/package-skill.sh        # writes dist/tui-design.skill
 ```
 
-The output is `dist/tui-design.skill` — a deterministic zip whose root is the complete `tui-design/` skill folder (`SKILL.md`, `agents/openai.yaml`, and `references/`), ready to install in a compatible agent. Packaging requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer.
+The output is `dist/tui-design.skill`—a deterministic zip containing the exact ten-file `tui-design/` allowlist (`SKILL.md`, `agents/openai.yaml`, and eight references), ready to install in a compatible agent. Packaging rejects symlinks, generated files, caches, and undeclared resources. It requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer.
 
 ## Evaluation
 
@@ -165,9 +167,9 @@ python3 scripts/eval_harness.py run \
   --repeat 2 -- path/to/model-runner --its-arguments
 ```
 
-Each generated `run.json` records the caller-supplied exact provider/model identifiers, repetitions, runner argv, git commit and dirty state, host metadata, eval-set and skill hashes, prompt and response hashes, timings, exit codes, and raw artifact paths. Generated work stays under ignored `evals/runs/`; copy only reviewed evidence intended for the repository into `evals/results/`. Keep credentials in the runner's environment—never put secrets in the recorded command arguments.
+Each schema-v2 `run.json` records the caller-supplied exact provider/model identifiers, repetitions, runner executable name and argv hash, git commit and dirty state, host metadata, eval-set and skill hashes, prompt and response hashes, timings, exit codes, and raw artifact paths. Exact runner arguments are private by default; add `--record-runner-argv` only when they contain no credentials or signed URLs and the evidence needs full command reproduction. Generated work stays under ignored `evals/runs/`; copy only reviewed evidence intended for the repository into `evals/results/`. Keep credentials in the runner's environment.
 
-Grades are a separate JSON artifact with a grader identity and one ordered boolean result per rubric assertion and trial. The scoring command rejects missing trials or assertions before calculating the aggregate and per-case pass rates:
+Grades are a separate schema-v2 JSON artifact with a grader kind, name, prompt version, and one ordered boolean result per rubric assertion and trial. The scoring command reconstructs the complete expected trial set from the eval source and rejects missing trials or assertions before calculating aggregate and per-case pass rates:
 
 ```bash
 python3 scripts/eval_harness.py score \
@@ -182,6 +184,8 @@ python3 scripts/eval_harness.py validate \
 ```
 
 Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. See `python3 scripts/eval_harness.py --help` and the integration tests for the artifact contract.
+
+The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
 
 ---
 

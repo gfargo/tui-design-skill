@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+Show the smallest correct Textual @work example that fetches a URL with HTTPX without blocking the UI, checks HTTP errors, and updates a Static widget. Should I write `await httpx.get(url)`?

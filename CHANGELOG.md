@@ -2,6 +2,32 @@
 
 All notable changes to the `tui-design` skill are documented here. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/), and the project follows semantic versioning.
 
+## [1.6.1] — 2026-08-18
+
+Correctness and release-integrity patch following an adversarial review of the complete v1.6.0 source, artifact, evaluation evidence, and framework guidance.
+
+### Fixed
+- **Evaluation harness containment:** schema v2 accepts only path-safe case IDs, uses one collision-free trial key for every artifact, and proves every recorded path stays within its run directory.
+- **Evaluation completeness:** validation reconstructs the exact case × repetition set from the hashed eval source, checks canonical prompt contents and artifact paths, and rejects omitted, duplicated, prepared, or empty-response trials in a completed run.
+- **Evaluation failure states:** timeouts safely decode partial byte output; missing runners, nonzero exits, empty output, and interruptions end in explicit terminal states rather than leaving a misleading `running` manifest. Grading now requires a recorded prompt version.
+- **Private runner metadata:** exact runner arguments are opt-in with `--record-runner-argv`; the default records an executable name and argv hash without persisting possible credentials.
+- **Framework guidance:** corrected the Textual/HTTPX async worker, documented Ratatui's non-transactional `try_init`/`try_restore` behavior, fixed Ink 7 Backspace naming and `<Static>` scope, removed picocolors from the ESM-only list, and corrected Cobra application-completion commands.
+- **Picker behavior:** reconciled fzf's full-screen default with explicit bounded `--height` mode and reserved printable `hjkl` for views or modes where text entry does not own those keys.
+- **CLI contracts:** replaced universal `--no-input` language with an ecosystem-appropriate noninteractive contract, distinguished `/dev/tty` pickers from stdio prompts, corrected exit-code-2 attribution, and marked BSD `sysexits` legacy/nonportable.
+- **Responsive wording:** geometry may derive from the latest stored window dimensions when a framework's render method has no frame; cached rectangles must be invalidated on resize.
+
+### Changed
+- **Trigger boundary:** the skill description now explicitly excludes browser/web UI, native GUI, editor/font configuration, and backend or shell work with no terminal interface. This addresses the committed v1.5 trigger set's known near-miss activations while preserving terminal-specific triggers.
+- **Exact package contract:** source and archive validation now enforce the declared ten-file allowlist and reject symlinks, caches, generated files, unexpected directories, wrong modes, wrong timestamps, or wrong archive order.
+- **CI hardening:** workflows pin actions by commit, run ShellCheck, and run Claude's strict plugin validator with a pinned CLI on Node 22.20. The documented release flow builds and verifies a draft's asset before publication.
+- **Installer documentation:** `npx skills` examples pin a tested CLI version, state its Node requirement, name the target agent explicitly, and clarify project-local versus agent-global installation.
+- **Evidence wording:** the v1.6.0 structural report remains preserved, but its 14/14 is identified as a targeted composite recheck rather than a full rerun of every case against the final tree.
+
+### Added
+- **Regression coverage:** expanded the harness/package suite from two tests to thirteen, covering traversal, sanitized-name collisions by rejection, exact trial coverage, state consistency, empty output, partial timeout output, missing runners, private argv, grader metadata, exact archives, symlinks, and unexpected package files.
+- **Correction evals:** added `evals/v161-correction-evals.json` for Python async HTTP, Ratatui fallible lifecycle handling, fzf key/screen contracts, Ink virtualization and Backspace, Cobra completion, noninteractive CLI behavior, and portable exit-code guidance.
+- **Single-snapshot forward evidence:** ran all seven correction cases against clean commit `7d68d6080ba7772febfad315e042d717b4804c37` with OpenAI Codex desktop CLI `0.147.0-alpha.6.5`, exact model `gpt-5.6-terra`, high reasoning, and one repetition. The separately graded schema-v2 run scored 25/25; raw prompts, answers, stderr traces, hashes, grades, and summary are preserved under `evals/results/v1.6.1-forward-test/`.
+
 ## [1.6.0] — 2026-08-18
 
 Structural release focused on efficient context use, single-source guidance, Codex presentation metadata, and reproducible evaluation evidence. The trigger description remains unchanged because the v1.5 trigger set showed no positive misses; this release changes what loads after activation, not when activation occurs.
@@ -15,7 +41,7 @@ Structural release focused on efficient context use, single-source guidance, Cod
 - **Codex metadata:** generated `agents/openai.yaml` with a concise UI description and a default prompt that explicitly invokes `$tui-design`; the validator checks its shape and the packaged archive now requires it.
 - **Reproducible eval harness:** `scripts/eval_harness.py` prepares baseline or clean-context with-skill prompts, runs any stdin/stdout model command without a shell, and records exact provider/model labels, repetitions, git state, host data, input hashes, raw outputs, timing, and exit status. Separate scoring and validation phases enforce full rubric coverage and detect artifact tampering.
 - **Harness tests:** standard-library integration tests cover prompt injection, repeated trials, scoring, manifest integrity, and tamper detection. They run inside `validate-release.sh` and CI.
-- **Structural forward tests:** added `evals/v160-structural-evals.json` and preserved the raw clean-context answers in `evals/results/v1.6.0-forward-test/`. The first pass scored 12/14; tightening named-framework routing fixed both misses, and the final candidate scored 14/14. The report explicitly records that the in-app runner did not expose its exact inherited model identifier, so this evidence is not presented as a reproducible comparative benchmark.
+- **Structural forward tests:** added `evals/v160-structural-evals.json` and preserved the raw clean-context answers in `evals/results/v1.6.0-forward-test/`. The first pass scored 12/14; after tightening named-framework routing, case 2 was rerun at 5/5. The report's 14/14 combines unchanged cases 0–1 from the initial pass with that targeted recheck, rather than a full final-tree rerun. It also records that the in-app runner did not expose its exact inherited model identifier, so this evidence is not a reproducible comparative benchmark.
 
 ## [1.5.1] — 2026-08-18
 

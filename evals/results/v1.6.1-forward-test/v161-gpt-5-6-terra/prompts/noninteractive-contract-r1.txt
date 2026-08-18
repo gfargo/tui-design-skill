@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm documenting automation support for a new CLI. Is --no-input a universal convention that every CLI should implement? What contract should I promise instead?

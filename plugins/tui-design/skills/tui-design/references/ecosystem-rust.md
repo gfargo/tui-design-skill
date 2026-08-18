@@ -104,10 +104,10 @@ Ratatui owns rendering and terminal setup, but not the application event loop, s
 |---|---|
 | Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
 | SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
-| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Reenter even when the child fails. A still-running input task can consume the terminal's capability responses during reinitialization. |
+| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Retain the child result while attempting every reentry step independently; if child and reentry both fail, report both instead of letting `?` discard one. A still-running input task can consume terminal capability responses during reinitialization. |
 | Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
 
-Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional.
+Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional. A successful redraw proves only that the renderer recovered; reload any file, process, or remote state the child could have changed.
 
 ## Widgets
 

@@ -22,7 +22,7 @@
       "assertions": [
         "Pauses or stops the Crossterm input task before terminal restoration so it cannot steal child input or terminal capability responses",
         "Restores shell modes before starting Vim, waits for it, then reinitializes, clears, and forces a full redraw",
-        "Ensures reentry cleanup runs even when the child fails and preserves child and restoration errors deliberately",
+        "Ensures reentry cleanup runs even when the child fails, retains the child result while collecting reentry errors, and does not silently overwrite either failure",
         "Routes SIGTERM through the runtime into the application loop so the managed closure returns rather than restoring from a low-level signal handler",
         "States that default SIGTERM or SIGKILL does not unwind ordinary Rust cleanup"
       ]
@@ -63,7 +63,7 @@
         "Uses Bubble Tea's managed signal lifecycle and ExecProcess or Suspend rather than restoring terminal state directly",
         "Routes Ratatui and required Textual desktop termination into their event loops instead of performing terminal I/O in a low-level signal handler",
         "Explains that Ink's exitOnCtrlC handles raw input rather than OS SIGTERM and places graceful signal policy around the render instance",
-        "Requires pause input, shell restoration, wait, reentry, stale-state refresh, and full redraw for resumable handoffs",
+        "Requires pause input, shell restoration, wait, reentry, external-state reload, and full redraw for resumable handoffs, recognizing that redraw alone does not refresh data",
         "Scopes SIGTSTP job control to Unix, provides another Windows path, and says SIGKILL cannot be cleaned up"
       ]
     }

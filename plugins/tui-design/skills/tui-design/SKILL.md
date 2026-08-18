@@ -56,7 +56,7 @@ For design questions, make the recommendation before explaining it. For implemen
 - Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
 - Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
 - Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
-- Where supported, suspend only after restoring the shell-facing terminal, then re-enter modes and force a full redraw on resume. Do not assume POSIX signals exist on Windows.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
 - Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
 
 ### Rendering, data, and performance

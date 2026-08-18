@@ -1,0 +1,2120 @@
+2026-08-18T23:20:56.554625Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T23:20:56.556952Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-08-18T23:20:56.558932Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /Users/gfargo/dev/gfargo/tui-design-skill
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a0172d-8de0-7913-b008-74ac50f5f0cb
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+In a Textual 8 app I need an Edit action that opens a local editor, plus Ctrl+Z support. The same app may run on Windows or Textual Web. Should I call os.system after self.exit and relaunch the app? Give me a portable lifecycle and exit-code contract.
+
+codex
+I’m using the requested TUI design guidance, including its Textual/Python reference, to ground the lifecycle and cross-platform key-handling recommendation.
+exec
+/bin/zsh -lc "pwd && sed -n '1,240p' plugins/tui-design/skills/tui-design/SKILL.md && sed -n '1,260p' plugins/tui-design/skills/tui-design/references/ecosystem-python.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+/Users/gfargo/dev/gfargo/tui-design-skill
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | Use the separate `vhs-cli-demos` skill |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve terminal-reserved behavior such as interrupt, suspend, and flow control.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+# Python ecosystem — Textual, Rich, prompt_toolkit
+
+Three tools occupy distinct niches: **Textual** (the modern reactive TUI framework — async-first, CSS-styled, web-deployable), **Rich** (output formatting — the rendering engine inside Textual, excellent standalone), and **prompt_toolkit** (input-focused REPLs and shells — powers IPython, ptpython, mycli/pgcli/litecli). They solve different problems. Pick by what the program *is*, not just by Python familiarity.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Textual](#textual-textualize-textual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
+- [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
+- [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
+- [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
+- [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Full-screen TUI app | **Textual** |
+| CLI tool with pretty output (tables, panels, syntax) | **Rich** |
+| Interactive REPL or shell-like tool | **prompt_toolkit** |
+| One or two prompts inside a CLI | **questionary** (built on prompt_toolkit) or **InquirerPy** |
+| Argparse with type hints | **Typer** (decorator API on Click) |
+| Argparse decorator-style (no type hints) | **Click** |
+| Simple progress bar | **tqdm** (max performance) or **alive-progress** (polished, redirect-safe) |
+
+**Default for full TUI: Textual.** It's the only modern Python TUI framework and is genuinely well-designed. **Default for fancy CLI output: Rich.**
+
+---
+
+## Textual (Textualize/textual)
+
+**Architectural model: reactive, async-first, message-passing.** Strongly inspired by web frameworks. App subclass + Widgets in a DOM-like tree (App → Screen → Widgets) + TCSS for layout/style + reactive attributes for state + Messages/Events for communication, all on asyncio.
+
+**Status:** Textualize the company wound down in mid-2025; Will McGugan maintains Textual and Rich as open source. If the user asks "isn't Textual dead?" — no. The release cadence says otherwise: four major versions since the announcement, with 8.x current as of mid-2026. Those majors did carry breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
+
+**Canonical structure:**
+
+```python
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Button, Label
+
+class HelloApp(App):
+    CSS_PATH = "hello.tcss"
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+        ("d", "toggle_dark", "Toggle dark mode"),
+    ]
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Label("Hello, world!", id="greeting")
+        yield Button("Click me", id="go", variant="success")
+        yield Footer()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.query_one("#greeting", Label).update("Button pressed!")
+
+    def action_toggle_dark(self) -> None:
+        self.theme = "textual-light" if self.theme == "textual-dark" else "textual-dark"
+
+if __name__ == "__main__":
+    HelloApp().run()
+```
+
+`compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+
+### Lifecycle and terminal handoff
+
+Textual's driver restores application mode from `App.run()` / `run_async()` cleanup. Use App actions and messages for exit or handoff so widgets do not manipulate raw mode themselves.
+
+| Boundary | Textual 8 contract |
+|---|---|
+| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+| SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
+| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+
+These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
+
+## Widgets
+
+Textual ships dozens. Categories:
+
+**Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`.
+
+**Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+
+**Container/structure:** `Header`, `Footer`, `LoadingIndicator`, `ProgressBar`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
+
+**Data:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`.
+
+`DataTable` is excellent — it's what you should use for any tabular display. Add columns with `add_columns`, rows with `add_rows`, configure cursor type (`cell`/`row`/`column`/`none`), enable `zebra_stripes`, hook into `on_data_table_row_selected`.
+
+## Layout — TCSS
+
+Layout is CSS:
+
+```css
+Screen {
+    layout: vertical;
+}
+
+#sidebar {
+    width: 30;
+    border: tall $accent;
+}
+
+#main {
+    width: 1fr;
+    layout: vertical;
+}
+
+DataTable {
+    height: 1fr;
+}
+
+.error {
+    color: $error;
+    text-style: bold;
+}
+```
+
+Concepts:
+- **`layout`** — `vertical | horizontal | grid`.
+- **Containers**: `Vertical`, `Horizontal`, `Grid`, `VerticalScroll`, `Center`, `Middle`.
+- **Sizing**: cells (`width: 30`), percentages (`width: 50%`), `auto`, fractional units (`width: 1fr`).
+- **Grid**: `grid-size: 3 4`, `grid-columns`, `grid-rows`, `grid-gutter`, `column-span`, `row-span`.
+- **Docking**: `dock: top | right | bottom | left` for sticky edges. Used for `Header` and `Footer`.
+- **Overflow**: `overflow-x: auto` adds scrollbars.
+
+**Selectors**: type (`Button { ... }` matches subclasses too — different from web CSS), id (`#dialog`), class (`.error`), pseudo (`:focus`, `:hover`, `:disabled`, `:dark`, `:light`). Nesting works. **Theme variables** (`$primary`, `$panel`, `$text`, `$accent`, `$error`, etc.) — semantic tokens that change with the active theme.
+
+**Live edit reloads instantly** with `textual run --dev`. Edit your `.tcss` in another window and see changes immediately.
+
+## Events and messages
+
+Two ways to handle events:
+
+**1. Name convention:**
+```python
+def on_button_pressed(self, event: Button.Pressed) -> None:
+    if event.button.id == "submit":
+        ...
+```
+
+**2. `@on` decorator with CSS selector** (preferred when you have many of the same widget type):
+```python
+from textual import on
+
+@on(Button.Pressed, "#submit")
+def handle_submit(self) -> None:
+    ...
+
+@on(Button.Pressed, ".danger")
+def handle_danger(self, event: Button.Pressed) -> None:
+    ...
+```
+
+Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: **"attributes down, messages up"** — parents set state on children via attributes; children notify parents via messages.
+
+## Reactive state
+
+```python
+from textual.reactive import reactive
+
+class Counter(Widget):
+    count: reactive[int] = reactive(0)
+
+    def watch_count(self, old: int, new: int) -> None:
+        # called automatically when count changes
+        self.refresh()
+
+    def validate_count(self, value: int) -> int:
+        # called before assignment; can clamp or transform
+        return max(0, min(10, value))
+
+    def compute_display(self) -> str:
+        # derived attribute; auto-updates when count changes
+        return f"Count: {self.count}"
+
+    def render(self) -> str:
+        return self.display
+```
+
+Execution order on assignment: **validate → assign → compute → watch**. Modifiers on `reactive(...)`:
+- `init=False` — don't fire watcher on initial assignment.
+- `always_update=True` — fire even when value didn't change.
+- `layout=True` — trigger a re-layout, not just a re-render.
+- `bindings=True` — re-evaluate `BINDINGS` (useful for context-sensitive bindings).
+- `recompose=True` — re-run `compose()` (rebuild children).
+
+This is the heart of Textual's "reactive" claim — it's genuinely declarative state-driven UI.
+
+## Async and workers
+
+Handlers can be `async def`. The `@work` decorator turns methods into background workers:
+
+```python
+import httpx
+from textual import work
+
+@work(exclusive=True)
+async def fetch_data(self, url: str) -> None:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        response.raise_for_status()
+    self.query_one("#result").update(response.text)
+
+# For blocking code:
+@work(thread=True)
+def compute_heavy(self) -> None:
+    result = expensive_sync_thing()
+    self.call_from_thread(self.update_result, result)
+```
+
+`call_from_thread(fn, *args)` is required when modifying UI from a thread (vs an asyncio task). `set_interval(secs, callable)` schedules periodic UI updates without blocking.
+
+## Modal screens
+
+Push a screen on top for dialogs/modals:
+
+```python
+from textual.screen import ModalScreen
+
+class ConfirmDialog(ModalScreen[bool]):
+    def compose(self) -> ComposeResult:
+        yield Label("Are you sure?")
+        yield Button("Yes", id="yes", variant="error")
+        yield Button("No", id="no")
+
+    @on(Button.Pressed, "#yes")
+    def confirm(self) -> None:
+        self.dismiss(True)
+
+    @on(Button.Pressed, "#no")
+    def cancel(self) -> None:
+        self.dismiss(False)
+
+# In your app — must run in a worker:
+@work
+async def action_delete(self) -> None:
+    if await self.push_screen_wait(ConfirmDialog()):
+        await self.do_delete()
+```
+
+`push_screen_wait` is the await-able way; results come back via `dismiss(value)`. It only works inside a worker — the `@work` decorator is mandatory, so waiting for the screen doesn't block the app. Calling it from a plain handler raises `NoActiveWorker`.
+
+## Testing — Pilot + pytest-textual-snapshot
+
+Textual has the best testing story of any TUI framework:
+
+```python
+async def test_button_click():
+    app = HelloApp()
+    async with app.run_test(size=(80, 24)) as pilot:
+        await pilot.press("tab", "enter")
+        await pilot.click("#submit")
+        await pilot.pause()
+        assert app.query_one("#result", Static).content == "Done"
+```
+
+
+exec
+/bin/zsh -lc "sed -n '261,620p' plugins/tui-design/skills/tui-design/references/ecosystem-python.md && sed -n '1,260p' plugins/tui-design/skills/tui-design/references/interaction-patterns.md && sed -n '1,220p' plugins/tui-design/skills/tui-design/references/cli-basics.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+For SVG snapshots:
+```python
+def test_homepage(snap_compare):
+    assert snap_compare("path/to/app.py", press=["tab", "enter", "a"])
+```
+
+Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. This is genuinely production-grade testing — in our view still the most complete story of any TUI framework, though Ratatui's `TestBackend` and Bubble Tea's `teatest` have matured.
+
+Gotchas worth knowing:
+
+- **`run_test()` runs headless at `size=(80, 24)` and disables notifications and tooltips by default.** A test asserting on a `notify()` toast will silently see nothing — pass `notifications=True` (and `tooltips=True` if relevant) to `run_test`.
+- **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
+- **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded `Input.Submitted`/`Changed` message's `event.validation_result` (`is_valid`, `failure_descriptions`) — or on `input.is_valid` / the auto-applied `-invalid`/`-valid` CSS classes.
+
+## Debugging
+
+The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
+
+Never `print()` inside a running Textual app — raw mode + the live display corrupt on any direct stdout write. Instead:
+
+- **`textual console`** — a separate process that receives logs and `print()`/`self.log(...)` output. Run it in another terminal, then `textual run --dev myapp.py` in the app's terminal.
+- **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
+- **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
+
+**Profiling:** neither `textual run --dev`/`console` nor `textual-dev diagnose` measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. **A correction worth internalizing:** `DataTable.add_rows()` is not a bulk-insert optimization — it's a plain loop over `add_row()`, paying the same per-row bookkeeping cost `len(rows)` times. If bulk-inserting thousands of rows is slow, switching from a manual loop to `add_rows()` won't fix it. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
+
+## Dev tools
+
+- **`textual serve app.py`** — serves the app over HTTP/WebSocket; runs in a browser tab. Same Python code, no changes.
+
+`textual serve` is genuinely unusual: same codebase runs in terminal, over SSH, or in a browser — and it's the best accessibility story in TUI-land, since browsers have real screen reader support. Prefer it (self-hosted, still maintained) over **textual-web**, the company's hosted service, whose future is unclear post-Textualize.
+
+## Notable Textual apps
+
+- **Toad** — Will McGugan's universal terminal UI for agentic coding, with ACP support for Claude Code, Gemini CLI, and others. The flagship Textual app.
+- **Posting** — HTTP client (Postman alternative).
+- **Harlequin** — SQL IDE.
+- **Toolong** — log viewer for multi-GB files.
+- **Memray** — Bloomberg's memory profiler.
+- **Dolphie** — MySQL/MariaDB monitor.
+- **elia** — chat UI for LLMs.
+- **frogmouth** — markdown browser.
+- **Trogon** — auto-generates a TUI from a Click/Typer CLI.
+
+## Pitfalls
+
+1. **Reactives in `__init__` fire watchers before mount** → `NoMatches` errors when watchers try to query DOM. Init in `on_mount` or use `set_reactive(MyClass.attr, value)` to bypass watchers.
+2. **`compose()` runs once.** To rebuild children, use `reactive(..., recompose=True)` or `await self.remove_children()` + `await self.mount(...)`.
+3. **Don't `print()` inside Textual.** Corrupts the screen. Use `self.log(...)` and `textual console` to view.
+4. **TCSS type selectors match subclasses** (unlike web CSS). `Button { ... }` matches your custom `MyButton(Button)`. Use class selectors (`.my-button`) when you want exact targeting.
+5. **Inside Textual, use `ProgressBar` widget**, not Rich's `Live`/`Progress` — they fight each other for the screen.
+6. **For periodic updates from sync code**, use `self.call_from_thread`, not direct attribute assignment.
+7. **`can_focus = True`** on custom widgets that should receive key events. Without this, key events bypass them.
+
+---
+
+## Rich (Textualize/rich)
+
+Immediate-mode output formatting — no input handling, no event loop. The de facto Python library for pretty CLI output. Used internally by Textual for rendering.
+
+```python
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.progress import track
+
+console = Console()
+
+# Markup syntax (like BBCode)
+console.print("[bold red]Error:[/] file not found")
+
+# Tables
+table = Table(title="Users")
+table.add_column("Name", style="cyan")
+table.add_column("Email", style="green")
+table.add_row("Alice", "alice@example.com")
+console.print(table)
+
+# Panels
+console.print(Panel.fit("Hello, world!", title="Greeting", border_style="blue"))
+
+# Progress
+for item in track(items, description="Processing..."):
+    do_work(item)
+```
+
+**Components:** `Console`, markup (`[bold red]…[/]`), `Table`, `Panel`, `Columns`, `Tree`, `Syntax` (Pygments), `Markdown`, `Progress` (with multiple tasks), `Live` (animated regions), `RichHandler` for colorized logs, `install()` for pretty tracebacks.
+
+**`rich.install()`** replaces the default Python traceback with a much better one — beautiful syntax highlighting and source context. Drop into any script for free upgrade.
+
+**Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools (Pip, Poetry, Sphinx, etc. all use Rich).
+
+---
+
+## prompt_toolkit
+
+Two modes:
+
+**1. Prompt-style** — single-line input with completion, history, syntax highlighting:
+
+```python
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+
+cmd_completer = WordCompleter(["help", "list", "quit"])
+text = prompt("> ", completer=cmd_completer)
+```
+
+**2. Full-screen Application** — HSplit/VSplit/FloatContainer + UIControl + KeyBindings. Powers IPython, ptpython, all the DBCLI tools (mycli, pgcli, litecli), pyvim, pymux.
+
+**When to choose prompt_toolkit:** you're building a REPL/shell where the central interaction is *typing commands*, with completion, history, multi-line editing, syntax highlighting. Textual can do this but prompt_toolkit is more focused.
+
+For one-off prompts inside CLI tools, use **questionary** (built on prompt_toolkit) — much simpler API:
+
+```python
+import questionary
+
+answer = questionary.text("What's your name?").ask()
+choice = questionary.select(
+    "Pick a color",
+    choices=["red", "green", "blue"],
+).ask()
+```
+
+---
+
+## Other libraries
+
+- **Urwid** — pre-Textual TUI framework; mature and actively maintained again (v3.0.x through 2025, v4.0 in 2026) after years of dormancy. New projects should still use Textual.
+- **Blessed** — modernized curses wrapper, cross-platform via `jinxed`. For bespoke games/animations where you want fine control. Not recommended as a first choice.
+- **curses** — stdlib, Unix-only, lowest level. Avoid for new code unless you have a strict zero-dep requirement.
+- **InquirerPy** — Python port of Inquirer.js. Alternative to questionary.
+- **tqdm** — battle-tested progress bars, max performance, the default for ML/data scripts. Survives `print()` interleaving with `with logging_redirect_tqdm():`.
+- **alive-progress** — animated, polished progress bars; better visual but slightly slower than tqdm.
+- **asciimatics** — animations + form-style TUIs. Niche; Textual has taken over its mindshare.
+
+---
+
+## CLI argparse: argparse vs Click vs Typer
+
+**argparse** — stdlib, no dependency. Verbose but capable.
+
+**Click** — decorator-based, very popular:
+```python
+import click
+
+@click.command()
+@click.option("--name", default="world", help="Who to greet")
+@click.option("--count", default=1, type=int)
+def hello(name: str, count: int) -> None:
+    """Say hello."""
+    for _ in range(count):
+        click.echo(f"Hello, {name}!")
+```
+
+**Typer** — built on Click, type-hint-driven (FastAPI's author). The most ergonomic:
+```python
+import typer
+
+app = typer.Typer()
+
+@app.command()
+def hello(name: str = "world", count: int = 1) -> None:
+    """Say hello."""
+    for _ in range(count):
+        typer.echo(f"Hello, {name}!")
+
+if __name__ == "__main__":
+    app()
+```
+
+**Recommendation: use Typer for new projects.** Type hints give you free validation, documentation, and shell completion.
+
+**Trogon** auto-generates a Textual TUI from any Click or Typer CLI — drop in `from trogon import Trogon` and your CLI gets an interactive form mode for free.
+
+---
+# Interaction patterns — keybindings, focus, navigation, modal vs modeless
+
+A deep dive into how users interact with TUIs — keybinding philosophy, focus management, navigation patterns, mouse support, and discoverability. The top-level `SKILL.md` covers the principles; this file goes deeper into the *why* and the trade-offs.
+
+**Contents:**
+- [Keybinding philosophies](#keybinding-philosophies)
+- [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
+- [Reserved keys — never bind these](#reserved-keys--never-bind-these)
+- [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
+- [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
+- [Focus management](#focus-management)
+- [Search and filter](#search-and-filter)
+- [Multi-select](#multi-select)
+- [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
+- [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+- [Forms and settings screens](#forms-and-settings-screens)
+- [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
+- Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
+- [Common interaction pitfalls](#common-interaction-pitfalls)
+
+---
+
+## Keybinding philosophies
+
+There are four major schools. Most apps blend them.
+
+### 1. Vim-style (modal)
+
+**Identity:** modes (NORMAL, INSERT, VISUAL, COMMAND), single-letter motions and operators in NORMAL mode, leader keys for namespaces.
+
+**Examples:** vim, neovim, helix, kakoune, k9s (ex-mode), aerc, weechat (command mode).
+
+**Strengths:**
+- Densely expressive — `5dw` ("delete five words") is two operators applied to a count.
+- Hands stay on home row; minimal modifier-key gymnastics.
+- Power users get fast.
+
+**Weaknesses:**
+- Steep learning curve.
+- "What mode am I in?" confusion if mode indicator is weak.
+- Modal text input fights conventional editing (Ctrl+A, Ctrl+E, etc.).
+
+**When to use:** editor-like tools where keystrokes are the primary interaction, users are likely to be vim-familiar, you want dense expressivity. Not appropriate for general-purpose tools targeting non-vim users.
+
+### 2. Emacs-style (chord)
+
+**Identity:** modifier-prefixed bindings (`C-x C-s` to save, `M-x` for command), no modes, deeply nested key tables.
+
+**Examples:** emacs (the originator), readline-based shells, weechat (default), some bash bindings.
+
+**Strengths:**
+- No modes; what you press is what you get.
+- Rich modifier space (`C-`, `M-`, `S-`, combinations).
+- Discoverable with which-key.
+
+**Weaknesses:**
+- Modifier strain ("Emacs pinky").
+- Conflicts with terminal-reserved keys.
+- Less efficient than modal for repetitive editing.
+
+**When to use:** rarely from scratch in 2026. Most Emacs-style apps inherit the convention from a long history. New apps usually go modal or modeless.
+
+### 3. Arrow-key / GUI-like (modeless)
+
+**Identity:** arrow keys + Enter + Tab + Esc + single-letter shortcuts. Mouse-first or mouse-friendly.
+
+**Examples:** btop, htop (somewhat), fzf, gum, Posting, Harlequin, most modern Textual apps.
+
+**Strengths:**
+- Zero learning curve.
+- Inclusive — works for users who've never touched vim.
+- Pairs naturally with mouse support.
+
+**Weaknesses:**
+- Slower for power users.
+- Less expressive — fewer keys means fewer commands.
+- Modifier keys (Ctrl/Alt) for less-common actions.
+
+**When to use:** general-purpose tools, dashboards, monitors, anything where you want broad usability.
+
+### 4. Hybrid (modeless + vim motions)
+
+**Identity:** on navigational surfaces, support arrows and compatible `hjkl` aliases simultaneously. Vim shortcuts are power-user paths, never requirements, and printable aliases yield while a text field owns input.
+
+**Examples:** lazygit, k9s, yazi, gh dash, most modern TUIs.
+
+**Strengths:**
+- Best of both worlds — onboarding via arrows, speed via hjkl.
+- Inclusive without sacrificing power.
+- Familiar to users from many backgrounds.
+
+**Weaknesses:**
+- Slightly more code (handle both).
+- Risk of inconsistency between which keys do what.
+
+**When to use:** a strong default for new navigational, full-screen TUIs. A bounded prompt or form can keep a smaller conventional keymap.
+
+---
+
+## Cross-app keybinding conventions
+
+These have crystallized across the ecosystem. Use them unless you have a strong reason not to:
+
+| Key | Action |
+|---|---|
+| `q` | quit |
+| `?` | help |
+| `/` | search / filter |
+| `n` / `N` | next / prev match |
+| `Esc` | cancel / back / dismiss |
+| `Enter` / `Return` | confirm / drill in |
+| `Space` | toggle / mark for multi-select |
+| `:` | command mode |
+| `gg` | top |
+| `G` | bottom |
+| `Tab` / `Shift+Tab` | switch focus |
+| `r` | refresh |
+| `1`–`9` | jump to panel / numbered tab |
+| `hjkl` *and* arrows | move in navigational views when text entry does not conflict |
+| `Ctrl+P` | command palette, when the app includes one |
+| `y` | yank / copy |
+| `p` | paste / push |
+| `d` | delete (often confirms first) |
+| `e` | edit |
+| `o` | open |
+
+**Pick a paradigm and stay consistent.** Don't mix `Ctrl+S` and `:w` for save unless both clearly map to "write file."
+
+---
+
+## Reserved keys — never bind these
+
+These belong to the terminal or shell:
+
+| Key | Why |
+|---|---|
+| **Ctrl+C** | SIGINT — should always quit cleanly |
+| **Ctrl+Z** | SIGTSTP — suspend; you must restore terminal state on resume |
+| **Ctrl+\\** | SIGQUIT — abort with core dump |
+| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control on legacy serial terminals |
+
+If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is `Ctrl+S` for "save" in editors (vim, helix) — but those editors traditionally disable XON/XOFF before binding.
+
+Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
+
+---
+
+## Discoverability — the four-layer pattern
+
+Every action a user can take should be discoverable through *at least one* of these layers, in order of immediacy:
+
+### Layer 1: Always-visible footer hints
+
+For a full-screen app, keep the 3–5 most-useful shortcuts visible at the bottom and update them by context. A one-step inline prompt can show its controls beside the prompt instead of reserving a footer row.
+
+For a complex full-screen app, this is usually the strongest discoverability tool. Most users will not begin in the docs; they read what is visible in context.
+
+Examples:
+- htop's F1–F10 strip.
+- lazygit's per-pane hints (`space stage  ↵ commit  p push  P pull  r refresh  ?`).
+- helix's status line.
+
+Auto-generation is a force multiplier:
+- **Bubble Tea**: `bubbles/help` reads from `key.KeyMap`.
+- **Textual**: `Footer` widget renders `BINDINGS`.
+- **Ratatui**: not auto-generated; build a helper that reads from your keybinding map.
+- **Ink**: not auto-generated; build with `<Box>` + the same keymap source.
+
+Define keys *once*, derive the footer.
+
+### Layer 2: `?` help screen
+
+Pressing `?` opens a modal or full-screen help with **all** keybindings, grouped by context.
+
+Every full-screen app with more than a handful of actions should provide this or an equivalent discoverable help view. A tiny picker whose complete keymap is already visible does not need a separate modal. lazygit's `?` shows a categorized list of keys, with sections per panel. Textual's `?` (when implemented) typically shows a key table.
+
+Format: `key  action  context`. Group by mode/panel/category.
+
+### Layer 3: Leader-key / which-key
+
+After pressing a leader (Space, `,`, `\`), show a popup with available follow-up keys. The user can:
+- Read the list and pick.
+- Type the key to dismiss the popup and trigger the action.
+- Press Esc to cancel.
+
+**The gold standard:** helix's `Space-` menu. Press Space, see `f` (file picker), `b` (buffer picker), `s` (symbols), `a` (LSP actions), etc. `which-key.nvim` is near-universal in neovim.
+
+When to add: when your keymap exceeds ~20 distinct actions. Below that, `?` help is enough.
+
+### Layer 4: Command palette
+
+`Ctrl+P` (or similar) opens a fuzzy-matched action list. The user types to filter.
+
+Add a palette when the action set is large, spans multiple contexts, or benefits from search; a small app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description.
+
+Examples:
+- Textual's built-in command palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT).
+- VS Code's Ctrl+Shift+P (the conceptual ancestor for many TUIs).
+- helix's `:` (ex-style command, not strictly a palette but similar role).
+- k9s's `:` (resource-typing, but adopts the same "type to filter actions" model).
+
+Format each command:
+```
+Action name              keybinding
+Description / context
+```
+
+Show the keybinding next to the command name — the palette doubles as keybinding documentation.
+
+---
+
+## Modal vs modeless — the deeper trade-off
+
+### Modal (vim-style)
+
+You're in a mode (NORMAL, INSERT, etc.). Keystrokes interpreted differently per mode.
+
+**Requires:**
+- Persistent mode indicator (status bar color or label).
+- Distinct cursor shapes per mode (block in NORMAL, bar in INSERT, underline in REPLACE).
+- A way to learn modes — usually a tutorial or readme.
+
+**Trade-offs:**
+- Pro: dense keybindings (no Ctrl/Alt needed for most operations).
+- Pro: composable operators (`d` + motion = delete-by-motion).
+- Con: confusion if mode is weakly indicated.
+- Con: muscle memory required.
+
+### Modeless
+
+What you press is what you get. State changes happen via widget focus.
+
+**Requires:**
+- Clear focus indication (border color, reverse video on selection).
+- Modifier-key bindings for less-common actions.
+
+**Trade-offs:**
+- Pro: zero learning curve.
+- Pro: no mode confusion.
+- Con: less expressive — limited by Ctrl/Alt combinations.
+- Con: more visual real estate spent on focus indicators.
+
+### The third option: contextual
+
+Bindings change based on which panel is focused. Not "modes" in the vim sense — more like "the current panel determines what `c` means."
+
+Examples: lazygit (`c` commits in Files, checks out in Branches, copies in Stash), k9s (panel-specific actions in addition to global ones).
+
+This is **context-sensitive modeless** — works well if you have rich, panel-specific actions and a footer hint bar that shows what's available right now.
+
+---
+
+## Focus management
+
+In a multi-panel TUI, **which panel has focus** determines:
+- Which keystrokes the panel responds to.
+- Which footer hints show.
+- The visual highlight (border color, reverse video on selection).
+
+### Focus indicators (in order of strength)
+# Simple CLI design — non-TUI command-line tools
+
+For programs that don't have a full-screen UI: read args, do work, print output, exit. This document synthesizes [clig.dev](https://clig.dev), the [12-Factor CLI](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) principles, POSIX.1-2017 utility conventions, GNU coding standards, the XDG Base Directory Specification, BSD `sysexits.h`, and the design of widely admired CLIs (`gh`, `rg`, `fd`, `bat`, `jq`, `httpie`, `kubectl`, `docker`, `starship`).
+
+The bar for a CLI to feel professional is lower than a TUI, but the principles are settled. Most "this CLI is bad" reactions trace to violating items on this checklist.
+
+**Contents:**
+- [Foundational principles](#foundational-principles)
+- [Input and arguments](#input-and-arguments)
+- [Output design](#output-design)
+- [Exit codes](#exit-codes)
+- [Error messages](#error-messages)
+- [Help and discoverability](#help-and-discoverability)
+- [Subcommands](#subcommands)
+- [Shell integration](#shell-integration)
+- [Configuration and state](#configuration-and-state)
+- [Performance and signals](#performance-and-signals)
+- [Future-proofing](#future-proofing)
+- [Shipping, updates, and telemetry](#shipping-updates-and-telemetry)
+- [Naming](#naming)
+- [Concrete exemplars to study](#concrete-exemplars-to-study)
+- [Final checklist](#final-checklist)
+
+---
+
+## Foundational principles
+
+**Human-first, machine-friendly.** Default output is readable; machine output is opt-in (`--json`, `--plain`, `-o yaml`).
+
+**Composable.** Honor stdin/stdout/stderr, exit codes, signals, and line-based text. Doug McIlroy: *"expect the output of every program to become the input to another, as yet unknown, program."*
+
+**Discoverable.** GUIs put options on screen; CLIs compensate with help text, examples, "did you mean…?" suggestions, and shell completions.
+
+**Conversational and consistent** across tools — same flag names mean the same things.
+
+**Robust and empathetic** — validate input early, fail fast, never lie about state.
+
+**Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
+
+---
+
+## Input and arguments
+
+### Argument syntax
+
+POSIX utility argument syntax:
+- Lowercase 2–9 char names.
+- Options begin with `-` and a single alphanumeric character.
+- `-abc` ≡ `-a -b -c` (combined boolean flags).
+- `-o file` or `-ofile` (optionally combined with arg).
+- `--` ends option parsing (rest are positional).
+- Bare `-` means stdin/stdout.
+
+GNU extensions (now near-universal):
+- Long options (`--verbose`, `--output=foo.txt`).
+- Every short option has a long counterpart.
+
+**Reserve single letters for the most common flags only.** `-f`/`--file`, `-o`/`--output`, `-v`/`--verbose`, `-q`/`--quiet`, `-h`/`--help`. If users will type it daily, give it a short form. If they'll type it monthly, long-only is fine. Beware `-f`: real-world tools split between `--file` (tar, make) and `--force` (rm, git push) — pick one meaning per tool and never use it for both.
+
+### Flags vs positional args
+
+Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. The clig.dev rule: *"Two or more args of different types is suspect; three is never good."*
+
+### Stdin / stdout / stderr discipline
+
+- **stdout** = primary output (the result; machine-readable when piped).
+- **stderr** = secondary channel (logs, progress, prompts, errors).
+- Support `-` for stdin/stdout where it makes sense.
+- If stdin is a TTY but your program expects piped input, **show help instead of hanging** (avoid `cat` UX).
+
+### Interactivity
+
+Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+
+**Never accept secrets via `--password=…`** — leaks via `ps`, shell history, `docker inspect`, debug logs. Use:
+- `--password-file path/to/secret`
+- `--password-stdin` (read from stdin)
+- OS keychains (macOS Keychain, libsecret, Windows Credential Manager)
+- `git-credential-*` helpers
+
+---
+
+## Output design
+
+### Tables for humans
+
+- One record per line.
+- **No ASCII borders** — they break `wc -l` and `grep` pipelines.
+- Headers by default, with `--no-headers` toggle.
+- Truncate to terminal width with `--no-truncate` toggle.
+- Allow `--columns col1,col2`, `--sort col`, `--filter`.
+- Recommend `--csv` or `--json` for machines.
+
+### JSON / NDJSON
+
+`--json` for structured output. **NDJSON** (one JSON object per line) is more pipe-friendly than a single array — downstream tools can `jq` line-by-line.
+
+`kubectl`'s `-o {wide,json,yaml,name,jsonpath=…,go-template=…,custom-columns=…}` is the gold standard projection system. Adopt it for tools with structured data.
+
+### Verbosity
+
+- `-q` / `--quiet` — suppress non-essential output (errors still print).
+- `-v` / `--verbose` — chatty mode.
+- `-vv` / `-vvv` — progressive debug levels.
+- `--debug` (or `DEBUG=1` env var) for stack traces — never appear by default.
+
+### Progress
+
+Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Show progress within ~100ms of starting work — earlier feels twitchy, later feels frozen.
+
+For multi-step work: hide noisy logs behind a progress indicator while things succeed; print them if something fails (Docker Compose pattern). This keeps the success case clean and the failure case debuggable.
+
+### Color
+
+**Disable color when:**
+- stdout/stderr is not a TTY, or
+- `NO_COLOR` env var is set ([no-color.org](https://no-color.org)), or
+- `TERM=dumb`, or
+- `--no-color` / `--color=never` is passed.
+
+**Force color** when `FORCE_COLOR=1` is set or `--color=always` is passed.
+
+Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Document any different policy.
+
+Use color sparingly: red for errors, dim for secondary text, bold for headings, cyan/blue for paths. **Never color-only** signaling — pair with a word or symbol.
+
+### Unicode and emoji
+
+Glyphs like ✅, ❌, ⚠ clarify state — yubikey-agent and starship use them well. But:
+- Detect locale and `TERM`; fall back to ASCII (`[ok]`, `[!]`, `[X]`) when piped or unsupported.
+- Never use emoji as the only signal — pair with words.
+- Newer Windows Terminal and macOS/Linux terminals handle emoji fine; older terminals don't.
+
+### Paging
+
+Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard flags: `LESS=FIRX` (or `less -FIRX`):
+- `F` — exit immediately if content fits one screen.
+- `I` — case-insensitive search.
+- `R` — pass through ANSI color codes.
+- `X` — don't clear the screen on exit (leaves content in scrollback).
+
+`bat`, `git`, `gh` all do this. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
+
+---
+
+## Exit codes
+
+### Universal conventions
+
+| Code | Meaning |
+|---|---|
+| 0 | Success |
+| 1 | General failure |
+| 2 | Common usage/parse error in many tools; not a universal standard |
+
+### Shell-defined
+
+| Code | Meaning |
+|---|---|
+| 126 | Found but not executable |
+| 127 | Command not found |
+| 128 + N | Terminated by signal N (130 = SIGINT/Ctrl-C, 143 = SIGTERM, 137 = SIGKILL) |
+
+### BSD `sysexits.h` (legacy, nonportable richer signaling)
+
+| Code | Constant | Meaning |
+|---|---|---|
+| 64 | EX_USAGE | Bad command-line usage |
+| 65 | EX_DATAERR | Bad input data |
+| 66 | EX_NOINPUT | Cannot open input file |
+| 69 | EX_UNAVAILABLE | Service unavailable |
+| 70 | EX_SOFTWARE | Internal software error |
+| 73 | EX_CANTCREAT | Cannot create output |
+| 74 | EX_IOERR | I/O error |
+| 75 | EX_TEMPFAIL | Temporary failure (retryable) |
+| 77 | EX_NOPERM | Permission denied |
+| 78 | EX_CONFIG | Configuration error |
+
+Tool-specific overloads are common: `grep`/`rg` use `0` = match found, `1` = no match, `2` = error. Document your scheme in `--help`.
+
+Treat `sysexits.h` as a legacy compatibility vocabulary, not a cross-platform recommendation. Many modern tools use a smaller documented scheme instead.
+
+---
+
+## Error messages
+
+The 12-Factor anatomy:
+
+1. **State what was attempted.**
+2. **State what failed and why.**
+3. **Suggest how to fix it** — give a command if possible.
+4. **Link to docs.**
+
+Example:
+
+```
+$ myapp dump -o myfile.out
+Error: EPERM — invalid permissions on myfile.out
+Cannot write to myfile.out; the file is read-only.
+Fix with: chmod +w myfile.out
+See: https://github.com/jdxcode/myapp#permissions
+```
+
+**Catch expected errors and rewrite** — never expose raw stack traces by default. Stack traces only on `--debug` or `DEBUG=1`.
+
+**Put the most important info last.** The eye lands at the bottom of the output. The fix command should be the last line.
+
+**Group repeated errors.** If 100 files fail to parse, summarize: "100 files failed to parse — first three: …; pass `--show-all-errors` to list all."
+
+**"Did you mean…?"** suggestions on typos. Brew, Heroku, Cargo, Git, npm all do this. Suggest, don't auto-execute.
+
+---
+
+## Help and discoverability
+
+### What must show help
+
+All of these must show help:
+- `mycli` (no args, when there's no sensible default action)
+- `mycli -h`
+
+exec
+/bin/zsh -lc "rg -n -C 12 'Undo / redo|Ctrl\\+Z|exit code|suspend|editor|SuspendNotSupported|suspend_process' plugins/tui-design/skills/tui-design/references/{interaction-patterns.md,cli-basics.md,ecosystem-python.md} && wc -l plugins/tui-design/skills/tui-design/references/{interaction-patterns.md,cli-basics.md}" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-62-```
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-63-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-64-`compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-65-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-66-### Lifecycle and terminal handoff
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-67-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-68-Textual's driver restores application mode from `App.run()` / `run_async()` cleanup. Use App actions and messages for exit or handoff so widgets do not manipulate raw mode themselves.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-69-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-70-| Boundary | Textual 8 contract |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-71-|---|---|
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-72-| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-73-| SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:74:| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:75:| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-76-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md:77:These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-78-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-79-## Widgets
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-80-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-81-Textual ships dozens. Categories:
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-82-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-83-**Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-84-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-85-**Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-86-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-87-**Container/structure:** `Header`, `Footer`, `LoadingIndicator`, `ProgressBar`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-88-
+plugins/tui-design/skills/tui-design/references/ecosystem-python.md-89-**Data:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`.
+--
+plugins/tui-design/skills/tui-design/references/cli-basics.md-18-- [Future-proofing](#future-proofing)
+plugins/tui-design/skills/tui-design/references/cli-basics.md-19-- [Shipping, updates, and telemetry](#shipping-updates-and-telemetry)
+plugins/tui-design/skills/tui-design/references/cli-basics.md-20-- [Naming](#naming)
+plugins/tui-design/skills/tui-design/references/cli-basics.md-21-- [Concrete exemplars to study](#concrete-exemplars-to-study)
+plugins/tui-design/skills/tui-design/references/cli-basics.md-22-- [Final checklist](#final-checklist)
+plugins/tui-design/skills/tui-design/references/cli-basics.md-23-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-24----
+plugins/tui-design/skills/tui-design/references/cli-basics.md-25-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-26-## Foundational principles
+plugins/tui-design/skills/tui-design/references/cli-basics.md-27-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-28-**Human-first, machine-friendly.** Default output is readable; machine output is opt-in (`--json`, `--plain`, `-o yaml`).
+plugins/tui-design/skills/tui-design/references/cli-basics.md-29-
+plugins/tui-design/skills/tui-design/references/cli-basics.md:30:**Composable.** Honor stdin/stdout/stderr, exit codes, signals, and line-based text. Doug McIlroy: *"expect the output of every program to become the input to another, as yet unknown, program."*
+plugins/tui-design/skills/tui-design/references/cli-basics.md-31-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-32-**Discoverable.** GUIs put options on screen; CLIs compensate with help text, examples, "did you mean…?" suggestions, and shell completions.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-33-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-34-**Conversational and consistent** across tools — same flag names mean the same things.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-35-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-36-**Robust and empathetic** — validate input early, fail fast, never lie about state.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-37-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-38-**Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-39-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-40----
+plugins/tui-design/skills/tui-design/references/cli-basics.md-41-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-42-## Input and arguments
+--
+plugins/tui-design/skills/tui-design/references/cli-basics.md-346-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-347-### Environment variables
+plugins/tui-design/skills/tui-design/references/cli-basics.md-348-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-349-- Prefix `TOOL_FOO_BAR` (uppercase, underscores).
+plugins/tui-design/skills/tui-design/references/cli-basics.md-350-- Single-line values only.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-351-- Honor general-purpose vars:
+plugins/tui-design/skills/tui-design/references/cli-basics.md-352-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-353-| Variable | Purpose |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-354-|---|---|
+plugins/tui-design/skills/tui-design/references/cli-basics.md-355-| `NO_COLOR` | Disable color |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-356-| `FORCE_COLOR` | Force color |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-357-| `DEBUG` | Enable debug output |
+plugins/tui-design/skills/tui-design/references/cli-basics.md:358:| `EDITOR` / `VISUAL` | Preferred text editor |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-359-| `PAGER` | Preferred pager |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-360-| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Proxy settings |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-361-| `TMPDIR` | Temp directory |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-362-| `HOME` | User home |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-363-| `SHELL` | Login shell |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-364-| `TERM` | Terminal type |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-365-| `LINES` / `COLUMNS` | Terminal size |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-366-| `LANG` / `LC_*` | Locale |
+plugins/tui-design/skills/tui-design/references/cli-basics.md-367-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-368-### Secrets — what NOT to do
+plugins/tui-design/skills/tui-design/references/cli-basics.md-369-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-370-Never accept secrets via `--password=`, `--token=`, etc. on the command line. They leak through:
+--
+plugins/tui-design/skills/tui-design/references/cli-basics.md-507-- Exits cleanly on SIGPIPE (no stack trace).
+plugins/tui-design/skills/tui-design/references/cli-basics.md-508-- First Ctrl-C graceful, second force.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-509-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-510-**Help & versioning**
+plugins/tui-design/skills/tui-design/references/cli-basics.md-511-- Shows help on no-arg / `-h` / `--help` / `help` (subcommand or global).
+plugins/tui-design/skills/tui-design/references/cli-basics.md-512-- Help has synopsis, grouped flags, and examples at the end.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-513-- Ships shell completions and `--version` with semver + commit.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-514-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-515-**Flags**
+plugins/tui-design/skills/tui-design/references/cli-basics.md-516-- Every short flag has a long form.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-517-- Uses standard names (`--quiet`, `--verbose`, `--output`, `--force`, `--dry-run`, `--json`, `--no-color`).
+plugins/tui-design/skills/tui-design/references/cli-basics.md-518-- Prefers flags to args when ambiguous.
+plugins/tui-design/skills/tui-design/references/cli-basics.md:519:- Distinct exit codes for distinct failure classes.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-520-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-521-**Output**
+plugins/tui-design/skills/tui-design/references/cli-basics.md-522-- Human-friendly by default; `--json` / `--plain` for scripts.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-523-- Tables have no borders and toggleable headers.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-524-- Color auto-detects TTY and honors `NO_COLOR` / `FORCE_COLOR` / `TERM=dumb`.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-525-- No animations when not a TTY.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-526-- No log-level prefixes in default mode.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-527-
+plugins/tui-design/skills/tui-design/references/cli-basics.md-528-**Errors**
+plugins/tui-design/skills/tui-design/references/cli-basics.md-529-- State what / why / how-to-fix.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-530-- Suggests "did you mean…?" without auto-running.
+plugins/tui-design/skills/tui-design/references/cli-basics.md-531-- No stack traces unless `--debug`.
+--
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-3-A deep dive into how users interact with TUIs — keybinding philosophy, focus management, navigation patterns, mouse support, and discoverability. The top-level `SKILL.md` covers the principles; this file goes deeper into the *why* and the trade-offs.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-4-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-5-**Contents:**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-6-- [Keybinding philosophies](#keybinding-philosophies)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-7-- [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-8-- [Reserved keys — never bind these](#reserved-keys--never-bind-these)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-9-- [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-10-- [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-11-- [Focus management](#focus-management)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-12-- [Search and filter](#search-and-filter)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-13-- [Multi-select](#multi-select)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-14-- [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:15:- [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-16-- [Forms and settings screens](#forms-and-settings-screens)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-17-- [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-18-- Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-19-- [Common interaction pitfalls](#common-interaction-pitfalls)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-20-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-21----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-22-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-23-## Keybinding philosophies
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-24-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-25-There are four major schools. Most apps blend them.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-26-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-27-### 1. Vim-style (modal)
+--
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-31-**Examples:** vim, neovim, helix, kakoune, k9s (ex-mode), aerc, weechat (command mode).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-32-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-33-**Strengths:**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-34-- Densely expressive — `5dw` ("delete five words") is two operators applied to a count.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-35-- Hands stay on home row; minimal modifier-key gymnastics.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-36-- Power users get fast.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-37-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-38-**Weaknesses:**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-39-- Steep learning curve.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-40-- "What mode am I in?" confusion if mode indicator is weak.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-41-- Modal text input fights conventional editing (Ctrl+A, Ctrl+E, etc.).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-42-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:43:**When to use:** editor-like tools where keystrokes are the primary interaction, users are likely to be vim-familiar, you want dense expressivity. Not appropriate for general-purpose tools targeting non-vim users.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-44-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-45-### 2. Emacs-style (chord)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-46-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-47-**Identity:** modifier-prefixed bindings (`C-x C-s` to save, `M-x` for command), no modes, deeply nested key tables.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-48-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-49-**Examples:** emacs (the originator), readline-based shells, weechat (default), some bash bindings.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-50-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-51-**Strengths:**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-52-- No modes; what you press is what you get.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-53-- Rich modifier space (`C-`, `M-`, `S-`, combinations).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-54-- Discoverable with which-key.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-55-
+--
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-126-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-127-**Pick a paradigm and stay consistent.** Don't mix `Ctrl+S` and `:w` for save unless both clearly map to "write file."
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-128-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-129----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-130-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-131-## Reserved keys — never bind these
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-132-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-133-These belong to the terminal or shell:
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-134-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-135-| Key | Why |
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-136-|---|---|
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-137-| **Ctrl+C** | SIGINT — should always quit cleanly |
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:138:| **Ctrl+Z** | SIGTSTP — suspend; you must restore terminal state on resume |
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-139-| **Ctrl+\\** | SIGQUIT — abort with core dump |
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-140-| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control on legacy serial terminals |
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-141-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:142:If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is `Ctrl+S` for "save" in editors (vim, helix) — but those editors traditionally disable XON/XOFF before binding.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-143-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-144-Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-145-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-146----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-147-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-148-## Discoverability — the four-layer pattern
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-149-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-150-Every action a user can take should be discoverable through *at least one* of these layers, in order of immediacy:
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-151-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-152-### Layer 1: Always-visible footer hints
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-153-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-154-For a full-screen app, keep the 3–5 most-useful shortcuts visible at the bottom and update them by context. A one-step inline prompt can show its controls beside the prompt instead of reserving a footer row.
+--
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-350-- Scrolling lists / viewports.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-351-- Clicking buttons in forms.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-352-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-353-Don't require mouse for:
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-354-- Anything in the critical path.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-355-- Power-user actions.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-356-- Anything that should work over a serial console or restricted SSH.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-357-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-358-**Document the Shift-bypass** for text selection. When mouse capture is on, regular click-drag selects via the app, not via the terminal. Users learn this pattern from one app and transfer it.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-359-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-360----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-361-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:362:## Undo / redo
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-363-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:364:Hard for non-editor apps, but lazygit notably tracks every git action with `z` (undo) / `Ctrl+z` (redo) — even file operations and rebases. This is a *huge* user comfort feature for destructive tools.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-365-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-366-**Two implementation strategies:**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-367-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-368-1. **Action stack** — model every user action as a reversible operation. On undo, pop and reverse.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-369-2. **State snapshots** — periodically snapshot full state; undo restores a snapshot. Cheaper to implement but coarser.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-370-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-371-For destructive actions without undo, use modal confirmation. **Never silently destroy.**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-372-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-373----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-374-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-375-## Confirmation patterns
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-376-
+--
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-430-        return huh.NewOptions(statesForCountry(country)...)
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-431-    }, &country) // recomputed whenever `country` changes
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-432-```
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-433-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-434-Textual's equivalent is the `watch_<name>` convention on a `reactive()` attribute — when the reactive value changes, Textual calls `watch_<name>(old, new)`, and the idiomatic way to hide a dependent widget inside it is `widget.display = False` (removes from layout) or `.visible = False` (hides without reflowing).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-435-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-436-### Settings-screen behavior — be honest about what's settled
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-437-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-438-There's no single widely adopted TUI convention for settings persistence. Choose from the behavior of the underlying operation rather than presenting one pattern as universal:
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-439-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-440-- **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-441-- **Explicit Apply / Save / Cancel**: appropriate when changes must be validated together, committed atomically, trigger an expensive reload, or update a remote system. Show dirty state, make `Esc` behavior explicit, and confirm before discarding meaningful edits.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:442:- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` to open the raw config file in the user's editor; changes require an app restart to take effect.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-443-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-444-There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-445-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-446----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-447-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-448-## Talking to the terminal emulator — OSC 8, 52, 9
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-449-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-450-Some interactions aren't between the user and your app — they're between your app and the *terminal emulator*: open a link, set the clipboard, pop a desktop notification. OSC escape sequences carry these requests in-band, down the same byte stream as your output. That's their superpower: they traverse SSH, containers, and nested shells, because the emulator on the user's *local* machine interprets them — no X11 forwarding, no remote clipboard daemon.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-451-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-452-### OSC 8 — hyperlinks
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-453-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-454-`ESC ] 8 ; params ; URI ESC \` … link text … `ESC ] 8 ; ; ESC \`. The optional `id=` param stitches one logical link across wrapped lines or split regions so all its cells underline together on hover; simple filters shouldn't set ids, full-screen apps that manage the screen should.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-455-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-456-**Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-457-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-458-**Libraries:** lipgloss has a `Hyperlink` style property (termenv underneath); Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workaround crates (`hyperrat`, `tui-link`) exist but work around the buffer model rather than fixing it.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-459-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:460:**Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-461-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-462-### OSC 52 — write the system clipboard
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-463-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-464-`ESC ] 52 ; c ; <base64 payload> ESC \` asks the emulator to set the system clipboard — from anywhere, including over SSH. Practical limits: the common ceiling comes from xterm/hterm's 100,000-byte maximum sequence length, ≈74,994 bytes of decoded text; older kitty builds capped far lower. Keep payloads to tens of KB or chunk them.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-465-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-466-**tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs the outer terminal's `Ms` terminfo capability. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-467-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-468-**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Windows Terminal even gates writes on window focus (since Feb 2026). Design for write-only.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-469-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-470-**Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-471-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-472-### OSC 9 / 777 — desktop notifications
+--
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-548-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-549----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-550-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-551-## The helix pattern — selection-first modal editing
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-552-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-553-Helix's bet against vim: select first, then act. `wd` selects-word-then-deletes (vs vim's `dw` "delete-word"). Multi-cursor is core. Tree-sitter integration. `Space` opens which-key.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-554-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-555-**Why it matters for general TUI design:**
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-556-- **Selection-then-act** has visual feedback before the destructive action — users see what they're about to delete.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-557-- **Multi-cursor** as primary scales beautifully for batch edits.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-558-- **Which-key for leader keys** is a discoverability pattern any modal app should consider.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-559-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:560:You probably won't build a modal editor, but the *visual-feedback-before-action* principle is widely applicable: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-561-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-562-**Case study:** `references/exemplar-apps.md` → *helix*.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-563-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-564----
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-565-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-566-## Common interaction pitfalls
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-567-
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md:568:1. **Reserved-key binding** (Ctrl+C, Ctrl+Z, Ctrl+S/Q). Don't.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-569-2. **No focus indication.** Users tab around guessing which panel is active.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-570-3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-571-4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-572-5. **`Esc` doesn't back up or dismiss** where the UI establishes a navigation stack or modal.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-573-6. **No discoverable key help** in an action-rich app; `?` is conventional, but an equivalent visible route is fine.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-574-7. **Filter that's slow** (>100ms updates).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-575-8. **Destructive single-letter without confirmation or undo.** Either confirm or implement undo.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-576-9. **Inconsistent meanings for the same key across panels** without a footer hint bar to explain.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-577-10. **Mouse-only actions** with no keyboard equivalent.
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-578-11. **Tab order that skips around** (not following visual reading order).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-579-12. **No multi-select where users need it** (file managers, lists of items to act on).
+plugins/tui-design/skills/tui-design/references/interaction-patterns.md-580-
+     581 plugins/tui-design/skills/tui-design/references/interaction-patterns.md
+     561 plugins/tui-design/skills/tui-design/references/cli-basics.md
+    1142 total
+
+exec
+/bin/zsh -lc "sed -n '261,581p' plugins/tui-design/skills/tui-design/references/interaction-patterns.md && sed -n '221,561p' plugins/tui-design/skills/tui-design/references/cli-basics.md" in /Users/gfargo/dev/gfargo/tui-design-skill
+ succeeded in 0ms:
+
+1. **Border color change** — strongest. The focused panel's border becomes the accent color.
+2. **Border weight** — thin → thick. Subtle but works.
+3. **Title color/weight** — bold + accent on focused panel title.
+4. **Background tint** — subtle but be careful (background-leak issues with borders).
+5. **Selection visible** — only the focused panel shows reverse-video selection; unfocused panels show muted selection.
+
+Combine 2–3 of these for unambiguous indication.
+
+### Focus navigation
+
+| Method | Best for |
+|---|---|
+| **Tab / Shift+Tab** cycle | Linear panel order; small number of panels |
+| **Numeric keys** (`1`–`9`) | Direct jumps; many panels (lazygit `1`–`5`, yazi `1`–`9`) |
+| **Directional** (`Ctrl+w h/j/k/l` like vim) | Spatial navigation; arbitrary panel arrangement |
+| **Mouse click** | Augmentation; not the primary path |
+
+**Numeric jumps are fastest** when you have 5+ panels. Tab is fine for 2–3.
+
+### Focus traps
+
+Some panels should "trap" focus — Tab inside them cycles through internal widgets, not back to the global panel cycle. Modal dialogs and forms always trap focus. Use Esc to escape.
+
+---
+
+## Search and filter
+
+Two distinct interactions:
+
+### Search (forward through content)
+
+Bound to `/`. Opens a search prompt; `Enter` jumps to first match; `n` / `N` cycles. Examples: vim's `/`, less's `/`, lazygit's `/`.
+
+- Show match count: `(2/15)`.
+- Highlight all matches; focus the current one with reverse video or accent.
+- `Esc` cancels and returns to original position.
+
+### Filter (narrow what's shown)
+
+Bound to `/` (when search isn't needed) or another key. Filters the list to matching items. Examples: fzf's whole identity, k9s's `/`, Textual's `Input` widget on a list.
+
+- Sub-100ms response — anything slower feels broken.
+- Show count: `123/45678`.
+- Highlight matched substring within results.
+- `Esc` clears filter.
+
+**Smart-case** is a kind courtesy: lowercase query is case-insensitive; mixed-case is case-sensitive. ripgrep, fzf, fd all default to this.
+
+---
+
+## Multi-select
+
+Universal pattern: **Space toggles** the row's marked state. Marked rows show a `*` prefix or accent background.
+
+Variants:
+- **Visual mode** (`v`): yazi and vim — extend selection with motion keys.
+- **Range select** (Shift+Click or Shift+arrow): from current to clicked.
+- **Select all** (`Ctrl+A`): mark everything — with the caveat that `Ctrl+A` is tmux's common prefix and readline's start-of-line, so keep an alternative binding.
+- **Invert** (`*` or another printable key): swap marked/unmarked. Avoid `Ctrl+I` — in the legacy encoding it's indistinguishable from Tab (only the Kitty keyboard protocol tells them apart), and Tab is your focus-cycle key.
+
+After multi-selecting, an action key applies to all marked items: `d` deletes all marked, `y` yanks all, etc.
+
+---
+
+## Mouse support — the real trade-off
+
+The fight between camps:
+
+### Pro-mouse
+
+- Textual treats mouse as first-class with `:hover`, click, scroll wheel.
+- btop has full mouse including draggable boxes.
+- lazygit selects on click.
+- Modern users expect to be able to click things.
+
+### Anti-mouse
+
+- vim, helix, fzf purists.
+- Mouse interferes with terminal text-selection (Shift bypasses in most emulators).
+- Adds complexity without speed benefit for power users.
+
+### The pragmatic compromise
+
+**Mouse augments keyboard, never replaces required actions.** Every mouse-reachable target needs a keyboard equivalent.
+
+Implement mouse for:
+- Clicking a panel to focus it.
+- Clicking a tab to switch.
+- Scrolling lists / viewports.
+- Clicking buttons in forms.
+
+Don't require mouse for:
+- Anything in the critical path.
+- Power-user actions.
+- Anything that should work over a serial console or restricted SSH.
+
+**Document the Shift-bypass** for text selection. When mouse capture is on, regular click-drag selects via the app, not via the terminal. Users learn this pattern from one app and transfer it.
+
+---
+
+## Undo / redo
+
+Hard for non-editor apps, but lazygit notably tracks every git action with `z` (undo) / `Ctrl+z` (redo) — even file operations and rebases. This is a *huge* user comfort feature for destructive tools.
+
+**Two implementation strategies:**
+
+1. **Action stack** — model every user action as a reversible operation. On undo, pop and reverse.
+2. **State snapshots** — periodically snapshot full state; undo restores a snapshot. Cheaper to implement but coarser.
+
+For destructive actions without undo, use modal confirmation. **Never silently destroy.**
+
+---
+
+## Confirmation patterns
+
+Three levels of friction:
+
+### Light: y/n prompt
+
+```
+Delete 3 files? [y/N]
+```
+
+Default to **No** — pressing Enter shouldn't delete.
+
+### Medium: typed name
+
+```
+This will delete the production database.
+Type the database name to confirm: prod-main
+```
+
+Used by Heroku for app deletion. Forces the user to *think* about what they're deleting.
+
+### Heavy: dual confirmation
+
+```
+Step 1: Type "delete" to confirm
+> delete
+
+Step 2: Are you sure? [y/N]
+```
+
+For nuclear actions. Used rarely.
+
+**Match friction to consequence.** Y/n for "stage all files" is fine. Typed name for "delete production." Don't make every confirmation typed-name — users learn to just type fast and lose the safety.
+
+---
+
+## Forms and settings screens
+
+### Validation timing — avoid premature errors
+
+Default to validation on **blur** or **submit** so an incomplete value is not treated as an error while the user is still typing. huh's `Input` validates when a field loses focus and again on Next/Submit — there's no per-keystroke validation path in its implementation. Clack and Inquirer validate only on Enter (there's no blur concept in a single-prompt-at-a-time flow). After an error has been shown, live revalidation can help it disappear as soon as the value becomes valid; expensive or remote checks should be debounced or reserved for submit.
+
+Textual's `Input.validate_on` accepts `"blur"`, `"changed"`, and `"submitted"`, and **defaults to all three**. Narrow it to `validate_on=["blur"]` or `["submitted"]` when errors should wait; keep `"changed"` only when immediate feedback is useful and non-disruptive.
+
+### Required-field marking — there is no framework convention
+
+None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual marker (no asterisk-for-required the way GUI toolkits do). **Don't assume one exists — this is an easy claim to get wrong by GUI pattern-matching.** In particular, huh's `" *"` suffix is its **error indicator**, shown after a validation failure, not a required-field marker; there's no `Required()` API. If a design needs required fields marked, do it manually with label text such as `(required)` or an explained `*`; color may reinforce the marker but must not carry the meaning alone.
+
+### Dynamic/conditional fields
+
+huh's real mechanism is **`Group.WithHideFunc(func() bool)`** — it hides/shows an entire group (a step's worth of fields) based on a predicate re-evaluated as form state changes. This operates at *group* granularity; per-field hiding is not shipped (open feature requests only) — don't present it as available. For recomputing one field from another's value, huh has `OptionsFunc`/`TitleFunc`/`DescriptionFunc`, which take a callback plus the fields they depend on and re-run automatically:
+
+```go
+huh.NewSelect[string]().
+    OptionsFunc(func() []huh.Option[string] {
+        return huh.NewOptions(statesForCountry(country)...)
+    }, &country) // recomputed whenever `country` changes
+```
+
+Textual's equivalent is the `watch_<name>` convention on a `reactive()` attribute — when the reactive value changes, Textual calls `watch_<name>(old, new)`, and the idiomatic way to hide a dependent widget inside it is `widget.display = False` (removes from layout) or `.visible = False` (hides without reflowing).
+
+### Settings-screen behavior — be honest about what's settled
+
+There's no single widely adopted TUI convention for settings persistence. Choose from the behavior of the underlying operation rather than presenting one pattern as universal:
+
+- **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
+- **Explicit Apply / Save / Cancel**: appropriate when changes must be validated together, committed atomically, trigger an expensive reload, or update a remote system. Show dirty state, make `Esc` behavior explicit, and confirm before discarding meaningful edits.
+- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` to open the raw config file in the user's editor; changes require an app restart to take effect.
+
+There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
+
+---
+
+## Talking to the terminal emulator — OSC 8, 52, 9
+
+Some interactions aren't between the user and your app — they're between your app and the *terminal emulator*: open a link, set the clipboard, pop a desktop notification. OSC escape sequences carry these requests in-band, down the same byte stream as your output. That's their superpower: they traverse SSH, containers, and nested shells, because the emulator on the user's *local* machine interprets them — no X11 forwarding, no remote clipboard daemon.
+
+### OSC 8 — hyperlinks
+
+`ESC ] 8 ; params ; URI ESC \` … link text … `ESC ] 8 ; ; ESC \`. The optional `id=` param stitches one logical link across wrapped lines or split regions so all its cells underline together on hover; simple filters shouldn't set ids, full-screen apps that manage the screen should.
+
+**Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
+
+**Libraries:** lipgloss has a `Hyperlink` style property (termenv underneath); Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workaround crates (`hyperrat`, `tui-link`) exist but work around the buffer model rather than fixing it.
+
+**Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
+
+### OSC 52 — write the system clipboard
+
+`ESC ] 52 ; c ; <base64 payload> ESC \` asks the emulator to set the system clipboard — from anywhere, including over SSH. Practical limits: the common ceiling comes from xterm/hterm's 100,000-byte maximum sequence length, ≈74,994 bytes of decoded text; older kitty builds capped far lower. Keep payloads to tens of KB or chunk them.
+
+**tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs the outer terminal's `Ms` terminfo capability. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
+
+**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Windows Terminal even gates writes on window focus (since Feb 2026). Design for write-only.
+
+**Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
+
+### OSC 9 / 777 — desktop notifications
+
+`ESC ] 9 ; message ESC \` (OSC 9, iTerm2-originated) has the widest support: kitty, WezTerm, Ghostty, iTerm2, foot. OSC 777 (`ESC ] 777 ; notify ; title ; body ESC \`) adds a title where supported (WezTerm, Ghostty, foot); a reasonable strategy is 777 where you know it works, else 9. tmux swallows both unless wrapped in DCS passthrough with `allow-passthrough on` (tmux 3.3+).
+
+**Etiquette:** notify only when long-running work finishes (or fails) while the user is likely elsewhere — build done, tests finished, deploy complete. Fire once, keep it short, prefer in-UI status when the app has focus. Never notify for routine events or things the user just did.
+
+### The rest of the family, in one line each
+
+- **OSC 11** — query the terminal's background color (`OSC 11 ; ? ST`); the standard light/dark detection trick, covered under Theming in `visual-patterns.md`.
+- **Bracketed paste (mode 2004)** — the terminal wraps pastes in `ESC [200~ … ESC [201~` so apps can tell paste from typing; any prompt reading free text should enable it (frameworks generally do).
+
+---
+
+## The fzf pattern in detail
+
+The "instant fuzzy filter" interaction has spread far beyond fzf itself: telescope.nvim, atuin, zoxide, helix's `Space+f`, Textual's command palette, k9s's `/`, lazygit's `/`.
+
+The pattern:
+
+1. **Open** with a key (often `/` or `Ctrl+P`).
+2. **Type to filter** — shows results updating in real time.
+3. **Arrow / `Ctrl+J` / `Ctrl+K`** to navigate while the query owns printable input. Reserve bare `hjkl` for an explicit navigation mode or a view with no active text field.
+4. **Tab** to mark for multi-select (in `--multi` mode).
+5. **Enter** to confirm; **Esc** to cancel.
+6. **Optional preview pane** (right side) showing detail of hovered result.
+
+Implementation rules:
+- **Sub-100ms updates** as the user types.
+- **Match count visible** — `123/45678`.
+- **Highlight matched substring** within each result.
+- **Smart-case** by default (lowercase = case-insensitive).
+- **Sensible result ranking** — exact matches first, then prefix, then substring.
+
+For Go: `sahilm/fuzzy` or `lithammer/fuzzysearch`. For Rust: `nucleo` (used by helix) or `skim`'s matcher. For Python: `rapidfuzz`. For TS/JS: `fuse.js` or `fzy.js`.
+
+**Case study:** `references/exemplar-apps.md` → *fzf*.
+
+---
+
+## The lazygit pattern — multi-pane with numeric tabs
+
+Used by: lazygit, lazydocker (and inspired by mc / Norton Commander).
+
+**Recipe:**
+1. 5+ persistent panels in fixed positions.
+2. `1`–`9` keys jump directly to numbered panels.
+3. `Tab` cycles in order.
+4. **Single letters trigger panel-specific actions** — `c` does something different in each panel.
+5. **Footer hint bar updates per panel** — shows which actions `c` and friends do *right now*.
+
+**The bet:** users tolerate context-sensitive single letters in exchange for dense bindings, *because the footer always shows what each key does in the current context.*
+
+**The trade-off:** higher cognitive load — `c` does N different things. The footer hint bar is what makes it work.
+
+**Case study:** `references/exemplar-apps.md` → *lazygit*.
+
+---
+
+## The k9s pattern — command-driven
+
+Used by: k9s, helix (`:` ex-commands), weechat (`/` slash-commands), aerc.
+
+**Recipe:**
+1. Press `:` to enter command mode.
+2. Type a resource type or command name (`pods`, `nodes`, `svc`, `ingress`).
+3. Tab-completion narrows.
+4. Enter runs.
+5. Aliases for common commands (`po` = `pods`).
+
+**Pros:** fast for power users, scales to many commands.
+
+**Cons:** demands tab-completion or a discoverability layer (k9s shows aliases in `?`). Without it, users won't know what's possible.
+
+**When to use:** when there are many resource types or actions, and users will repeat them often.
+
+**Case study:** `references/exemplar-apps.md` → *k9s*.
+
+---
+
+## The helix pattern — selection-first modal editing
+
+Helix's bet against vim: select first, then act. `wd` selects-word-then-deletes (vs vim's `dw` "delete-word"). Multi-cursor is core. Tree-sitter integration. `Space` opens which-key.
+
+**Why it matters for general TUI design:**
+- **Selection-then-act** has visual feedback before the destructive action — users see what they're about to delete.
+- **Multi-cursor** as primary scales beautifully for batch edits.
+- **Which-key for leader keys** is a discoverability pattern any modal app should consider.
+
+You probably won't build a modal editor, but the *visual-feedback-before-action* principle is widely applicable: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited.
+
+**Case study:** `references/exemplar-apps.md` → *helix*.
+
+---
+
+## Common interaction pitfalls
+
+1. **Reserved-key binding** (Ctrl+C, Ctrl+Z, Ctrl+S/Q). Don't.
+2. **No focus indication.** Users tab around guessing which panel is active.
+3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
+4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.
+5. **`Esc` doesn't back up or dismiss** where the UI establishes a navigation stack or modal.
+6. **No discoverable key help** in an action-rich app; `?` is conventional, but an equivalent visible route is fine.
+7. **Filter that's slow** (>100ms updates).
+8. **Destructive single-letter without confirmation or undo.** Either confirm or implement undo.
+9. **Inconsistent meanings for the same key across panels** without a footer hint bar to explain.
+10. **Mouse-only actions** with no keyboard equivalent.
+11. **Tab order that skips around** (not following visual reading order).
+12. **No multi-select where users need it** (file managers, lists of items to act on).
+
+When reviewing a TUI's interaction design, walk this list. Most existing apps fail on 4–6 items.
+- `mycli --help`
+- `mycli help`
+- `mycli sub -h`, `mycli help sub`
+
+`-h` / `--help` is reserved. Don't use it for anything else.
+
+### Concise help by default
+
+When run with no args (and no sensible default action), show:
+- One-sentence description.
+- 1–2 examples.
+- Top-level flags / subcommands list.
+- "Run `mycli --help` for more."
+
+`jq`'s no-arg behavior is canonical.
+
+### Full help (`--help`)
+
+- **Synopsis** with POSIX notation: `mycli [-v] [--output FILE] FILE...`.
+- **Description** — 1–3 paragraphs.
+- **Flags grouped by purpose.** `gh` and Heroku group: General, Output, Filtering, Auth. This scales much better than one alphabetical list.
+- **Examples at the end**, building from simple to complex. Examples are the most-read part of help text.
+- Link to docs, man page, or `mycli help <topic>`.
+
+### Man pages
+
+Power users love them. Generate from Markdown via `ronn` or `pandoc`. Route `git help foo` and `npm help foo` to the corresponding man page.
+
+### Versioning
+
+Support `--version`, `-V`, and `version` subcommand. Output:
+- Semver version.
+- Git commit (short SHA).
+- Build date.
+- Runtime info (Go/Node/Python version).
+
+These end up in bug reports — make them easy to copy. If your tool talks to a server, send the version in the `User-Agent` header.
+
+### Shell completions
+
+Generate for bash, zsh, fish, pwsh. Most modern frameworks (Cobra, Click/Typer, clap, commander, yargs, oclif, picocli) emit them automatically. Wire them up.
+
+Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
+
+---
+
+## Subcommands
+
+Two patterns:
+
+1. **Single-command** — `grep`, `cp`, `rg`. Simple tools.
+2. **Multi-command** — `git foo`, `gh foo`, `docker foo`. Tools with many objects.
+
+For multi-command, **clig.dev recommends noun-verb**:
+- `docker container create` (noun-verb), not `docker create container`.
+- `gh pr list`, `gh issue close`, `gh repo clone`.
+
+Noun-verb scales: adding `pr review` doesn't conflict with `issue review`. Verb-first runs out of namespace.
+
+**Same flag = same meaning across subcommands.** `-o` should always mean output file (or always output format), never both.
+
+**No catch-all default subcommand.** Don't make `mycli foo` silently mean `mycli run foo` — it's a footgun when you add a future `foo` subcommand.
+
+**No prefix-matching.** `mycli ins` → `install` becomes a breaking change when you add a future `instance` command. Define explicit aliases instead.
+
+**Avoid near-synonyms.** `update` vs `upgrade` confuses users. Pick one.
+
+---
+
+## Shell integration
+
+A child process cannot change its parent shell's working directory or environment variables — only the shell itself can do that. There's no IPC trick around this; two patterns cover everything real tools need.
+
+### cd-on-exit: the cwd-file wrapper function
+
+If your tool navigates directories and should `cd` the user's shell on exit (a file picker, a directory jumper), ship a flag that writes the final directory to a caller-specified file, and document a shell wrapper function that reads it and `cd`s after your program exits. yazi and ranger converge on the identical shape:
+
+```bash
+function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+    command rm -f -- "$tmp"
+}
+```
+
+ranger's `--choosedir` does the same thing under a different flag name. This is the pattern, not an implementation detail — there's no other way to get a "cd on exit" TUI.
+
+### The `eval "$(tool init shell)"` pattern
+
+For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits only a `precmd` prompt-regeneration hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits a keybinding (Ctrl-R by default) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
+
+### Never silently edit rc files
+
+Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+
+---
+
+## Configuration and state
+
+### Precedence (highest wins)
+
+1. Command-line flags.
+2. Environment variables.
+3. Project-local config (`./mytool.toml`, `./.mytoolrc`).
+4. User config (`$XDG_CONFIG_HOME/mytool/`).
+5. System config (`/etc/mytool/`).
+6. Built-in defaults.
+
+This is what `git`, `docker`, `kubectl` all use. Predictable.
+
+### XDG Base Directory Specification
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `XDG_CONFIG_HOME` | `~/.config` | User config |
+| `XDG_DATA_HOME` | `~/.local/share` | Persistent user data |
+| `XDG_STATE_HOME` | `~/.local/state` | Logs, history, ephemeral state |
+| `XDG_CACHE_HOME` | `~/.cache` | Regenerable cache |
+| `XDG_RUNTIME_DIR` | (no default) | Sockets, pipes, mode 0700 |
+
+**Use `~/.config/mytool/`, not `~/.mytool/`.** Older "dotfile in $HOME" pollution is being phased out — adopt XDG for new tools.
+
+On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On macOS, prefer XDG (`~/.config/mytool/`) for developer CLIs — it keeps dotfiles portable across machines; reserve `~/Library/Application Support/` for GUI-style apps.
+
+### Environment variables
+
+- Prefix `TOOL_FOO_BAR` (uppercase, underscores).
+- Single-line values only.
+- Honor general-purpose vars:
+
+| Variable | Purpose |
+|---|---|
+| `NO_COLOR` | Disable color |
+| `FORCE_COLOR` | Force color |
+| `DEBUG` | Enable debug output |
+| `EDITOR` / `VISUAL` | Preferred text editor |
+| `PAGER` | Preferred pager |
+| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Proxy settings |
+| `TMPDIR` | Temp directory |
+| `HOME` | User home |
+| `SHELL` | Login shell |
+| `TERM` | Terminal type |
+| `LINES` / `COLUMNS` | Terminal size |
+| `LANG` / `LC_*` | Locale |
+
+### Secrets — what NOT to do
+
+Never accept secrets via `--password=`, `--token=`, etc. on the command line. They leak through:
+- `ps` output.
+- Shell history files.
+- `docker inspect`, `systemctl show`.
+- Crash dumps and debug logs.
+- Process accounting.
+
+**Use instead:**
+- Credential files with restrictive permissions.
+- Stdin (`--password-stdin`).
+- AF_UNIX sockets.
+- OS keychains (gh uses macOS Keychain / libsecret / Windows Credential Manager).
+- `git-credential-*`-style helper protocols.
+
+### First-run authentication
+
+Two patterns dominate, and both are legitimate:
+
+1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or print a URL + code with `--no-browser`), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
+2. **Direct prompt for long-lived credentials**, written to a plaintext config file. Older but still standard for cloud-infra CLIs with long-lived access-key-style credentials (`aws configure`) — though even AWS is moving federated auth toward device-flow (`aws configure sso`).
+
+**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+
+**Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
+
+**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): absent a restrictive umask, `~/.aws/credentials` was written world-readable. `chmod 600` the file yourself at creation time.
+
+---
+
+## Performance and signals
+
+### Startup time
+
+- **<100ms** — feels instant. `starship` is obsessive about this; it has to be (runs on every prompt).
+- **100–500ms** — fast.
+- **500ms–2s** — annoying.
+- **2s+** — users avoid the tool.
+
+Tactics:
+- Lazy-load subcommand modules (oclif's architecture).
+- Skip auto-update checks except occasionally (e.g., once a day on a background goroutine).
+- Cache parsed config.
+- Prefer compiled languages (Go, Rust) over Python/Node for shell-prompt-tier performance.
+
+### Streaming
+
+Stream line-by-line where possible (`grep`, `jq`, `rg`). Don't read whole input before outputting. Flush stdout on newlines so piped consumers see data immediately.
+
+### Signals
+
+| Signal | Convention |
+|---|---|
+| **SIGINT** (Ctrl-C, exit 130) | Acknowledge immediately, bound cleanup with timeout, exit. **Second Ctrl-C should force-exit.** |
+| **SIGTERM** (exit 143) | Graceful shutdown. |
+| **SIGPIPE** | When piping into `head` and the consumer closes early. **Exit silently with code 0 or 141; never emit a stack trace.** |
+| **SIGHUP** | Long-running daemons reload config; one-shot tools exit. |
+
+**SIGPIPE handling per language:**
+- **Python**: `signal.signal(signal.SIGPIPE, signal.SIG_DFL)` at startup.
+- **Rust**: handle `ErrorKind::BrokenPipe` explicitly.
+- **Go**: ignore `EPIPE` on stdout.
+- **Node**: handle `EPIPE` on `process.stdout`.
+
+### Atomicity and idempotency
+
+- Write tmpfile then `rename(2)` — atomic on most filesystems.
+- `--dry-run` for destructive operations (`rsync`, `terraform plan`, `git add -n`).
+- Re-running should converge ("crash-only" design). The user shouldn't fear running the command twice.
+- Configurable timeouts, exponential backoff, retry on `EX_TEMPFAIL` (75) errors.
+
+---
+
+## Future-proofing
+
+Once shipped, your CLI is an API. Users script around it.
+
+- **Additive changes only** when possible.
+- **Deprecation runway**: warn for at least one release cycle before removing.
+- **Output for humans is iterable**; **machine output (`--json`, `--plain`) must be stable** — that's the contract scripts depend on.
+- Document deprecations clearly. Print a notice to stderr: "`--old-flag` is deprecated; use `--new-flag` instead. Will be removed in v2.0."
+
+---
+
+## Shipping, updates, and telemetry
+
+### Distribution shape constrains your options
+
+- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency — the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser automates the release; its `homebrew_formulas` publisher is deprecated as of v2.10 in favor of `homebrew_casks`.
+- **npm with per-platform `optionalDependencies`**: the current pattern for shipping native binaries through npm (esbuild, `@swc/core`) — each platform gets its own scoped package (`@esbuild/darwin-arm64`), and the package manager installs only the matching one. This superseded the older, fragile `postinstall`-downloads-a-binary approach, which breaks under offline installs, custom registries, and `--ignore-scripts`.
+- **Pure npm / pipx**: needs the language runtime present, but is the cheapest to publish and update.
+
+### Update-check etiquette
+
+If you check for updates: check async, cache the result (once a day is the norm — both gh and the widely-used `update-notifier` npm package default to a 24-hour interval), and print the notice to stderr *after* your normal output, not interleaved with it. Auto-skip in CI and gate on stdout being a TTY. Provide an opt-out env var (gh's is `GH_NO_UPDATE_NOTIFIER`; the npm package's is `NO_UPDATE_NOTIFIER`).
+
+**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh disables its own update checker specifically in precompiled/package-manager-distributed binaries. Getting this wrong is a live bug class, not a hypothetical: gemini-cli's self-update logic has misattributed an npm install as Homebrew-managed and told users to run `brew upgrade`, which silently no-ops.
+
+### Telemetry, if you collect it
+
+`DO_NOT_TRACK=1` is a real, named convention with real prior art (Homebrew, Gatsby, Syncthing, .NET, Azure CLI) — but it is **not close to universal**: Next.js, Vercel CLI, Prisma, and Netlify CLI all decline or ignore it despite direct, still-open requests asking them to. The practical pattern: ship your own clearly-named opt-out (an env var plus a `tool telemetry disable` subcommand, following Next.js/Vercel's shape), auto-skip in CI, and honor `DO_NOT_TRACK=1` as a cheap courtesy on top — it costs nothing to check and it's the right thing to do even though most tools don't yet. Disclose before collecting: Homebrew shows its analytics notice before analytics are ever sent, so a user can opt out before any data leaves the machine. And never let an opt-out be silently overridden — Netlify CLI once fired a telemetry event *reporting that the user had disabled telemetry*, undermining the opt-out it was supposed to respect. Treat an opt-out flag as an absolute veto, checked first, no exceptions.
+
+---
+
+## Naming
+
+- Lowercase, short, easy to type with both hands.
+- Memorable but not too generic.
+- No mixed case (`curl` ✅, `DownloadURL` ❌).
+- Hyphens between words for multi-word names (`gh-actions-helper`, not `gh_actions_helper`).
+- Don't reuse existing tool names — `git` is taken.
+
+---
+
+## Concrete exemplars to study
+
+- **gh** — clean noun-verb subcommands; `--json field1,field2` + `--jq '...'` + `--template '...'`; OS-keychain credentials; auto-pages.
+- **rg** (ripgrep) — smart defaults (`gitignore`, skip binary, recurse, smart-case); `--json` emits NDJSON; `RIPGREP_CONFIG_PATH` for persistent flags; exit 0/1/2 for found/not-found/error; linear-time regex.
+- **fd** — regex by default, colorized, gitignore-aware; `-x cmd {}` simpler than `find -exec`.
+- **bat** — TTY-aware (colorizes/pages on terminal, plain `cat` when piped); `--plain`/`-p`; honors `$BAT_PAGER`/`$PAGER`.
+- **jq** — tiny startup; `-r` raw output, `-c` compact NDJSON, `-s` slurp; help-on-empty-invocation.
+- **httpie / xh** — human-friendly HTTP; pretty on TTY, raw on pipe; xh exists specifically to fix httpie's startup latency.
+- **kubectl** — rich `-o` (`json`, `yaml`, `wide`, `name`, `jsonpath`, `go-template`, `custom-columns`); tab completion from API; `--dry-run=client|server`.
+- **docker** — multi-level subcommands; parallel per-layer progress bars during pulls; backward-compat aliases (`docker ps` ≡ `docker container ls`).
+- **delta** — side-by-side diff via git's `core.pager`; demonstrates plug-in via stdin.
+- **eza** (formerly exa) — defaults closer to `ls -lh --color`; git status integration; `--tree`.
+- **starship** — cross-shell prompt; sub-100ms hard requirement; single TOML config.
+
+---
+
+## Final checklist
+
+A good CLI:
+
+**Exit & streams**
+- Returns 0 on success, non-zero on failure.
+- Sends primary output to stdout, messages and errors to stderr.
+- Reads `-` as stdin; honors `--`.
+- Exits cleanly on SIGPIPE (no stack trace).
+- First Ctrl-C graceful, second force.
+
+**Help & versioning**
+- Shows help on no-arg / `-h` / `--help` / `help` (subcommand or global).
+- Help has synopsis, grouped flags, and examples at the end.
+- Ships shell completions and `--version` with semver + commit.
+
+**Flags**
+- Every short flag has a long form.
+- Uses standard names (`--quiet`, `--verbose`, `--output`, `--force`, `--dry-run`, `--json`, `--no-color`).
+- Prefers flags to args when ambiguous.
+- Distinct exit codes for distinct failure classes.
+
+**Output**
+- Human-friendly by default; `--json` / `--plain` for scripts.
+- Tables have no borders and toggleable headers.
+- Color auto-detects TTY and honors `NO_COLOR` / `FORCE_COLOR` / `TERM=dumb`.
+- No animations when not a TTY.
+- No log-level prefixes in default mode.
+
+**Errors**
+- State what / why / how-to-fix.
+- Suggests "did you mean…?" without auto-running.
+- No stack traces unless `--debug`.
+
+**Interactivity**
+- Prompts only on TTY.
+- Provides a documented non-interactive flag, environment variable, or stdin contract appropriate to the ecosystem.
+- Confirms destructive ops with `--yes` / `--force` override.
+- No secrets via flag.
+
+**Configuration**
+- Precedence: flag > env > config > default.
+- Uses XDG dirs.
+- Env vars prefixed `MYTOOL_…`.
+
+**Performance**
+- Cold start <500ms (ideally <100ms for shell-prompt-tier).
+- Streams output line-by-line.
+- `--dry-run` for destructive ops.
+- Atomic writes; idempotent re-runs.
+
+**Subcommands**
+- No catch-all default subcommand.
+- No prefix-matching.
+- Same flags mean the same things across subcommands.
+
+**Future-proofing**
+- Machine output is stable.
+- Deprecations carry a release-cycle warning before removal.
+
+---
+
+If the tool grows to need a full-screen UI later, that's a TUI — return to the main `SKILL.md` and pick an ecosystem reference. Many great tools (`gh`, `helix`, `atuin`, `posting`) ship both a CLI and a TUI from the same core, with the CLI handling scripts and the TUI handling exploration.
+
+web search: 
+web search: site:textual.textualize.io Textual App suspend SuspendNotSupported exit return_code suspend_process
+web search: 
+web search: site:textual.textualize.io Textual App suspend SuspendNotSupported exit return_code suspend_process
+codex
+No—don’t `self.exit()`, call `os.system()`, and relaunch for the normal Edit path. Keep one app session and temporarily lend the terminal to the editor:
+
+```python
+import subprocess
+from textual.app import App, SuspendNotSupported
+
+class MyApp(App[None]):
+    def action_edit(self) -> None:
+        target = self.document_path
+        argv = [*self.editor_argv(), str(target)]  # configure as argv, not a shell string
+
+        try:
+            with self.suspend():
+                result = subprocess.run(argv, check=False)
+        except SuspendNotSupported:
+            self.open_in_app_editor()  # or download/upload or a remote-editor flow
+            return
+
+        # The editor may have written changes even if it returned non-zero.
+        self.reload_document_from_disk()
+        if result.returncode:
+            self.notify(f"Editor exited with {result.returncode}", severity="warning")
+```
+
+`App.suspend()` restores the terminal for the child and restores Textual when it returns; it works in local Unix and Windows terminals, but raises `SuspendNotSupported` in Textual Web. Use `subprocess.run(argv)`, not `os.system`, so there is no shell quoting/injection contract to maintain. Textual documents this exact suspend-and-editor lifecycle. [App guide](https://textual.textualize.io/guide/app/)
+
+Lifecycle contract:
+
+1. `e` / **Edit** checks the runtime capability.
+2. Local terminal: suspend → launch local editor inheriting stdio → resume.
+3. After resume: reread and validate the file; a redraw alone does not reload external changes.
+4. Textual Web: never spawn an editor on the server. Offer an in-app editor, import/export, or an explicitly configured browser-accessible editor.
+5. An editor failure is an in-session outcome, not a reason to relaunch or terminate the app.
+
+For Ctrl+Z, decide which meaning you need:
+
+- **Foreground job-control support:** bind `ctrl+z` to Textual’s `suspend_process`. On Unix it sends `SIGTSTP`; on Windows and Textual Web it is intentionally a no-op. Only show the shortcut in local Unix terminal help. [Textual App API](https://textual.textualize.io/api/app/)
+- **Application undo:** don’t use Ctrl+Z as a cross-platform TUI binding—it conflicts with Unix suspend. Use `z` for undo and a visible command/help entry; maintain an action stack or snapshots. Let text fields retain their native editing behavior.
+
+Keep process exit codes separate from edit outcomes:
+
+| Code | Contract |
+|---:|---|
+| 0 | Normal user exit, including a canceled/failed editor session that the app handled |
+| 2 | CLI/configuration usage error before the UI can run |
+| 65 | Unrecoverable document/input validation failure |
+| 70 | Unexpected fatal application failure |
+
+Do not propagate the editor’s exit code as your app’s exit code; report it, reload if the file changed, and keep the session alive. At the process boundary:
+
+```python
+def main() -> int:
+    app = MyApp()
+    app.run()
+    return app.return_code or 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+`self.exit(return_code=...)` is for final process outcomes, not temporary handoff; Textual exposes `app.return_code` specifically for the outer `sys.exit(...)` call.
+tokens used
+57,732

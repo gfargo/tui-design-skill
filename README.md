@@ -189,6 +189,8 @@ Use `--prepare-only` when the model interface cannot be called as a command; it 
 
 The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
 
+The current unreleased v1.7 lifecycle evidence under `evals/results/v1.7.0-lifecycle-forward-test/` is likewise a single clean-source snapshot: five framework and cross-framework cases, 25/25 human-graded assertions, schema-v3 runner and grading provenance, and a summary that the harness recomputes from the complete trial set.
+
 ---
 
 ## Repository layout
@@ -237,6 +239,7 @@ tui-design-skill/
 │   ├── v151-correction-evals.json
 │   ├── v160-structural-evals.json
 │   ├── v161-correction-evals.json
+│   ├── v170-lifecycle-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

@@ -11,6 +11,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -20,7 +21,14 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+SUPPORTED_SCHEMA_VERSIONS = {2, 3}
+SCHEMA_ROOT = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3"
+SCHEMA_FILES = {
+    "tui-design-eval-run": "run.schema.json",
+    "tui-design-eval-grades": "grades.schema.json",
+    "tui-design-eval-summary": "summary.schema.json",
+}
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SKILL_DIR = REPO_ROOT / "plugins/tui-design/skills/tui-design"
 CASE_ID_PATTERN = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,127})\Z")
@@ -80,6 +88,21 @@ def read_json(path: Path) -> Any:
         return json.loads(path.read_text())
     except (OSError, json.JSONDecodeError) as exc:
         raise HarnessError(f"cannot read JSON from {path}: {exc}") from exc
+
+
+def schema_uri(artifact_type: str) -> str:
+    return f"{SCHEMA_ROOT}/{SCHEMA_FILES[artifact_type]}"
+
+
+def artifact_schema_version(artifact: dict[str, Any], artifact_type: str) -> int:
+    version = artifact.get("schema_version")
+    if isinstance(version, bool) or not isinstance(version, int) or version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise HarnessError(f"{artifact_type} has an unsupported schema version")
+    if artifact.get("artifact_type") != artifact_type:
+        raise HarnessError(f"artifact is not {artifact_type}")
+    if version >= 3 and artifact.get("schema") != schema_uri(artifact_type):
+        raise HarnessError(f"{artifact_type} does not declare the canonical schema-v{version} URI")
+    return version
 
 
 def load_eval_set(path: Path) -> dict[str, Any]:
@@ -147,6 +170,55 @@ def runner_fingerprint(runner: Sequence[str]) -> str:
     return sha256_bytes(encoded)
 
 
+def generation_metadata(args: argparse.Namespace) -> dict[str, Any]:
+    if args.system_prompt_file:
+        system_prompt = Path(args.system_prompt_file).resolve().read_bytes()
+        prompt_metadata = {
+            "status": "recorded",
+            "sha256": sha256_bytes(system_prompt),
+            "bytes": len(system_prompt),
+        }
+    else:
+        prompt_metadata = {
+            "status": "none" if args.no_system_prompt else "unavailable",
+            "sha256": None,
+            "bytes": None,
+        }
+    return {
+        "seed": args.seed,
+        "temperature": args.temperature,
+        "system_prompt": prompt_metadata,
+    }
+
+
+def validate_generation_metadata(value: Any, label: str) -> None:
+    if not isinstance(value, dict):
+        raise HarnessError(f"{label} must be an object")
+    seed = value.get("seed")
+    if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int)):
+        raise HarnessError(f"{label}.seed must be an integer or null")
+    temperature = value.get("temperature")
+    if temperature is not None and (
+        isinstance(temperature, bool)
+        or not isinstance(temperature, (int, float))
+        or not math.isfinite(temperature)
+        or temperature < 0
+    ):
+        raise HarnessError(f"{label}.temperature must be a finite non-negative number or null")
+    system_prompt = value.get("system_prompt")
+    if not isinstance(system_prompt, dict) or system_prompt.get("status") not in {"recorded", "none", "unavailable"}:
+        raise HarnessError(f"{label}.system_prompt has an invalid status")
+    digest = system_prompt.get("sha256")
+    byte_count = system_prompt.get("bytes")
+    if system_prompt["status"] == "recorded":
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise HarnessError(f"{label}.system_prompt.sha256 must be a lowercase SHA-256 digest")
+        if isinstance(byte_count, bool) or not isinstance(byte_count, int) or byte_count < 0:
+            raise HarnessError(f"{label}.system_prompt.bytes must be a non-negative integer")
+    elif digest is not None or byte_count is not None:
+        raise HarnessError(f"{label}.system_prompt cannot record a hash or length for this status")
+
+
 def git_metadata() -> dict[str, Any]:
     def git(*args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -199,6 +271,7 @@ def command_run(args: argparse.Namespace) -> int:
     eval_set = load_eval_set(eval_path)
     if not skill_dir.joinpath("SKILL.md").is_file():
         raise HarnessError(f"skill directory has no SKILL.md: {skill_dir}")
+    generation = generation_metadata(args)
 
     runner = normalize_runner(args.runner)
     if not args.prepare_only and not runner:
@@ -239,6 +312,7 @@ def command_run(args: argparse.Namespace) -> int:
 
     manifest: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
+        "schema": schema_uri("tui-design-eval-run"),
         "artifact_type": "tui-design-eval-run",
         "run_id": run_id,
         "status": "prepared" if args.prepare_only else "running",
@@ -253,9 +327,11 @@ def command_run(args: argparse.Namespace) -> int:
         "model": args.model,
         "repetitions": args.repeat,
         "runner_executable": Path(runner[0]).name if runner else None,
+        "runner_version": args.runner_version,
         "runner_argv": runner if runner and args.record_runner_argv else None,
         "runner_argv_recorded": bool(runner and args.record_runner_argv),
         "runner_argv_sha256": runner_fingerprint(runner) if runner else None,
+        "generation": generation,
         "timeout_seconds": args.timeout,
         "git": git_metadata(),
         "host": host_metadata(),
@@ -422,17 +498,31 @@ def expected_trial_assertions(manifest: dict[str, Any]) -> dict[str, int]:
 
 
 def validate_grades(manifest: dict[str, Any], grades: dict[str, Any]) -> None:
-    if grades.get("schema_version") != SCHEMA_VERSION or grades.get("artifact_type") != "tui-design-eval-grades":
-        raise HarnessError("grades have an unsupported schema or artifact type")
+    manifest_version = artifact_schema_version(manifest, "tui-design-eval-run")
+    grades_version = artifact_schema_version(grades, "tui-design-eval-grades")
+    if grades_version != manifest_version:
+        raise HarnessError("grades schema version does not match the run manifest")
     if grades.get("run_id") != manifest.get("run_id"):
         raise HarnessError("grades run_id does not match the run manifest")
     grader = grades.get("grader")
     if not isinstance(grader, dict) or not grader.get("kind") or not grader.get("name"):
         raise HarnessError("grades must record grader.kind and grader.name")
+    if grades_version >= 3 and grader.get("kind") not in {"human", "model"}:
+        raise HarnessError("grader.kind must be human or model")
     if not grader.get("prompt_version"):
         raise HarnessError("grades must record grader.prompt_version")
-    if grader.get("kind") == "model" and not grader.get("model"):
-        raise HarnessError("model grading must record grader.model")
+    if grades_version >= 3:
+        prompt_digest = grader.get("prompt_sha256")
+        if not isinstance(prompt_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", prompt_digest):
+            raise HarnessError("schema-v3 grades must record grader.prompt_sha256")
+    if grader.get("kind") == "model":
+        if not grader.get("model"):
+            raise HarnessError("model grading must record grader.model")
+        if grades_version >= 3:
+            for key in ("provider", "runner_version"):
+                if not grader.get(key):
+                    raise HarnessError(f"schema-v3 model grading must record grader.{key}")
+            validate_generation_metadata(grader.get("generation"), "grader.generation")
 
     expected = expected_trial_assertions(manifest)
     items = grades.get("trials")
@@ -456,14 +546,7 @@ def validate_grades(manifest: dict[str, Any], grades: dict[str, Any]) -> None:
             raise HarnessError(f"every assertion for {item['trial_id']} needs a boolean passed value")
 
 
-def command_score(args: argparse.Namespace) -> int:
-    manifest_path = Path(args.run).resolve()
-    manifest = read_json(manifest_path)
-    grades_path = Path(args.grades).resolve()
-    grades = read_json(grades_path)
-    validate_manifest(manifest_path, manifest, require_completed=True)
-    validate_grades(manifest, grades)
-
+def score_metrics(manifest: dict[str, Any], grades: dict[str, Any]) -> tuple[int, int, list[dict[str, Any]]]:
     case_names = {trial["case_id"]: trial.get("case_name") for trial in manifest["trials"]}
     by_case: dict[str, dict[str, Any]] = {}
     total = passed = 0
@@ -483,8 +566,21 @@ def command_score(args: argparse.Namespace) -> int:
 
     for case in by_case.values():
         case["pass_rate"] = case["passed"] / case["total"]
+    return passed, total, list(by_case.values())
+
+
+def command_score(args: argparse.Namespace) -> int:
+    manifest_path = Path(args.run).resolve()
+    manifest = read_json(manifest_path)
+    grades_path = Path(args.grades).resolve()
+    grades = read_json(grades_path)
+    validate_manifest(manifest_path, manifest, require_completed=True)
+    validate_grades(manifest, grades)
+
+    version = artifact_schema_version(manifest, "tui-design-eval-run")
+    passed, total, by_case = score_metrics(manifest, grades)
     summary = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": version,
         "artifact_type": "tui-design-eval-summary",
         "run_id": manifest["run_id"],
         "created_at": utc_now(),
@@ -494,8 +590,10 @@ def command_score(args: argparse.Namespace) -> int:
         "passed": passed,
         "total": total,
         "pass_rate": passed / total,
-        "by_case": list(by_case.values()),
+        "by_case": by_case,
     }
+    if version >= 3:
+        summary["schema"] = schema_uri("tui-design-eval-summary")
     output = Path(args.output).resolve() if args.output else manifest_path.parent / "summary.json"
     write_json(output, summary)
     print(output)
@@ -503,8 +601,7 @@ def command_score(args: argparse.Namespace) -> int:
 
 
 def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: bool = False) -> None:
-    if manifest.get("schema_version") != SCHEMA_VERSION or manifest.get("artifact_type") != "tui-design-eval-run":
-        raise HarnessError("run manifest has an unsupported schema or artifact type")
+    version = artifact_schema_version(manifest, "tui-design-eval-run")
     for key in ("run_id", "condition", "provider", "model", "eval_set", "eval_set_sha256", "skill_dir", "skill_sha256"):
         if not manifest.get(key):
             raise HarnessError(f"run manifest is missing {key}")
@@ -527,6 +624,13 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
         raise HarnessError("executed runs must record runner_argv_sha256")
     if manifest.get("runner_argv_sha256") and not re.fullmatch(r"[0-9a-f]{64}", manifest["runner_argv_sha256"]):
         raise HarnessError("runner_argv_sha256 must be a lowercase SHA-256 digest")
+    if version >= 3:
+        if manifest.get("status") != "prepared":
+            if not isinstance(manifest.get("runner_executable"), str) or not manifest["runner_executable"].strip():
+                raise HarnessError("executed schema-v3 runs must record runner_executable")
+            if not isinstance(manifest.get("runner_version"), str) or not manifest["runner_version"].strip():
+                raise HarnessError("executed schema-v3 runs must record runner_version")
+        validate_generation_metadata(manifest.get("generation"), "generation")
 
     eval_path = resolve_recorded_path(manifest["eval_set"])
     skill_dir = resolve_recorded_path(manifest["skill_dir"])
@@ -606,14 +710,31 @@ def command_validate(args: argparse.Namespace) -> int:
         grades_path = None
 
     if args.summary:
+        if grades_path is None:
+            raise HarnessError("--summary requires --grades so calculated results can be verified")
         summary_path = Path(args.summary).resolve()
         summary = read_json(summary_path)
-        if summary.get("artifact_type") != "tui-design-eval-summary" or summary.get("run_id") != manifest["run_id"]:
+        summary_version = artifact_schema_version(summary, "tui-design-eval-summary")
+        if summary_version != artifact_schema_version(manifest, "tui-design-eval-run"):
+            raise HarnessError("summary schema version does not match the run manifest")
+        if summary.get("run_id") != manifest["run_id"]:
             raise HarnessError("summary does not match the run manifest")
         if sha256_file(manifest_path) != summary.get("run_manifest_sha256"):
             raise HarnessError("summary was calculated from a different run manifest")
-        if grades_path and sha256_file(grades_path) != summary.get("grades_sha256"):
+        if sha256_file(grades_path) != summary.get("grades_sha256"):
             raise HarnessError("summary was calculated from different grades")
+        if summary.get("grades_file") != portable_path(grades_path, manifest_path.parent):
+            raise HarnessError("summary grades_file does not match the supplied grades")
+        expected_passed, expected_total, expected_by_case = score_metrics(manifest, grades)
+        expected_values = {
+            "passed": expected_passed,
+            "total": expected_total,
+            "pass_rate": expected_passed / expected_total,
+            "by_case": expected_by_case,
+        }
+        for key, expected in expected_values.items():
+            if summary.get(key) != expected:
+                raise HarnessError(f"summary {key} does not match the supplied grades")
 
     print(f"Validated {manifest['run_id']}")
     return 0
@@ -633,6 +754,19 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--run-id", help="stable output-directory name; default includes the UTC timestamp")
     run.add_argument("--repeat", type=int, default=1)
     run.add_argument("--timeout", type=float, default=600.0)
+    run.add_argument("--runner-version", help="exact caller-reported version of the model runner")
+    run.add_argument("--seed", type=int, help="caller-reported model generation seed, when exposed")
+    run.add_argument("--temperature", type=float, help="caller-reported model temperature, when exposed")
+    system_prompt = run.add_mutually_exclusive_group()
+    system_prompt.add_argument(
+        "--system-prompt-file",
+        help="system-prompt file used by the runner; records only its SHA-256 and byte length",
+    )
+    system_prompt.add_argument(
+        "--no-system-prompt",
+        action="store_true",
+        help="record that the runner used no separate system prompt; omission means unavailable",
+    )
     run.add_argument("--prepare-only", action="store_true", help="write prompts and manifest without executing a runner")
     run.add_argument(
         "--record-runner-argv",
@@ -664,6 +798,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         parser.error("--repeat must be at least 1")
     if getattr(args, "timeout", 1) <= 0:
         parser.error("--timeout must be positive")
+    if getattr(args, "temperature", None) is not None and (
+        not math.isfinite(args.temperature) or args.temperature < 0
+    ):
+        parser.error("--temperature must be a finite non-negative number")
+    if getattr(args, "command", None) == "run" and not args.prepare_only and (
+        not isinstance(args.runner_version, str) or not args.runner_version.strip()
+    ):
+        parser.error("--runner-version is required for executed runs")
     try:
         return args.handler(args)
     except (HarnessError, KeyError, OSError, TypeError, ValueError) as exc:

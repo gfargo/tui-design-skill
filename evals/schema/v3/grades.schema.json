@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3/grades.schema.json",
+  "title": "tui-design evaluation grades v3",
+  "type": "object",
+  "required": ["schema_version", "schema", "artifact_type", "run_id", "grader", "trials"],
+  "properties": {
+    "schema_version": { "const": 3 },
+    "schema": { "const": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3/grades.schema.json" },
+    "artifact_type": { "const": "tui-design-eval-grades" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "grader": {
+      "type": "object",
+      "required": ["kind", "name", "prompt_version", "prompt_sha256"],
+      "properties": {
+        "kind": { "enum": ["human", "model"] },
+        "name": { "type": "string", "minLength": 1 },
+        "prompt_version": { "type": "string", "minLength": 1 },
+        "prompt_sha256": { "$ref": "#/$defs/sha256" },
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "runner_version": { "type": "string", "minLength": 1 },
+        "generation": { "$ref": "#/$defs/generation" }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "model" } }, "required": ["kind"] },
+          "then": { "required": ["provider", "model", "runner_version", "generation"] }
+        }
+      ]
+    },
+    "trials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["trial_id", "assertions"],
+        "properties": {
+          "trial_id": { "type": "string", "minLength": 1 },
+          "assertions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["index", "passed"],
+              "properties": {
+                "index": { "type": "integer", "minimum": 0 },
+                "passed": { "type": "boolean" },
+                "notes": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "generation": {
+      "type": "object",
+      "required": ["seed", "temperature", "system_prompt"],
+      "properties": {
+        "seed": { "type": ["integer", "null"] },
+        "temperature": { "type": ["number", "null"], "minimum": 0 },
+        "system_prompt": {
+          "type": "object",
+          "required": ["status", "sha256", "bytes"],
+          "properties": {
+            "status": { "enum": ["recorded", "none", "unavailable"] },
+            "sha256": {
+              "oneOf": [
+                { "type": "null" },
+                { "$ref": "#/$defs/sha256" }
+              ]
+            },
+            "bytes": { "type": ["integer", "null"], "minimum": 0 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

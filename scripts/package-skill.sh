@@ -34,16 +34,16 @@ while IFS= read -r -d '' source_entry; do
   relative="${source_entry#"$skill_dir"/}"
   case "$relative" in
     agents|references)
-      [ -d "$source_entry" ] && [ ! -L "$source_entry" ] || {
+      if [ ! -d "$source_entry" ] || [ -L "$source_entry" ]; then
         echo "error: expected a real directory in skill source: $relative" >&2
         exit 1
-      }
+      fi
       ;;
     SKILL.md|agents/openai.yaml|references/cli-basics.md|references/ecosystem-go.md|references/ecosystem-python.md|references/ecosystem-rust.md|references/ecosystem-typescript.md|references/exemplar-apps.md|references/interaction-patterns.md|references/visual-patterns.md)
-      [ -f "$source_entry" ] && [ ! -L "$source_entry" ] || {
+      if [ ! -f "$source_entry" ] || [ -L "$source_entry" ]; then
         echo "error: expected a regular, non-symlink skill file: $relative" >&2
         exit 1
-      }
+      fi
       ;;
     *)
       echo "error: unexpected entry in skill source: $relative" >&2

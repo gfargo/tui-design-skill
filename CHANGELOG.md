@@ -5,6 +5,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
 ## [Unreleased]
 
 ### Added
+- **Schema-v4 grading-prompt integrity:** grades now record `grading_prompt: {path, sha256}`, machine-linking `grader.prompt_sha256` to a grading-prompt file preserved inside the same evidence bundle. The harness enforces bundle containment and rejects path traversal, missing files, and digest mismatches. Schema v2 and v3 evidence remains readable and valid under their original, unchanged rules.
 - **Reference freshness audit:** `scripts/check-reference-freshness.py` and `scripts/reference-inventory.json` check pinned Bubble Tea, Ratatui, Textual, and Ink version claims against their primary package registries and verify cited source links still resolve, without ever editing reference content. Ambiguous or unreachable checks report `unknown` rather than failing. `.github/workflows/reference-freshness.yml` runs the audit weekly and on demand.
 
 ## [1.7.0] — 2026-08-18

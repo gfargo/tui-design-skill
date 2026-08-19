@@ -177,25 +177,33 @@ for path in sorted((root / "evals").glob("*.json")):
     if len(ids) != len(set(ids)) or len(names) != len(set(names)):
         raise SystemExit(f"eval ids/names must be unique: {path.relative_to(root)}")
 
-schema_root = root / "evals/schema/v3"
-expected_schema_files = {
-    "run.schema.json": "tui-design evaluation run v3",
-    "grades.schema.json": "tui-design evaluation grades v3",
-    "summary.schema.json": "tui-design evaluation summary v3",
+expected_schema_versions = {
+    3: {
+        "run.schema.json": "tui-design evaluation run v3",
+        "grades.schema.json": "tui-design evaluation grades v3",
+        "summary.schema.json": "tui-design evaluation summary v3",
+    },
+    4: {
+        "run.schema.json": "tui-design evaluation run v4",
+        "grades.schema.json": "tui-design evaluation grades v4",
+        "summary.schema.json": "tui-design evaluation summary v4",
+    },
 }
-actual_schema_files = {path.name for path in schema_root.glob("*.json")}
-if actual_schema_files != set(expected_schema_files):
-    raise SystemExit(
-        "schema-v3 file set mismatch; "
-        f"expected={sorted(expected_schema_files)}, actual={sorted(actual_schema_files)}"
-    )
-schema_base = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3"
-for filename, title in expected_schema_files.items():
-    schema = json.loads((schema_root / filename).read_text())
-    if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
-        raise SystemExit(f"wrong JSON Schema dialect: {filename}")
-    if schema.get("$id") != f"{schema_base}/{filename}" or schema.get("title") != title:
-        raise SystemExit(f"wrong schema-v3 identity: {filename}")
+for schema_version, expected_schema_files in expected_schema_versions.items():
+    schema_root = root / f"evals/schema/v{schema_version}"
+    actual_schema_files = {path.name for path in schema_root.glob("*.json")}
+    if actual_schema_files != set(expected_schema_files):
+        raise SystemExit(
+            f"schema-v{schema_version} file set mismatch; "
+            f"expected={sorted(expected_schema_files)}, actual={sorted(actual_schema_files)}"
+        )
+    schema_base = f"https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v{schema_version}"
+    for filename, title in expected_schema_files.items():
+        schema = json.loads((schema_root / filename).read_text())
+        if schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
+            raise SystemExit(f"wrong JSON Schema dialect: {filename}")
+        if schema.get("$id") != f"{schema_base}/{filename}" or schema.get("title") != title:
+            raise SystemExit(f"wrong schema-v{schema_version} identity: {filename}")
 
 if any(path.name == ".DS_Store" for path in skill_dir.rglob(".DS_Store")):
     raise SystemExit("skill source contains .DS_Store cruft")

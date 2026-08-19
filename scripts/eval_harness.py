@@ -21,9 +21,12 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 
-SCHEMA_VERSION = 3
-SUPPORTED_SCHEMA_VERSIONS = {2, 3}
-SCHEMA_ROOT = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3"
+SCHEMA_VERSION = 4
+SUPPORTED_SCHEMA_VERSIONS = {2, 3, 4}
+SCHEMA_ROOTS = {
+    3: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3",
+    4: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4",
+}
 SCHEMA_FILES = {
     "tui-design-eval-run": "run.schema.json",
     "tui-design-eval-grades": "grades.schema.json",
@@ -90,8 +93,11 @@ def read_json(path: Path) -> Any:
         raise HarnessError(f"cannot read JSON from {path}: {exc}") from exc
 
 
-def schema_uri(artifact_type: str) -> str:
-    return f"{SCHEMA_ROOT}/{SCHEMA_FILES[artifact_type]}"
+def schema_uri(artifact_type: str, version: int) -> str:
+    root = SCHEMA_ROOTS.get(version)
+    if root is None:
+        raise HarnessError(f"schema version {version} has no published schema root")
+    return f"{root}/{SCHEMA_FILES[artifact_type]}"
 
 
 def artifact_schema_version(artifact: dict[str, Any], artifact_type: str) -> int:
@@ -100,7 +106,7 @@ def artifact_schema_version(artifact: dict[str, Any], artifact_type: str) -> int
         raise HarnessError(f"{artifact_type} has an unsupported schema version")
     if artifact.get("artifact_type") != artifact_type:
         raise HarnessError(f"artifact is not {artifact_type}")
-    if version >= 3 and artifact.get("schema") != schema_uri(artifact_type):
+    if version >= 3 and artifact.get("schema") != schema_uri(artifact_type, version):
         raise HarnessError(f"{artifact_type} does not declare the canonical schema-v{version} URI")
     return version
 
@@ -140,19 +146,19 @@ def safe_label(value: str) -> str:
     return label
 
 
-def resolve_run_artifact(run_dir: Path, value: str, label: str) -> Path:
-    """Resolve a recorded run artifact and prove it remains under run_dir."""
+def resolve_bundle_path(root_dir: Path, value: str, label: str) -> Path:
+    """Resolve a recorded evidence-bundle path and prove it remains under root_dir."""
     if not isinstance(value, str) or not value:
         raise HarnessError(f"{label} must be a non-empty relative path")
     recorded = Path(value)
     if recorded.is_absolute():
-        raise HarnessError(f"{label} must be relative to the run directory: {value!r}")
-    run_root = run_dir.resolve()
-    resolved = (run_root / recorded).resolve()
+        raise HarnessError(f"{label} must be relative to its bundle directory: {value!r}")
+    bundle_root = root_dir.resolve()
+    resolved = (bundle_root / recorded).resolve()
     try:
-        resolved.relative_to(run_root)
+        resolved.relative_to(bundle_root)
     except ValueError as exc:
-        raise HarnessError(f"{label} escapes the run directory: {value!r}") from exc
+        raise HarnessError(f"{label} escapes its bundle directory: {value!r}") from exc
     return resolved
 
 
@@ -312,7 +318,7 @@ def command_run(args: argparse.Namespace) -> int:
 
     manifest: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
-        "schema": schema_uri("tui-design-eval-run"),
+        "schema": schema_uri("tui-design-eval-run", SCHEMA_VERSION),
         "artifact_type": "tui-design-eval-run",
         "run_id": run_id,
         "status": "prepared" if args.prepare_only else "running",
@@ -373,7 +379,7 @@ def command_run(args: argparse.Namespace) -> int:
 
     failures = 0
     for index, trial in enumerate(trials):
-        prompt_path = resolve_run_artifact(run_dir, trial["prompt_file"], "prompt_file")
+        prompt_path = resolve_bundle_path(run_dir, trial["prompt_file"], "prompt_file")
         started = dt.datetime.now(dt.timezone.utc)
         trial["status"] = "running"
         write_json(manifest_path, manifest)
@@ -497,7 +503,23 @@ def expected_trial_assertions(manifest: dict[str, Any]) -> dict[str, int]:
     return {trial_id: trial["assertion_count"] for trial_id, trial in expected_trials(manifest).items()}
 
 
-def validate_grades(manifest: dict[str, Any], grades: dict[str, Any]) -> None:
+def validate_grading_prompt(grades: dict[str, Any], grader: dict[str, Any], grades_path: Path) -> None:
+    grading_prompt = grades.get("grading_prompt")
+    if not isinstance(grading_prompt, dict):
+        raise HarnessError("schema-v4 grades must record grading_prompt")
+    digest = grading_prompt.get("sha256")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise HarnessError("grading_prompt.sha256 must be a lowercase SHA-256 digest")
+    if digest != grader.get("prompt_sha256"):
+        raise HarnessError("grading_prompt.sha256 must match grader.prompt_sha256")
+    resolved = resolve_bundle_path(grades_path.parent, grading_prompt.get("path"), "grading_prompt.path")
+    if not resolved.is_file():
+        raise HarnessError(f"grading_prompt file not found: {grading_prompt.get('path')!r}")
+    if sha256_file(resolved) != digest:
+        raise HarnessError("grading_prompt file does not match its recorded digest")
+
+
+def validate_grades(manifest: dict[str, Any], grades: dict[str, Any], grades_path: Path) -> None:
     manifest_version = artifact_schema_version(manifest, "tui-design-eval-run")
     grades_version = artifact_schema_version(grades, "tui-design-eval-grades")
     if grades_version != manifest_version:
@@ -523,6 +545,8 @@ def validate_grades(manifest: dict[str, Any], grades: dict[str, Any]) -> None:
                 if not grader.get(key):
                     raise HarnessError(f"schema-v3 model grading must record grader.{key}")
             validate_generation_metadata(grader.get("generation"), "grader.generation")
+    if grades_version >= 4:
+        validate_grading_prompt(grades, grader, grades_path)
 
     expected = expected_trial_assertions(manifest)
     items = grades.get("trials")
@@ -575,7 +599,7 @@ def command_score(args: argparse.Namespace) -> int:
     grades_path = Path(args.grades).resolve()
     grades = read_json(grades_path)
     validate_manifest(manifest_path, manifest, require_completed=True)
-    validate_grades(manifest, grades)
+    validate_grades(manifest, grades, grades_path)
 
     version = artifact_schema_version(manifest, "tui-design-eval-run")
     passed, total, by_case = score_metrics(manifest, grades)
@@ -593,7 +617,7 @@ def command_score(args: argparse.Namespace) -> int:
         "by_case": by_case,
     }
     if version >= 3:
-        summary["schema"] = schema_uri("tui-design-eval-summary")
+        summary["schema"] = schema_uri("tui-design-eval-summary", version)
     output = Path(args.output).resolve() if args.output else manifest_path.parent / "summary.json"
     write_json(output, summary)
     print(output)
@@ -661,7 +685,7 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
         for field in ("case_id", "case_name", "repetition", "prompt_file"):
             if trial.get(field) != specification[field]:
                 raise HarnessError(f"{field} mismatch for {trial_id}")
-        prompt = resolve_run_artifact(run_dir, trial["prompt_file"], f"prompt_file for {trial_id}")
+        prompt = resolve_bundle_path(run_dir, trial["prompt_file"], f"prompt_file for {trial_id}")
         if prompt.read_text() != specification["prompt"]:
             raise HarnessError(f"prompt content mismatch for {trial_id}")
         if sha256_file(prompt) != trial["prompt_sha256"]:
@@ -674,8 +698,8 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
                 raise HarnessError(f"response_file mismatch for {trial_id}")
             if trial.get("stderr_file") != specification["stderr_file"]:
                 raise HarnessError(f"stderr_file mismatch for {trial_id}")
-            response = resolve_run_artifact(run_dir, trial["response_file"], f"response_file for {trial_id}")
-            stderr = resolve_run_artifact(run_dir, trial["stderr_file"], f"stderr_file for {trial_id}")
+            response = resolve_bundle_path(run_dir, trial["response_file"], f"response_file for {trial_id}")
+            stderr = resolve_bundle_path(run_dir, trial["stderr_file"], f"stderr_file for {trial_id}")
             if sha256_file(response) != trial["response_sha256"]:
                 raise HarnessError(f"response hash mismatch for {trial_id}")
             if sha256_file(stderr) != trial["stderr_sha256"]:
@@ -705,7 +729,7 @@ def command_validate(args: argparse.Namespace) -> int:
     if args.grades:
         grades_path = Path(args.grades).resolve()
         grades = read_json(grades_path)
-        validate_grades(manifest, grades)
+        validate_grades(manifest, grades, grades_path)
     else:
         grades_path = None
 

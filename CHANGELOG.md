@@ -4,6 +4,9 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Added
+- **Schema-v4 grading-prompt integrity:** grades now record `grading_prompt: {path, sha256}`, machine-linking `grader.prompt_sha256` to a grading-prompt file preserved inside the same evidence bundle. The harness enforces bundle containment and rejects path traversal, missing files, and digest mismatches. Schema v2 and v3 evidence remains readable and valid under their original, unchanged rules.
+
 ## [1.7.0] — 2026-08-18
 
 Reliability release focused on framework-native terminal lifecycle boundaries and reproducible evaluation provenance.

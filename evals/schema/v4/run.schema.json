@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/run.schema.json",
+  "title": "tui-design evaluation run v4",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema",
+    "artifact_type",
+    "run_id",
+    "status",
+    "created_at",
+    "completed_at",
+    "eval_set",
+    "eval_set_sha256",
+    "skill_dir",
+    "skill_sha256",
+    "condition",
+    "provider",
+    "model",
+    "repetitions",
+    "runner_executable",
+    "runner_version",
+    "runner_argv",
+    "runner_argv_recorded",
+    "runner_argv_sha256",
+    "generation",
+    "timeout_seconds",
+    "git",
+    "host",
+    "trials"
+  ],
+  "properties": {
+    "schema_version": { "const": 4 },
+    "schema": { "const": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/run.schema.json" },
+    "artifact_type": { "const": "tui-design-eval-run" },
+    "run_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "status": { "enum": ["prepared", "running", "completed", "failed", "aborted"] },
+    "created_at": { "type": "string", "minLength": 1 },
+    "completed_at": { "type": ["string", "null"] },
+    "eval_set": { "type": "string", "minLength": 1 },
+    "eval_set_sha256": { "$ref": "#/$defs/sha256" },
+    "skill_dir": { "type": "string", "minLength": 1 },
+    "skill_sha256": { "$ref": "#/$defs/sha256" },
+    "condition": { "enum": ["baseline", "with-skill"] },
+    "provider": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "repetitions": { "type": "integer", "minimum": 1 },
+    "runner_executable": { "type": ["string", "null"] },
+    "runner_version": { "type": ["string", "null"] },
+    "runner_argv": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      ]
+    },
+    "runner_argv_recorded": { "type": "boolean" },
+    "runner_argv_sha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/sha256" }
+      ]
+    },
+    "generation": { "$ref": "#/$defs/generation" },
+    "timeout_seconds": { "type": "number", "exclusiveMinimum": 0 },
+    "git": { "type": "object" },
+    "host": { "type": "object" },
+    "trials": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/trial" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "system_prompt": {
+      "type": "object",
+      "required": ["status", "sha256", "bytes"],
+      "properties": {
+        "status": { "enum": ["recorded", "none", "unavailable"] },
+        "sha256": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/sha256" }
+          ]
+        },
+        "bytes": { "type": ["integer", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "generation": {
+      "type": "object",
+      "required": ["seed", "temperature", "system_prompt"],
+      "properties": {
+        "seed": { "type": ["integer", "null"] },
+        "temperature": { "type": ["number", "null"], "minimum": 0 },
+        "system_prompt": { "$ref": "#/$defs/system_prompt" }
+      },
+      "additionalProperties": false
+    },
+    "trial": {
+      "type": "object",
+      "required": [
+        "trial_id",
+        "case_id",
+        "repetition",
+        "prompt_file",
+        "prompt_sha256",
+        "status"
+      ],
+      "properties": {
+        "trial_id": { "type": "string", "minLength": 1 },
+        "case_id": { "type": "string", "minLength": 1 },
+        "case_name": { "type": ["string", "null"] },
+        "repetition": { "type": "integer", "minimum": 1 },
+        "prompt_file": { "type": "string", "minLength": 1 },
+        "prompt_sha256": { "$ref": "#/$defs/sha256" },
+        "status": { "enum": ["prepared", "running", "completed", "failed", "timed_out", "error", "aborted"] },
+        "exit_code": { "type": ["integer", "null"] },
+        "duration_seconds": { "type": "number", "minimum": 0 },
+        "response_file": { "type": "string", "minLength": 1 },
+        "response_sha256": { "$ref": "#/$defs/sha256" },
+        "stderr_file": { "type": "string", "minLength": 1 },
+        "stderr_sha256": { "$ref": "#/$defs/sha256" },
+        "failure_kind": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

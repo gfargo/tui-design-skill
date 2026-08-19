@@ -11,10 +11,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HARNESS = REPO_ROOT / "scripts/eval_harness.py"
-SCHEMA_ROOT = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3"
-RUN_SCHEMA = f"{SCHEMA_ROOT}/run.schema.json"
-GRADES_SCHEMA = f"{SCHEMA_ROOT}/grades.schema.json"
-SUMMARY_SCHEMA = f"{SCHEMA_ROOT}/summary.schema.json"
+SCHEMA_ROOT_V3 = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3"
+RUN_SCHEMA_V3 = f"{SCHEMA_ROOT_V3}/run.schema.json"
+GRADES_SCHEMA_V3 = f"{SCHEMA_ROOT_V3}/grades.schema.json"
+SUMMARY_SCHEMA_V3 = f"{SCHEMA_ROOT_V3}/summary.schema.json"
+SCHEMA_ROOT_V4 = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4"
+RUN_SCHEMA_V4 = f"{SCHEMA_ROOT_V4}/run.schema.json"
+GRADES_SCHEMA_V4 = f"{SCHEMA_ROOT_V4}/grades.schema.json"
+SUMMARY_SCHEMA_V4 = f"{SCHEMA_ROOT_V4}/summary.schema.json"
 
 
 class EvalHarnessTest(unittest.TestCase):
@@ -56,6 +60,35 @@ class EvalHarnessTest(unittest.TestCase):
                 }
             )
         )
+
+    def write_grading_prompt(self, directory: Path, text: str = "Grading protocol.\n") -> tuple[Path, str]:
+        path = directory / "grading-prompt.md"
+        path.write_text(text)
+        return path, hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def base_v4_grades(self, manifest, grading_prompt_path: str, digest: str) -> dict:
+        return {
+            "schema_version": 4,
+            "schema": GRADES_SCHEMA_V4,
+            "artifact_type": "tui-design-eval-grades",
+            "run_id": manifest["run_id"],
+            "grader": {
+                "kind": "human",
+                "name": "Reviewer",
+                "prompt_version": "rubric-v1",
+                "prompt_sha256": digest,
+            },
+            "grading_prompt": {"path": grading_prompt_path, "sha256": digest},
+            "trials": [
+                {
+                    "trial_id": manifest["trials"][0]["trial_id"],
+                    "assertions": [
+                        {"index": 0, "passed": True},
+                        {"index": 1, "passed": True},
+                    ],
+                }
+            ],
+        }
 
     def run_fixture(self, run_id: str, runner_code: str, *extra: str, expected: int = 0) -> Path:
         completed = self.invoke(
@@ -113,8 +146,8 @@ class EvalHarnessTest(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text())
         self.assertEqual(manifest["model"], "fixture-model-v1")
         self.assertEqual(manifest["provider"], "fixture")
-        self.assertEqual(manifest["schema_version"], 3)
-        self.assertEqual(manifest["schema"], RUN_SCHEMA)
+        self.assertEqual(manifest["schema_version"], 4)
+        self.assertEqual(manifest["schema"], RUN_SCHEMA_V4)
         self.assertEqual(manifest["runner_version"], "Python " + sys.version.split()[0])
         self.assertEqual(manifest["generation"]["system_prompt"]["status"], "unavailable")
         self.assertIsNone(manifest["runner_argv"])
@@ -126,17 +159,19 @@ class EvalHarnessTest(unittest.TestCase):
         response = manifest_path.parent.joinpath(manifest["trials"][0]["response_file"])
         self.assertIn("ANSWER\nUse $tui-design", response.read_text())
 
+        _, grading_prompt_digest = self.write_grading_prompt(manifest_path.parent)
         grades = {
-            "schema_version": 3,
-            "schema": GRADES_SCHEMA,
+            "schema_version": 4,
+            "schema": GRADES_SCHEMA_V4,
             "artifact_type": "tui-design-eval-grades",
             "run_id": "test-run",
             "grader": {
                 "kind": "human",
                 "name": "Test Reviewer",
                 "prompt_version": "rubric-v1",
-                "prompt_sha256": "0" * 64,
+                "prompt_sha256": grading_prompt_digest,
             },
+            "grading_prompt": {"path": "grading-prompt.md", "sha256": grading_prompt_digest},
             "trials": [
                 {
                     "trial_id": trial["trial_id"],
@@ -154,7 +189,7 @@ class EvalHarnessTest(unittest.TestCase):
         self.invoke("score", "--run", str(manifest_path), "--grades", str(grades_path), "--output", str(summary_path))
         summary = json.loads(summary_path.read_text())
         self.assertEqual((summary["passed"], summary["total"], summary["pass_rate"]), (3, 4, 0.75))
-        self.assertEqual(summary["schema"], SUMMARY_SCHEMA)
+        self.assertEqual(summary["schema"], SUMMARY_SCHEMA_V4)
         self.invoke(
             "validate",
             "--run",
@@ -457,8 +492,8 @@ class EvalHarnessTest(unittest.TestCase):
         manifest_path = self.run_fixture("grader-run", "print('ok')")
         manifest = json.loads(manifest_path.read_text())
         grades = {
-            "schema_version": 3,
-            "schema": GRADES_SCHEMA,
+            "schema_version": 4,
+            "schema": GRADES_SCHEMA_V4,
             "artifact_type": "tui-design-eval-grades",
             "run_id": manifest["run_id"],
             "grader": {"kind": "human", "name": "Reviewer"},
@@ -479,9 +514,12 @@ class EvalHarnessTest(unittest.TestCase):
     def test_schema_v3_grades_require_prompt_hash_and_model_provenance(self) -> None:
         manifest_path = self.run_fixture("model-grader-run", "print('ok')")
         manifest = json.loads(manifest_path.read_text())
+        manifest["schema_version"] = 3
+        manifest["schema"] = RUN_SCHEMA_V3
+        manifest_path.write_text(json.dumps(manifest))
         grades = {
             "schema_version": 3,
-            "schema": GRADES_SCHEMA,
+            "schema": GRADES_SCHEMA_V3,
             "artifact_type": "tui-design-eval-grades",
             "run_id": manifest["run_id"],
             "grader": {
@@ -520,6 +558,75 @@ class EvalHarnessTest(unittest.TestCase):
         )
         grades_path.write_text(json.dumps(grades))
         self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path))
+
+    def test_schema_v4_requires_grading_prompt(self) -> None:
+        manifest_path = self.run_fixture("v4-grading-prompt-required", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        grades = {
+            "schema_version": 4,
+            "schema": GRADES_SCHEMA_V4,
+            "artifact_type": "tui-design-eval-grades",
+            "run_id": manifest["run_id"],
+            "grader": {
+                "kind": "human",
+                "name": "Reviewer",
+                "prompt_version": "rubric-v1",
+                "prompt_sha256": "1" * 64,
+            },
+            "trials": [
+                {
+                    "trial_id": manifest["trials"][0]["trial_id"],
+                    "assertions": [
+                        {"index": 0, "passed": True},
+                        {"index": 1, "passed": True},
+                    ],
+                }
+            ],
+        }
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_schema_v4_grading_prompt_rejects_path_traversal(self) -> None:
+        manifest_path = self.run_fixture("v4-grading-prompt-traversal", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        outside = self.work / "outside-prompt.md"
+        outside.write_text("Escaped prompt.\n")
+        digest = hashlib.sha256(outside.read_bytes()).hexdigest()
+        grades = self.base_v4_grades(manifest, "../outside-prompt.md", digest)
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_schema_v4_grading_prompt_rejects_missing_file(self) -> None:
+        manifest_path = self.run_fixture("v4-grading-prompt-missing", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        grades = self.base_v4_grades(manifest, "grading-prompt.md", "2" * 64)
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_schema_v4_grading_prompt_detects_digest_tampering(self) -> None:
+        manifest_path = self.run_fixture("v4-grading-prompt-tamper", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        _, digest = self.write_grading_prompt(manifest_path.parent)
+        grades = self.base_v4_grades(manifest, "grading-prompt.md", digest)
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path))
+
+        (manifest_path.parent / "grading-prompt.md").write_text("Tampered protocol.\n")
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_schema_v4_grading_prompt_digest_must_match_grader_prompt_sha256(self) -> None:
+        manifest_path = self.run_fixture("v4-grading-prompt-mismatch", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        _, digest = self.write_grading_prompt(manifest_path.parent)
+        grades = self.base_v4_grades(manifest, "grading-prompt.md", digest)
+        grades["grader"]["prompt_sha256"] = "3" * 64
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
 
 
 if __name__ == "__main__":

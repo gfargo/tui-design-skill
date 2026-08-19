@@ -231,7 +231,7 @@ tui-design-skill/
 │                   └── exemplar-apps.md
 ├── evals/                        # versioned prompt/assertion sets and curated results
 │   ├── README.md                 # evidence, privacy, and schema contract
-│   ├── schema/v3/                # run, grade, and summary JSON Schemas
+│   ├── schema/v3/, schema/v4/    # versioned run, grade, and summary JSON Schemas
 │   ├── evals.json
 │   ├── build-evals.json
 │   ├── tier2-content-evals.json

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/summary.schema.json",
+  "title": "tui-design evaluation summary v4",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema",
+    "artifact_type",
+    "run_id",
+    "created_at",
+    "run_manifest_sha256",
+    "grades_file",
+    "grades_sha256",
+    "passed",
+    "total",
+    "pass_rate",
+    "by_case"
+  ],
+  "properties": {
+    "schema_version": { "const": 4 },
+    "schema": { "const": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/summary.schema.json" },
+    "artifact_type": { "const": "tui-design-eval-summary" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "grades_file": { "type": "string", "minLength": 1 },
+    "grades_sha256": { "$ref": "#/$defs/sha256" },
+    "passed": { "type": "integer", "minimum": 0 },
+    "total": { "type": "integer", "minimum": 1 },
+    "pass_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "by_case": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["case_id", "case_name", "passed", "total", "pass_rate"],
+        "properties": {
+          "case_id": { "type": "string", "minLength": 1 },
+          "case_name": { "type": ["string", "null"] },
+          "passed": { "type": "integer", "minimum": 0 },
+          "total": { "type": "integer", "minimum": 1 },
+          "pass_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

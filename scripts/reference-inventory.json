@@ -1,0 +1,80 @@
+{
+  "$comment": "Explicit inventory of version-sensitive framework references consumed by scripts/check-reference-freshness.py. Each entry is either a 'pinned_version' claim (compared against the framework's primary package registry) or a 'source_link' citation (checked for reachability only). This inventory does not track every mention in the skill content — only claims that would mislead a reader if the pinned version or link went stale. Edit this file by hand when the underlying reference changes; the audit script never edits it or the skill content.",
+  "references": [
+    {
+      "id": "bubbletea-major-line",
+      "framework": "Bubble Tea",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"v2 is stable (v2.0.0 shipped February 2026 ...; current is v2.0.x)\"",
+      "pinned_version": "2.0.8",
+      "granularity": "major",
+      "registry": { "type": "go_proxy", "module": "github.com/charmbracelet/bubbletea/v2" }
+    },
+    {
+      "id": "bubbletea-exec-go-source",
+      "framework": "Bubble Tea",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go"
+    },
+    {
+      "id": "bubbletea-tea-go-source",
+      "framework": "Bubble Tea",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/charmbracelet/bubbletea/blob/v2.0.8/tea.go"
+    },
+    {
+      "id": "ratatui-current-line",
+      "framework": "Ratatui",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "claim": "\"Current line: 0.30 (0.30.0 stable since December 2025; 0.30.2 current)\"",
+      "pinned_version": "0.30.2",
+      "granularity": "minor",
+      "registry": { "type": "crates_io", "crate": "ratatui" }
+    },
+    {
+      "id": "ratatui-spawn-vim-recipe",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://ratatui.rs/recipes/apps/spawn-vim/"
+    },
+    {
+      "id": "textual-current-major",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"four major versions since the announcement, with 8.x current as of mid-2026\"",
+      "pinned_version": "8.0.0",
+      "granularity": "major",
+      "registry": { "type": "pypi", "package": "textual" }
+    },
+    {
+      "id": "textual-suspend-guide",
+      "framework": "Textual",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "url": "https://textual.textualize.io/guide/app/#suspending-the-application"
+    },
+    {
+      "id": "ink-current-major",
+      "framework": "Ink",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"Current major: Ink 7 (7.1.x as of mid-2026)\"",
+      "pinned_version": "7.1.1",
+      "granularity": "minor",
+      "registry": { "type": "npm", "package": "ink" }
+    },
+    {
+      "id": "ink-suspend-terminal-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback"
+    }
+  ]
+}

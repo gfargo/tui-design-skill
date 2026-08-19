@@ -4,6 +4,9 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Added
+- **Reference freshness audit:** `scripts/check-reference-freshness.py` and `scripts/reference-inventory.json` check pinned Bubble Tea, Ratatui, Textual, and Ink version claims against their primary package registries and verify cited source links still resolve, without ever editing reference content. Ambiguous or unreachable checks report `unknown` rather than failing. `.github/workflows/reference-freshness.yml` runs the audit weekly and on demand.
+
 ## [1.7.0] — 2026-08-18
 
 Reliability release focused on framework-native terminal lifecycle boundaries and reproducible evaluation provenance.

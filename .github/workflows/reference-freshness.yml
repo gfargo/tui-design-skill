@@ -1,0 +1,52 @@
+name: Reference freshness audit
+
+# Lightweight maintenance aid: checks whether the pinned framework versions
+# and cited source links in the skill's ecosystem references have drifted
+# or gone dead. It never edits content — see scripts/reference-inventory.json
+# and evals/README.md-adjacent docs in README.md for the maintenance contract.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly; framework releases and link rot do not move fast enough to
+    # justify checking more often, and less often risks staleness sitting
+    # unnoticed for a long time.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Run reference freshness audit
+        id: audit
+        run: |
+          set +e
+          python3 scripts/check-reference-freshness.py --output reference-freshness-report.json \
+            > reference-freshness-report.txt
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+          cat reference-freshness-report.txt
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## Reference freshness audit"
+            echo
+            echo '```'
+            cat reference-freshness-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail when a claim needs human review
+        if: always()
+        run: |
+          if [ "${{ steps.audit.outputs.exit_code }}" != "0" ]; then
+            echo "::error::Reference freshness audit needs review — see the job summary and step logs above."
+            exit 1
+          fi

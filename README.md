@@ -191,6 +191,18 @@ The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a com
 
 The current unreleased v1.7 lifecycle evidence under `evals/results/v1.7.0-lifecycle-forward-test/` is likewise a single clean-source snapshot: five framework and cross-framework cases, 25/25 human-graded assertions, schema-v3 runner and grading provenance, and a summary that the harness recomputes from the complete trial set.
 
+## Reference freshness
+
+The framework references (`plugins/tui-design/skills/tui-design/references/ecosystem-*.md`) carry version-sensitive guidance for Bubble Tea, Ratatui, Textual, and Ink — pinned "current version" claims and tag-pinned source-code citations that can age even though the surrounding design guidance stays correct. `scripts/reference-inventory.json` is the explicit, hand-maintained list of those claims and links; `scripts/check-reference-freshness.py` audits it:
+
+```bash
+python3 scripts/check-reference-freshness.py
+```
+
+For each `pinned_version` entry it compares the pinned version against that framework's primary package registry (Go module proxy, crates.io, PyPI, or npm) at the claim's stated precision (major/minor/patch). For each `source_link` entry it checks that the citation still resolves, rewriting `github.com/.../blob/...` URLs to `raw.githubusercontent.com` first since GitHub's web frontend can 403 well-behaved automated requests regardless of whether the file exists. Network failures and ambiguous statuses (redirects that don't resolve, non-404/410 error codes) are reported as **unknown**, never as a hard failure — a transient outage or a scraper-hostile block is not evidence that a reference is actually stale or broken, and treating it as such would train reviewers to ignore the audit. Only **stale** (registry has moved past the pinned precision) or **broken** (a confirmed 404/410) findings fail the run.
+
+The audit never edits `reference-inventory.json` or any reference content — it only reports what a human should review. `.github/workflows/reference-freshness.yml` runs it weekly and on demand (`workflow_dispatch`), posting the full report to the job summary and failing the job when something needs review. Update `reference-inventory.json` by hand when a reference's pinned version, citation URL, or precision changes; add an entry when new version-sensitive guidance is introduced. An audit failure is a prompt to review the cited claim and update the prose if it's actually wrong — not an instruction to bump the pinned number without checking the framework's current behavior still matches what's written.
+
 ---
 
 ## Repository layout
@@ -202,14 +214,18 @@ tui-design-skill/
 │   └── marketplace.json          # plugin marketplace catalog
 ├── .github/
 │   └── workflows/
-│       ├── release.yml           # validates + attaches the tagged .skill release asset
-│       └── validate.yml          # validates pull requests and main
+│       ├── release.yml               # validates + attaches the tagged .skill release asset
+│       ├── validate.yml              # validates pull requests and main
+│       └── reference-freshness.yml   # weekly + on-demand framework-reference audit
 ├── scripts/
 │   ├── eval_harness.py           # records, scores, and validates model eval runs
+│   ├── check-reference-freshness.py # audits pinned framework versions and source links
+│   ├── reference-inventory.json  # explicit list of version-sensitive references to audit
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
 │   └── validate-release.sh       # checks metadata, content, eval JSON, and package output
 ├── tests/
 │   ├── test_eval_harness.py      # runner/scoring/integrity integration tests
+│   ├── test_reference_freshness.py # freshness-audit unit/CLI tests (offline fixture server)
 │   └── test_packaging.py         # exact package-contract regression tests
 ├── plugins/
 │   └── tui-design/

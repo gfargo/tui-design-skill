@@ -4,10 +4,10 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Bubble Tea](#bubble-tea-charmbracelet-bubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbracelet-lipgloss) · [Bubbles](#bubbles-charmbracelet-bubbles) · [Huh](#huh-charmbracelet-huh)
+- [Bubble Tea](#bubble-tea-charmbraceletbubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbraceletlipgloss) · [Bubbles](#bubbles-charmbraceletbubbles) · [Huh](#huh-charmbracelethuh)
 - [Other Charm libraries](#other-charm-libraries-worth-knowing)
-- [tview](#tview-rivo-tview) · [gocui](#gocui-awesome-gocui-gocui) · [tcell](#lower-level-tcell)
-- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfave-cli)
+- [tview](#tview-rivotview) · [gocui](#gocui-awesome-gocuigocui) · [tcell](#lower-level-tcell)
+- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfavecli)
 - [Output formatting](#output-formatting-non-tui)
 - [Testing](#testing) · [Debugging](#debugging)
 - [Notable Go TUI apps](#notable-go-tui-apps-to-study)

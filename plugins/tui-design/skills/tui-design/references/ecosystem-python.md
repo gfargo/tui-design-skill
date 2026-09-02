@@ -4,10 +4,10 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Textual](#textual-textualize-textual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
+- [Textual](#textual-textualizetextual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
 - [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
 - [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
-- [Rich](#rich-textualize-rich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
+- [Rich](#rich-textualizerich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
 - [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
 
 ## Quick recommendation

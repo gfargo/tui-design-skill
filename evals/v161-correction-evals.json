@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.6.1 correctness regressions. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "notes": "Focused v1.6.1 correctness regressions. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. The cobra-app-completion rubric was corrected after v1.6.1 shipped: Cobra generates the completion subcommand itself, so the original assertion that cobra-cli add completion should scaffold one was wrong; the recorded v1.6.1 run bundle keeps its original eval-set hash and is validated against that snapshot.",
   "evals": [
     {
       "id": "python-async-http",
@@ -57,7 +57,8 @@
       "files": [],
       "assertions": [
         "Uses shipctl completion bash as the user-facing completion command",
-        "Explains that cobra-cli add completion can scaffold the application's completion command",
+        "Explains that Cobra (v1.2+) generates the completion subcommand automatically, so no completion command needs to be added or scaffolded",
+        "Does not recommend cobra-cli add completion, which would shadow the built-in command",
         "Does not claim cobra-cli completion bash generates completions for shipctl"
       ]
     },

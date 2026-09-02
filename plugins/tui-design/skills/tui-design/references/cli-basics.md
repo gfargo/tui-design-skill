@@ -106,7 +106,7 @@ Prompt only when an interactive input channel is available—normally a TTY, or 
 
 ### Progress
 
-Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Show progress within ~100ms of starting work — earlier feels twitchy, later feels frozen.
+Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Start showing progress once work has run for roughly 100–200ms: an indicator that flashes for near-instant work feels twitchy, and silence past a few hundred milliseconds feels frozen. The same delayed-spinner rule is spelled out in `references/visual-patterns.md` → *Spinners*.
 
 For multi-step work: hide noisy logs behind a progress indicator while things succeed; print them if something fails (Docker Compose pattern). This keeps the success case clean and the failure case debuggable.
 

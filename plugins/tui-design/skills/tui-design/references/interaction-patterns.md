@@ -465,7 +465,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 **tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs the outer terminal's `Ms` terminfo capability. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
 
-**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Windows Terminal even gates writes on window focus (since Feb 2026). Design for write-only.
+**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and Windows Terminal added the same focus gate in February 2026, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
 
 **Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
 

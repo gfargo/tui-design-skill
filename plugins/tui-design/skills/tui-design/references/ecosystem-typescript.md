@@ -8,14 +8,14 @@ The Node.js ecosystem splits along two axes:
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Ink](#ink-vadimdemedes-ink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+- [Ink](#ink-vadimdemedesink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedesink-ui)
 - [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
-- [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
-- [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
+- [Pastel](#pastel--nextjs-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+- [Modern prompts: @clack/prompts](#modern-prompts-clackprompts) · [@inquirer/prompts](#inquirerprompts)
 - [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
-- [OpenTUI](#opentui-anomalyco-opentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
-- [Notable JS/TS TUI apps](#notable-js-ts-tui-apps-to-study)
-- [Pitfalls common to JS/TS](#pitfalls-common-to-js-ts-terminal-apps)
+- [OpenTUI](#opentui-anomalycoopentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
+- [Notable JS/TS TUI apps](#notable-jsts-tui-apps-to-study)
+- [Pitfalls common to JS/TS](#pitfalls-common-to-jsts-terminal-apps)
 - [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
 
 ## Quick recommendation

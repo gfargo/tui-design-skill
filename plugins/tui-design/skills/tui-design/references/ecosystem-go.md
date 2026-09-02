@@ -26,7 +26,7 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 | Subcommand framing for any of the above | **Cobra** or **urfave/cli** |
 | TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
 
-**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps, `gh`, and most new Go TUIs use.
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps and most new Go TUIs use. (`gh` itself is Cobra + Lipgloss + Glamour with no Bubble Tea; it is a CLI, not a TUI.)
 
 ---
 
@@ -215,8 +215,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     return m, cmd
 }
 
-func (m model) View() string {
-    return m.list.View() + "\n" + m.help.View(m.keys)
+func (m model) View() tea.View {
+    // Bubbles still return strings; the parent wraps them in a tea.View.
+    return tea.NewView(m.list.View() + "\n" + m.help.View(m.keys))
 }
 ```
 
@@ -235,8 +236,8 @@ var keys = keyMap{
     Quit: key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
 }
 
-// In Update:
-case tea.KeyMsg:
+// In Update (tea.KeyMsg is an interface in v2 that also matches releases; switch on presses):
+case tea.KeyPressMsg:
     switch {
     case key.Matches(msg, keys.Quit):
         return m, tea.Quit
@@ -288,7 +289,7 @@ Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect
 ## Other Charm libraries worth knowing
 
 - **Glamour** (`charmbracelet/glamour`) — render Markdown to ANSI. Themable via JSON stylesheets. Used for `gh` PR/issue rendering, `glow` markdown viewer.
-- **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH with HTTP-style middleware. Per-session Lipgloss renderers (`bm.MakeRenderer(sess)`) use the *client's* color profile, not the server's.
+- **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH with HTTP-style middleware. Build each program with `bubbletea.MakeOptions(sess)` (or the `bubbletea.Middleware` handler, which applies it for you) so input, output, and color-profile detection follow the *client's* PTY, not the server's. The v1-era per-session `MakeRenderer` helper is gone in v2 because Lipgloss v2 no longer owns terminal I/O.
 - **Soft Serve** — git server with a Bubble Tea TUI; built on Wish.
 - **gum** — shell-script wrapper around Bubble Tea components. `gum choose`, `gum input`, `gum confirm`, `gum spin`. Use when scripting Bash and you want huh-quality prompts without writing Go.
 - **VHS** — record terminal sessions to GIFs from a `.tape` script. Gold for documentation.
@@ -388,11 +389,11 @@ func init() {
 
 **Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. Don't write to stdout from `PreRun` if you'll enter alt-screen (output gets eaten). For commands that take pipe input, check `isatty.IsTerminal(os.Stdin.Fd())` before launching the TUI; if piped, run in non-interactive mode.
 
-Cobra supports generated shell completions. Add a `completion` command to the application (or scaffold one with `cobra-cli add completion`), then users generate a script with `myapp completion bash|zsh|fish|powershell`; `cobra-cli completion ...` completes the generator itself, not the generated application.
+Cobra supports generated shell completions and, since v1.2, adds a working `completion` subcommand to every root command automatically (hidden when there are no other subcommands). Do not scaffold your own `completion` command; it would shadow the built-in. Users generate a script with `myapp completion bash|zsh|fish|powershell`; disable or customize the default via `rootCmd.CompletionOptions`. Note that `cobra-cli completion ...` completes the generator tool itself, not your application.
 
 **Fang** (`charmbracelet/fang`) — the CLI starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation. The idiomatic Cobra companion in a Charm-stack app.
 
-**urfave/cli** (`urfave/cli/v2`) — alternative subcommand framework, simpler API, less popular but used by syncthing and others.
+**urfave/cli** (`github.com/urfave/cli/v3`; v3 has been the stable line since 2025, v2 is maintenance-only) — alternative subcommand framework, simpler API, less popular but used by syncthing and others.
 
 For one-shot `flag` parsing only, the stdlib `flag` package is fine.
 
@@ -461,7 +462,7 @@ if len(os.Getenv("DEBUG")) > 0 {
 }
 ```
 
-Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; v2 adds `tea.LogToFileWith` for a custom logger.
+Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; `tea.LogToFileWith` (present in both v1 and v2) takes a custom logger.
 
 **Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless — `dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`, then `dlv connect 127.0.0.1:43000` from a second terminal.
 

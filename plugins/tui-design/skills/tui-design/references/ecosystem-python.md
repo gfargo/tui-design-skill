@@ -282,7 +282,7 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 - **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
 - **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
 
-**Profiling:** neither `textual run --dev`/`console` nor `textual-dev diagnose` measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. **A correction worth internalizing:** `DataTable.add_rows()` is not a bulk-insert optimization — it's a plain loop over `add_row()`, paying the same per-row bookkeeping cost `len(rows)` times. If bulk-inserting thousands of rows is slow, switching from a manual loop to `add_rows()` won't fix it. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
+**Profiling:** neither `textual run --dev`/`console` nor `textual diagnose` (from the `textual-dev` package) measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. **A correction worth internalizing:** `DataTable.add_rows()` is not a bulk-insert optimization — it's a plain loop over `add_row()`, paying the same per-row bookkeeping cost `len(rows)` times. If bulk-inserting thousands of rows is slow, switching from a manual loop to `add_rows()` won't fix it. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
 
 ## Dev tools
 
@@ -346,9 +346,9 @@ for item in track(items, description="Processing..."):
 
 **Components:** `Console`, markup (`[bold red]…[/]`), `Table`, `Panel`, `Columns`, `Tree`, `Syntax` (Pygments), `Markdown`, `Progress` (with multiple tasks), `Live` (animated regions), `RichHandler` for colorized logs, `install()` for pretty tracebacks.
 
-**`rich.install()`** replaces the default Python traceback with a much better one — beautiful syntax highlighting and source context. Drop into any script for free upgrade.
+**`from rich.traceback import install; install()`** replaces the default Python traceback with a much better one — beautiful syntax highlighting and source context. Drop into any script for a free upgrade. (There is no `rich.install()`; the sibling `rich.pretty.install()` only pretty-prints REPL results.)
 
-**Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools (Pip, Poetry, Sphinx, etc. all use Rich).
+**Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools; pip vendors Rich for its own output, and Textual, Harlequin, Posting, and most new Typer-based tools build on it. (Poetry uses cleo and Sphinx does not depend on Rich; do not cite them as Rich users.)
 
 ---
 

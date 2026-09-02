@@ -392,7 +392,7 @@ Two patterns dominate, and both are legitimate:
 
 **Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
 
-**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): absent a restrictive umask, `~/.aws/credentials` was written world-readable. `chmod 600` the file yourself at creation time.
+**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): with a default umask, three subcommands (`codeartifact login`, `iam create-virtual-mfa-device`, `deploy register`) wrote credential and config files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
 
 ---
 
@@ -454,7 +454,7 @@ Once shipped, your CLI is an API. Users script around it.
 
 ### Distribution shape constrains your options
 
-- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency — the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser automates the release; its `homebrew_formulas` publisher is deprecated as of v2.10 in favor of `homebrew_casks`.
+- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency — the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser automates the release; its `brews` (Homebrew formula) publisher was deprecated in v2.10 and hard-deprecated in v2.16 in favor of `homebrew_casks`.
 - **npm with per-platform `optionalDependencies`**: the current pattern for shipping native binaries through npm (esbuild, `@swc/core`) — each platform gets its own scoped package (`@esbuild/darwin-arm64`), and the package manager installs only the matching one. This superseded the older, fragile `postinstall`-downloads-a-binary approach, which breaks under offline installs, custom registries, and `--ignore-scripts`.
 - **Pure npm / pipx**: needs the language runtime present, but is the cheapest to publish and update.
 

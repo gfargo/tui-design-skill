@@ -139,7 +139,7 @@ These belong to the terminal or shell:
 | **Ctrl+\\** | SIGQUIT — abort with core dump |
 | **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control on legacy serial terminals |
 
-If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is `Ctrl+S` for "save" in editors (vim, helix) — but those editors traditionally disable XON/XOFF before binding.
+If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is a user who rebinds `Ctrl+S` to "save" in an editor; that only works because they also run `stty -ixon` to disable flow control. Neither vim nor helix binds it to save by default (helix uses `Ctrl-s` for `save_selection`).
 
 Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
 
@@ -316,7 +316,7 @@ Universal pattern: **Space toggles** the row's marked state. Marked rows show a 
 Variants:
 - **Visual mode** (`v`): yazi and vim — extend selection with motion keys.
 - **Range select** (Shift+Click or Shift+arrow): from current to clicked.
-- **Select all** (`Ctrl+A`): mark everything — with the caveat that `Ctrl+A` is tmux's common prefix and readline's start-of-line, so keep an alternative binding.
+- **Select all** (`Ctrl+A`): mark everything — with the caveat that `Ctrl+A` is GNU screen's prefix (and a common tmux rebinding) and readline's start-of-line, so keep an alternative binding.
 - **Invert** (`*` or another printable key): swap marked/unmarked. Avoid `Ctrl+I` — in the legacy encoding it's indistinguishable from Tab (only the Kitty keyboard protocol tells them apart), and Tab is your focus-cycle key.
 
 After multi-selecting, an action key applies to all marked items: `d` deletes all marked, `y` yanks all, etc.

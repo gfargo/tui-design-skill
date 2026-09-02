@@ -46,13 +46,13 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 - **Per-pane sub-tabs.** The Branches panel has Local / Remotes / Tags as `[`/`]` tabs.
 - **Undo/redo for git operations** (`z` / `Ctrl+z`) — including rebases. This is unusually thoughtful for a TUI.
 - **Subtle pulse animation** on background fetch — present without commanding attention.
-- **Custom commands and aliases** in TOML config.
+- **Custom commands and aliases** in YAML config (`config.yml`).
 - A "command log" pane showing what git commands actually ran (transparency).
 - A confirmation modal pattern that defaults to No.
 
 **Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
 
-**Stack:** Go, gocui (jesseduffield's fork), TOML config.
+**Stack:** Go, gocui (jesseduffield's fork), YAML config.
 
 ---
 
@@ -67,7 +67,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 - **Sortable columns** with `<` and `>`.
 - **Fuzzy filter** (`/`) to narrow huge lists in real time.
 - **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
-- **Plugin system** for custom actions (TOML).
+- **Plugin system** for custom actions (`plugins.yaml`).
 - **Status-header** showing the current "address" of where you are.
 
 **Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
@@ -80,21 +80,21 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > System monitor. The pinnacle of widget dashboard layouts.
 
-**Layout:** widget dashboard. CPU graph (top-left), memory (top-right), network (bottom-left), processes table (bottom-right). All resizable, all rearrangeable, all configurable in TOML.
+**Layout:** widget dashboard. CPU graph (top-left), memory (top-right), network (bottom-left), processes table (bottom-right). All resizable, all rearrangeable, all configurable in `btop.conf` (a TOML-like `key = value` file).
 
 **What it does well:**
 - **Truecolor gradient meters** that look genuinely beautiful.
-- **Per-widget responsiveness** — CPU updates every 100ms, processes every 2s.
+- **One tunable refresh rate** (`update_ms`, default 2000) that every box shares; each box keeps its own scroll, focus, and graph history.
 - **Mouse support** that doesn't get in your way (drag to resize, click to focus).
 - **Theme system** with dozens of community themes.
 - **Help modal (`h`)** that's actually informative, organized by widget.
 
 **Specific features worth copying:**
-- Widget independence (each owns its own update loop).
-- Theme system as TOML — one file per theme.
+- Widget independence for focus, scroll, and layout (boxes can be shown, hidden, and rearranged individually).
+- Theme system as one `.theme` file per theme (a simple `theme[key]="#hex"` format).
 - The decision to default to truecolor and degrade — most users have it now.
 
-**Lessons:** in a dashboard, every widget should be independent — its own update cadence, its own scroll, its own focus. Don't synchronize what doesn't need to be.
+**Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
 
 **Stack:** C++ (btop), Rust (bottom — `btm`). Go's gotop pioneered the clone lineage, but cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat it as a current peer.
 

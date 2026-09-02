@@ -4,6 +4,14 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Fixed
+- **Python guidance:** the Rich traceback installer is `rich.traceback.install()`, not a nonexistent `rich.install()`; Poetry and Sphinx are no longer cited as Rich users (neither depends on it); the dev CLI command is `textual diagnose`.
+- **Go guidance:** Cobra has generated the `completion` subcommand automatically since v1.2, so the reference no longer tells readers to add or scaffold one; `urfave/cli` now points at the v3 line; the Bubbles embedding example uses v2 signatures (`View() tea.View`, `tea.KeyPressMsg`); Wish v2 guidance uses `bubbletea.MakeOptions` instead of the removed `MakeRenderer`; `gh` is no longer cited as a Bubble Tea app; `tea.LogToFileWith` is no longer described as v2-only.
+- **Config-format facts:** lazygit, lazydocker, and k9s plugins use YAML, not TOML; alacritty has used TOML since 0.13; bat, fzf, and delta do not use TOML config files; btop themes are `.theme` files. The btop case study no longer claims per-widget refresh cadences (btop has a single `update_ms`).
+- **CLI guidance:** goreleaser's deprecated Homebrew key is `brews`, not `homebrew_formulas`; the AWS CLI CVE-2026-13769 example now names the three affected subcommands instead of implying `aws configure` was affected.
+- **Interaction guidance:** neither vim nor helix binds `Ctrl+S` to save by default (helix uses it for `save_selection`); `Ctrl+A` is GNU screen's prefix rather than tmux's default.
+- **Visual guidance:** repaired the dangling cross-reference to a removed SKILL.md section; the Braille `dots` spinner has ten frames; starship's preset is `nerd-font-symbols`.
+
 ### Added
 - **Schema-v4 grading-prompt integrity:** grades now record `grading_prompt: {path, sha256}`, machine-linking `grader.prompt_sha256` to a grading-prompt file preserved inside the same evidence bundle. The harness enforces bundle containment and rejects path traversal, missing files, and digest mismatches. Schema v2 and v3 evidence remains readable and valid under their original, unchanged rules.
 - **Reference freshness audit:** `scripts/check-reference-freshness.py` and `scripts/reference-inventory.json` check pinned Bubble Tea, Ratatui, Textual, and Ink version claims against their primary package registries and verify cited source links still resolve, without ever editing reference content. Ambiguous or unreachable checks report `unknown` rather than failing. `.github/workflows/reference-freshness.yml` runs the audit weekly and on demand.

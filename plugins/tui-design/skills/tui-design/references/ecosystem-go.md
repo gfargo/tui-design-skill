@@ -316,7 +316,7 @@ if err := app.SetRoot(list, true).Run(); err != nil {
 }
 ```
 
-**Threading rule:** `app.QueueUpdateDraw(func)` is **required** for any modification from a goroutine. Calling `app.Draw()` from a non-main goroutine causes deadlocks. This is the #1 tview pitfall.
+**Threading rule:** any modification to a primitive from a goroutine must go through `app.QueueUpdate(func)` or `app.QueueUpdateDraw(func)`, which run `func` on the main loop. A bare `app.Draw()` from a goroutine is safe (it only schedules a repaint) but does not synchronize your data. The deadlock trap is the opposite direction: calling `Draw()`, `QueueUpdate()`, or `QueueUpdateDraw()` from *inside* an event handler that already runs on the main goroutine (a key handler, `SetSelectedFunc`, and so on) blocks forever, per the tview Concurrency wiki. This is the #1 tview pitfall.
 
 **When to choose tview over Bubble Tea:** you have many widgets that need to coexist (a real "form with 12 fields, table, sidebar"), the team prefers callbacks over message-passing, or you're already on tcell. Bubble Tea is more ergonomic for state-heavy apps but you assemble layout manually; tview gives you a richer widget set with less code.
 
@@ -411,7 +411,7 @@ When the user wants pretty CLI output (no full-screen UI):
 
 ## Testing
 
-**Test in layers, bottom-heavy.** Even Charm's flagship v2 app (crush, 163 test files) uses zero teatest — it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base of the pyramid; the harness is the thin top.
+**Test in layers, bottom-heavy.** Even Charm's flagship v2 app (crush, over 200 test files) uses zero teatest — it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base of the pyramid; the harness is the thin top.
 
 **Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
 

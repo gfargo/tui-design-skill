@@ -455,7 +455,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 **Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
 
-**Libraries:** lipgloss has a `Hyperlink` style property (termenv underneath); Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workaround crates (`hyperrat`, `tui-link`) exist but work around the buffer model rather than fixing it.
+**Libraries:** Lipgloss v2 has `Style.Hyperlink(url)`; Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workarounds (the `hyperrat` crate, the `tui-link` repo) exist but work around the buffer model rather than fixing it.
 
 **Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
 

@@ -97,7 +97,7 @@ Independent widgets in a grid, each owning its data lifecycle. Layout is configu
 **Implementation notes:**
 - Define a config schema (TOML/YAML) early. Users *will* want to customize.
 - Each widget should be independently scrollable/expandable.
-- Mouse-resize is nice-to-have (btop supports it).
+- Mouse-resize is rare; btop, for example, offers click-to-focus and scroll but no drag-resize.
 
 ### 5. IDE three-panel
 
@@ -482,8 +482,8 @@ When filtering a list:
 
 Three approaches:
 
-1. **Hide low-priority columns.** Define column priority; drop them as width shrinks. eza does this.
-2. **Horizontal scroll.** k9s scrolls table content horizontally on narrow terminals.
+1. **Hide low-priority columns.** Define column priority; drop them as width shrinks.
+2. **Horizontal scroll.** htop scrolls the process table left and right with the arrow keys when columns overflow.
 3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The universal escape hatch.
 
 Detail-on-Enter is the highest-leverage pattern: you can show fewer columns, and the user is one keypress away from full detail.
@@ -643,11 +643,11 @@ The community has built theme repos for most popular tools; users of highly them
 
 ### Icons and Nerd Fonts — there is no detection, only opt-in
 
-No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, does exactly that) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
+No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, checks a list of terminals that bundle Nerd Font glyphs, then parses the terminal's config for the font name, and still needs a `NERD_FONT=1` override) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
 
 - **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence — it fully trusts the user.
 - **lazygit** — `gui.nerdFontsVersion: '2' | '3' | ""`; empty (the default) means no icons at all.
-- **yazi** — icons are default-on, baked into the shipped theme file rather than gated by a flag; a user without a Nerd Font swaps in a community `theme-no-nerd-fonts.toml` instead of toggling a setting.
+- **yazi** — icons are default-on in the shipped theme rather than gated by a flag; the FAQ's answer for users without a Nerd Font is to override the icon tables in `theme.toml`, not a switch.
 
 **Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 reorganized Material Design Icons' codepoints (`F500–FD46` → `F0001+`) because the old range collided with CJK Unicode — a real, documented breaking change, which is exactly why lazygit's config asks for `'2'` or `'3'` explicitly rather than shipping one hardcoded set.
 

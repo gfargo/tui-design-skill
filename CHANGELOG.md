@@ -4,6 +4,10 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+## [1.7.1] — 2026-09-02
+
+Correctness patch after a three-pass fact-check of every reference claim against package registries, changelogs, and upstream sources, bundled with the schema-v4 grading-prompt integrity and reference freshness audit work merged since 1.7.0.
+
 ### Fixed
 - **Python guidance:** the Rich traceback installer is `rich.traceback.install()`, not a nonexistent `rich.install()`; Poetry and Sphinx are no longer cited as Rich users (neither depends on it); the dev CLI command is `textual diagnose`.
 - **Go guidance:** Cobra has generated the `completion` subcommand automatically since v1.2, so the reference no longer tells readers to add or scaffold one; `urfave/cli` now points at the v3 line; the Bubbles embedding example uses v2 signatures (`View() tea.View`, `tea.KeyPressMsg`); Wish v2 guidance uses `bubbletea.MakeOptions` instead of the removed `MakeRenderer`; `gh` is no longer cited as a Bubble Tea app; `tea.LogToFileWith` is no longer described as v2-only.

@@ -6,12 +6,12 @@ Ratatui dominates Rust TUI development — thousands of crates build on it. Fork
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Ratatui](#ratatui-ratatui-ratatui) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+- [Ratatui](#ratatui-ratatuiratatui) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
 - [Backends](#backends-crossterm-vs-termion-vs-termwiz)
 - [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
 - [Testing](#testing) · [Debugging](#debugging)
 - [Companion crates](#companion-crates)
-- [Panic safety](#panic-safety--the-critical-pattern)
+- [Panic safety](#panic-and-error-safety--the-critical-pattern)
 - [Alternatives to Ratatui](#alternatives-to-ratatui)
 - [Pitfalls](#pitfalls)
 - [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
@@ -288,7 +288,7 @@ Pair with **`insta`** for snapshot testing — `insta::assert_snapshot!(terminal
 
 **Test at multiple sizes.** Resize bugs live at unusual dimensions, so run the same render across several `TestBackend` sizes — include odd ones like 79×23 alongside 80×24 and 200×50 — snapshotting each under a size-suffixed name (`app_79x23`). Parameterizing per-size with `rstest` (which ratatui itself uses for its own tests) is a natural fit, though that combination is community practice rather than an official recipe. Extracting layout math into a pure `fn compute_layout(area: Rect) -> ...` makes per-size assertions cheap — no terminal needed at all.
 
-Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025 — and had to revert and re-land them over a startup-latency issue, a useful caution that snapshot tests over a full async app need deterministic wait points, not sleeps. **openai/codex** makes insta snapshot coverage *mandatory* for any change that affects visible TUI output (workflow: `cargo insta pending-snapshots`, `cargo insta accept`).
+Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) were reverted because the refactor that made the main loop testable dropped the initial notify event, so the app opened blank for one tick interval; the re-landed version (PR #2813, merged April 2026) restores that event. The caution: when you restructure an event loop so tests can drive it, the app's own startup path is what regresses, so cover first-draw behavior in the same tests. **openai/codex** makes insta snapshot coverage *mandatory* for any change that affects visible TUI output (workflow: `cargo insta pending-snapshots`, `cargo insta accept`).
 
 ## Debugging
 

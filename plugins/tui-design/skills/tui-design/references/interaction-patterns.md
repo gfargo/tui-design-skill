@@ -139,7 +139,7 @@ These belong to the terminal or shell:
 | **Ctrl+\\** | SIGQUIT — abort with core dump |
 | **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control on legacy serial terminals |
 
-If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is `Ctrl+S` for "save" in editors (vim, helix) — but those editors traditionally disable XON/XOFF before binding.
+If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is a user who rebinds `Ctrl+S` to "save" in an editor; that only works because they also run `stty -ixon` to disable flow control. Neither vim nor helix binds it to save by default (helix uses `Ctrl-s` for `save_selection`).
 
 Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
 
@@ -316,7 +316,7 @@ Universal pattern: **Space toggles** the row's marked state. Marked rows show a 
 Variants:
 - **Visual mode** (`v`): yazi and vim — extend selection with motion keys.
 - **Range select** (Shift+Click or Shift+arrow): from current to clicked.
-- **Select all** (`Ctrl+A`): mark everything — with the caveat that `Ctrl+A` is tmux's common prefix and readline's start-of-line, so keep an alternative binding.
+- **Select all** (`Ctrl+A`): mark everything — with the caveat that `Ctrl+A` is GNU screen's prefix (and a common tmux rebinding) and readline's start-of-line, so keep an alternative binding.
 - **Invert** (`*` or another printable key): swap marked/unmarked. Avoid `Ctrl+I` — in the legacy encoding it's indistinguishable from Tab (only the Kitty keyboard protocol tells them apart), and Tab is your focus-cycle key.
 
 After multi-selecting, an action key applies to all marked items: `d` deletes all marked, `y` yanks all, etc.
@@ -455,7 +455,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 **Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
 
-**Libraries:** lipgloss has a `Hyperlink` style property (termenv underneath); Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workaround crates (`hyperrat`, `tui-link`) exist but work around the buffer model rather than fixing it.
+**Libraries:** Lipgloss v2 has `Style.Hyperlink(url)`; Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workarounds (the `hyperrat` crate, the `tui-link` repo) exist but work around the buffer model rather than fixing it.
 
 **Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
 
@@ -465,7 +465,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 **tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs the outer terminal's `Ms` terminfo capability. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
 
-**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Windows Terminal even gates writes on window focus (since Feb 2026). Design for write-only.
+**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and Windows Terminal added the same focus gate in February 2026, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
 
 **Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
 

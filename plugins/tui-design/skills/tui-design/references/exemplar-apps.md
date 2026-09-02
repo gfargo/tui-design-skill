@@ -46,13 +46,13 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 - **Per-pane sub-tabs.** The Branches panel has Local / Remotes / Tags as `[`/`]` tabs.
 - **Undo/redo for git operations** (`z` / `Ctrl+z`) — including rebases. This is unusually thoughtful for a TUI.
 - **Subtle pulse animation** on background fetch — present without commanding attention.
-- **Custom commands and aliases** in TOML config.
+- **Custom commands and aliases** in YAML config (`config.yml`).
 - A "command log" pane showing what git commands actually ran (transparency).
 - A confirmation modal pattern that defaults to No.
 
 **Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
 
-**Stack:** Go, gocui (jesseduffield's fork), TOML config.
+**Stack:** Go, gocui (jesseduffield's fork), YAML config.
 
 ---
 
@@ -64,10 +64,10 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 **What it does well:**
 - **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes. Different resources get different actions.
-- **Sortable columns** with `<` and `>`.
+- **Sortable columns** via Shift+letter (`shift-n` name, `shift-a` age, `shift-o` the selected column).
 - **Fuzzy filter** (`/`) to narrow huge lists in real time.
 - **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
-- **Plugin system** for custom actions (TOML).
+- **Plugin system** for custom actions (`plugins.yaml`).
 - **Status-header** showing the current "address" of where you are.
 
 **Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
@@ -80,21 +80,21 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > System monitor. The pinnacle of widget dashboard layouts.
 
-**Layout:** widget dashboard. CPU graph (top-left), memory (top-right), network (bottom-left), processes table (bottom-right). All resizable, all rearrangeable, all configurable in TOML.
+**Layout:** widget dashboard. CPU graph (top-left), memory (top-right), network (bottom-left), processes table (bottom-right). All resizable, all rearrangeable, all configurable in `btop.conf` (a TOML-like `key = value` file).
 
 **What it does well:**
 - **Truecolor gradient meters** that look genuinely beautiful.
-- **Per-widget responsiveness** — CPU updates every 100ms, processes every 2s.
-- **Mouse support** that doesn't get in your way (drag to resize, click to focus).
+- **One tunable refresh rate** (`update_ms`, default 2000) that every box shares; each box keeps its own scroll, focus, and graph history.
+- **Mouse support** that doesn't get in your way: highlighted keys and boxes are clickable, lists scroll with the wheel, and there is no drag-resize to fight.
 - **Theme system** with dozens of community themes.
-- **Help modal (`h`)** that's actually informative, organized by widget.
+- **Help modal (`h`, `?`, or F1)** that's actually informative, organized by widget.
 
 **Specific features worth copying:**
-- Widget independence (each owns its own update loop).
-- Theme system as TOML — one file per theme.
+- Widget independence for focus, scroll, and layout (boxes can be shown, hidden, and rearranged individually).
+- Theme system as one `.theme` file per theme (a simple `theme[key]="#hex"` format).
 - The decision to default to truecolor and degrade — most users have it now.
 
-**Lessons:** in a dashboard, every widget should be independent — its own update cadence, its own scroll, its own focus. Don't synchronize what doesn't need to be.
+**Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
 
 **Stack:** C++ (btop), Rust (bottom — `btm`). Go's gotop pioneered the clone lineage, but cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat it as a current peer.
 
@@ -245,15 +245,15 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 **What it does well:**
 - **Empty states explain next action** — "No requests. Press `n` to create one."
 - **Multiple themes** (Catppuccin, Gruvbox, Tokyo Night, Solarized, custom).
-- **Vim and emacs editor key bindings** in text fields.
-- **Response history** with diff between runs.
+- **Vim keys** plus a "jump mode" for reaching any widget in two keystrokes.
+- **Import and export** of curl commands, Postman collections, and OpenAPI specs.
 - **Variable substitution** (`{{token}}`) with environment switching.
 - **Keyboard-first** — every action keyboard-reachable; mouse is augmentation.
 
 **Specific features worth copying:**
 - The empty-state pattern (`No X. Press `n` to create one.`) — never just say "No data."
 - Theme switching at runtime.
-- Both vim and emacs bindings in text fields — let users pick their muscle memory.
+- Jump mode: label every focusable widget with a letter so a keyboard user never tabs through a form.
 
 **Lessons:** Postman-style apps don't have to be GUIs. A well-designed TUI can replace bulky Electron apps and be faster, more keyboard-friendly, and offline-friendly.
 
@@ -268,7 +268,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 **Layout:** IDE three-panel — schema/catalog (left), SQL editor (top-right), results table (bottom-right).
 
 **What it does well:**
-- **Multi-adapter** — DuckDB, Postgres, MySQL, SQLite, Snowflake, BigQuery, Trino, all from the same UI.
+- **Multi-adapter** — DuckDB, SQLite, Postgres, MySQL/MariaDB, and ODBC from the maintainers, plus community adapters for many more databases, all from the same UI.
 - **Tree-sitter SQL** highlighting in the editor.
 - **Fast result virtualization** for million-row queries.
 - **Run-on-keystroke** option for ad-hoc exploration.
@@ -393,7 +393,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 - **Beautiful Markdown rendering** via Glamour.
 - **Multiple themes** (light, dark, custom JSON).
 - **Local + remote files** (GitHub URLs work directly).
-- **Stash** — save documents from any source.
+- Scope discipline: Glow 2.0 removed the cloud stash feature rather than carry a dead backend.
 
 **Specific features worth copying:**
 - The decision to ship as both a CLI (`glow README.md` pipes to terminal) and a TUI (`glow` opens the picker).
@@ -430,8 +430,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 **What it does well:**
 - **Sub-50ms cold start** as a hard requirement. Every feature added must not blow the budget.
-- **Async git status** — checks asynchronously, displays placeholder while waiting.
-- **Minimal allocations.** Profiles every release.
+- **Per-module time budgets** — `scan_timeout` (30ms) and `command_timeout` (500ms) bound every module; a module that overruns is dropped from that prompt with a warning instead of delaying it.
 - **Single TOML config** with semantic blocks (one per "module": `[character]`, `[directory]`, `[git_branch]`).
 - **Cross-shell** — bash, zsh, fish, pwsh, ion, nu — all from one binary.
 

@@ -97,7 +97,7 @@ Independent widgets in a grid, each owning its data lifecycle. Layout is configu
 **Implementation notes:**
 - Define a config schema (TOML/YAML) early. Users *will* want to customize.
 - Each widget should be independently scrollable/expandable.
-- Mouse-resize is nice-to-have (btop supports it).
+- Mouse-resize is rare; btop, for example, offers click-to-focus and scroll but no drag-resize.
 
 ### 5. IDE three-panel
 
@@ -253,7 +253,7 @@ Detect via `$LANG` containing UTF-8 or `$LC_ALL`, and via terminal capability qu
 
 ### The three tiers
 
-Design in the three layers SKILL.md's *Color as a semantic system* names (monochrome / 16 ANSI / 256-truecolor). The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+Design in three layers (monochrome / 16 ANSI / 256-truecolor); SKILL.md → *Meaning and access* states the contract this section expands. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
 
 ### Semantic tokens
 
@@ -482,8 +482,8 @@ When filtering a list:
 
 Three approaches:
 
-1. **Hide low-priority columns.** Define column priority; drop them as width shrinks. eza does this.
-2. **Horizontal scroll.** k9s scrolls table content horizontally on narrow terminals.
+1. **Hide low-priority columns.** Define column priority; drop them as width shrinks.
+2. **Horizontal scroll.** htop scrolls the process table left and right with the arrow keys when columns overflow.
 3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The universal escape hatch.
 
 Detail-on-Enter is the highest-leverage pattern: you can show fewer columns, and the user is one keypress away from full detail.
@@ -555,10 +555,10 @@ Why this bar matters and how to auto-generate it from your keymap: `references/i
 The de facto modern default for indeterminate work: **Braille spinners**.
 
 ```
-⠋⠙⠹⠸⠼⠴⠦⠧
+⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏
 ```
 
-Eight frames at ~80ms per frame = smooth rotation. `cli-spinners` (the npm package, vendored everywhere) ships ~70+ named styles.
+Ten frames at ~80ms per frame (cli-spinners' `dots`) = smooth rotation. `cli-spinners` (the npm package, vendored everywhere) ships ~70+ named styles.
 
 **Rules:**
 - Show only after ~150–200ms — instant work shouldn't flash a spinner.
@@ -620,8 +620,9 @@ Most production TUIs support themes. The canonical approach:
 
 ### Configuration formats
 
-- **TOML** — lazygit, bottom, btop, helix, delta, bat, fzf, starship.
-- **YAML** — k9s, alacritty.
+- **TOML** — bottom, helix, starship, alacritty (since 0.13); btop's `btop.conf` is a TOML-like `key = value` file.
+- **YAML** — lazygit (`config.yml`), lazydocker, k9s (including `plugins.yaml`).
+- **Flag files / git config** — bat's config file is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives in `.gitconfig` under `[delta]`.
 - **TCSS (Textual CSS)** — Textual apps; live-reloads.
 - **JSON** — VS Code-style; less common in TUIs.
 
@@ -642,15 +643,15 @@ The community has built theme repos for most popular tools; users of highly them
 
 ### Icons and Nerd Fonts — there is no detection, only opt-in
 
-No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, does exactly that) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
+No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, checks a list of terminals that bundle Nerd Font glyphs, then parses the terminal's config for the font name, and still needs a `NERD_FONT=1` override) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
 
 - **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence — it fully trusts the user.
 - **lazygit** — `gui.nerdFontsVersion: '2' | '3' | ""`; empty (the default) means no icons at all.
-- **yazi** — icons are default-on, baked into the shipped theme file rather than gated by a flag; a user without a Nerd Font swaps in a community `theme-no-nerd-fonts.toml` instead of toggling a setting.
+- **yazi** — icons are default-on in the shipped theme rather than gated by a flag; the FAQ's answer for users without a Nerd Font is to override the icon tables in `theme.toml`, not a switch.
 
 **Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 reorganized Material Design Icons' codepoints (`F500–FD46` → `F0001+`) because the old range collided with CJK Unicode — a real, documented breaking change, which is exactly why lazygit's config asks for `'2'` or `'3'` explicitly rather than shipping one hardcoded set.
 
-The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII — is real, but starship is the cleanest evidence of a tool actually shipping all three rungs as named presets (`nerd-font` / `no-nerd-font` / `plain-text-symbols`). Most tools are binary (icons on with a Nerd Font, or off), not a full three-tier ladder — don't imply every icon-capable tool implements all three.
+The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII — is real, but starship is the cleanest evidence of a tool actually shipping all three rungs as named presets (`nerd-font-symbols` / `no-nerd-font` / `plain-text-symbols`). Most tools are binary (icons on with a Nerd Font, or off), not a full three-tier ladder — don't imply every icon-capable tool implements all three.
 
 ### Light/dark detection
 

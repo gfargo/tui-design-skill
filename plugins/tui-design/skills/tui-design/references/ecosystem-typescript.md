@@ -8,14 +8,14 @@ The Node.js ecosystem splits along two axes:
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Ink](#ink-vadimdemedes-ink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedes-ink-ui)
+- [Ink](#ink-vadimdemedesink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedesink-ui)
 - [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
-- [Pastel](#pastel--next-js-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
-- [Modern prompts: @clack/prompts](#modern-prompts-clack-prompts) · [@inquirer/prompts](#inquirer-prompts)
+- [Pastel](#pastel--nextjs-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+- [Modern prompts: @clack/prompts](#modern-prompts-clackprompts) · [@inquirer/prompts](#inquirerprompts)
 - [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
-- [OpenTUI](#opentui-anomalyco-opentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
-- [Notable JS/TS TUI apps](#notable-js-ts-tui-apps-to-study)
-- [Pitfalls common to JS/TS](#pitfalls-common-to-js-ts-terminal-apps)
+- [OpenTUI](#opentui-anomalycoopentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
+- [Notable JS/TS TUI apps](#notable-jsts-tui-apps-to-study)
+- [Pitfalls common to JS/TS](#pitfalls-common-to-jsts-terminal-apps)
 - [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
 
 ## Quick recommendation
@@ -222,7 +222,7 @@ Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "P
 
 ## Modern prompts: @clack/prompts
 
-`@clack/prompts` (~4 KB gzipped) has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (clack.cc) and actively released. Used by **create-vite, create-astro, create-svelte, create-t3-app**, and inspired the Rust port `cliclack`.
+`@clack/prompts` has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (clack.cc) and actively released. Used by **create-vite, `sv` (Svelte's CLI), and create-t3-app**, and inspired the Rust port `cliclack`; create-astro ships the same look through its own `@astrojs/cli-kit` rather than Clack.
 
 ```ts
 import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
@@ -307,7 +307,7 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 
 - **ora** — single elegant spinner; ~70+ styles via `cli-spinners`. Use outside Ink. Inside Ink, use `<Spinner>` from `@inkjs/ui`.
 - **cli-progress** — single and multi-bar progress with ETA. Use outside Ink.
-- **listr2** — hierarchical animated task list with concurrency, retries, rollback. Renderers: `default` (live), `simple` (line-per-task, CI-friendly), `verbose`, `silent`, `test`. ~36M weekly downloads.
+- **listr2** — hierarchical animated task list with concurrency, retries, rollback. Renderers: `default` (live), `simple` (line-per-task, CI-friendly), `verbose`, `silent`, `test`. Ubiquitous via lint-staged and scaffolding tools.
 - **boxen** — text in boxes; used by `update-notifier`. Useful for one-time announcements ("Update available!").
 - **figlet** + **gradient-string** — banner text with color gradients, for branding splashes.
 - **terminal-link** — OSC 8 hyperlinks; falls back to plain URL on terminals without support.
@@ -318,16 +318,16 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 
 ## Argument parsers
 
-| Parser | Weekly DL | Style | Best for |
+| Parser | Adoption | Style | Best for |
 |---|---|---|---|
-| **commander** | ~400M+ | Fluent API | The default for most projects (webpack, babel, vue-cli) |
-| **yargs** | High | Fluent + middleware | Best validation; used by Mocha, nyc, jest |
+| **commander** | The most downloaded by a wide margin | Fluent API | The default for most projects (webpack, babel, vue-cli) |
+| **yargs** | Very high | Fluent + middleware | Best validation; used by Mocha, nyc, jest |
 | **citty** | Growing | TS-first, declarative | UnJS ecosystem (Nuxt, Nitro, unbuild) |
-| **cac** | Lower | Tiny ~7K | Vite uses it; minimal deps |
-| **oclif** | Plugin marketplace | Class-per-command | Heroku, Salesforce, Shopify CLI; cold start ~85ms |
+| **cac** | Niche | Tiny ~7K | Vite uses it; minimal deps |
+| **oclif** | Plugin marketplace | Class-per-command | Heroku, Salesforce, Shopify CLI; heaviest startup of the group |
 | **node:util.parseArgs** | stdlib | Argparse only | Stable since Node 18; zero-dep |
 
-**Startup overhead** (cold start): no framework ≈12ms, commander ≈18ms, yargs ≈35ms, oclif ≈85ms. For frequently-invoked CLIs, this matters.
+**Startup overhead** grows from the stdlib parser and cac, through commander and yargs, to oclif's plugin loader at the heavy end. Measure your own binary with `hyperfine 'mycli --version'` rather than trusting published numbers; for frequently-invoked CLIs the difference matters.
 
 **commander hello world:**
 
@@ -364,9 +364,9 @@ Powers **opencode** (Anomaly's terminal coding agent) in production, and will al
 
 Retained-mode classics, pre-Ink era.
 
-- **blessed** — reimplements ncurses in pure JS with terminfo/termcap parsing, painter's algorithm with damage buffers. Massive widget set: `box`, `list`, `form`, `textbox`, `textarea`, `progressbar`, `log`, `table`, `tree`, `terminal` (embedded shell). **Largely abandoned** — last release 2017.
+- **blessed** — reimplements ncurses in pure JS with terminfo/termcap parsing, painter's algorithm with damage buffers. Massive widget set: `box`, `list`, `form`, `textbox`, `textarea`, `progressbar`, `log`, `table`, `tree`, `terminal` (embedded shell). **Largely abandoned** — last release (0.1.81) in September 2015.
 - **neo-blessed** — maintained fork of blessed.
-- **terminal-kit** (~82K weekly DL) — cursor control, screen buffers, input fields, menus, **image rendering (truecolor + Sixel)**, even a Document model.
+- **terminal-kit** — cursor control, screen buffers, input fields, menus, **image rendering (truecolor + Sixel)**, even a Document model.
 
 **Choose** for image rendering, precise damage-region control, or maintaining legacy code. **Don't choose** for new TUI apps in 2026 — Ink is better-supported and the React/JSX model is more productive.
 

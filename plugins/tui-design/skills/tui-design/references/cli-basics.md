@@ -106,7 +106,7 @@ Prompt only when an interactive input channel is available—normally a TTY, or 
 
 ### Progress
 
-Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Show progress within ~100ms of starting work — earlier feels twitchy, later feels frozen.
+Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Start showing progress once work has run for roughly 100–200ms: an indicator that flashes for near-instant work feels twitchy, and silence past a few hundred milliseconds feels frozen. The same delayed-spinner rule is spelled out in `references/visual-patterns.md` → *Spinners*.
 
 For multi-step work: hide noisy logs behind a progress indicator while things succeed; print them if something fails (Docker Compose pattern). This keeps the success case clean and the failure case debuggable.
 
@@ -392,7 +392,7 @@ Two patterns dominate, and both are legitimate:
 
 **Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
 
-**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): absent a restrictive umask, `~/.aws/credentials` was written world-readable. `chmod 600` the file yourself at creation time.
+**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): with a default umask, three subcommands (`codeartifact login`, `iam create-virtual-mfa-device`, `deploy register`) wrote credential and config files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
 
 ---
 
@@ -454,7 +454,7 @@ Once shipped, your CLI is an API. Users script around it.
 
 ### Distribution shape constrains your options
 
-- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency — the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser automates the release; its `homebrew_formulas` publisher is deprecated as of v2.10 in favor of `homebrew_casks`.
+- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency — the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser automates the release; its `brews` (Homebrew formula) publisher was deprecated in v2.10 and hard-deprecated in v2.16 in favor of `homebrew_casks`.
 - **npm with per-platform `optionalDependencies`**: the current pattern for shipping native binaries through npm (esbuild, `@swc/core`) — each platform gets its own scoped package (`@esbuild/darwin-arm64`), and the package manager installs only the matching one. This superseded the older, fragile `postinstall`-downloads-a-binary approach, which breaks under offline installs, custom registries, and `--ignore-scripts`.
 - **Pure npm / pipx**: needs the language runtime present, but is the cheapest to publish and update.
 
@@ -466,7 +466,7 @@ If you check for updates: check async, cache the result (once a day is the norm 
 
 ### Telemetry, if you collect it
 
-`DO_NOT_TRACK=1` is a real, named convention with real prior art (Homebrew, Gatsby, Syncthing, .NET, Azure CLI) — but it is **not close to universal**: Next.js, Vercel CLI, Prisma, and Netlify CLI all decline or ignore it despite direct, still-open requests asking them to. The practical pattern: ship your own clearly-named opt-out (an env var plus a `tool telemetry disable` subcommand, following Next.js/Vercel's shape), auto-skip in CI, and honor `DO_NOT_TRACK=1` as a cheap courtesy on top — it costs nothing to check and it's the right thing to do even though most tools don't yet. Disclose before collecting: Homebrew shows its analytics notice before analytics are ever sent, so a user can opt out before any data leaves the machine. And never let an opt-out be silently overridden — Netlify CLI once fired a telemetry event *reporting that the user had disabled telemetry*, undermining the opt-out it was supposed to respect. Treat an opt-out flag as an absolute veto, checked first, no exceptions.
+`DO_NOT_TRACK=1` is a real, named convention, but adoption is thin: netdata, tilt, and since 2026 the GitHub CLI honor it, while Homebrew, Gatsby, Syncthing, and the .NET SDK each rejected patches to add it and kept their own variables (`HOMEBREW_NO_ANALYTICS`, `GATSBY_TELEMETRY_DISABLED`, `DOTNET_CLI_TELEMETRY_OPTOUT`), and Next.js, Vercel CLI, Prisma, and Netlify CLI ignore it too. Its own author disowned the proposal in 2024. The practical pattern: ship your own clearly-named opt-out (an env var plus a `tool telemetry disable` subcommand, following gh and Next.js), auto-skip in CI, and honor `DO_NOT_TRACK=1` as a cheap courtesy on top — it costs one env lookup. Disclose before collecting: Homebrew shows its analytics notice before analytics are ever sent, so a user can opt out before any data leaves the machine. And never let an opt-out be silently overridden — Netlify CLI once fired a telemetry event *reporting that the user had disabled telemetry*, undermining the opt-out it was supposed to respect. Treat an opt-out flag as an absolute veto, checked first, no exceptions.
 
 ---
 

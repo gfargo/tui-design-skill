@@ -1,0 +1,102 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.7.1 correctness regressions for facts corrected after a full reference audit against package registries, changelogs, and tagged sources (Rich, Cobra v1.2+, Wish v2.0.3, lazygit, btop, cli-spinners, tview's concurrency wiki, DO_NOT_TRACK adoption history). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "evals": [
+    {
+      "id": "rich-traceback-install",
+      "name": "rich-traceback-install",
+      "prompt": "I want Rich's pretty tracebacks in my Click CLI. Is `import rich; rich.install()` the right call, and which Python CLIs actually ship Rich so I can point my team at precedent?",
+      "files": [],
+      "assertions": [
+        "Uses rich.traceback.install() (from rich.traceback import install) rather than a nonexistent rich.install()",
+        "Says rich.install() does not exist, or at minimum never presents it as valid",
+        "Cites pip as vendoring Rich without claiming Poetry or Sphinx depend on it",
+        "Keeps the traceback installer separate from rich.pretty.install(), which only affects REPL output"
+      ]
+    },
+    {
+      "id": "lazygit-config-format",
+      "name": "lazygit-config-format",
+      "prompt": "I'm building a lazygit-style multi-pane tool and want to mirror lazygit's configuration conventions. What file format and location does lazygit use, and does k9s use the same format for its plugins?",
+      "files": [],
+      "assertions": [
+        "Says lazygit's config is YAML (config.yml) under the XDG config directory",
+        "Does not describe lazygit's config as TOML",
+        "Says k9s plugins are defined in plugins.yaml",
+        "Recommends choosing a config format from the app's own needs rather than presenting one format as the TUI standard"
+      ]
+    },
+    {
+      "id": "reserved-ctrl-s-save",
+      "name": "reserved-ctrl-s-save",
+      "prompt": "My editor-like TUI should bind Ctrl+S to save, the way vim and helix do. Is that safe by default?",
+      "files": [],
+      "assertions": [
+        "Explains that Ctrl+S is XON/XOFF flow control and can freeze the terminal unless flow control is disabled (stty -ixon)",
+        "Does not claim vim or helix bind Ctrl+S to save by default",
+        "Notes that helix binds Ctrl+S to save_selection, or otherwise corrects the premise",
+        "Offers a conventional alternative binding or an explicit opt-in for users who disable flow control"
+      ]
+    },
+    {
+      "id": "btop-refresh-cadence",
+      "name": "btop-refresh-cadence",
+      "prompt": "I'm designing a btop-style dashboard. btop refreshes its CPU box every 100ms and the process table every 2s, so should every widget in my app run its own timer?",
+      "files": [],
+      "assertions": [
+        "Corrects the premise: btop uses a single update_ms setting (default 2000) shared by every box",
+        "Recommends widget independence for focus, scroll, and layout rather than mandatory per-widget timers",
+        "Reserves a separate cadence for widgets whose data source is slow or expensive",
+        "Keeps data collection off the render path regardless of cadence"
+      ]
+    },
+    {
+      "id": "wish-v2-session-options",
+      "name": "wish-v2-session-options",
+      "prompt": "I'm serving a Bubble Tea v2 app over Wish v2. How do I make styling follow each SSH client's color profile instead of the server's? Should I call bubbletea.MakeRenderer(sess)?",
+      "files": [],
+      "assertions": [
+        "Says MakeRenderer is not part of the Wish v2 bubbletea middleware",
+        "Recommends bubbletea.MakeOptions(sess) or the bubbletea.Middleware handler so input, output, and profile detection follow the client's PTY",
+        "Explains that Lipgloss v2 is pure and no longer owns terminal I/O, so per-session renderers are unnecessary",
+        "Keeps all Charm v2 modules on the same major version"
+      ]
+    },
+    {
+      "id": "spinner-delay-contract",
+      "name": "spinner-delay-contract",
+      "prompt": "For a one-shot CLI that usually finishes in under 50ms but sometimes takes several seconds, should the spinner appear the instant work starts? Which Braille frames should I use?",
+      "files": [],
+      "assertions": [
+        "Delays the spinner by roughly 100–200ms so near-instant work never flashes an indicator",
+        "Sends progress to stderr and suppresses animation when output is not a TTY",
+        "Uses the ten-frame cli-spinners dots sequence or states the frame count correctly if it lists frames",
+        "Ends with a final state symbol or clears the spinner cleanly"
+      ]
+    },
+    {
+      "id": "tview-goroutine-draw",
+      "name": "tview-goroutine-draw",
+      "prompt": "In my tview app a background goroutine polls an API and updates a Table. Is it safe to call app.Draw() from that goroutine, and where do tview deadlocks actually come from?",
+      "files": [],
+      "assertions": [
+        "Routes primitive mutations from goroutines through QueueUpdate or QueueUpdateDraw",
+        "Says a bare app.Draw() from a goroutine is safe but does not synchronize data access",
+        "Identifies the deadlock as calling Draw, QueueUpdate, or QueueUpdateDraw from inside an event handler on the main goroutine",
+        "Does not claim that calling Draw from a goroutine deadlocks"
+      ]
+    },
+    {
+      "id": "do-not-track-adoption",
+      "name": "do-not-track-adoption",
+      "prompt": "I'm adding opt-in telemetry to my CLI. Is DO_NOT_TRACK the standard opt-out that Homebrew, Gatsby, and the .NET SDK follow, or should I define my own?",
+      "files": [],
+      "assertions": [
+        "Says Homebrew, Gatsby, and the .NET SDK did not adopt DO_NOT_TRACK and use their own variables",
+        "Names at least one real adopter such as the GitHub CLI, netdata, or tilt",
+        "Recommends a tool-specific opt-out (env var plus subcommand) with DO_NOT_TRACK honored as an extra courtesy",
+        "Treats the opt-out as an absolute veto that is never itself reported as an event"
+      ]
+    }
+  ]
+}

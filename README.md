@@ -28,7 +28,7 @@ Use it for greenfield builds, design reviews, refactors, library decisions, and 
 
 ## What the skill covers
 
-The skill uses progressive disclosure: its 139-line `SKILL.md` carries the workflow, routing table, and cross-cutting contracts, then loads one authoritative reference per topic on demand. The nine Markdown files total about 4,160 lines, but the agent does not need all of that context for every question.
+The skill uses progressive disclosure: its 139-line `SKILL.md` carries the workflow, routing table, and cross-cutting contracts, then loads one authoritative reference per topic on demand. The nine Markdown files total about 4,200 lines, but the agent does not need all of that context for every question.
 
 **Top-level (`SKILL.md`):**
 - Product classification: one-shot CLI, summon–choose–exit tool, or full-screen session
@@ -256,6 +256,7 @@ tui-design-skill/
 │   ├── v160-structural-evals.json
 │   ├── v161-correction-evals.json
 │   ├── v170-lifecycle-evals.json
+│   ├── v171-correction-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

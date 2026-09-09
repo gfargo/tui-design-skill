@@ -1,0 +1,50 @@
+{
+  "schema_version": 4,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v170-lifecycle-with-skill-r3",
+  "created_at": "2026-09-09T18:28:16Z",
+  "run_manifest_sha256": "41a976175734b3134e44a4662c9f4c9bbf75ee1c9ed8a923ecfb4f5955fae4a2",
+  "grades_file": "grades.json",
+  "grades_sha256": "6b6751c297eb54400324929b5a3b51ccf1935a029d7b9b5d9a9bc0ff337c2d5c",
+  "passed": 69,
+  "total": 75,
+  "pass_rate": 0.92,
+  "by_case": [
+    {
+      "case_id": "bubble-tea-editor-handoff",
+      "case_name": "bubble-tea-editor-handoff",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-editor-reader",
+      "case_name": "ratatui-editor-reader-handoff",
+      "passed": 14,
+      "total": 15,
+      "pass_rate": 0.9333333333333333
+    },
+    {
+      "case_id": "textual-portable-suspension",
+      "case_name": "textual-portable-suspension",
+      "passed": 13,
+      "total": 15,
+      "pass_rate": 0.8666666666666667
+    },
+    {
+      "case_id": "ink-suspend-terminal",
+      "case_name": "ink-suspend-terminal",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "cross-framework-signal-boundaries",
+      "case_name": "cross-framework-signal-boundaries",
+      "passed": 15,
+      "total": 18,
+      "pass_rate": 0.8333333333333334
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/summary.schema.json"
+}

@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+A Ratatui 0.30 app has a Tokio task continuously reading Crossterm events. When I launch Vim, the child sometimes starts with garbage and the TUI is corrupted afterward, especially when Vim exits nonzero. What exact ownership sequence should surround the child, how do I preserve both outcomes if Vim and terminal re-entry fail, how should SIGTERM reach shutdown, and which hard-termination path cannot run cleanup?

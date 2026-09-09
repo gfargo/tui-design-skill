@@ -1,0 +1,792 @@
+2026-09-09T18:08:25.793005Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-09-09T18:08:25.794398Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-09-09T18:08:25.795674Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /tmp/tui-design-baseline-v170
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a0875b-58bc-7960-94f7-5780533baf09
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+A Ratatui 0.30 app has a Tokio task continuously reading Crossterm events. When I launch Vim, the child sometimes starts with garbage and the TUI is corrupted afterward, especially when Vim exits nonzero. What exact ownership sequence should surround the child, how do I preserve both outcomes if Vim and terminal re-entry fail, how should SIGTERM reach shutdown, and which hard-termination path cannot run cleanup?
+
+codex
+I’m using the TUI design skill’s Rust guidance here because this is a Ratatui/Crossterm terminal-ownership and process-lifecycle problem.
+exec
+/bin/zsh -lc "sed -n '1,240p' /Users/gfargo/.agents/skills/tui-design/SKILL.md && sed -n '1,300p' /Users/gfargo/.agents/skills/tui-design/references/ecosystem-rust.md" in /tmp/tui-design-baseline-v170
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design and build clean, professional, minimal terminal UI (TUI) applications and command-line tools. Use this skill whenever the user is building, designing, refactoring, reviewing, or asking about terminal interfaces — full-screen TUIs (file managers, dashboards, monitors, git/k8s tools, REPLs), interactive CLI prompts, or simple command-line utilities. Use it for library questions ("Bubble Tea vs Ratatui vs Textual vs Ink"), design questions ("how should I lay out this dashboard"), and concrete build requests ("build me a TUI for X"), even when the user doesn't say "TUI" explicitly — phrases like "terminal app", "ncurses-style", "interactive shell tool", "CLI dashboard", "fzf-like picker", or naming a known TUI app (lazygit, k9s, btop, helix, yazi) all qualify.
+---
+
+# TUI & CLI Design
+
+Build terminal applications that feel professional — the way `lazygit`, `k9s`, `btop`, `helix`, `fzf`, and `yazi` feel. The terminal is enjoying a renaissance: Charm (Go), Ratatui (Rust), Textual (Python), and Ink (TypeScript) have each crystallized a mature philosophy. This skill teaches the universal patterns that make TUIs feel good plus per-ecosystem deep-dives in `references/`.
+
+## When to read which reference
+
+Use this skill's body for the **universal principles** below. Then load reference files on demand:
+
+| Situation | Read |
+|---|---|
+| User picked Go / mentioned Bubble Tea, Charm, Lipgloss, tview, gocui | `references/ecosystem-go.md` |
+| User picked Rust / mentioned Ratatui, crossterm, tui-rs, Cursive | `references/ecosystem-rust.md` |
+| User picked Python / mentioned Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| User picked TS/JS / mentioned Ink, blessed, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| Building a non-interactive CLI (no full-screen UI) | `references/cli-basics.md` |
+| Designing layout, borders, color, typography, density, theming, icons, progress/loading/disconnected states | `references/visual-patterns.md` |
+| Designing keybindings, focus, navigation, modal vs modeless, forms/settings screens | `references/interaction-patterns.md` |
+| Studying what makes specific apps great (lazygit, k9s, fzf, btop, helix, yazi, atuin) | `references/exemplar-apps.md` |
+| Testing or debugging a TUI | that ecosystem's `references/ecosystem-*.md` (Testing / Debugging sections) |
+| Inline vs full-screen; clipboard, hyperlinks, notifications (OSC) | `references/visual-patterns.md` → *Inline, alt-screen, or overlay*; `references/interaction-patterns.md` → *Talking to the terminal emulator* |
+| Capturing a screenshot or demo GIF of the finished app | Not this skill — use the separate `vhs-cli-demos` skill |
+
+If the user hasn't named a language, ask which ecosystem before diving into framework specifics. The universal principles below apply regardless.
+
+---
+
+## The terminal is a constrained design medium
+
+Every cell is the same width. Type size doesn't change. You have ~80×24 characters at the small end, maybe 200×60 if you're lucky. You can't draw arbitrary pixels; you compose grids of characters with foreground/background colors and a handful of attributes (bold, dim, italic, underline, reverse). These constraints are the **point** — they force clarity. When something feels cramped or noisy in a TUI, the answer is almost never "add more"; it's usually "remove something or use whitespace."
+
+Three observations that drive everything else:
+
+1. **Spatial memory is the navigation.** Users learn where things live: the file list is left, the diff is right, the status bar is bottom. Once that's established, panels must never move without explicit action. Reordering panels on focus is among the worst sins a TUI can commit.
+2. **Color encodes meaning, not appearance.** Treat colors as semantic tokens (`status.error`, `text.muted`, `accent.primary`), not raw hex codes. The app should be *usable in monochrome* — color is enhancement, never the only signal. ~8% of males have red-green CVD; pair color with letters or symbols.
+3. **Keyboard is primary; mouse is augmentation.** Every action must be reachable from the keyboard. Mouse can speed things up but never gates functionality. Vim motions (`hjkl`, `/`, `?`, `Esc`, `q`, `gg`, `G`) are the lingua franca even for non-vim users — supporting them is a courtesy that costs nothing.
+
+## The seven canonical layouts
+
+Most successful TUIs use one of these. Choose by workflow shape, not by aesthetics:
+
+- **Persistent multi-panel** — All panels visible in fixed positions, focus shifts between them. Numeric keys (`1`–`5`) jump directly. Used by **lazygit, btop, htop**. Best for at-a-glance observation and switching between views of related state.
+- **Miller columns** — Three (or N) columns: parent → current → preview. `h`/`l` ascend/descend. Used by **yazi, ranger, broot**. Best for hierarchies (filesystems, JSON, K8s resources). Degrades poorly on narrow terminals — provide a single-pane fallback.
+- **Drill-down stack** — Browser-style: navigate deeper with a back-stack, `Esc` returns. Often paired with command-mode navigation (`:pods`, `:nodes`). Used by **k9s, lazydocker**. Best when there are many resource types and the user needs to pivot between them.
+- **Widget dashboard** — Independent widgets in a grid, each owning its data lifecycle. Layout configurable via TOML/YAML. Used by **bottom, btop, glances**. Best for monitoring/observability where users want to compose their own view.
+- **IDE three-panel** — Sidebar → main content → detail/output, often with tabs in the main panel. Used by **Posting, Harlequin, helix**. Best for editor-like workflows.
+- **Overlay / popup** — Appears over the shell, does one thing, exits. Used by **fzf, atuin, zoxide+fzf**. Best for "summon → choose → output" interactions. See `references/visual-patterns.md` → *Inline, alt-screen, or overlay* for the buffer choice and exit contract.
+- **Tabbed within panel** — Tab bars cycled with `[`/`]`. Used inside larger layouts (lazygit's Local/Remotes/Tags, lazydocker's Logs/Stats/Env tabs). Best when one panel needs multiple personalities without changing the global layout.
+
+The universal rule: **panels never move without explicit user action.**
+
+## Visual hierarchy without varying type size
+
+Since you can't change font size, hierarchy comes from:
+
+- **Position** — top/left reads first; status bar at bottom; headers at top.
+- **Color and weight** — bold + accent color for titles and focused panel borders; dim for metadata, timestamps, disabled items; default weight for primary text.
+- **Reverse video** — universally available since VT100; the canonical way to mark current selection. Works on every terminal.
+- **Indentation and connectors** — `├─ └─` for trees; consistent indent units (2 cells is standard).
+- **Whitespace and bullets** — `▶` expandable, `▼` expanded, `●` active, `○` inactive, `•` static bullet.
+- **Borders for focus** — border *color* change is the strongest focus indicator. Lipgloss, Ratatui, Textual, and Ink all support per-side border styling.
+
+Use **bold** for titles, selection labels, and primary content. Use **dim** for metadata and disabled items. Use **italic** sparingly (poorly supported on many terminals — never the only signal). Use **underline** for hyperlinks (OSC 8) and shortcut hints. Use **reverse video** for the cursor row and current selection. Avoid blink (disabled in most modern terminals; accessibility hazard) and strikethrough (limited support).
+
+## Color as a semantic system
+
+Design in three tiers:
+
+1. **Monochrome** — does the app work with `NO_COLOR=1`? If layout, weight, and reverse video carry the meaning, yes.
+2. **16 ANSI** — does it look right with the user's theme (Solarized, Gruvbox, whatever)? You don't control these; theme-coherent palettes do.
+3. **256 / truecolor** — fine-grained palette for designed themes (Catppuccin, Dracula, Nord). Detect via `$COLORTERM=truecolor`.
+
+**Always respect `NO_COLOR`** (no-color.org). `ripgrep`, `bat`, `eza`, `delta`, `fd` all do.
+
+Conventional meanings have crystallized:
+- **Green** → success, added, online
+- **Red** → error, deleted, danger
+- **Yellow** → warning, modified, pending
+- **Cyan / Blue** → info, paths, links
+- **Magenta** → special, highlights
+- **Dim / gray** → secondary, disabled
+
+Define semantic tokens (`status.error`, `git.staged`, `text.muted`) and theme them. Lipgloss's `LightDark` (v2; `AdaptiveColor` in v1/compat), Textual's CSS variables, and Ratatui's palette pipelines all implement this indirection. Scattering hex codes through code is a phase you grow out of.
+
+**Never use color alone.** Pair with letters (lazygit's file status: `M` modified, `A` added, `D` deleted, `??` untracked) or symbols (delta's `+`/`-` line prefixes). Safe color pairs for CVD: blue+orange, blue+yellow, black+white.
+
+## Borders, density, and whitespace
+
+Use single-line borders (`─ │ ┌ ┐ └ ┘`) by default. Rounded (`╭ ╮ ╰ ╯`) is the modern Charm aesthetic — fine, slightly softer. Heavy (`━ ┃ ┏`) for emphasis sparingly. **Avoid double-line** (`═ ║ ╔`) — it reads as "DOS." Always provide ASCII fallback (`+`, `-`, `|`) for legacy SSH and `TERM=dumb`.
+
+When to use borders vs whitespace:
+- **Borders** — when the pane has dynamic content needing a visible boundary, when focus state must be shown, when adjacent panels need clear separation.
+- **Whitespace alone** — when content is static (htop has no internal borders) or density matters more than structure. A single blank row often beats a heavy border.
+
+Density choices:
+- **Pack** when data is scanned at a glance, updates in real time, or is read horizontally across rows (htop, btop, k9s).
+- **Pad** when reading prose, filling forms, or making single decisions (gum/huh forms, Glow markdown, Posting).
+
+Don't decorate. Borders that exist purely for "looks polished" usually make the app feel busier without adding meaning.
+
+## Two reflexes to apply unprompted
+
+These are the two things the default instinct misses most, because users rarely ask for them by name — and a strong base model will answer the literal question without raising either. Apply both to **any** layout you design or review, even when the user asked about something else entirely (a color choice, a keybinding, "why does this feel busy"). This is where most of the value is.
+
+**1. Run a clutter audit — make "feels busy" countable.** Never answer "it feels noisy" with "simplify it." Count the offenders and name the specific cuts: border-nesting depth (more than *one* border between the terminal edge and the content is too many; an outer full-screen frame is almost always redundant), how many separate signals encode the same state (`[PASS]` + green + `✅` + a row marker is four), markers that sit on every row (a glyph on 100% of rows marks nothing), and the ratio of cells spent on chrome — borders, labels, repeated boilerplate like a full datestamp on every log line — versus actual data. The full method is in `references/visual-patterns.md` → *The clutter audit*.
+
+**2. Pressure-test the floor.** A layout designed at the author's own window size is unfinished — they never see it break because they only ever see their own terminal. State concretely what happens at **80×24 and a 60-column tmux split**: what collapses to a single pane, what hides, what truncates, and the "terminal too small" message below the minimum. Multi-column layouts (Miller columns, 2×N grids) must have a single-pane fallback. **Raise this in every layout review even when size was never mentioned** — it is the single most-missed issue in TUI design, and "it looks great on my screen" is exactly the blind spot it addresses. Breakpoint ladder in `references/visual-patterns.md` → *Responsive design*.
+
+## Tables and lists
+
+Always:
+- **Align numerics right, text left, dates as fixed-width ISO-8601.**
+- **Truncate, don't wrap, in cells.** Tail truncation (`/usr/local/share/...`) for paths in lists. Middle truncation (`/usr/.../file.txt`) when the basename matters. Reserve a cell for the ellipsis.
+- **Show a count** (`123/45678` like fzf does) when filtering.
+- **Sort indicator** (`▲`/`▼`) on the active column.
+- **Detail-on-Enter** as the universal escape hatch — pressing Enter on a row reveals all fields in a side panel or modal. This lets you hide low-priority columns at narrow widths without losing access to the data.
+- **Virtualize** any list that might exceed a few hundred items. k9s renders thousands of pods, Toolong tails multi-GB logs — both virtualize. Built into Textual `DataTable`, Ratatui `Table`+`TableState`, Bubbles `list`, Ink with `<Static>`.
+
+## Status bars, headers, footers
+
+The convention that has converged across nearly every modern TUI:
+
+- **Header (top)** — persistent context: what app, what dataset, what mode. htop's CPU/mem meters; k9s's cluster/context/namespace; lazygit's branch and repo.
+- **Main area (middle)** — the panels. This is where the work happens.
+- **Status / mode line** — ephemeral feedback ("Saved", "3 files changed") with auto-fade. Vim-style mode indicators (NORMAL/INSERT/SELECT) with distinct cursor shapes.
+- **Footer hint bar (bottom)** — 3–5 most-useful shortcuts always visible, full reference behind `?`.
+
+The footer hint bar is the single most important discoverability tool. htop's F1–F10 strip; lazygit's per-pane hints; Bubble Tea's `bubbles/help` auto-generates from the keymap; Textual's `Footer` widget renders bindings declared via `BINDINGS`. **Don't make users read docs to discover basic actions.**
+
+## Keys: discoverability and conventions
+
+**Cross-app conventions** that have crystallized — use these unless you have a strong reason not to:
+
+| Key | Action |
+|---|---|
+| `q` | quit |
+| `?` | help |
+| `/` | search |
+| `n` / `N` | next / prev match |
+| `Esc` | cancel / back |
+| `Enter` | confirm / drill in |
+| `Space` | toggle / mark for multi-select |
+| `:` | command mode |
+| `gg` / `G` | top / bottom |
+| `Tab` / `Shift+Tab` | switch focus |
+| `r` | refresh |
+| `1`–`9` | jump to panel / numbered tab |
+| `hjkl` *and* arrows | move (support both) |
+
+**Never bind these — they belong to the terminal:**
+- `Ctrl+C` (SIGINT — should always quit cleanly)
+- `Ctrl+Z` (SIGTSTP — suspend; you must restore terminal state on resume)
+- `Ctrl+\` (SIGQUIT)
+- `Ctrl+S` / `Ctrl+Q` (XON/XOFF flow control on legacy terminals)
+
+**Discoverability is layered:**
+
+1. Always-visible footer hints (3–5 most useful keys)
+2. `?` opens a help screen with all bindings
+3. Leader-key prefixes show a which-key popup (helix's `Space-` menu is the gold standard)
+4. Command palette (`Ctrl+P`) — every action with a binding should also be a palette command
+5. Documentation as the last resort, not the first
+
+**Modal vs modeless** is a real choice. Modal apps (vim, helix, k9s ex-mode) get denser keybindings and need persistent mode indicators (status-bar color or label) plus distinct cursor shapes. Modeless apps (Textual, Bubble Tea, btop) lean on widget focus. Both are valid; pick one paradigm and stick with it.
+
+**Mouse support** is contested. The pragmatic answer: support mouse where it's natural (clicking a tab, scrolling a list, focusing a pane) but require nothing of it. Every mouse-reachable target needs a keyboard equivalent. Note that mouse capture disables terminal text-selection — most emulators bypass with Shift.
+
+## The non-negotiables (terminal hygiene)
+
+These four are the difference between an app that feels professional and one that doesn't:
+
+1. **Use the alternate screen for full-screen TUIs.** Don't pollute the user's scrollback. On exit, the terminal returns to where it was.
+2. **Always restore terminal state on exit — even on panic.** Install panic/atexit handlers that disable raw mode, leave alt screen, and restore the cursor *before* printing the trace. A panicking TUI that leaves raw mode + alt screen is the worst possible UX. Ratatui's `color_eyre` integration, Bubble Tea's `defer p.RestoreTerminal()`, Textual's exception cleanup, Ink's `unmount()` all do this.
+3. **Handle resize (`SIGWINCH`).** Re-layout on every resize event; debounce rapid resizes. Define a minimum size (typically 80×24) and render a clear "terminal too small" message rather than crash. Use percentages, `fr` units, `min`/`max`, and ratios — never absolute positions.
+4. **Handle suspend (`Ctrl+Z` / `SIGTSTP`).** On suspend: disable raw mode, leave alt screen, restore cursor, then `kill(0, SIGTSTP)`. On `SIGCONT`: re-enter alt screen and force a full redraw. Windows lacks SIGTSTP; that's fine.
+
+Other essentials:
+
+- **Never block the UI thread on I/O.** All network/disk/subprocess work happens in goroutines/tasks/promises; results flow back via messages/channels/events.
+- **Don't redraw on a fixed timer.** Redraw on events. Most apps idle at 0 fps until something happens. Cap animations at 30–60 fps.
+- **Logging can't go to stdout.** Alt-screen + raw mode would corrupt the UI — see *Testing and debugging* below for the file-log + `tail -f` workflow and per-ecosystem APIs.
+- **Cell width ≠ string length.** CJK ideographs are width 2; emoji should be width 2 (legacy `wcwidth` lies). Use `unicode-segmentation` (Rust), `golang.org/x/text` + `mattn/go-runewidth` (Go), `wcwidth` (Python), `string-width` (JS — Ink uses this) — never `len()` or `.length`.
+- **Clipboard, hyperlinks, and desktop notifications go through OSC escapes** (52 / 8 / 9) — the *local* emulator interprets them, so they work over SSH where shelling out to `pbcopy`/`xclip` can't. Support matrices and tmux caveats: `references/interaction-patterns.md` → *Talking to the terminal emulator*.
+
+## Testing and debugging
+
+TUIs are testable; teams that skip tests usually just don't know the shape. Three layers, bottom-heavy:
+
+1. **Unit-test the update/event layer as pure functions.** Every modern framework separates state change from rendering — feed a synthetic key event in, assert on state out. Cheapest, least flaky, and catches the "Tab silently stopped working" class of regression. Even Charm's own apps lean on this layer over harnesses.
+2. **Golden/snapshot the rendered frame** at a *pinned terminal size and color profile* — unpinned size or profile is the #1 cause of snapshot tests that flap in CI. Harnesses: teatest/v2 golden files (Go), `TestBackend` + insta (Rust), Pilot + pytest-textual-snapshot (Python), ink-testing-library frame assertions (TS).
+3. **PTY end-to-end sparingly** — one or two smoke flows at most; it's slow and the tooling is thin in every ecosystem.
+
+Debugging follows one rule: **never write debug output to the terminal the TUI owns** — raw mode + alt screen turn `print` into screen corruption. Log to a file and `tail -f` it in a second terminal, or use the framework's dev console. Exact APIs live in each ecosystem reference's Testing / Debugging sections.
+
+## Performance and compatibility
+
+**Truecolor is now safe to assume** in 2026. Detect via `$COLORTERM=truecolor`; fall back to 256 then 16 then monochrome. The Kitty keyboard protocol (CSI u) is supported by kitty, foot, WezTerm, Alacritty, iTerm2, Ghostty, Rio, and Windows Terminal — opt-in for advanced bindings (Ctrl+I distinct from Tab, Shift+Enter distinct from Enter), always with legacy fallback.
+
+**SSH and tmux** strip features unless explicitly enabled. For tmux:
+```
+set -ga terminal-overrides ",*:Tc"            # truecolor passthrough
+set -g extended-keys on                        # CSI u
+set -g extended-keys-format csi-u
+set -g allow-passthrough on                    # kitty graphics
+set -g mouse on                                # mouse forwarding
+set -g set-clipboard on                        # OSC 52 clipboard
+```
+
+**Image protocols are fragmented**: kitty graphics (best quality) → Sixel (broadest compat) → iTerm2 inline. yazi auto-detects and supports all three.
+
+## Accessibility — the honest take
+
+TUIs are inherently inaccessible to screen readers. NVDA, JAWS, VoiceOver, and Orca read the visible buffer like a textbox, with no concept of widgets or focus. Best current practices when accessibility matters:
+
+- Linear left-to-right, top-to-bottom layouts where possible.
+- Never color-alone signals; pair with words (`[ERROR]`, `[OK]`, `[!]`).
+- Full keyboard parity — every action reachable via keyboard.
+- Provide a `--no-tui` plain mode that just prints output linearly.
+- For Python/Textual specifically, `textual serve` → HTML is currently the best a11y route — same code runs in a browser, where real accessibility tooling exists.
+
+If a11y matters seriously, ship a web alternative or a plain-CLI mode alongside the TUI. Don't pretend the TUI alone is accessible.
+
+## Theming
+
+Most production TUIs support themes via TOML/YAML config (lazygit, bottom, btop, helix, delta, bat, fzf), TCSS files (Textual), or composable styles (Lipgloss). Light/dark detection via OSC `]11;?` query or `$COLORFGBG`; Lipgloss's `LightDark` and Textual's runtime theme switching are the cleanest implementations.
+
+Community palettes you should be able to support: Catppuccin (Latte/Frappé/Macchiato/Mocha), Dracula, Nord, Gruvbox, Tokyo Night, Rose Pine, Solarized, base16. Build your theme via semantic tokens, then map tokens → palette colors. Adding a new theme should be one config file, not a code change.
+
+## Patterns worth naming
+
+Recognize these and refer to them by name. Implementation recipes live in `references/interaction-patterns.md`; case studies of the apps that exemplify them live in `references/exemplar-apps.md`.
+
+- **The fzf pattern** — instant fuzzy filter as the core interaction. fzf, skim, telescope.nvim, atuin, zoxide, helix, Textual's command palette.
+- **The lazygit pattern** — multi-pane with numeric tab navigation and panel-specific letter actions.
+- **The k9s pattern** — command-driven via vim-style ex-commands with tab-completion.
+- **The helix pattern** — selection-first modal editing with multi-cursor as primary.
+# Rust ecosystem — Ratatui, crossterm, Cursive, clap
+
+Ratatui dominates Rust TUI development — thousands of crates build on it. Forked from `tui-rs` in February 2023. Notable production users: **gitui, bottom, yazi, atuin, bandwhich, oha, tokio-console, csvlens, gpg-tui, systemctl-tui, tenere, kdash**. Helix uses its own custom renderer but follows similar patterns.
+
+**Current line: 0.30** (0.30.0 stable since December 2025; 0.30.2 current). 0.30 reorganized Ratatui into a modular workspace of crates (better compile times and API stability) and added `no_std` support, but the main `ratatui` crate still re-exports everything, so most apps import it exactly as before. The version detail that actually bites in practice is the crossterm-compatibility story below.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Ratatui](#ratatui-ratatui-ratatui) — [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+- [Backends](#backends-crossterm-vs-termion-vs-termwiz)
+- [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Companion crates](#companion-crates)
+- [Panic safety](#panic-safety--the-critical-pattern)
+- [Alternatives to Ratatui](#alternatives-to-ratatui)
+- [Pitfalls](#pitfalls)
+- [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
+- [CLI design in Rust](#cli-design-in-rust)
+- [Idioms summary](#idioms-summary)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI in Rust | **Ratatui + Crossterm** |
+| Form-heavy app with dialogs/menus | **Cursive** (callback-driven, retained-mode) |
+| React-like declarative TUI | **iocraft** (newer, hooks + JSX-style + taffy flexbox) |
+| Argparse for CLI | **clap** (derive API) |
+| Pretty terminal colors | **owo-colors** (zero-allocation, recommended) |
+| Non-TUI progress bars | **indicatif** |
+| Interactive prompts (one-shot) | **inquire** (modern) or **dialoguer** (stable) |
+| Rich panic/error reports | **color-eyre** |
+| Fancy modern wizards (Clack-style) | **cliclack** |
+
+**Default: Ratatui + Crossterm + clap + color-eyre.** Use `ratatui/templates` as a starting point — it includes Tokio integration, panic hooks, and the component pattern.
+
+---
+
+## Ratatui (ratatui/ratatui)
+
+**Architectural model: immediate-mode rendering.** Every frame, the application redraws the entire UI from current state. The library handles diffing between intermediate buffers and emits only changed cells — "a video codec for text."
+
+The mental model is **"UI = f(state)"**. You manage app state, the event loop, and timing yourself. Ratatui handles the rendering math.
+
+**Canonical app structure:**
+
+```rust
+use ratatui::{prelude::*, widgets::*};
+use color_eyre::Result;
+
+fn main() -> Result<()> {
+    color_eyre::install()?;            // panic hook restores terminal first
+    let mut terminal = ratatui::init();
+    let result = App::default().run(&mut terminal);
+    ratatui::restore();
+    result
+}
+
+#[derive(Default)]
+struct App {
+    counter: i32,
+    should_quit: bool,
+}
+
+impl App {
+    fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        while !self.should_quit {
+            terminal.draw(|frame| self.draw(frame))?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+    fn draw(&self, frame: &mut Frame) {
+        frame.render_widget(
+            Paragraph::new(format!("Counter: {}", self.counter))
+                .block(Block::bordered().title("Demo")),
+            frame.area(),
+        );
+    }
+
+    fn handle_events(&mut self) -> Result<()> {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => self.should_quit = true,
+                    KeyCode::Char('+') | KeyCode::Right => self.counter += 1,
+                    KeyCode::Char('-') | KeyCode::Left => self.counter -= 1,
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
+}
+```
+
+`ratatui::init()` enables raw mode, enters the alt screen, and constructs a `Terminal<CrosstermBackend>`. `ratatui::restore()` reverses it. **`color_eyre::install()` first** so panics restore the terminal before printing.
+
+## Widgets
+
+**Built-in:**
+- **`Block`** — borders, title, padding. The container for almost everything.
+- **`Paragraph`** — text with wrap, alignment, scroll offset.
+- **`List`** + **`ListState`** — selectable list with virtualized rendering.
+- **`Table`** + **`TableState`** — selectable table, virtualized.
+- **`Tabs`** — tab bar.
+- **`Chart`** — line/scatter chart with X/Y axes.
+- **`BarChart`** — horizontal or vertical bars.
+- **`Gauge`** / **`LineGauge`** — progress indicator.
+- **`Sparkline`** — compact trend visualization.
+- **`Canvas`** — sub-cell drawing using Braille markers; great for maps, plots, custom shapes.
+- **`Scrollbar`** — pair with any scrollable widget.
+- **`Clear`** — paints over an area; use for popup hole-punching.
+- **`Calendar`** — monthly calendar.
+
+**Custom widgets** implement the `Widget` trait (one-shot) or `StatefulWidget` (with associated state). Both are zero-cost — they're just `(area, buf)` consumers.
+
+**Third-party widgets worth knowing:**
+- **`tui-textarea`** — multi-line editor with vim/emacs bindings.
+- **`tui-input`** — single-line input.
+- **`tui-tree-widget`** — hierarchical tree.
+- **`tui-big-text`** — banner text.
+- **`tui-popup`** — modal popups.
+- **`tui-logger`** — in-app log pane.
+- **`throbber-widgets-tui`** — spinners.
+
+## Layout
+
+Constraint-based using Cassowary (the same algorithm as iOS Auto Layout):
+
+```rust
+use ratatui::layout::{Layout, Constraint};
+
+let [header, body, status] = Layout::vertical([
+    Constraint::Length(3),    // 3 rows for header
+    Constraint::Min(0),       // body fills remaining
+    Constraint::Length(1),    // 1 row for status
+]).areas(frame.area());
+
+let [sidebar, main] = Layout::horizontal([
+    Constraint::Percentage(30),
+    Constraint::Percentage(70),
+]).areas(body);
+```
+
+Constraint variants:
+- `Length(n)` — exactly n cells.
+- `Min(n)` — at least n cells (grows to fill).
+- `Max(n)` — at most n cells.
+- `Percentage(p)` — p% of available.
+- `Ratio(num, den)` — fraction.
+- `Fill(weight)` — proportional to weight (prefer over `Percentage` when ratios are simple).
+
+Layouts cache by default — split once and reuse the resulting `Rect`s in the same frame.
+
+## Styling
+
+```rust
+use ratatui::style::{Color, Modifier, Style, Stylize};
+
+// Direct API
+let style = Style::default()
+    .fg(Color::Yellow)
+    .bg(Color::Black)
+    .add_modifier(Modifier::BOLD);
+
+// Stylize extension trait (preferred for brevity)
+let span = "Hello".bold().yellow().on_black();
+```
+
+**Colors:** 16 ANSI named colors (`Color::Red`, `Color::LightRed`, …), `Color::Indexed(u8)` for 256-color, `Color::Rgb(r, g, b)` for truecolor. Detect terminal capability via `crossterm::style::available_color_count()` if you want to gate features.
+
+**Modifiers:** `BOLD`, `DIM`, `ITALIC`, `UNDERLINED`, `SLOW_BLINK`, `RAPID_BLINK`, `REVERSED`, `HIDDEN`, `CROSSED_OUT`. Avoid blink and crossed-out — poorly supported.
+
+## Backends: Crossterm vs Termion vs Termwiz
+
+- **Crossterm** — default, cross-platform (Linux/macOS/Windows), pure Rust, MIT. Use this unless you have a specific reason not to.
+- **Termion** — Unix-only, older, smaller. Choose only if you want Unix-only and minimal dependencies.
+- **Termwiz** — cross-platform, advanced features (Sixel, kitty image protocol). Choose if you need terminal graphics protocols. Authored by the WezTerm developer.
+- **mousefood** — `embedded-graphics` backend over `ratatui-core`, taking Ratatui's `no_std` support to embedded hardware displays.
+
+**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Crossterm 0.29 (April 2025) is the current stable; 0.28 is the legacy pin. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps — prefer `crossterm_0_29`, pick only the flag matching your Crossterm, and don't enable both.
+
+## State management patterns
+
+**1. Monolithic App struct** (simplest, used in most examples):
+
+```rust
+struct App {
+    items: Vec<Item>,
+    list_state: ListState,
+    input: String,
+    mode: Mode,
+    // ...
+}
+```
+
+**2. Elm Architecture** (Model + Message + update + view):
+
+```rust
+enum Msg { Increment, Decrement, Quit }
+
+fn update(model: &mut Model, msg: Msg) -> Option<Cmd> { /* ... */ }
+fn view(model: &Model, frame: &mut Frame) { /* ... */ }
+```
+
+Useful when state is complex and you want testable update logic.
+
+**3. Component pattern** — each component implements an `init`/`handle_events`/`update`/`draw` interface and communicates via `mpsc::UnboundedSender<Action>`. The official `ratatui/templates` repo uses this with Tokio. Best for larger apps. If you'd rather adopt a framework than roll your own, **tui-realm** formalizes this pattern on top of Ratatui (components, subscriptions, message-based events).
+
+## Async with Tokio
+
+The standard pattern: one task reads `crossterm::event::EventStream` into an `mpsc` channel; another task emits ticks at fixed intervals; the main loop `select!`s and calls `terminal.draw` on tick or input.
+
+```rust
+use tokio::sync::mpsc;
+use crossterm::event::{Event, EventStream};
+use futures::StreamExt;
+
+let (tx, mut rx) = mpsc::unbounded_channel::<AppEvent>();
+
+// Input task
+let input_tx = tx.clone();
+tokio::spawn(async move {
+    let mut events = EventStream::new();
+    while let Some(Ok(event)) = events.next().await {
+        let _ = input_tx.send(AppEvent::Crossterm(event));
+    }
+});
+
+// Tick task
+let tick_tx = tx.clone();
+tokio::spawn(async move {
+    let mut interval = tokio::time::interval(Duration::from_millis(250));
+    loop {
+        interval.tick().await;
+        let _ = tick_tx.send(AppEvent::Tick);
+    }
+});
+
+// Main loop
+loop {
+    terminal.draw(|f| app.draw(f))?;
+    if let Some(event) = rx.recv().await {
+        app.handle(event);
+        if app.should_quit { break; }
+    }
+}
+```
+
+For sync-only apps, `event::poll(Duration::from_millis(250))` then `event::read()` works without Tokio.
+
+## Testing
+
+`TestBackend` lets you assert against rendered output:
+
+```rust
+use ratatui::{backend::TestBackend, Terminal};
+
+let backend = TestBackend::new(20, 5);
+let mut terminal = Terminal::new(backend)?;
+terminal.draw(|f| app.draw(f))?;
+terminal.backend().assert_buffer_lines([
+    "┌─ Demo ───────────┐",
+    "│Counter: 0        │",
+    "└──────────────────┘",
+    "                    ",
+    "                    ",
+]);
+```
+
+Pair with **`insta`** for snapshot testing — `insta::assert_snapshot!(terminal.backend())`. Snapshots are stored as text files and reviewed via `cargo insta review`. This is the officially documented recipe (ratatui.rs → Recipes → Testing), with one caveat straight from that page: **snapshots capture text only — color and style are not asserted.** When color matters (selected-row highlight, error styling), compare `Buffer`s instead: build the expected buffer with `Buffer::with_lines(...)`, apply `set_style` to the regions you care about, and `assert_eq!` against the backend's buffer — the official counter-app tutorial demonstrates exactly this.
+
+**Test at multiple sizes.** Resize bugs live at unusual dimensions, so run the same render across several `TestBackend` sizes — include odd ones like 79×23 alongside 80×24 and 200×50 — snapshotting each under a size-suffixed name (`app_79x23`). Parameterizing per-size with `rstest` (which ratatui itself uses for its own tests) is a natural fit, though that combination is community practice rather than an official recipe. Extracting layout math into a pure `fn compute_layout(area: Rect) -> ...` makes per-size assertions cheap — no terminal needed at all.
+
+Real-world anchors: **gitui** adopted insta + TestBackend snapshots in late 2025 — and had to revert and re-land them over a startup-latency issue, a useful caution that snapshot tests over a full async app need deterministic wait points, not sleeps. **openai/codex** makes insta snapshot coverage *mandatory* for any change that affects visible TUI output (workflow: `cargo insta pending-snapshots`, `cargo insta accept`).
+
+## Debugging
+
+`println!` and `dbg!` are broken inside a running TUI: raw mode stops newline processing — crossterm's docs say it directly, "`println!` can't be used, use `write!` instead" — and anything printed is stomped by the next draw or hidden entirely under the alt screen. The working options:
+
+- **Log to a file and tail it** (official recipe): `tracing` + `tracing-subscriber` (env-filter) writing to a plain file with ANSI disabled, then `tail -f app.log` in a second terminal.
+- **In-app debug pane** (official recipe): keep `show_debug: bool` in app state, split off a column when toggled, and render `format!("{state:#?}")` into it.
+- **tui-logger** (0.18.x, actively maintained) — the ready-made in-app log widget, with `log`/`slog`/`tracing` support behind feature flags; the official debug recipe points to it as an alternative.
+- **Debuggers:** attach from a *second* terminal (`lldb -p <pid>` / `gdb -p`) or use an IDE debugger so the debug console is separate from the app's terminal — stopping the process in its own terminal leaves you at a prompt that's still in raw mode + alt screen. (Convention rather than official doctrine, but it follows directly from the raw-mode behavior.)
+
+**Profiling:** `cargo flamegraph` is the standard tool — ratatui.rs's own Recipes and FAQ have no profiling entry, so there's no official recipe to follow here. One real gotcha worth knowing: `cargo flamegraph` stops recording by forwarding Ctrl+C as SIGINT to the wrapped `perf`/`dtrace` process, but `crossterm::terminal::enable_raw_mode()` intercepts Ctrl+C before it becomes a signal — it arrives as an ordinary key event your app's loop has to interpret instead. In practice, either give your app a quit key that calls `disable_raw_mode()` and exits normally (a clean process exit works fine with `flamegraph`'s wrapper), or bypass the wrapper entirely and run `perf record -p $(pgrep app) -- sleep 30` against an already-running process. For async task time in a Ratatui+Tokio app, `tokio-console` (via the `console-subscriber` crate) shows per-task poll/wake/busy time live. The recurring real-world slow path, seen across several ratatui GitHub issues (high CPU in `terminal.draw`, a `Table` widget laggy at 15k rows): it's rarely widget construction itself — Ratatui's immediate-mode model rebuilding widgets every frame is by design and meant to be cheap — the actual cost is accidental O(n) work smuggled into the render closure, like eagerly collecting a large `Vec` or recomputing string widths on every draw instead of caching outside the loop.
+
+## Companion crates
+
+- **clap** — argument parsing. Derive API:
+  ```rust
+  #[derive(Parser)]
+  struct Cli {
+      #[arg(short, long)]
+      verbose: bool,
+
+      #[command(subcommand)]
+      command: Commands,
+
+exec
+/bin/zsh -lc "rg -n -C 8 'Panic safety|child|signal|SIGTERM|shutdown|EventStream|restore|suspend' /Users/gfargo/.agents/skills/tui-design/references/ecosystem-rust.md" in /tmp/tui-design-baseline-v170
+ succeeded in 0ms:
+6-
+7-**Contents:**
+8-- [Quick recommendation](#quick-recommendation)
+9-- [Ratatui](#ratatui-ratatui-ratatui) — [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+10-- [Backends](#backends-crossterm-vs-termion-vs-termwiz)
+11-- [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
+12-- [Testing](#testing) · [Debugging](#debugging)
+13-- [Companion crates](#companion-crates)
+14:- [Panic safety](#panic-safety--the-critical-pattern)
+15-- [Alternatives to Ratatui](#alternatives-to-ratatui)
+16-- [Pitfalls](#pitfalls)
+17-- [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
+18-- [CLI design in Rust](#cli-design-in-rust)
+19-- [Idioms summary](#idioms-summary)
+20-
+21-## Quick recommendation
+22-
+--
+44-
+45-**Canonical app structure:**
+46-
+47-```rust
+48-use ratatui::{prelude::*, widgets::*};
+49-use color_eyre::Result;
+50-
+51-fn main() -> Result<()> {
+52:    color_eyre::install()?;            // panic hook restores terminal first
+53-    let mut terminal = ratatui::init();
+54-    let result = App::default().run(&mut terminal);
+55:    ratatui::restore();
+56-    result
+57-}
+58-
+59-#[derive(Default)]
+60-struct App {
+61-    counter: i32,
+62-    should_quit: bool,
+63-}
+--
+90-                }
+91-            }
+92-        }
+93-        Ok(())
+94-    }
+95-}
+96-```
+97-
+98:`ratatui::init()` enables raw mode, enters the alt screen, and constructs a `Terminal<CrosstermBackend>`. `ratatui::restore()` reverses it. **`color_eyre::install()` first** so panics restore the terminal before printing.
+99-
+100-## Widgets
+101-
+102-**Built-in:**
+103-- **`Block`** — borders, title, padding. The container for almost everything.
+104-- **`Paragraph`** — text with wrap, alignment, scroll offset.
+105-- **`List`** + **`ListState`** — selectable list with virtualized rendering.
+106-- **`Table`** + **`TableState`** — selectable table, virtualized.
+--
+206-```
+207-
+208-Useful when state is complex and you want testable update logic.
+209-
+210-**3. Component pattern** — each component implements an `init`/`handle_events`/`update`/`draw` interface and communicates via `mpsc::UnboundedSender<Action>`. The official `ratatui/templates` repo uses this with Tokio. Best for larger apps. If you'd rather adopt a framework than roll your own, **tui-realm** formalizes this pattern on top of Ratatui (components, subscriptions, message-based events).
+211-
+212-## Async with Tokio
+213-
+214:The standard pattern: one task reads `crossterm::event::EventStream` into an `mpsc` channel; another task emits ticks at fixed intervals; the main loop `select!`s and calls `terminal.draw` on tick or input.
+215-
+216-```rust
+217-use tokio::sync::mpsc;
+218:use crossterm::event::{Event, EventStream};
+219-use futures::StreamExt;
+220-
+221-let (tx, mut rx) = mpsc::unbounded_channel::<AppEvent>();
+222-
+223-// Input task
+224-let input_tx = tx.clone();
+225-tokio::spawn(async move {
+226:    let mut events = EventStream::new();
+227-    while let Some(Ok(event)) = events.next().await {
+228-        let _ = input_tx.send(AppEvent::Crossterm(event));
+229-    }
+230-});
+231-
+232-// Tick task
+233-let tick_tx = tx.clone();
+234-tokio::spawn(async move {
+--
+280-
+281-`println!` and `dbg!` are broken inside a running TUI: raw mode stops newline processing — crossterm's docs say it directly, "`println!` can't be used, use `write!` instead" — and anything printed is stomped by the next draw or hidden entirely under the alt screen. The working options:
+282-
+283-- **Log to a file and tail it** (official recipe): `tracing` + `tracing-subscriber` (env-filter) writing to a plain file with ANSI disabled, then `tail -f app.log` in a second terminal.
+284-- **In-app debug pane** (official recipe): keep `show_debug: bool` in app state, split off a column when toggled, and render `format!("{state:#?}")` into it.
+285-- **tui-logger** (0.18.x, actively maintained) — the ready-made in-app log widget, with `log`/`slog`/`tracing` support behind feature flags; the official debug recipe points to it as an alternative.
+286-- **Debuggers:** attach from a *second* terminal (`lldb -p <pid>` / `gdb -p`) or use an IDE debugger so the debug console is separate from the app's terminal — stopping the process in its own terminal leaves you at a prompt that's still in raw mode + alt screen. (Convention rather than official doctrine, but it follows directly from the raw-mode behavior.)
+287-
+288:**Profiling:** `cargo flamegraph` is the standard tool — ratatui.rs's own Recipes and FAQ have no profiling entry, so there's no official recipe to follow here. One real gotcha worth knowing: `cargo flamegraph` stops recording by forwarding Ctrl+C as SIGINT to the wrapped `perf`/`dtrace` process, but `crossterm::terminal::enable_raw_mode()` intercepts Ctrl+C before it becomes a signal — it arrives as an ordinary key event your app's loop has to interpret instead. In practice, either give your app a quit key that calls `disable_raw_mode()` and exits normally (a clean process exit works fine with `flamegraph`'s wrapper), or bypass the wrapper entirely and run `perf record -p $(pgrep app) -- sleep 30` against an already-running process. For async task time in a Ratatui+Tokio app, `tokio-console` (via the `console-subscriber` crate) shows per-task poll/wake/busy time live. The recurring real-world slow path, seen across several ratatui GitHub issues (high CPU in `terminal.draw`, a `Table` widget laggy at 15k rows): it's rarely widget construction itself — Ratatui's immediate-mode model rebuilding widgets every frame is by design and meant to be cheap — the actual cost is accidental O(n) work smuggled into the render closure, like eagerly collecting a large `Vec` or recomputing string widths on every draw instead of caching outside the loop.
+289-
+290-## Companion crates
+291-
+292-- **clap** — argument parsing. Derive API:
+293-  ```rust
+294-  #[derive(Parser)]
+295-  struct Cli {
+296-      #[arg(short, long)]
+297-      verbose: bool,
+298-
+299-      #[command(subcommand)]
+300-      command: Commands,
+301-  }
+302-  ```
+303-  Best-in-class argparse with auto-generated help, shell completions, and validation.
+304-
+305:- **color-eyre** — installs a panic hook that prints rich error reports with source spans. Critical pairing for Ratatui — your panic handler should restore terminal state *first*, then color-eyre prints the report.
+306-
+307-- **owo-colors** — zero-allocation color formatting. Recommended over `colored` (older, allocates) and `ansi_term` (unmaintained).
+308-
+309-- **indicatif** — progress bars for non-TUI CLIs. Auto-hides on non-TTY.
+310-
+311-- **inquire** — modern interactive prompts (text, select, multi-select, confirm). The Rust answer to Inquirer.js.
+312-
+313-- **dialoguer** — older, stable alternative to inquire.
+314-
+315-- **cliclack** — port of the JS Clack library; modern wizard-style prompts with Unicode connectors.
+316-
+317-- **ratatui-image** — image display in Ratatui apps via Sixel/kitty/iTerm2 protocols.
+318-
+319:## Panic safety — the critical pattern
+320-
+321-A Ratatui app that panics without restoring the terminal leaves the user in raw mode + alt screen + no cursor. Awful. The fix:
+322-
+323-```rust
+324-fn install_hooks() -> Result<()> {
+325-    let panic_hook = std::panic::take_hook();
+326-    std::panic::set_hook(Box::new(move |info| {
+327:        let _ = ratatui::restore();   // restore FIRST
+328-        panic_hook(info);              // then print panic message
+329-    }));
+330-
+331-    color_eyre::install()?;
+332-    Ok(())
+333-}
+334-```
+335-
+--
+353-**Dioxus TUI / Plasmo** — abandoned React-like renderer for Dioxus. Unmaintained; don't start new work on it.
+354-
+355-**Ratzilla** (`ratatui/ratzilla`) — run Ratatui apps in the browser via WASM; maintained under the ratatui org. Handy for demos and web playgrounds of terminal apps.
+356-
+357-**Original `tui-rs`** — the predecessor to Ratatui, archived. Migrate to Ratatui.
+358-
+359-## Pitfalls
+360-
+361:1. **Panic without terminal restore.** Use the panic hook pattern above.
+362-2. **Crossterm version skew.** Run `cargo tree -p crossterm`; ensure one version.
+363-3. **Naive redraw loop.** Don't busy-loop calling `draw`. Use `event::poll(timeout)` for sync, `tokio::select!` for async.
+364-4. **On Windows, both Press and Release events fire.** Filter with `key.kind == KeyEventKind::Press`.
+365-5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` are `StatefulWidget`s — you pass `&mut ListState` / `TableState` / `ScrollbarState` at render time; the state lives in your App struct, not the widget.
+366-6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
+367-7. **Layouts cache.** Split once and reuse the `Rect`s; don't re-split mid-frame for the same area.
+368-8. **`String::len()` is bytes, not cells.** Use `unicode_width::UnicodeWidthStr::width(s)` for display width.
+369-
+--
+401-- **env_logger** or **tracing** + **tracing-subscriber** for logging.
+402-
+403-Pair with the principles in `references/cli-basics.md` for argument design, exit codes, and stream handling.
+404-
+405----
+406-
+407-## Idioms summary
+408-
+409:- Always install a panic hook that restores terminal **before** color-eyre runs.
+410-- Use `color_eyre::install()` after the panic hook.
+411-- Filter `KeyEventKind::Press` to avoid double-firing on Windows.
+412:- For async apps, use the EventStream + tick channel + `tokio::select!` pattern.
+413-- Layout once per frame; reuse the `Rect`s.
+414-- Use `Stylize` extension trait for brevity (`.bold().yellow()`).
+415-- For complex apps, copy from the official template rather than starting from scratch.
+416-- Respect `NO_COLOR` — owo-colors and most modern crates do automatically.
+417-- Use `unicode_width` for cell-width math; don't trust `String::len()`.
+418-
+419-For deeper patterns shared across apps, see `references/visual-patterns.md` and `references/interaction-patterns.md`.
+
+web search: 
+web search: site:docs.rs ratatui 0.30 Terminal suspend restore crossterm child process ...
+web search: 
+web search: site:docs.rs/tokio/latest/tokio/process/struct.Child.html kill start_kill SIGKILL Unix ...
+2026-09-09T18:10:02.843005Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `supports_parallel_tool_calls` at line 93 column 5
+codex
+Make terminal ownership exclusive. The input task must not coexist with Vim.
+
+1. Cancel the `EventStream` task and await its join; discard any queued app input.
+2. Restore the TUI completely: disable raw mode, leave alt-screen, disable mouse capture if enabled, show cursor, flush (`ratatui::try_restore()`).
+3. Spawn/wait for Vim with inherited stdio.
+4. **Regardless of Vim’s launch/wait/exit result**, attempt `ratatui::try_init()` again.
+5. Use the new terminal instance, clear/invalidate it, force a full redraw.
+6. Only then create a **fresh** `EventStream` task and resume input.
+
+The important ordering is `stop reader → restore → child → re-init → start reader`. A live `EventStream` can consume Vim’s bytes or retain partially parsed input, which explains both the garbage at launch and the corrupted redraw afterward. Ratatui 0.30’s `try_init`/`try_restore` are the appropriate fallible ownership transitions. [Ratatui initialization docs](https://docs.rs/ratatui/latest/ratatui/init/index.html)
+
+Do not use `?` on Vim’s result before re-entry:
+
+```rust
+let vim: Result<ExitStatus, io::Error> = run_vim().await;
+let resume: Result<DefaultTerminal, io::Error> = resume_tui();
+
+match (vim, resume) {
+    (Ok(status), Ok(terminal)) => { /* redraw, restart input; then handle status */ }
+    (Err(vim), Ok(terminal)) => { /* redraw, restart input; report Vim error */ }
+    (Ok(status), Err(resume)) => {
+        // report: “Vim exited {status}; terminal re-entry failed: {resume}”
+    }
+    (Err(vim), Err(resume)) => {
+        // return one error type containing *both* errors
+    }
+}
+```
+
+An exit status such as `1` is an `Ok(ExitStatus)`, not a spawn/wait error—preserve and report it too. The key is to capture both outcomes before deciding what to return.
+
+For shutdown, install a Unix signal watcher for `SignalKind::terminate()` and convert SIGTERM into the same `Shutdown` event / `CancellationToken` used by normal quit. The main lifecycle owner then stops tasks, handles any active child, restores the terminal, and returns normally. Do not call `process::exit` from the signal task; it skips Rust destructors and bypasses structured cleanup. [Tokio SIGTERM API](https://docs.rs/tokio/latest/tokio/signal/unix/struct.SignalKind.html)
+
+While waiting on Vim, also select on that shutdown token. On SIGTERM, send Vim a graceful SIGTERM (and wait/reap it); only escalate after a timeout if necessary. On Unix, Tokio `Child::kill()` / `start_kill()` use **SIGKILL**, so Vim—and any process receiving SIGKILL—cannot run cleanup. [Tokio child termination semantics](https://docs.rs/tokio/latest/tokio/process/struct.Child.html)
+tokens used
+45,969

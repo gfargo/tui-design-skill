@@ -7,6 +7,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
 ### Added
 - **Schema-v4 grading-prompt integrity:** grades now record `grading_prompt: {path, sha256}`, machine-linking `grader.prompt_sha256` to a grading-prompt file preserved inside the same evidence bundle. The harness enforces bundle containment and rejects path traversal, missing files, and digest mismatches. Schema v2 and v3 evidence remains readable and valid under their original, unchanged rules.
 - **Reference freshness audit:** `scripts/check-reference-freshness.py` and `scripts/reference-inventory.json` check pinned Bubble Tea, Ratatui, Textual, and Ink version claims against their primary package registries and verify cited source links still resolve, without ever editing reference content. Ambiguous or unreachable checks report `unknown` rather than failing. `.github/workflows/reference-freshness.yml` runs the audit weekly and on demand.
+- **Repeated lifecycle evidence:** the schema-v4 baseline-versus-with-skill study runs all five v1.7 lifecycle cases three times per condition with the exact release runner/model settings. The isolated baseline scored 63/75 (84%) and the with-skill condition scored 69/75 (92%), with the same +8 percentage-point difference in every repetition; the committed report preserves case-level outcomes, zero aggregate repetition variance, limitations, raw artifacts, grades, and summaries.
 
 ## [1.7.0] — 2026-08-18
 

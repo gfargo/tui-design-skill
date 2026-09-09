@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+I maintain Bubble Tea, Ratatui, Textual, and Ink implementations of one terminal dashboard. Can I share a generic SIGINT/SIGTERM handler that immediately restores raw mode and calls the framework's final exit API for Ctrl+Z, external editors, and process shutdown? Define the safe common policy, the framework-specific exceptions, what must be refreshed after an editor returns, and what SIGKILL means for cleanup.

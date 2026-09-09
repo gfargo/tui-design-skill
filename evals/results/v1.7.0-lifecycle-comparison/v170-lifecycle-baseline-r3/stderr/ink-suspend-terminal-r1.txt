@@ -1,0 +1,83 @@
+2026-09-09T17:53:17.034575Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-09-09T17:53:17.035989Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-09-09T17:53:17.037275Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /tmp/tui-design-baseline-v170
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a0874d-7ae4-70b0-9956-1ee8ecd57453
+--------
+user
+My Ink 7 component needs to run an interactive editor and then continue rendering. Is unmount plus render again the right approach? Cover callback failure, manual ownership, non-TTY behavior, and what waitUntilExit is for.
+
+codex
+I’ll verify this against the current Ink 7 API and clarify the lifecycle edge cases.
+web search: 
+web search: Ink v7 waitUntilExit unmount render interactive editor manual mode isTTY documentation site:github.com/vadimdemedes/ink OR site:github.com/vadimdemedes/ink
+web search: 
+web search: Ink v7 waitUntilExit unmount render interactive editor manual mode isTTY documentation site:github.com/vadimdemedes/ink
+web search: 
+web search: 
+web search: 
+web search: repo:vadimdemedes/ink suspendTerminal callback catches error resume source ...
+web search: 
+web search: https://raw.githubusercontent.com/vadimdemedes/ink/v7.1.1/src/components/App.tsx
+web search: 
+web search: 'suspendTerminal ='
+web search: 
+web search: https://raw.githubusercontent.com/vadimdemedes/ink/v7.1.1/src/ink.tsx
+web search: 
+web search: 
+codex
+No—don’t unmount and call `render()` again just to launch an editor. In Ink 7.1+, keep the app mounted and use `useApp().suspendTerminal()`. It hands the terminal to `$EDITOR`, then restores Ink’s terminal modes and performs a full redraw. [Ink documentation](https://www.npmjs.com/package/ink)
+
+```tsx
+import {useApp, useStdin, useStdout} from 'ink';
+
+function EditAction() {
+	const {suspendTerminal} = useApp();
+	const {stdin} = useStdin();
+	const {stdout} = useStdout();
+
+	const edit = async () => {
+		if (!stdin.isTTY || !stdout.isTTY) {
+			throw new Error('Editing requires an interactive terminal.');
+		}
+
+		await suspendTerminal(async () => {
+			await runEditor(); // e.g. await spawnEditor(process.env.EDITOR)
+		});
+
+		// Ink is mounted and has redrawn here.
+	};
+
+	// invoke `void edit()` from input/click handler; catch and surface errors as UI state
+	return null;
+}
+```
+
+The callback form is the usual choice. If `runEditor()` throws or rejects, Ink still restores the terminal in `finally`, then the original failure propagates—catch it in your component and render an error state. Ink also avoids letting a redraw failure mask that editor error. [Implementation](https://raw.githubusercontent.com/vadimdemedes/ink/v7.1.1/src/ink.tsx)
+
+For manual ownership—useful when the editor lifecycle spans more than one function—get a suspension and always resume it:
+
+```ts
+const suspension = await suspendTerminal();
+try {
+	await runEditor();
+} finally {
+	await suspension.resume();
+}
+```
+
+Or use `await using` if your TypeScript/runtime setup supports async disposables. Do not nest suspensions: attempting one while another is active throws. While suspended, Ink stops handling input and emitting frames; updates made then are reflected by the forced redraw on resume. [Ink documentation](https://www.npmjs.com/package/ink)
+
+For non-TTY/CI/piped output, Ink is non-interactive. `suspendTerminal(callback)` still runs the callback, but performs no terminal handoff—so launching a full-screen editor there is generally wrong; detect it and fail clearly or use a noninteractive fallback. Ink normally decides this from CI status and `stdout.isTTY`. [Ink source](https://raw.githubusercontent.com/vadimdemedes/ink/v7.1.1/src/ink.tsx)
+
+`waitUntilExit()` is unrelated to suspending. It is for code outside the tree that needs to await the **whole Ink app** being unmounted: it resolves with `exit(value)`, rejects for `exit(error)`, and waits for manual-unmount stdout writes. Use the `await suspendTerminal(...)` promise to wait for the editor; use `waitUntilRenderFlush()` only when you need to wait for a frame to reach stdout. [Ink documentation](https://www.npmjs.com/package/ink)
+tokens used
+68,262

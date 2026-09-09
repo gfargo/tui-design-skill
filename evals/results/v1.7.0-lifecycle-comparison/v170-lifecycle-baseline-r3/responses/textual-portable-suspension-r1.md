@@ -1,0 +1,70 @@
+No. Don’t call `os.system()` after `self.exit()` and relaunch the app.
+
+For a native terminal session, keep one app instance alive and temporarily give the terminal to the editor:
+
+```python
+from pathlib import Path
+import subprocess
+
+from textual.app import App
+from textual.binding import Binding
+from textual.widgets import TextArea
+
+
+class MyApp(App[None]):
+    BINDINGS = [
+        Binding("e", "edit_external", "Edit externally"),
+        # Deliberately no app-level Ctrl+Z binding.
+    ]
+
+    def __init__(self, path: Path, editor_argv: list[str]) -> None:
+        super().__init__()
+        self.path = path
+        self.editor_argv = editor_argv  # e.g. ["vim"] or ["code", "--wait"]
+
+    def action_edit_external(self) -> None:
+        if self.is_web:
+            self.notify("External local editing is unavailable in the web client.")
+            return
+
+        self.save_draft_atomically()
+
+        with self.suspend():
+            result = subprocess.run(
+                [*self.editor_argv, str(self.path)],
+                check=False,
+            )
+
+        if result.returncode == 0:
+            self.reload_from_disk()
+        else:
+            self.notify(f"Editor exited with status {result.returncode}")
+
+    def save_draft_atomically(self) -> None:
+        ...
+
+    def reload_from_disk(self) -> None:
+        ...
+```
+
+`App.suspend()` restores the terminal while the editor runs, then restores Textual afterward. It is supported on Unix-like systems and Windows, but explicitly not on Textual Web. Prefer `subprocess.run([...])` to `os.system()`: no shell quoting or injection issues, and editor arguments stay portable. Require a *synchronous* editor command—e.g. `code --wait`—so a zero exit means “editing is complete.” [Textual suspension docs](https://textual.textualize.io/guide/app/)
+
+For Textual Web, the app process is on the server, not the browser client. Launching an editor would open one on the server, which is neither useful nor safe for the user. Use an in-app `TextArea`, or provide “Download draft” plus an explicit import/upload workflow; it cannot be an automatic local-editor round trip. `self.is_web` is the built-in capability check. [Textual Web architecture](https://textual.textualize.io/blog/2024/09/08/towards-textual-web-applications/)
+
+For Ctrl+Z:
+
+- With `TextArea`, do nothing extra: its default `Ctrl+Z` binding performs undo (`Ctrl+Y` redo).
+- Do **not** bind `ctrl+z` at the app level to `suspend_process`; that is a Unix job-control feature, is ignored on Windows/Web, and would override the editor’s undo if made priority.
+- If an external edit replaces all text, define whether that reload resets history or is one undo checkpoint; don’t silently mix the external editor’s history with Textual’s. [TextArea undo](https://textual.textualize.io/widgets/text_area/), [binding precedence](https://textual.textualize.io/guide/input/)
+
+Exit-code contract:
+
+| Code | Meaning |
+|---:|---|
+| 0 | Normal user exit; external-edit cycles completed successfully |
+| 10 | Invalid editor configuration |
+| 11 | Editor could not be launched |
+| 12 | Editor exited non-zero / reload failed |
+| 1 | Unhandled app failure (Textual default) |
+
+Keep “edit externally” as an in-process action, not an exit code. If you truly need a full restart—for example, a launcher must recreate configuration—have `App.exit(result=EditRequest(path), return_code=0)` return a typed **intent** to the top-level launcher; the launcher runs the editor and starts a new app instance. Reserve numeric exit codes for the final process outcome. Textual’s `exit(result=..., return_code=...)` separates those two channels, and `run()` returns the result while `app.return_code` holds the process status. [Textual exit semantics](https://textual.textualize.io/guide/app/)

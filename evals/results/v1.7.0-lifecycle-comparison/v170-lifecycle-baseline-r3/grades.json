@@ -1,0 +1,168 @@
+{
+  "schema_version": 4,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v170-lifecycle-baseline-r3",
+  "grader": {
+    "kind": "human",
+    "name": "Primary Codex issue reviewer",
+    "prompt_version": "v170-lifecycle-direct-rubric-v1",
+    "prompt_sha256": "d1b867f551a1ec75485db3013af4af6b0531fdc67e86c2f84563e9cc0143665b"
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "d1b867f551a1ec75485db3013af4af6b0531fdc67e86c2f84563e9cc0143665b"
+  },
+  "trials": [
+    {
+      "trial_id": "bubble-tea-editor-handoff-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses tea.ExecProcess and describes the managed release, child wait, restoration, and callback lifecycle."},
+        {"index": 1, "passed": true, "notes": "Routes release, child, and restoration failures through the callback message and explains the simultaneous-failure limitation."},
+        {"index": 2, "passed": true, "notes": "Rejects manual release/restore in Update and leaves final cleanup to Program.Run."},
+        {"index": 3, "passed": true, "notes": "Maps q to tea.Quit and raw Ctrl+C to tea.Interrupt with ErrInterrupted and status 130 handling."}
+      ]
+    },
+    {
+      "trial_id": "bubble-tea-editor-handoff-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses tea.ExecProcess and accurately describes pause, terminal handoff, restore, repaint, and callback delivery."},
+        {"index": 1, "passed": true, "notes": "Returns release, child, or restoration failure through editorFinishedMsg and notes that the child error wins if both fail."},
+        {"index": 2, "passed": true, "notes": "Explicitly rejects direct child execution with deferred RestoreTerminal inside Update."},
+        {"index": 3, "passed": false, "notes": "Maps raw-mode Ctrl+C to tea.Quit and never identifies tea.Interrupt or ErrInterrupted."}
+      ]
+    },
+    {
+      "trial_id": "bubble-tea-editor-handoff-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses tea.ExecProcess for the resumable editor lifecycle and callback delivery."},
+        {"index": 1, "passed": true, "notes": "Covers release, child, restoration, and combined child/restoration failure behavior in the callback."},
+        {"index": 2, "passed": true, "notes": "Rejects manual release/restore and keeps Program.Run responsible for final cleanup."},
+        {"index": 3, "passed": false, "notes": "Combines q and raw Ctrl+C under tea.Quit rather than preserving tea.Interrupt and ErrInterrupted semantics."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Quiesces and awaits the input reader before restoring the terminal so it cannot consume Vim input."},
+        {"index": 1, "passed": true, "notes": "Orders shell restoration, Vim wait, terminal re-entry, clear/reset, redraw, and reader restart correctly."},
+        {"index": 2, "passed": true, "notes": "Stores Vim and re-entry results independently and returns an aggregate when both fail."},
+        {"index": 3, "passed": true, "notes": "Routes SIGTERM through a Tokio listener into cooperative shutdown and normal return."},
+        {"index": 4, "passed": true, "notes": "States SIGKILL cannot run cleanup and also warns that process::exit skips destructors."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Quiesces and awaits the Crossterm reader before terminal restoration and child launch."},
+        {"index": 1, "passed": true, "notes": "Restores shell modes, waits for Vim, then re-enters, clears, fully redraws, and restarts input."},
+        {"index": 2, "passed": true, "notes": "Retains ExitStatus and re-entry error together, including the nonzero-status case."},
+        {"index": 3, "passed": true, "notes": "Uses a Tokio SIGTERM listener to notify the top-level lifecycle controller."},
+        {"index": 4, "passed": true, "notes": "Explicitly states SIGKILL cannot run Drop, hooks, tasks, or terminal cleanup."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Cancels and joins EventStream before restoring terminal modes."},
+        {"index": 1, "passed": true, "notes": "Restores the shell, waits for Vim, re-enters modes, clears, and forces a redraw before a fresh reader."},
+        {"index": 2, "passed": true, "notes": "Preserves both Vim and re-entry outcomes without an early question-mark return."},
+        {"index": 3, "passed": true, "notes": "Turns SIGTERM into a shutdown event handled by the outer Tokio state machine."},
+        {"index": 4, "passed": true, "notes": "States SIGKILL runs no handler, Drop, hook, or restoration."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Runs an argv-based editor inside self.suspend without exiting and relaunching the app."},
+        {"index": 1, "passed": false, "notes": "Provides a Web fallback through is_web but never handles SuspendNotSupported as required by the rubric."},
+        {"index": 2, "passed": false, "notes": "Names suspend_process but recommends not binding or invoking it for Unix foreground job control."},
+        {"index": 3, "passed": true, "notes": "Reloads the externally editable file after the suspend/editor handoff completes."},
+        {"index": 4, "passed": false, "notes": "Mentions App.exit(return_code) and app.return_code but does not explicitly propagate that code to the process."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses self.suspend with subprocess.run argv and keeps the Textual app alive."},
+        {"index": 1, "passed": false, "notes": "Branches on is_web but does not catch or otherwise handle SuspendNotSupported."},
+        {"index": 2, "passed": true, "notes": "Uses suspend_process for Unix foreground suspension and identifies the Windows/Web no-op."},
+        {"index": 3, "passed": true, "notes": "Reloads the document from disk after a successful editor resume."},
+        {"index": 4, "passed": true, "notes": "Reserves self.exit(return_code) for final shutdown and explicitly propagates app.return_code with sys.exit."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses an argv-based subprocess inside self.suspend and rejects exit/relaunch."},
+        {"index": 1, "passed": false, "notes": "Uses an is_web precheck but never handles SuspendNotSupported."},
+        {"index": 2, "passed": true, "notes": "Identifies suspend_process as Unix foreground job control and as a Windows/Web no-op."},
+        {"index": 3, "passed": true, "notes": "Reloads the externally mutable document after editor resume."},
+        {"index": 4, "passed": false, "notes": "Propagates app.return_code but never uses self.exit(return_code=...) to set it for final shutdown."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses useApp().suspendTerminal and rejects unmount-and-rerender for a resumable editor."},
+        {"index": 1, "passed": true, "notes": "Explains callback failure still restores in finally before propagating the original error."},
+        {"index": 2, "passed": true, "notes": "Requires awaited resume in finally or await using and rejects nested suspensions."},
+        {"index": 3, "passed": true, "notes": "States the callback still runs in non-TTY mode without terminal handoff and recommends a fallback."},
+        {"index": 4, "passed": true, "notes": "Reserves unmount or exit plus waitUntilExit for permanent shutdown and output flushing."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Keeps the React tree mounted and uses suspendTerminal for the editor handoff."},
+        {"index": 1, "passed": true, "notes": "Describes guaranteed restoration/redraw on callback rejection followed by error propagation."},
+        {"index": 2, "passed": true, "notes": "Uses awaited resume in finally and forbids overlapping suspension."},
+        {"index": 3, "passed": true, "notes": "Explains noninteractive callbacks still execute without a handoff and gates the editor action."},
+        {"index": 4, "passed": true, "notes": "Uses waitUntilExit only at the outer final-unmount lifecycle boundary."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses suspendTerminal rather than destroying and recreating the Ink tree."},
+        {"index": 1, "passed": true, "notes": "States Ink restores on callback throw or rejection before the promise rejects."},
+        {"index": 2, "passed": true, "notes": "Requires await resume in finally or await using and disallows nesting."},
+        {"index": 3, "passed": true, "notes": "States non-TTY mode still invokes the callback without handoff and provides noninteractive alternatives."},
+        {"index": 4, "passed": true, "notes": "Treats unmount and waitUntilExit as final shutdown, not editor resume."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Rejects one cleanup handler and separates shutdown, job-control suspension, and editor handoff."},
+        {"index": 1, "passed": true, "notes": "Uses Bubble Tea managed signals plus ExecProcess and Suspend rather than direct final restoration."},
+        {"index": 2, "passed": true, "notes": "Routes framework shutdown requests onto the owning event loops and avoids terminal I/O in signal handlers."},
+        {"index": 3, "passed": true, "notes": "Distinguishes Ink raw Ctrl+C handling from Node OS signals and places cleanup at the render boundary."},
+        {"index": 4, "passed": true, "notes": "Requires input coordination, terminal re-entry, data reload, and full redraw after a resumable handoff."},
+        {"index": 5, "passed": false, "notes": "Scopes job control to Unix and covers SIGKILL, but provides no concrete Windows alternative."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Separates final shutdown from resumable child and job-control handoffs."},
+        {"index": 1, "passed": true, "notes": "Uses Bubble Tea managed signal handling, ExecProcess, and Suspend."},
+        {"index": 2, "passed": true, "notes": "Keeps terminal manipulation out of low-level handlers and routes work to framework ownership."},
+        {"index": 3, "passed": false, "notes": "Describes Ink signal-listener ownership but never explains that exitOnCtrlC handles raw input rather than SIGTERM."},
+        {"index": 4, "passed": true, "notes": "Requires reader coordination, mode restoration, data reload, and a full redraw."},
+        {"index": 5, "passed": false, "notes": "Covers Unix suspension and SIGKILL but gives no Windows alternative to job control."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Rejects a generic terminal-restoration handler and distinguishes all lifecycle boundaries."},
+        {"index": 1, "passed": true, "notes": "Uses Bubble Tea managed messages, ExecProcess, and Suspend without direct final restoration."},
+        {"index": 2, "passed": true, "notes": "Routes termination through the runtime/framework loop rather than manipulating the terminal in a signal handler."},
+        {"index": 3, "passed": true, "notes": "Explains exitOnCtrlC as raw-input handling and places OS-signal cleanup around Ink's render instance."},
+        {"index": 4, "passed": true, "notes": "Requires stopping input, restoring modes, waiting, reloading data, and fully redrawing."},
+        {"index": 5, "passed": false, "notes": "Says Windows lacks job control but does not provide a concrete alternate Windows action."}
+      ]
+    }
+  ]
+}

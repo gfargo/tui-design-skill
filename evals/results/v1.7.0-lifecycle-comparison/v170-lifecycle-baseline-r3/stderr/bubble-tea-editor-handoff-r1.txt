@@ -1,0 +1,127 @@
+2026-09-09T17:41:35.745358Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-09-09T17:41:35.746807Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-09-09T17:41:35.749464Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+OpenAI Codex v0.147.0-alpha.6.5
+--------
+workdir: /tmp/tui-design-baseline-v170
+model: gpt-5.6-terra
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a08742-c778-77a1-87db-b53576c4d74f
+--------
+user
+My Bubble Tea v2 app opens $EDITOR from Update. I was going to call Program.ReleaseTerminal, run exec.Command directly, defer Program.RestoreTerminal, and then keep using the model. Show the correct lifecycle, including how child or restoration failures return to Update and what should happen for q versus raw-mode Ctrl+C.
+
+codex
+I’ll verify the Bubble Tea v2 API and source behavior so the lifecycle and error paths are exact.
+web search: 
+web search: Bubble Tea v2 Program ReleaseTerminal RestoreTerminal Update editor official documentation github
+web search: 
+web search: Bubble Tea v2 Program ReleaseTerminal RestoreTerminal Update editor official documentation github
+web search: 
+web search: site:github.com/charmbracelet/bubbletea "ExecProcess" v2 ...
+web search: 
+web search: site:github.com/charmbracelet/bubbletea "Raw" command ctrl+c terminal raw mode ...
+2026-09-09T17:42:04.473744Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `supports_parallel_tool_calls` at line 93 column 5
+web search: 
+web search: 
+2026-09-09T17:42:11.117364Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `supports_parallel_tool_calls` at line 93 column 5
+web search: 
+web search: 'case InterruptMsg'
+2026-09-09T17:42:17.319926Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `supports_parallel_tool_calls` at line 93 column 5
+codex
+Use `tea.ExecProcess`, returned from `Update`; don’t manually release/restore the terminal there. It pauses Bubble Tea, hands the terminal to the editor, restores it, then sends your completion message back through `Update`. [This is precisely what `ExecProcess` is for.](https://github.com/charmbracelet/bubbletea/blob/main/exec.go)
+
+```go
+type editorFinishedMsg struct{ err error }
+
+func editFile(editor, path string) tea.Cmd {
+	if editor == "" {
+		editor = "vi"
+	}
+
+	// Treat editor as an executable name. If you support $EDITOR flags,
+	// parse it with a shell-words parser; do not use `sh -c`.
+	cmd := exec.Command(editor, path)
+
+	return tea.ExecProcess(cmd, func(err error) tea.Msg {
+		return editorFinishedMsg{err: err}
+	})
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "q":
+			return m, tea.Quit // normal, graceful application quit
+
+		case "ctrl+c":
+			return m, tea.Interrupt // Run returns tea.ErrInterrupted
+
+		case "e":
+			m.editorOpen = true
+			m.err = nil
+			return m, editFile(os.Getenv("EDITOR"), m.path)
+		}
+
+	case editorFinishedMsg:
+		m.editorOpen = false
+		if msg.err != nil {
+			m.err = msg.err // render this in View, or report it
+			return m, nil
+		}
+
+		// Editor completed and Bubble Tea has restored the terminal.
+		// Return a normal async Cmd here if you need to reload the file.
+		return m, reloadFile(m.path)
+	}
+
+	return m, nil
+}
+```
+
+Lifecycle:
+
+```text
+Update → tea.ExecProcess
+       → Bubble Tea releases terminal/input reader
+       → editor runs with the program's terminal I/O
+       → Bubble Tea restores terminal, input reader, and renderer
+       → editorFinishedMsg arrives in Update
+```
+
+The completion callback’s error handling is:
+
+- Release failure: the editor is not started; the error is sent in `editorFinishedMsg`.
+- Editor failure: Bubble Tea attempts restoration, then sends the **editor error** to `Update`.
+- Editor succeeds but restoration fails: the restoration error is sent in `editorFinishedMsg`.
+- Both succeed: `err == nil`.
+
+One subtle implementation detail: if the editor fails *and* restoration fails, current Bubble Tea sends the editor error and discards the restoration error after attempting it. Thus `ExecProcess` cannot report both independently; if you must distinguish/retain both, that requires a framework change or a deliberately separate terminal-management design. [The source shows this exact ordering.](https://github.com/charmbracelet/bubbletea/blob/main/exec.go)
+
+For quitting:
+
+- `q` is an app policy: return `tea.Quit`. `Run()` returns normally.
+- In Bubble Tea’s raw mode, Ctrl+C is ordinarily a `tea.KeyPressMsg`, not an OS `SIGINT`; map it to `tea.Interrupt` if it should retain interrupt semantics. `Run()` then returns `tea.ErrInterrupted`, which a CLI commonly maps to exit code 130.
+- While the editor is active, Bubble Tea has released raw mode, so Ctrl+C belongs to the editor/child process. Its resulting exit error comes back as `editorFinishedMsg`; it does not automatically interrupt the resumed TUI.
+- A real SIGINT received outside raw input (for example non-TTY input) is handled internally as `InterruptMsg` before `Update`, and `Run()` returns `tea.ErrInterrupted`. [Bubble Tea’s event loop distinguishes `QuitMsg` from `InterruptMsg`.](https://github.com/charmbracelet/bubbletea/blob/main/tea.go)
+
+At top level, preserve that distinction:
+
+```go
+_, err := p.Run()
+switch {
+case err == nil:
+case errors.Is(err, tea.ErrInterrupted):
+	os.Exit(130)
+default:
+	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
+}
+```
+tokens used
+64,324

@@ -1,0 +1,168 @@
+{
+  "schema_version": 4,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v170-lifecycle-with-skill-r3",
+  "grader": {
+    "kind": "human",
+    "name": "Primary Codex issue reviewer",
+    "prompt_version": "v170-lifecycle-direct-rubric-v1",
+    "prompt_sha256": "d1b867f551a1ec75485db3013af4af6b0531fdc67e86c2f84563e9cc0143665b"
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "d1b867f551a1ec75485db3013af4af6b0531fdc67e86c2f84563e9cc0143665b"
+  },
+  "trials": [
+    {
+      "trial_id": "bubble-tea-editor-handoff-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses tea.ExecProcess and describes release, editor wait, terminal restore, repaint, and callback delivery."},
+        {"index": 1, "passed": true, "notes": "Routes release, child, and restoration errors through editorDoneMsg and explains combined-failure behavior."},
+        {"index": 2, "passed": true, "notes": "Rejects manual release/restore and leaves final cleanup to Program.Run."},
+        {"index": 3, "passed": true, "notes": "Maps q to tea.Quit and raw Ctrl+C to tea.Interrupt with ErrInterrupted/status 130 semantics."}
+      ]
+    },
+    {
+      "trial_id": "bubble-tea-editor-handoff-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses tea.ExecProcess for the full managed editor handoff and resume lifecycle."},
+        {"index": 1, "passed": true, "notes": "Covers release, child, restore, and simultaneous failure handling through the callback message."},
+        {"index": 2, "passed": true, "notes": "Explicitly rejects ReleaseTerminal/RestoreTerminal as the Update or final-cleanup mechanism."},
+        {"index": 3, "passed": true, "notes": "Keeps normal tea.Quit distinct from tea.Interrupt and propagates ErrInterrupted after Run."}
+      ]
+    },
+    {
+      "trial_id": "bubble-tea-editor-handoff-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses tea.ExecProcess and accurately describes terminal ownership and callback resume."},
+        {"index": 1, "passed": true, "notes": "Returns release, child, or restoration failure through editorDoneMsg and treats it as a handoff error."},
+        {"index": 2, "passed": true, "notes": "Rejects deferred RestoreTerminal and relies on Program.Run for final cleanup."},
+        {"index": 3, "passed": true, "notes": "Uses tea.Quit for q and tea.Interrupt for raw Ctrl+C with ErrInterrupted semantics."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Cancels and awaits the Crossterm reader before terminal restoration."},
+        {"index": 1, "passed": true, "notes": "Restores shell modes, waits for Vim, re-enters, clears, redraws, and restarts input."},
+        {"index": 2, "passed": false, "notes": "The prose requests aggregation, but the Ok(nonzero status)/Err(reentry) code branch discards the child status."},
+        {"index": 3, "passed": true, "notes": "Routes SIGTERM through Tokio cancellation into normal loop return and cleanup."},
+        {"index": 4, "passed": true, "notes": "States SIGKILL cannot invoke handlers, Drop, or terminal restoration."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Stops, joins, and discards queued reader input before restoring the terminal."},
+        {"index": 1, "passed": true, "notes": "Orders restore, inherited-stdio child wait, reinitialization, clear, redraw, and fresh reader correctly."},
+        {"index": 2, "passed": true, "notes": "Preserves ExitStatus or child error alongside re-entry failure in explicit aggregate variants."},
+        {"index": 3, "passed": true, "notes": "Sends Tokio SIGTERM notification to the lifecycle controller and returns normally."},
+        {"index": 4, "passed": true, "notes": "Explicitly says SIGKILL cannot run cleanup, Drop, hooks, or child reaping."}
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Cancels and joins EventStream before restoring shell-facing modes."},
+        {"index": 1, "passed": true, "notes": "Waits for Vim, reinitializes, clears, fully redraws, and starts a fresh reader."},
+        {"index": 2, "passed": true, "notes": "Retains both ExitStatus and re-entry outcome, including nonzero and double-failure cases."},
+        {"index": 3, "passed": true, "notes": "Routes SIGTERM into the application's normal shutdown token/event path."},
+        {"index": 4, "passed": true, "notes": "Identifies SIGKILL as a path on which child and application cleanup cannot run."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Runs an argv-based child inside self.suspend without exiting or relaunching."},
+        {"index": 1, "passed": true, "notes": "Catches SuspendNotSupported and uses an in-app editor fallback for unsupported runtimes/Web."},
+        {"index": 2, "passed": true, "notes": "Binds suspend_process on Unix and identifies the Windows/Web no-op."},
+        {"index": 3, "passed": true, "notes": "Reloads after editor handoff and explicitly points to app_resume_signal for post-job-control reload."},
+        {"index": 4, "passed": true, "notes": "Reserves self.exit(return_code) for final shutdown and propagates app.return_code with SystemExit."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses self.suspend around subprocess.run(argv) and keeps the app session alive."},
+        {"index": 1, "passed": true, "notes": "Catches SuspendNotSupported and supplies a non-terminal fallback/clear unavailable message."},
+        {"index": 2, "passed": true, "notes": "Uses suspend_process for Unix and explains it is ignored on Windows and Web."},
+        {"index": 3, "passed": false, "notes": "Reloads after a successful editor but never addresses externally mutable state after foreground-process resume."},
+        {"index": 4, "passed": true, "notes": "Uses self.exit(return_code) only for final exit and propagates app.return_code through sys.exit."}
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses self.suspend and argv-based subprocess execution without app teardown/relaunch."},
+        {"index": 1, "passed": true, "notes": "Catches SuspendNotSupported and falls back to an in-app editor."},
+        {"index": 2, "passed": true, "notes": "Uses suspend_process for Unix job control and identifies its Windows/Web no-op behavior."},
+        {"index": 3, "passed": false, "notes": "Reloads after editor resume but omits any reload decision after Ctrl+Z/SIGCONT resume."},
+        {"index": 4, "passed": true, "notes": "Calls self.exit(return_code) only for final termination and propagates app.return_code explicitly."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses useApp().suspendTerminal and rejects unmount/rerender for editor handoff."},
+        {"index": 1, "passed": true, "notes": "Explains callback failure still restores and redraws before rejection reaches the caller."},
+        {"index": 2, "passed": true, "notes": "Requires awaited resume in finally or await using and forbids overlapping suspension."},
+        {"index": 3, "passed": true, "notes": "States non-TTY callbacks still run without handoff and supplies a noninteractive fallback."},
+        {"index": 4, "passed": true, "notes": "Uses unmount/exit and waitUntilExit only at permanent shutdown."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Keeps the mounted React tree and uses suspendTerminal for the child."},
+        {"index": 1, "passed": true, "notes": "Describes finally-based restoration and propagation of callback failure."},
+        {"index": 2, "passed": true, "notes": "Shows await resume in finally, mentions await using, and rejects nesting."},
+        {"index": 3, "passed": true, "notes": "Explains the callback runs without terminal handoff in noninteractive mode and gates the editor."},
+        {"index": 4, "passed": true, "notes": "Reserves waitUntilExit for the outer unmount lifecycle rather than editor resume."}
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Uses suspendTerminal and rejects final unmount as a temporary handoff."},
+        {"index": 1, "passed": true, "notes": "States callback rejection still restores the terminal before propagating."},
+        {"index": 2, "passed": true, "notes": "Requires resume in finally or await using and prevents overlapping suspension."},
+        {"index": 3, "passed": true, "notes": "States non-TTY callbacks still execute with no handoff and offers file/stdin alternatives."},
+        {"index": 4, "passed": true, "notes": "Explains unmount and waitUntilExit as final-shutdown/output-flush mechanisms."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r1",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Rejects a generic cleanup handler and distinguishes final shutdown, editor handoff, and job-control resume."},
+        {"index": 1, "passed": true, "notes": "Uses Bubble Tea managed signals, ExecProcess, and Suspend without direct raw-mode cleanup."},
+        {"index": 2, "passed": true, "notes": "Routes Ratatui/Textual termination through their owning loops instead of low-level terminal I/O."},
+        {"index": 3, "passed": true, "notes": "Distinguishes Ink exitOnCtrlC raw input from SIGTERM and places cleanup around the render instance."},
+        {"index": 4, "passed": true, "notes": "Requires reader coordination, re-entry, data reload, and full redraw after resumable handoff."},
+        {"index": 5, "passed": false, "notes": "Scopes job control to Unix and covers SIGKILL, but gives no concrete alternate Windows action."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r2",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Separates final exit from editor and Ctrl+Z handoff/resume lifecycles."},
+        {"index": 1, "passed": true, "notes": "Uses Bubble Tea's managed signal lifecycle, ExecProcess, and Suspend."},
+        {"index": 2, "passed": true, "notes": "Routes Ratatui and Textual termination requests through their event loops."},
+        {"index": 3, "passed": true, "notes": "Explicitly distinguishes exitOnCtrlC input bytes from OS SIGTERM and awaits Ink teardown."},
+        {"index": 4, "passed": true, "notes": "Requires terminal and application-state refresh, including reader handling and full redraw."},
+        {"index": 5, "passed": false, "notes": "Identifies Unix-only job control and SIGKILL limitations but provides no Windows alternative."}
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r3",
+      "assertions": [
+        {"index": 0, "passed": true, "notes": "Rejects one generic handler and clearly separates final and resumable lifecycle transitions."},
+        {"index": 1, "passed": true, "notes": "Leaves Bubble Tea cleanup to Program.Run and uses ExecProcess/Suspend for temporary ownership."},
+        {"index": 2, "passed": true, "notes": "Schedules Ratatui and Textual termination on their framework/runtime loops."},
+        {"index": 3, "passed": true, "notes": "Explains exitOnCtrlC raw input versus OS signals and uses unmount/waitUntilExit at the render boundary."},
+        {"index": 4, "passed": true, "notes": "Requires input pause, shell modes, wait/resume, external-state reload, and full repaint."},
+        {"index": 5, "passed": false, "notes": "Says Windows needs a non-job-control fallback but does not identify a concrete alternate path."}
+      ]
+    }
+  ]
+}

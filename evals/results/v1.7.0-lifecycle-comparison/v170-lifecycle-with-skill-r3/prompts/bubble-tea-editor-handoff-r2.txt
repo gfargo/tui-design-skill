@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/plugins/tui-design/skills/tui-design to solve this request:
+
+My Bubble Tea v2 app opens $EDITOR from Update. I was going to call Program.ReleaseTerminal, run exec.Command directly, defer Program.RestoreTerminal, and then keep using the model. Show the correct lifecycle, including how child or restoration failures return to Update and what should happen for q versus raw-mode Ctrl+C.

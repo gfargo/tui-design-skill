@@ -17,15 +17,16 @@ import platform
 import re
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Optional, Sequence
 
 
-SCHEMA_VERSION = 4
-SUPPORTED_SCHEMA_VERSIONS = {2, 3, 4}
+SCHEMA_VERSION = 5
+SUPPORTED_SCHEMA_VERSIONS = {2, 3, 4, 5}
 SCHEMA_ROOTS = {
     3: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3",
     4: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4",
+    5: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5",
 }
 SCHEMA_FILES = {
     "tui-design-eval-run": "run.schema.json",
@@ -250,13 +251,82 @@ def host_metadata() -> dict[str, str]:
     }
 
 
-def invocation_prompt(raw_prompt: str, condition: str, skill_dir: Path) -> str:
+def invocation_prompt(raw_prompt: str, condition: str, skill_path: Optional[str]) -> str:
+    """Build the exact prompt text a trial sends to the runner.
+
+    ``skill_path`` is the absolute skill directory embedded in with-skill prompts.
+    It is recorded in schema-v5 manifests as ``skill_invocation_path`` so a
+    bundle can be revalidated from a checkout at any other location.
+    """
     if condition == "baseline":
         return raw_prompt.rstrip() + "\n"
+    if not skill_path:
+        raise HarnessError("with-skill prompts require the skill invocation path")
     return (
-        f"Use $tui-design at {skill_dir.resolve()} to solve this request:\n\n"
+        f"Use $tui-design at {skill_path} to solve this request:\n\n"
         f"{raw_prompt.rstrip()}\n"
     )
+
+
+def as_posix_string(value: str) -> str:
+    """Normalize a recorded native path string (POSIX or Windows) to forward slashes."""
+    return PureWindowsPath(value).as_posix() if "\\" in value else PurePosixPath(value).as_posix()
+
+
+def is_absolute_path_string(value: str) -> bool:
+    return PurePosixPath(value).is_absolute() or PureWindowsPath(value).is_absolute()
+
+
+def skill_invocation_path(
+    manifest: dict[str, Any],
+    *,
+    source_root: Path = REPO_ROOT,
+    recorded_skill_path: Optional[str] = None,
+) -> Optional[str]:
+    """Return the absolute skill path embedded in this run's with-skill prompts.
+
+    Schema-v5 manifests record it as ``skill_invocation_path`` and are
+    self-describing. Older with-skill manifests only embedded the path in the
+    prompt files, so revalidating them from a checkout at a different location
+    needs the path supplied through ``recorded_skill_path``; without it the
+    current checkout's resolved skill directory is used, exactly as before.
+    """
+    version = artifact_schema_version(manifest, "tui-design-eval-run")
+    condition = manifest.get("condition")
+    if condition not in {"baseline", "with-skill"}:
+        raise HarnessError("run manifest has an invalid condition")
+    skill_dir = manifest.get("skill_dir")
+    if not isinstance(skill_dir, str) or not skill_dir:
+        raise HarnessError("run manifest is missing skill_dir")
+    if condition == "baseline":
+        if recorded_skill_path is not None:
+            raise HarnessError("--recorded-skill-path does not apply to baseline runs; their prompts embed no skill path")
+        if version >= 5 and manifest.get("skill_invocation_path") is not None:
+            raise HarnessError("baseline runs must record skill_invocation_path as null")
+        return None
+
+    if version >= 5:
+        recorded = manifest.get("skill_invocation_path")
+        if not isinstance(recorded, str) or not recorded:
+            raise HarnessError("schema-v5 with-skill runs must record skill_invocation_path")
+        if not is_absolute_path_string(recorded):
+            raise HarnessError("skill_invocation_path must be an absolute path")
+        if not as_posix_string(recorded).endswith(as_posix_string(skill_dir)):
+            raise HarnessError("skill_invocation_path does not end with the recorded skill_dir")
+        if recorded_skill_path is not None and recorded_skill_path != recorded:
+            raise HarnessError(
+                "--recorded-skill-path conflicts with the skill_invocation_path recorded in run.json: "
+                f"{recorded_skill_path!r} != {recorded!r}"
+            )
+        return recorded
+
+    if "skill_invocation_path" in manifest:
+        raise HarnessError(f"schema-v{version} runs cannot record skill_invocation_path")
+    if recorded_skill_path is not None:
+        if not recorded_skill_path.strip():
+            raise HarnessError("--recorded-skill-path must not be empty")
+        return recorded_skill_path
+    return str(resolve_recorded_path(skill_dir, source_root).resolve())
 
 
 def make_run_id(eval_set: Path, condition: str) -> str:
@@ -296,12 +366,13 @@ def command_run(args: argparse.Namespace) -> int:
         stderr_dir.mkdir()
 
     created_at = utc_now()
+    invocation_path = str(skill_dir) if args.condition == "with-skill" else None
     trials: list[dict[str, Any]] = []
     for case in eval_set["evals"]:
         case_id = str(case["id"])
         for repetition in range(1, args.repeat + 1):
             trial_id = f"{case_id}-r{repetition}"
-            prompt = invocation_prompt(case["prompt"], args.condition, skill_dir)
+            prompt = invocation_prompt(case["prompt"], args.condition, invocation_path)
             prompt_path = prompt_dir / f"{trial_id}.txt"
             prompt_path.write_text(prompt)
             trials.append(
@@ -328,6 +399,7 @@ def command_run(args: argparse.Namespace) -> int:
         "eval_set_sha256": sha256_file(eval_path),
         "skill_dir": portable_path(skill_dir),
         "skill_sha256": sha256_tree(skill_dir),
+        "skill_invocation_path": invocation_path,
         "condition": args.condition,
         "provider": args.provider,
         "model": args.model,
@@ -470,8 +542,13 @@ def command_run(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
-def expected_trials(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    eval_path = resolve_recorded_path(manifest["eval_set"])
+def expected_trials(
+    manifest: dict[str, Any],
+    *,
+    source_root: Path = REPO_ROOT,
+    recorded_skill_path: Optional[str] = None,
+) -> dict[str, dict[str, Any]]:
+    eval_path = resolve_recorded_path(manifest["eval_set"], source_root)
     eval_set = load_eval_set(eval_path)
     repetitions = manifest.get("repetitions")
     if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
@@ -479,7 +556,9 @@ def expected_trials(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
     condition = manifest.get("condition")
     if condition not in {"baseline", "with-skill"}:
         raise HarnessError("run manifest has an invalid condition")
-    skill_dir = resolve_recorded_path(manifest["skill_dir"])
+    skill_path = skill_invocation_path(
+        manifest, source_root=source_root, recorded_skill_path=recorded_skill_path
+    )
     expected: dict[str, dict[str, Any]] = {}
     for case in eval_set["evals"]:
         case_id = str(case["id"])
@@ -492,15 +571,21 @@ def expected_trials(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
                 "repetition": repetition,
                 "assertion_count": len(case["assertions"]),
                 "prompt_file": f"prompts/{trial_id}.txt",
-                "prompt": invocation_prompt(case["prompt"], condition, skill_dir),
+                "prompt": invocation_prompt(case["prompt"], condition, skill_path),
                 "response_file": f"responses/{trial_id}.md",
                 "stderr_file": f"stderr/{trial_id}.txt",
             }
     return expected
 
 
-def expected_trial_assertions(manifest: dict[str, Any]) -> dict[str, int]:
-    return {trial_id: trial["assertion_count"] for trial_id, trial in expected_trials(manifest).items()}
+def expected_trial_assertions(
+    manifest: dict[str, Any],
+    *,
+    source_root: Path = REPO_ROOT,
+    recorded_skill_path: Optional[str] = None,
+) -> dict[str, int]:
+    trials = expected_trials(manifest, source_root=source_root, recorded_skill_path=recorded_skill_path)
+    return {trial_id: trial["assertion_count"] for trial_id, trial in trials.items()}
 
 
 def validate_grading_prompt(grades: dict[str, Any], grader: dict[str, Any], grades_path: Path) -> None:
@@ -519,7 +604,14 @@ def validate_grading_prompt(grades: dict[str, Any], grader: dict[str, Any], grad
         raise HarnessError("grading_prompt file does not match its recorded digest")
 
 
-def validate_grades(manifest: dict[str, Any], grades: dict[str, Any], grades_path: Path) -> None:
+def validate_grades(
+    manifest: dict[str, Any],
+    grades: dict[str, Any],
+    grades_path: Path,
+    *,
+    source_root: Path = REPO_ROOT,
+    recorded_skill_path: Optional[str] = None,
+) -> None:
     manifest_version = artifact_schema_version(manifest, "tui-design-eval-run")
     grades_version = artifact_schema_version(grades, "tui-design-eval-grades")
     if grades_version != manifest_version:
@@ -548,7 +640,9 @@ def validate_grades(manifest: dict[str, Any], grades: dict[str, Any], grades_pat
     if grades_version >= 4:
         validate_grading_prompt(grades, grader, grades_path)
 
-    expected = expected_trial_assertions(manifest)
+    expected = expected_trial_assertions(
+        manifest, source_root=source_root, recorded_skill_path=recorded_skill_path
+    )
     items = grades.get("trials")
     if not isinstance(items, list):
         raise HarnessError("grades.trials must be a list")
@@ -598,8 +692,21 @@ def command_score(args: argparse.Namespace) -> int:
     manifest = read_json(manifest_path)
     grades_path = Path(args.grades).resolve()
     grades = read_json(grades_path)
-    validate_manifest(manifest_path, manifest, require_completed=True)
-    validate_grades(manifest, grades, grades_path)
+    source_root = Path(args.source_root).resolve()
+    validate_manifest(
+        manifest_path,
+        manifest,
+        require_completed=True,
+        source_root=source_root,
+        recorded_skill_path=args.recorded_skill_path,
+    )
+    validate_grades(
+        manifest,
+        grades,
+        grades_path,
+        source_root=source_root,
+        recorded_skill_path=args.recorded_skill_path,
+    )
 
     version = artifact_schema_version(manifest, "tui-design-eval-run")
     passed, total, by_case = score_metrics(manifest, grades)
@@ -624,7 +731,14 @@ def command_score(args: argparse.Namespace) -> int:
     return 0
 
 
-def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: bool = False) -> None:
+def validate_manifest(
+    path: Path,
+    manifest: dict[str, Any],
+    require_completed: bool = False,
+    *,
+    source_root: Path = REPO_ROOT,
+    recorded_skill_path: Optional[str] = None,
+) -> None:
     version = artifact_schema_version(manifest, "tui-design-eval-run")
     for key in ("run_id", "condition", "provider", "model", "eval_set", "eval_set_sha256", "skill_dir", "skill_sha256"):
         if not manifest.get(key):
@@ -655,9 +769,12 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
             if not isinstance(manifest.get("runner_version"), str) or not manifest["runner_version"].strip():
                 raise HarnessError("executed schema-v3 runs must record runner_version")
         validate_generation_metadata(manifest.get("generation"), "generation")
+    if version >= 5 and "skill_invocation_path" not in manifest:
+        raise HarnessError("schema-v5 runs must record skill_invocation_path")
+    skill_invocation_path(manifest, source_root=source_root, recorded_skill_path=recorded_skill_path)
 
-    eval_path = resolve_recorded_path(manifest["eval_set"])
-    skill_dir = resolve_recorded_path(manifest["skill_dir"])
+    eval_path = resolve_recorded_path(manifest["eval_set"], source_root)
+    skill_dir = resolve_recorded_path(manifest["skill_dir"], source_root)
     if sha256_file(eval_path) != manifest["eval_set_sha256"]:
         raise HarnessError("eval-set hash does not match the recorded input")
     if sha256_tree(skill_dir) != manifest["skill_sha256"]:
@@ -674,7 +791,7 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
         raise HarnessError("every run trial must have a string trial_id")
     if len(trial_ids) != len(set(trial_ids)):
         raise HarnessError("run manifest contains duplicate trial ids")
-    expected = expected_trials(manifest)
+    expected = expected_trials(manifest, source_root=source_root, recorded_skill_path=recorded_skill_path)
     if set(trial_ids) != set(expected):
         missing = sorted(set(expected) - set(trial_ids))
         extra = sorted(set(trial_ids) - set(expected))
@@ -724,12 +841,25 @@ def validate_manifest(path: Path, manifest: dict[str, Any], require_completed: b
 def command_validate(args: argparse.Namespace) -> int:
     manifest_path = Path(args.run).resolve()
     manifest = read_json(manifest_path)
-    validate_manifest(manifest_path, manifest, require_completed=args.require_completed)
+    source_root = Path(args.source_root).resolve()
+    validate_manifest(
+        manifest_path,
+        manifest,
+        require_completed=args.require_completed,
+        source_root=source_root,
+        recorded_skill_path=args.recorded_skill_path,
+    )
 
     if args.grades:
         grades_path = Path(args.grades).resolve()
         grades = read_json(grades_path)
-        validate_grades(manifest, grades, grades_path)
+        validate_grades(
+            manifest,
+            grades,
+            grades_path,
+            source_root=source_root,
+            recorded_skill_path=args.recorded_skill_path,
+        )
     else:
         grades_path = None
 
@@ -804,6 +934,7 @@ def build_parser() -> argparse.ArgumentParser:
     score.add_argument("--run", required=True, help="path to run.json")
     score.add_argument("--grades", required=True, help="path to grades JSON")
     score.add_argument("--output", help="summary path; default is summary.json beside run.json")
+    add_source_arguments(score)
     score.set_defaults(handler=command_score)
 
     validate = subparsers.add_parser("validate", help="validate recorded hashes and optional grading artifacts")
@@ -811,8 +942,29 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--grades", help="optional grades JSON")
     validate.add_argument("--summary", help="optional summary JSON")
     validate.add_argument("--require-completed", action="store_true")
+    add_source_arguments(validate)
     validate.set_defaults(handler=command_validate)
     return parser
+
+
+def add_source_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--source-root",
+        default=str(REPO_ROOT),
+        help=(
+            "checkout that holds the eval set and skill snapshot recorded in run.json; "
+            "default is this harness's own repository. Point it at a clean checkout of the "
+            "recorded git commit to revalidate historical evidence from anywhere"
+        ),
+    )
+    parser.add_argument(
+        "--recorded-skill-path",
+        help=(
+            "absolute skill directory embedded in the with-skill prompts of a schema-v2, v3, or v4 run "
+            "(copy it from any prompt file's first line); needed only when validating such a run from a "
+            "checkout at a different location. Schema-v5 runs record it as skill_invocation_path"
+        ),
+    )
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

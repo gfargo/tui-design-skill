@@ -188,6 +188,11 @@ expected_schema_versions = {
         "grades.schema.json": "tui-design evaluation grades v4",
         "summary.schema.json": "tui-design evaluation summary v4",
     },
+    5: {
+        "run.schema.json": "tui-design evaluation run v5",
+        "grades.schema.json": "tui-design evaluation grades v5",
+        "summary.schema.json": "tui-design evaluation summary v5",
+    },
 }
 for schema_version, expected_schema_files in expected_schema_versions.items():
     schema_root = root / f"evals/schema/v{schema_version}"

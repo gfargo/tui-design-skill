@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HARNESS = REPO_ROOT / "scripts/eval_harness.py"
+SKILL_RELATIVE = Path("plugins/tui-design/skills/tui-design")
+SKILL_DIR = REPO_ROOT / SKILL_RELATIVE
 SCHEMA_ROOT_V3 = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3"
 RUN_SCHEMA_V3 = f"{SCHEMA_ROOT_V3}/run.schema.json"
 GRADES_SCHEMA_V3 = f"{SCHEMA_ROOT_V3}/grades.schema.json"
@@ -19,6 +22,11 @@ SCHEMA_ROOT_V4 = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main
 RUN_SCHEMA_V4 = f"{SCHEMA_ROOT_V4}/run.schema.json"
 GRADES_SCHEMA_V4 = f"{SCHEMA_ROOT_V4}/grades.schema.json"
 SUMMARY_SCHEMA_V4 = f"{SCHEMA_ROOT_V4}/summary.schema.json"
+SCHEMA_ROOT_V5 = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5"
+RUN_SCHEMA_V5 = f"{SCHEMA_ROOT_V5}/run.schema.json"
+GRADES_SCHEMA_V5 = f"{SCHEMA_ROOT_V5}/grades.schema.json"
+SUMMARY_SCHEMA_V5 = f"{SCHEMA_ROOT_V5}/summary.schema.json"
+RUN_SCHEMAS = {3: RUN_SCHEMA_V3, 4: RUN_SCHEMA_V4, 5: RUN_SCHEMA_V5}
 
 
 class EvalHarnessTest(unittest.TestCase):
@@ -31,10 +39,10 @@ class EvalHarnessTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def invoke(self, *args: str, expected: int = 0) -> subprocess.CompletedProcess[str]:
+    def invoke(self, *args: str, expected: int = 0, harness: Path = HARNESS) -> subprocess.CompletedProcess[str]:
         completed = subprocess.run(
-            [sys.executable, str(HARNESS), *args],
-            cwd=REPO_ROOT,
+            [sys.executable, str(harness), *args],
+            cwd=harness.parent.parent,
             text=True,
             capture_output=True,
             check=False,
@@ -66,10 +74,36 @@ class EvalHarnessTest(unittest.TestCase):
         path.write_text(text)
         return path, hashlib.sha256(path.read_bytes()).hexdigest()
 
-    def base_v4_grades(self, manifest, grading_prompt_path: str, digest: str) -> dict:
+    def downgrade_manifest(self, manifest_path: Path, version: int) -> dict:
+        """Rewrite a freshly recorded manifest as an older schema version.
+
+        Older versions never carried skill_invocation_path; their with-skill
+        prompts embedded the path without recording it anywhere else.
+        """
+        manifest = json.loads(manifest_path.read_text())
+        manifest["schema_version"] = version
+        manifest.pop("skill_invocation_path", None)
+        if version >= 3:
+            manifest["schema"] = RUN_SCHEMAS[version]
+        else:
+            for key in ("schema", "runner_version", "generation"):
+                manifest.pop(key, None)
+        manifest_path.write_text(json.dumps(manifest))
+        return manifest
+
+    def make_checkout(self, name: str) -> Path:
+        """Copy the harness and skill snapshot to a fresh location, as another machine or CI would have."""
+        checkout = self.work / name
+        shutil.copytree(SKILL_DIR, checkout / SKILL_RELATIVE)
+        (checkout / "scripts").mkdir()
+        shutil.copy(HARNESS, checkout / "scripts/eval_harness.py")
+        return checkout
+
+    def base_v4_grades(self, manifest, grading_prompt_path: str, digest: str, version: int = 4) -> dict:
+        schemas = {4: GRADES_SCHEMA_V4, 5: GRADES_SCHEMA_V5}
         return {
-            "schema_version": 4,
-            "schema": GRADES_SCHEMA_V4,
+            "schema_version": version,
+            "schema": schemas[version],
             "artifact_type": "tui-design-eval-grades",
             "run_id": manifest["run_id"],
             "grader": {
@@ -146,8 +180,9 @@ class EvalHarnessTest(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text())
         self.assertEqual(manifest["model"], "fixture-model-v1")
         self.assertEqual(manifest["provider"], "fixture")
-        self.assertEqual(manifest["schema_version"], 4)
-        self.assertEqual(manifest["schema"], RUN_SCHEMA_V4)
+        self.assertEqual(manifest["schema_version"], 5)
+        self.assertEqual(manifest["schema"], RUN_SCHEMA_V5)
+        self.assertEqual(manifest["skill_invocation_path"], str(SKILL_DIR))
         self.assertEqual(manifest["runner_version"], "Python " + sys.version.split()[0])
         self.assertEqual(manifest["generation"]["system_prompt"]["status"], "unavailable")
         self.assertIsNone(manifest["runner_argv"])
@@ -155,14 +190,14 @@ class EvalHarnessTest(unittest.TestCase):
         self.assertEqual(len(manifest["runner_argv_sha256"]), 64)
         self.assertEqual(len(manifest["trials"]), 2)
         prompt = manifest_path.parent.joinpath(manifest["trials"][0]["prompt_file"]).read_text()
-        self.assertIn("Use $tui-design at ", prompt)
+        self.assertTrue(prompt.startswith(f"Use $tui-design at {SKILL_DIR} to solve this request:\n\n"))
         response = manifest_path.parent.joinpath(manifest["trials"][0]["response_file"])
         self.assertIn("ANSWER\nUse $tui-design", response.read_text())
 
         _, grading_prompt_digest = self.write_grading_prompt(manifest_path.parent)
         grades = {
-            "schema_version": 4,
-            "schema": GRADES_SCHEMA_V4,
+            "schema_version": 5,
+            "schema": GRADES_SCHEMA_V5,
             "artifact_type": "tui-design-eval-grades",
             "run_id": "test-run",
             "grader": {
@@ -189,7 +224,7 @@ class EvalHarnessTest(unittest.TestCase):
         self.invoke("score", "--run", str(manifest_path), "--grades", str(grades_path), "--output", str(summary_path))
         summary = json.loads(summary_path.read_text())
         self.assertEqual((summary["passed"], summary["total"], summary["pass_rate"]), (3, 4, 0.75))
-        self.assertEqual(summary["schema"], SUMMARY_SCHEMA_V4)
+        self.assertEqual(summary["schema"], SUMMARY_SCHEMA_V5)
         self.invoke(
             "validate",
             "--run",
@@ -239,7 +274,9 @@ class EvalHarnessTest(unittest.TestCase):
         prompt = manifest_path.parent.joinpath(manifest["trials"][0]["prompt_file"]).read_text()
         self.assertEqual(prompt, "Review this terminal layout.\n")
         self.assertEqual(manifest["status"], "prepared")
+        self.assertIsNone(manifest["skill_invocation_path"])
         self.invoke("validate", "--run", str(manifest_path))
+        self.invoke("validate", "--run", str(manifest_path), "--recorded-skill-path", str(SKILL_DIR), expected=2)
 
     def test_rejects_unsafe_eval_ids_before_creating_a_run(self) -> None:
         for case_id in ("../../escaped", "a b", "..", "/absolute"):
@@ -450,11 +487,7 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v2_artifacts_remain_valid(self) -> None:
         manifest_path = self.run_fixture("legacy-run", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
-        manifest["schema_version"] = 2
-        for key in ("schema", "runner_version", "generation"):
-            manifest.pop(key)
-        manifest_path.write_text(json.dumps(manifest))
+        manifest = self.downgrade_manifest(manifest_path, 2)
         grades = {
             "schema_version": 2,
             "artifact_type": "tui-design-eval-grades",
@@ -513,10 +546,7 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v3_grades_require_prompt_hash_and_model_provenance(self) -> None:
         manifest_path = self.run_fixture("model-grader-run", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
-        manifest["schema_version"] = 3
-        manifest["schema"] = RUN_SCHEMA_V3
-        manifest_path.write_text(json.dumps(manifest))
+        manifest = self.downgrade_manifest(manifest_path, 3)
         grades = {
             "schema_version": 3,
             "schema": GRADES_SCHEMA_V3,
@@ -561,7 +591,7 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v4_requires_grading_prompt(self) -> None:
         manifest_path = self.run_fixture("v4-grading-prompt-required", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
+        manifest = self.downgrade_manifest(manifest_path, 4)
         grades = {
             "schema_version": 4,
             "schema": GRADES_SCHEMA_V4,
@@ -589,7 +619,7 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v4_grading_prompt_rejects_path_traversal(self) -> None:
         manifest_path = self.run_fixture("v4-grading-prompt-traversal", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
+        manifest = self.downgrade_manifest(manifest_path, 4)
         outside = self.work / "outside-prompt.md"
         outside.write_text("Escaped prompt.\n")
         digest = hashlib.sha256(outside.read_bytes()).hexdigest()
@@ -600,7 +630,7 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v4_grading_prompt_rejects_missing_file(self) -> None:
         manifest_path = self.run_fixture("v4-grading-prompt-missing", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
+        manifest = self.downgrade_manifest(manifest_path, 4)
         grades = self.base_v4_grades(manifest, "grading-prompt.md", "2" * 64)
         grades_path = manifest_path.parent / "grades.json"
         grades_path.write_text(json.dumps(grades))
@@ -608,7 +638,7 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v4_grading_prompt_detects_digest_tampering(self) -> None:
         manifest_path = self.run_fixture("v4-grading-prompt-tamper", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
+        manifest = self.downgrade_manifest(manifest_path, 4)
         _, digest = self.write_grading_prompt(manifest_path.parent)
         grades = self.base_v4_grades(manifest, "grading-prompt.md", digest)
         grades_path = manifest_path.parent / "grades.json"
@@ -620,13 +650,141 @@ class EvalHarnessTest(unittest.TestCase):
 
     def test_schema_v4_grading_prompt_digest_must_match_grader_prompt_sha256(self) -> None:
         manifest_path = self.run_fixture("v4-grading-prompt-mismatch", "print('ok')")
-        manifest = json.loads(manifest_path.read_text())
+        manifest = self.downgrade_manifest(manifest_path, 4)
         _, digest = self.write_grading_prompt(manifest_path.parent)
         grades = self.base_v4_grades(manifest, "grading-prompt.md", digest)
         grades["grader"]["prompt_sha256"] = "3" * 64
         grades_path = manifest_path.parent / "grades.json"
         grades_path.write_text(json.dumps(grades))
         self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_schema_v5_with_skill_bundle_validates_from_another_checkout(self) -> None:
+        manifest_path = self.run_fixture("portable-v5", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest["skill_dir"], SKILL_RELATIVE.as_posix())
+        self.assertEqual(manifest["skill_invocation_path"], str(SKILL_DIR))
+        _, digest = self.write_grading_prompt(manifest_path.parent)
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(self.base_v4_grades(manifest, "grading-prompt.md", digest, version=5)))
+        summary_path = manifest_path.parent / "summary.json"
+        self.invoke("score", "--run", str(manifest_path), "--grades", str(grades_path), "--output", str(summary_path))
+
+        elsewhere = self.make_checkout("elsewhere")
+        other_harness = elsewhere / "scripts/eval_harness.py"
+        self.assertNotEqual(elsewhere / SKILL_RELATIVE, SKILL_DIR)
+        validate = (
+            "validate",
+            "--run",
+            str(manifest_path),
+            "--grades",
+            str(grades_path),
+            "--summary",
+            str(summary_path),
+            "--require-completed",
+        )
+        self.invoke(*validate, harness=other_harness)
+        self.invoke("score", "--run", str(manifest_path), "--grades", str(grades_path), "--output", str(self.work / "again.json"), harness=other_harness)
+        # A recorded path that is also passed explicitly must agree with the manifest.
+        self.invoke(*validate, "--recorded-skill-path", str(SKILL_DIR), harness=other_harness)
+        self.invoke(*validate, "--recorded-skill-path", str(elsewhere / SKILL_RELATIVE), harness=other_harness, expected=2)
+
+        # The recorded path is checked, not trusted: tampering with it or the prompt still fails.
+        prompt_path = manifest_path.parent / manifest["trials"][0]["prompt_file"]
+        original_prompt = prompt_path.read_text()
+        prompt_path.write_text(original_prompt.replace(str(SKILL_DIR), str(elsewhere / SKILL_RELATIVE)))
+        self.invoke(*validate, harness=other_harness, expected=2)
+        prompt_path.write_text(original_prompt)
+        self.invoke(*validate, harness=other_harness)
+        for bad_path in ("", "plugins/tui-design/skills/tui-design", "/somewhere/else", None):
+            with self.subTest(skill_invocation_path=bad_path):
+                tampered = dict(manifest, skill_invocation_path=bad_path)
+                manifest_path.write_text(json.dumps(tampered))
+                self.invoke("validate", "--run", str(manifest_path), expected=2)
+        manifest_path.write_text(json.dumps(manifest))
+        del manifest["skill_invocation_path"]
+        manifest_path.write_text(json.dumps(manifest))
+        self.invoke("validate", "--run", str(manifest_path), expected=2)
+
+    def test_legacy_with_skill_bundle_validates_from_another_checkout_with_recorded_path(self) -> None:
+        elsewhere = self.make_checkout("elsewhere")
+        other_harness = elsewhere / "scripts/eval_harness.py"
+        for version in (2, 3, 4):
+            with self.subTest(schema_version=version):
+                manifest_path = self.run_fixture(f"legacy-v{version}", "print('ok')")
+                manifest = self.downgrade_manifest(manifest_path, version)
+                self.assertNotIn("skill_invocation_path", manifest)
+                prompt = manifest_path.parent.joinpath(manifest["trials"][0]["prompt_file"]).read_text()
+                self.assertTrue(prompt.startswith(f"Use $tui-design at {SKILL_DIR} to solve"))
+                run = ("validate", "--run", str(manifest_path), "--require-completed")
+
+                # From the recording checkout the bundle validates as it always did.
+                self.invoke(*run)
+                # From another checkout the reconstructed prompt embeds a different path.
+                completed = self.invoke(*run, harness=other_harness, expected=2)
+                self.assertIn("prompt content mismatch", completed.stderr)
+                # Supplying the recorded path reconstructs the prompt the run actually used.
+                self.invoke(*run, "--recorded-skill-path", str(SKILL_DIR), harness=other_harness)
+                completed = self.invoke(*run, "--recorded-skill-path", "/wrong/skill/path", harness=other_harness, expected=2)
+                self.assertIn("prompt content mismatch", completed.stderr)
+                self.invoke(*run, "--recorded-skill-path", "", harness=other_harness, expected=2)
+
+                # The recorded hashes still guard the prompt file itself.
+                prompt_path = manifest_path.parent / manifest["trials"][0]["prompt_file"]
+                prompt_path.write_text(prompt.replace("Review this", "Review that"))
+                self.invoke(*run, "--recorded-skill-path", str(SKILL_DIR), harness=other_harness, expected=2)
+                prompt_path.write_text(prompt)
+                manifest["trials"][0]["prompt_sha256"] = "0" * 64
+                manifest_path.write_text(json.dumps(manifest))
+                completed = self.invoke(*run, "--recorded-skill-path", str(SKILL_DIR), harness=other_harness, expected=2)
+                self.assertIn("prompt hash mismatch", completed.stderr)
+
+                # Legacy schema versions never carried the field, so it stays rejected there.
+                manifest["trials"][0]["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()
+                manifest["skill_invocation_path"] = str(SKILL_DIR)
+                manifest_path.write_text(json.dumps(manifest))
+                self.invoke(*run, expected=2)
+
+    def test_source_root_revalidates_against_recorded_snapshot(self) -> None:
+        snapshot = self.make_checkout("snapshot")
+        snapshot_harness = snapshot / "scripts/eval_harness.py"
+        completed = self.invoke(
+            "run",
+            "--eval-set",
+            str(self.eval_set),
+            "--condition",
+            "with-skill",
+            "--provider",
+            "fixture",
+            "--model",
+            "fixture-model-v1",
+            "--runner-version",
+            "fixture-runner-v1",
+            "--output-dir",
+            str(self.work / "runs"),
+            "--run-id",
+            "snapshot-run",
+            "--",
+            sys.executable,
+            "-c",
+            "print('ok')",
+            harness=snapshot_harness,
+        )
+        manifest_path = Path(completed.stdout.strip())
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest["skill_dir"], SKILL_RELATIVE.as_posix())
+        self.assertEqual(manifest["skill_invocation_path"], str((snapshot / SKILL_RELATIVE).resolve()))
+        run = ("validate", "--run", str(manifest_path), "--require-completed")
+        self.invoke(*run, harness=snapshot_harness)
+        # This checkout holds the same skill snapshot, so it validates the bundle unchanged.
+        self.invoke(*run)
+
+        # Once the recording checkout's skill moves on, its evidence needs the recorded snapshot.
+        skill_file = snapshot / SKILL_RELATIVE / "SKILL.md"
+        skill_file.write_text(skill_file.read_text() + "\nLater edit.\n")
+        completed = self.invoke(*run, harness=snapshot_harness, expected=2)
+        self.assertIn("skill hash does not match", completed.stderr)
+        self.invoke(*run, "--source-root", str(REPO_ROOT), harness=snapshot_harness)
+        self.invoke(*run, "--source-root", str(snapshot), expected=2)
 
 
 if __name__ == "__main__":

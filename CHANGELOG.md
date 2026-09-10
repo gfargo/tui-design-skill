@@ -4,6 +4,9 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Added
+- **Schema v5 portable evidence:** run manifests now record `skill_invocation_path`, the absolute skill directory embedded in every with-skill prompt, so a bundle can be revalidated from a checkout at any location instead of only from the exact path that produced it. `validate` and `score` gain `--source-root` (a clean checkout of the recorded commit to hash eval-set and skill inputs against) and `--recorded-skill-path` (the path that a schema-v2, v3, or v4 with-skill bundle embedded in its prompts). Historical bundles keep their schema versions, hashes, and rules; the committed v1.6.1 and v1.7.0 with-skill evidence validates from any machine by passing the path documented in `evals/README.md`. `scripts/validate-evidence.sh` revalidates every committed bundle against a snapshot of its recorded commit, and the validate workflow now runs it.
+
 ## [1.7.1] — 2026-09-02
 
 Correctness patch after a three-pass fact-check of every reference claim against package registries, changelogs, and upstream sources, bundled with the schema-v4 grading-prompt integrity and reference freshness audit work merged since 1.7.0.

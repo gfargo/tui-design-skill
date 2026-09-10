@@ -185,7 +185,7 @@ python3 scripts/eval_harness.py validate \
   --require-completed
 ```
 
-Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. The validator continues to accept schema-v2 artifacts; revalidate historical evidence from the clean source commit recorded in its `run.json` when eval or skill inputs have since changed. See [`evals/README.md`](evals/README.md), `python3 scripts/eval_harness.py --help`, and the integration tests for the complete artifact contract.
+Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. The validator continues to accept schema-v2 artifacts. Evidence is portable: schema-v5 runs record the absolute skill path their with-skill prompts embedded as `skill_invocation_path`, so any checkout can reconstruct and verify them, and older with-skill bundles take that path through `--recorded-skill-path`. When eval or skill inputs have changed since a run, point `--source-root` at a clean checkout of the commit recorded in its `run.json`; `./scripts/validate-evidence.sh` does that for every committed bundle and runs in CI. See [`evals/README.md`](evals/README.md), `python3 scripts/eval_harness.py --help`, and the integration tests for the complete artifact contract.
 
 The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
 
@@ -224,7 +224,8 @@ tui-design-skill/
 │   ├── check-reference-freshness.py # audits pinned framework versions and source links
 │   ├── reference-inventory.json  # explicit list of version-sensitive references to audit
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
-│   └── validate-release.sh       # checks metadata, content, eval JSON, and package output
+│   ├── validate-release.sh       # checks metadata, content, eval JSON, and package output
+│   └── validate-evidence.sh      # revalidates committed eval evidence from any checkout
 ├── tests/
 │   ├── test_eval_harness.py      # runner/scoring/integrity integration tests
 │   ├── test_reference_freshness.py # freshness-audit unit/CLI tests (offline fixture server)
@@ -249,7 +250,7 @@ tui-design-skill/
 │                   └── exemplar-apps.md
 ├── evals/                        # versioned prompt/assertion sets and curated results
 │   ├── README.md                 # evidence, privacy, and schema contract
-│   ├── schema/v3/, schema/v4/    # versioned run, grade, and summary JSON Schemas
+│   ├── schema/v3/ … schema/v5/   # versioned run, grade, and summary JSON Schemas
 │   ├── evals.json
 │   ├── build-evals.json
 │   ├── tier2-content-evals.json

@@ -5,7 +5,7 @@ A deep dive into how users interact with TUIs — keybinding philosophy, focus m
 **Contents:**
 - [Keybinding philosophies](#keybinding-philosophies)
 - [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
-- [Reserved keys — never bind these](#reserved-keys--never-bind-these)
+- [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect)
 - [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
 - [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
 - [Focus management](#focus-management)
@@ -28,10 +28,10 @@ There are four major schools. Most apps blend them.
 
 **Identity:** modes (NORMAL, INSERT, VISUAL, COMMAND), single-letter motions and operators in NORMAL mode, leader keys for namespaces.
 
-**Examples:** vim, neovim, helix, kakoune, k9s (ex-mode), aerc, weechat (command mode).
+**Examples:** vim, neovim, helix, kakoune, k9s (ex-mode), aerc.
 
 **Strengths:**
-- Densely expressive — `5dw` ("delete five words") is two operators applied to a count.
+- Densely expressive — `5dw` ("delete five words") is an operator plus a motion with a count.
 - Hands stay on home row; minimal modifier-key gymnastics.
 - Power users get fast.
 
@@ -128,18 +128,18 @@ These have crystallized across the ecosystem. Use them unless you have a strong 
 
 ---
 
-## Reserved keys — never bind these
+## Reserved keys — preserve what users expect
 
-These belong to the terminal or shell:
+In cooked (line) mode these keys belong to the terminal driver and shell. In raw mode — which every full-screen framework enables — they arrive as ordinary keypresses: no SIGINT, SIGTSTP, or XOFF is generated unless your app produces that behavior itself.
 
-| Key | Why |
+| Key | Expected behavior |
 |---|---|
-| **Ctrl+C** | SIGINT — should always quit cleanly |
-| **Ctrl+Z** | SIGTSTP — suspend; you must restore terminal state on resume |
-| **Ctrl+\\** | SIGQUIT — abort with core dump |
-| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control on legacy serial terminals |
+| **Ctrl+C** | Interrupt — cancel the current operation or quit cleanly |
+| **Ctrl+Z** | Suspend — restore the terminal, stop, and redraw on `fg` |
+| **Ctrl+\\** | Abort — SIGQUIT (core dump) in cooked mode |
+| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control, for line-mode programs where the tty driver still sees them |
 
-If you bind these, you'll get bug reports from users whose terminals freeze, can't suspend your app, or can't quit. The rare exception is a user who rebinds `Ctrl+S` to "save" in an editor; that only works because they also run `stty -ixon` to disable flow control. Neither vim nor helix binds it to save by default (helix uses `Ctrl-s` for `save_selection`).
+A full-screen app *may* handle these keys, and real ones do: helix binds `Ctrl-c` to toggle comments and `Ctrl-s` to `save_selection`; nano and micro save on `Ctrl+S`. What you owe users is the expected behavior, not a hands-off policy: keep `Ctrl+C` as cancel/quit unless there's a strong reason not to (and then offer an obvious exit), and implement `Ctrl+Z` suspend through the framework's support so the terminal is restored. Flow-control freezes (and the `stty -ixon` workaround) only matter for cooked-mode programs; raw mode as set by `cfmakeraw` also clears `IXON`.
 
 Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
 
@@ -157,7 +157,7 @@ For a complex full-screen app, this is usually the strongest discoverability too
 
 Examples:
 - htop's F1–F10 strip.
-- lazygit's per-pane hints (`space stage  ↵ commit  p push  P pull  r refresh  ?`).
+- lazygit's per-pane hints (`space stage  c commit  P push  p pull  ?`).
 - helix's status line.
 
 Auto-generation is a force multiplier:
@@ -242,9 +242,9 @@ What you press is what you get. State changes happen via widget focus.
 
 ### The third option: contextual
 
-Bindings change based on which panel is focused. Not "modes" in the vim sense — more like "the current panel determines what `c` means."
+Bindings change based on which panel is focused. Not "modes" in the vim sense — more like "the current panel determines what `space` means."
 
-Examples: lazygit (`c` commits in Files, checks out in Branches, copies in Stash), k9s (panel-specific actions in addition to global ones).
+Examples: lazygit (`space` stages in Files, checks out in Branches, applies in Stash), k9s (panel-specific actions in addition to global ones).
 
 This is **context-sensitive modeless** — works well if you have rich, panel-specific actions and a footer hint bar that shows what's available right now.
 
@@ -272,7 +272,7 @@ Combine 2–3 of these for unambiguous indication.
 | Method | Best for |
 |---|---|
 | **Tab / Shift+Tab** cycle | Linear panel order; small number of panels |
-| **Numeric keys** (`1`–`9`) | Direct jumps; many panels (lazygit `1`–`5`, yazi `1`–`9`) |
+| **Numeric keys** (`1`–`9`) | Direct jumps; many panels or tabs (lazygit `1`–`5` panels, yazi `1`–`9` tabs) |
 | **Directional** (`Ctrl+w h/j/k/l` like vim) | Spatial navigation; arbitrary panel arrangement |
 | **Mouse click** | Augmentation; not the primary path |
 
@@ -305,7 +305,7 @@ Bound to `/` (when search isn't needed) or another key. Filters the list to matc
 - Highlight matched substring within results.
 - `Esc` clears filter.
 
-**Smart-case** is a kind courtesy: lowercase query is case-insensitive; mixed-case is case-sensitive. ripgrep, fzf, fd all default to this.
+**Smart-case** is a kind courtesy: lowercase query is case-insensitive; mixed-case is case-sensitive. fzf and fd default to this; ripgrep offers it as `-S`/`--smart-case`.
 
 ---
 
@@ -330,7 +330,7 @@ The fight between camps:
 ### Pro-mouse
 
 - Textual treats mouse as first-class with `:hover`, click, scroll wheel.
-- btop has full mouse including draggable boxes.
+- btop makes every highlighted key clickable and scrolls lists with the wheel.
 - lazygit selects on click.
 - Modern users expect to be able to click things.
 
@@ -361,7 +361,7 @@ Don't require mouse for:
 
 ## Undo / redo
 
-Hard for non-editor apps, but lazygit notably tracks every git action with `z` (undo) / `Ctrl+z` (redo) — even file operations and rebases. This is a *huge* user comfort feature for destructive tools.
+Hard for non-editor apps, but lazygit notably offers `z` (undo) / `Z` (redo) for git actions recorded in the reflog — commits, checkouts, resets, even a whole botched rebase. It is honest about the limits: working-tree and stash changes, pushes, and branch creation can't be undone, and undo is unavailable mid-rebase. Even bounded, this is a *huge* user comfort feature for destructive tools.
 
 **Two implementation strategies:**
 
@@ -465,7 +465,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 **tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs the outer terminal's `Ms` terminfo capability. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
 
-**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and Windows Terminal added the same focus gate in February 2026, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
+**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and other terminals may apply similar focus gates, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
 
 **Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
 
@@ -565,7 +565,7 @@ You probably won't build a modal editor, but the *visual-feedback-before-action*
 
 ## Common interaction pitfalls
 
-1. **Reserved-key binding** (Ctrl+C, Ctrl+Z, Ctrl+S/Q). Don't.
+1. **Broken reserved-key expectations** — Ctrl+C that neither cancels nor quits, Ctrl+Z that doesn't suspend cleanly.
 2. **No focus indication.** Users tab around guessing which panel is active.
 3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
 4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.

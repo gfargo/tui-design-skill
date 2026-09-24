@@ -38,6 +38,9 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ steps.tag.outputs.tag }}
+          # Later steps run third-party code (npx); keep the write-scoped token
+          # out of git config so only the upload step can use it.
+          persist-credentials: false
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -46,7 +49,7 @@ jobs:
       - name: Lint release scripts
         run: |
           scripts=()
-          for script in scripts/package-skill.sh scripts/validate-release.sh; do
+          for script in scripts/package-skill.sh scripts/validate-release.sh scripts/validate-evidence.sh; do
             if [ -f "$script" ]; then scripts+=("$script"); fi
           done
           if [ "${#scripts[@]}" -gt 0 ]; then shellcheck "${scripts[@]}"; fi
@@ -102,4 +105,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TARGET_TAG: ${{ steps.tag.outputs.tag }}
-        run: gh release upload "$TARGET_TAG" dist/tui-design.skill --clobber
+        run: |
+          # The preferred flow attaches the asset to a draft, then publishes;
+          # publishing re-triggers this workflow. Skip an identical asset and
+          # never silently replace a published one.
+          existing_dir="$(mktemp -d)"
+          if gh release download "$TARGET_TAG" --repo "$GITHUB_REPOSITORY" \
+               --pattern tui-design.skill --dir "$existing_dir" 2>/dev/null; then
+            if cmp -s "$existing_dir/tui-design.skill" dist/tui-design.skill; then
+              echo "Release $TARGET_TAG already has an identical tui-design.skill; nothing to upload."
+              exit 0
+            fi
+            is_draft="$(gh release view "$TARGET_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"
+            if [ "$is_draft" != "true" ]; then
+              echo "::error::Published release $TARGET_TAG has a different tui-design.skill; refusing to replace it."
+              exit 1
+            fi
+          fi
+          gh release upload "$TARGET_TAG" dist/tui-design.skill --repo "$GITHUB_REPOSITORY" --clobber
+          sha256sum dist/tui-design.skill

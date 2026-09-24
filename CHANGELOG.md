@@ -4,6 +4,26 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+Correctness patch after a September 2026 audit that checked every code sample and version-sensitive claim against tagged upstream sources, plus release-workflow hardening.
+
+### Fixed
+- **Code samples:** the Ratatui canonical example now imports `DefaultTerminal` and Crossterm's event types; the `TestBackend` assertion matches the buffer Ratatui actually renders; the Textual reactive example declares the reactive its `compute_` method derives and no longer shadows `Widget.display`; the Pilot test targets the example app's real IDs; the ink-testing-library test tolerates the round border and awaits input; Clack's `validate` handles `undefined` and the `select` result is checked with `isCancel`; the Bubble Tea fetch command reads the response body; Huh v2 themes use `huh.ThemeFunc(huh.ThemeCharm)`.
+- **Go guidance:** `gh` uses Bubble Tea, Bubbles, and Huh for its prompts; inside a running Bubble Tea program, request the background color with `tea.RequestBackgroundColor` rather than querying the terminal with `lipgloss.HasDarkBackground`; the Bubbles `table` has no built-in sorting and `tree` is listed; `help.View` requires a `help.KeyMap`.
+- **Rust guidance:** `EventStream` needs Crossterm's `event-stream` feature; the Tokio loop uses a cancellable reader that is stopped before restore or child handoff; the editor handoff is one snippet that keeps both child and reentry results; import Crossterm through `ratatui::crossterm`, and enabling both version flags is not an error; color-eyre, `ratatui::restore()`, clap, and `Line::width()` details corrected.
+- **Python guidance:** Textual's reactive order is validate → assign → watch → compute; `app_resume_signal` is named; Textual has shipped five majors since May 2025; `logging_redirect_tqdm` does not capture `print()`; InquirerPy is unmaintained; Rich diagnostics belong on a `Console(stderr=True)`.
+- **TypeScript guidance:** `suspendTerminal` requires Ink 7.1+; aria props arrived in Ink 6.2 and screen-reader mode is still opt-in; ink-testing-library 4.0.0 predates Ink 6/7; Ink 7, chalk 6, and commander 15 require Node 22, so Node 20 deployments pin Ink 6, chalk 5, and commander 14; `node:util.parseArgs` is stable from Node 20 and `styleText` is the zero-dependency color option; OpenTUI's runtime floor, neo-blessed's status, and `sv` replacing create-svelte are stated.
+- **Reserved keys:** raw mode delivers Ctrl+C, Ctrl+Z, and Ctrl+S as keypresses, so full-screen apps may bind them; the contract is to preserve cancel/quit and framework-managed suspend, and flow-control freezes only affect cooked-mode programs.
+- **Exemplar facts:** lazygit pulls with `p`, pushes with `P`, and its reflog-backed `z`/`Z` undo cannot reverse pushes or working-tree changes; helix shows its mode in the status line, keeps per-mode cursor shapes and colors opt-in, uses a picker rather than a sidebar tree, and enables the mouse by default; btop's default layout and mouse support are described accurately and it has no drag-resize; bottom descends from gtop/gotop; ripgrep's smart case needs `-S`; yazi's number keys switch tabs.
+- **Visual and CLI guidance:** truncate paths at the start or middle so the filename survives; `Ctrl+Tab` needs an enhanced keyboard protocol and `Ctrl+B` collides with tmux; `NO_COLOR` applies when non-empty, `FORCE_COLOR=0` forces color off, and `CLICOLOR_FORCE` is covered; the spinner delay is 100–200ms in every reference; git's default `LESS` is `FRX`; the argument-count rule is attributed to 12 Factor CLI Apps; unverifiable app specifics were softened or replaced with sourced text.
+- **Plugin metadata:** `plugin.json` and `marketplace.json` descriptions match the skill's design/build/refactor/review scope and declare homepage, repository, and license.
+
+### Release engineering
+- The release workflow checks out without persisted credentials so steps that run third-party code cannot read the write token, lints `validate-evidence.sh`, and skips an identical asset instead of clobbering it when publishing re-triggers the workflow; it refuses to replace a different asset on a published release.
+
+### Evaluation
+- `evals/v173-correction-evals.json` covers the corrected facts: lazygit undo scope, raw-mode reserved keys, Huh v2 themes, Bubble Tea background detection, Ratatui async input handoff, Textual computed reactives, Node 20 pins, path truncation, and smart-case defaults.
+- The v1.7.1 `reserved-ctrl-s-save` rubric now grades raw-mode behavior instead of treating flow control as a universal freeze; no recorded bundle uses that eval set.
+
 ## [1.7.2] — 2026-09-10
 
 Release-engineering patch that makes committed evaluation evidence verifiable from any checkout or CI runner. Skill content is unchanged from 1.7.1.

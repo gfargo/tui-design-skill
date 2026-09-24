@@ -59,7 +59,7 @@ GNU extensions (now near-universal):
 
 ### Flags vs positional args
 
-Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. The clig.dev rule: *"Two or more args of different types is suspect; three is never good."*
+Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. Jeff Dickey's [12 Factor CLI Apps](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) rule of thumb, which clig.dev cites: one type of argument is fine, two types are suspect, three are never good.
 
 ### Stdin / stdout / stderr discipline
 
@@ -114,11 +114,11 @@ For multi-step work: hide noisy logs behind a progress indicator while things su
 
 **Disable color when:**
 - stdout/stderr is not a TTY, or
-- `NO_COLOR` env var is set ([no-color.org](https://no-color.org)), or
+- `NO_COLOR` env var is set to a non-empty value ([no-color.org](https://no-color.org)), or
 - `TERM=dumb`, or
 - `--no-color` / `--color=never` is passed.
 
-**Force color** when `FORCE_COLOR=1` is set or `--color=always` is passed.
+**Force color** when `FORCE_COLOR` is set (in the chalk/supports-color convention, `FORCE_COLOR=0` instead forces color *off*) or `--color=always` is passed. Treat `CLICOLOR_FORCE` ([bixense.com/clicolors](https://bixense.com/clicolors/)) as another force signal, still subordinate to `NO_COLOR`; some older tools read `CLICOLOR=0` as off.
 
 Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Document any different policy.
 
@@ -133,7 +133,7 @@ Glyphs like ✅, ❌, ⚠ clarify state — yubikey-agent and starship use them 
 
 ### Paging
 
-Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. The standard flags: `LESS=FIRX` (or `less -FIRX`):
+Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. A common choice is `LESS=FIRX` (or `less -FIRX`); git's default when `LESS` is unset is `FRX`:
 - `F` — exit immediately if content fits one screen.
 - `I` — case-insensitive search.
 - `R` — pass through ANSI color codes.
@@ -309,7 +309,7 @@ ranger's `--choosedir` does the same thing under a different flag name. This is 
 
 ### The `eval "$(tool init shell)"` pattern
 
-For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits only a `precmd` prompt-regeneration hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits a keybinding (Ctrl-R by default) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
+For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits only a `precmd` prompt-regeneration hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits keybindings (Ctrl-R and the Up arrow by default; `--disable-up-arrow` opts out) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
 
 ### Never silently edit rc files
 
@@ -352,8 +352,8 @@ On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On
 
 | Variable | Purpose |
 |---|---|
-| `NO_COLOR` | Disable color |
-| `FORCE_COLOR` | Force color |
+| `NO_COLOR` | Disable color (when non-empty) |
+| `FORCE_COLOR` | Force color (`0` forces it off in chalk/supports-color) |
 | `DEBUG` | Enable debug output |
 | `EDITOR` / `VISUAL` | Preferred text editor |
 | `PAGER` | Preferred pager |
@@ -400,7 +400,7 @@ Two patterns dominate, and both are legitimate:
 
 ### Startup time
 
-- **<100ms** — feels instant. `starship` is obsessive about this; it has to be (runs on every prompt).
+- **<100ms** — feels instant. `starship` is obsessive about this, with sub-50ms startup as a design target; it has to be (runs on every prompt).
 - **100–500ms** — fast.
 - **500ms–2s** — annoying.
 - **2s+** — users avoid the tool.
@@ -483,7 +483,7 @@ If you check for updates: check async, cache the result (once a day is the norm 
 ## Concrete exemplars to study
 
 - **gh** — clean noun-verb subcommands; `--json field1,field2` + `--jq '...'` + `--template '...'`; OS-keychain credentials; auto-pages.
-- **rg** (ripgrep) — smart defaults (`gitignore`, skip binary, recurse, smart-case); `--json` emits NDJSON; `RIPGREP_CONFIG_PATH` for persistent flags; exit 0/1/2 for found/not-found/error; linear-time regex.
+- **rg** (ripgrep) — smart defaults (`gitignore`, skip binary, recurse; smart-case one flag away with `-S`); `--json` emits NDJSON; `RIPGREP_CONFIG_PATH` for persistent flags; exit 0/1/2 for found/not-found/error; linear-time regex.
 - **fd** — regex by default, colorized, gitignore-aware; `-x cmd {}` simpler than `find -exec`.
 - **bat** — TTY-aware (colorizes/pages on terminal, plain `cat` when piped); `--plain`/`-p`; honors `$BAT_PAGER`/`$PAGER`.
 - **jq** — tiny startup; `-r` raw output, `-c` compact NDJSON, `-s` slurp; help-on-empty-invocation.
@@ -492,7 +492,7 @@ If you check for updates: check async, cache the result (once a day is the norm 
 - **docker** — multi-level subcommands; parallel per-layer progress bars during pulls; backward-compat aliases (`docker ps` ≡ `docker container ls`).
 - **delta** — side-by-side diff via git's `core.pager`; demonstrates plug-in via stdin.
 - **eza** (formerly exa) — defaults closer to `ls -lh --color`; git status integration; `--tree`.
-- **starship** — cross-shell prompt; sub-100ms hard requirement; single TOML config.
+- **starship** — cross-shell prompt; sub-50ms startup as a design target; single TOML config.
 
 ---
 

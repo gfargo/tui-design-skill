@@ -1,0 +1,114 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.7.3 correctness regressions for facts and code samples corrected after the September 2026 reference audit, checked against tagged upstream sources (huh v2.0.3, bubbletea v2.0.10, ratatui 0.30.2, Textual 8.2.8, Ink 7.1.1, npm engines metadata, lazygit docs/Undoing.md and keybindings, the helix book, ripgrep's documentation). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "evals": [
+    {
+      "id": "lazygit-undo-scope",
+      "name": "lazygit-undo-scope",
+      "prompt": "I want undo in my git TUI to work like lazygit's. Which keys does lazygit use for undo and redo, and can it undo a push or a discarded working-tree change?",
+      "files": [],
+      "assertions": [
+        "Says lazygit undoes with z and redoes with Z (not Ctrl+z)",
+        "Explains that lazygit's undo is reflog-backed, so it covers reflog-visible actions such as commits, checkouts, and rebases",
+        "Says pushes and working-tree or stash changes cannot be undone, or otherwise does not claim undo covers them",
+        "Recommends that the user's tool state its undo scope honestly and confirm actions that fall outside it"
+      ]
+    },
+    {
+      "id": "raw-mode-reserved-keys",
+      "name": "raw-mode-reserved-keys",
+      "prompt": "My full-screen Bubble Tea app wants Ctrl+S for save and Ctrl+C for copy. Someone told me those keys never reach a terminal app because the terminal eats them. Is that true?",
+      "files": [],
+      "assertions": [
+        "Explains that raw mode, which full-screen frameworks enable, disables signal generation and XON/XOFF flow control, so Ctrl+C and Ctrl+S arrive as ordinary key events",
+        "Limits the flow-control freeze to cooked or line-mode programs rather than presenting it as a universal ban",
+        "Warns that users expect Ctrl+C to cancel or quit, so rebinding it needs a strong reason and another obvious quit path",
+        "Accepts Ctrl+S for save as a legitimate convention (nano and micro use it) without claiming vim or helix bind it to save by default"
+      ]
+    },
+    {
+      "id": "huh-v2-theme",
+      "name": "huh-v2-theme",
+      "prompt": "Upgrading to Huh v2, `form.WithTheme(huh.ThemeCharm(true))` no longer compiles. What's the right call, and how does the form know whether the background is dark?",
+      "files": [],
+      "assertions": [
+        "Says huh.ThemeCharm is a func(isDark bool) *Styles rather than a Theme value",
+        "Uses form.WithTheme(huh.ThemeFunc(huh.ThemeCharm)) or an equivalent huh.Theme implementation",
+        "Explains that the dark/light choice comes from a tea.BackgroundColorMsg rather than a hard-coded bool",
+        "Tells an embedding Bubble Tea parent to forward the background-color message to the form"
+      ]
+    },
+    {
+      "id": "bubbletea-background-query",
+      "name": "bubbletea-background-query",
+      "prompt": "In my Bubble Tea v2 app I call lipgloss.HasDarkBackground(os.Stdin, os.Stdout) inside Update to pick a theme, and input sometimes stutters. What should I do instead?",
+      "files": [],
+      "assertions": [
+        "Explains that HasDarkBackground queries the terminal and competes with the running program for input",
+        "Recommends requesting the color through Bubble Tea (tea.RequestBackgroundColor) and handling tea.BackgroundColorMsg",
+        "Picks style variants with lipgloss.LightDark(msg.IsDark()) or an equivalent derived from the message",
+        "Keeps HasDarkBackground for standalone Lipgloss use outside a Bubble Tea program"
+      ]
+    },
+    {
+      "id": "ratatui-async-input",
+      "name": "ratatui-async-input",
+      "prompt": "Ratatui 0.30 with Tokio: `crossterm::event::EventStream` doesn't resolve, and when I open $EDITOR from the app my first few keystrokes vanish. What's wrong?",
+      "files": [],
+      "assertions": [
+        "Says EventStream requires Crossterm's event-stream feature, which Ratatui does not enable",
+        "Recommends a single Crossterm version shared with Ratatui, for example by importing through ratatui::crossterm and matching the feature dependency's version",
+        "Identifies the still-running input reader as the task consuming the editor's keystrokes",
+        "Stops or cancels the reader before restoring the terminal and starts a fresh one after reentry, then clears and redraws"
+      ]
+    },
+    {
+      "id": "textual-computed-reactive",
+      "name": "textual-computed-reactive",
+      "prompt": "In Textual I wrote `count = reactive(0)` and `def compute_display(self): return f\"Count: {self.count}\"`, then `render()` returns `self.display`. The widget shows True instead of the text. Why?",
+      "files": [],
+      "assertions": [
+        "Explains that a compute_ method only runs for a reactive declared with that name",
+        "Identifies display as Widget's built-in visibility property",
+        "Declares a separately named reactive (for example label) with a matching compute_ method",
+        "Does not state the reactive order as validate, assign, compute, then watch"
+      ]
+    },
+    {
+      "id": "ink-suspend-node20",
+      "name": "ink-suspend-node20",
+      "prompt": "Our Ink CLI runs on Node 20 LTS. I want the newest Ink, chalk, and commander plus Ink's API for suspending the UI while $EDITOR runs. Which versions should I pin?",
+      "files": [],
+      "assertions": [
+        "Says Ink 7 requires Node 22, so a Node 20 deployment should stay on Ink 6",
+        "Says chalk 6 and commander 15 also require Node 22 and recommends chalk 5 and commander 14 for Node 20",
+        "Says the resumable suspendTerminal API arrived in Ink 7.1, so it is not available on Ink 6",
+        "Offers a Node 20 fallback for the editor handoff, or recommends upgrading Node, rather than presenting suspendTerminal as available"
+      ]
+    },
+    {
+      "id": "path-truncation-side",
+      "name": "path-truncation-side",
+      "prompt": "My file list column is 30 cells wide and paths like /usr/local/share/applications/org.example.Viewer.desktop overflow. Should I cut the end and add an ellipsis?",
+      "files": [],
+      "assertions": [
+        "Truncates paths at the start or middle so the filename stays visible",
+        "Reserves end truncation for prose, descriptions, or identifiers whose prefix carries the meaning",
+        "Measures terminal cell width rather than string length when truncating",
+        "Reveals the full path somewhere, such as a detail pane, status line, or tooltip"
+      ]
+    },
+    {
+      "id": "smart-case-defaults",
+      "name": "smart-case-defaults",
+      "prompt": "I'm adding a filter box to my TUI and want case handling that matches fzf, fd, and ripgrep defaults. What do those tools do by default?",
+      "files": [],
+      "assertions": [
+        "Says fzf and fd default to smart case",
+        "Says ripgrep is case-sensitive by default and offers smart case through -S or --smart-case",
+        "Recommends smart case for an interactive filter",
+        "Keeps filtering responsive and shows the match count or highlighted matches"
+      ]
+    }
+  ]
+}

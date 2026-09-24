@@ -44,7 +44,8 @@ The mental model is **"UI = f(state)"**. You manage app state, the event loop, a
 **Canonical app structure:**
 
 ```rust
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::*, DefaultTerminal};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use color_eyre::Result;
 
 fn main() -> Result<()> {
@@ -104,14 +105,35 @@ Ratatui owns rendering and terminal setup, but not the application event loop, s
 |---|---|
 | Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
 | SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
-| Interactive child | Stop or pause the input-reader task first, restore shell modes, run and wait for the child, reinitialize, clear the terminal, and force a complete draw. Retain the child result while attempting every reentry step independently; if child and reentry both fail, report both instead of letting `?` discard one. A still-running input task can consume terminal capability responses during reinitialization. |
+| Interactive child | Stop the input reader first (a still-running reader steals the child's keystrokes and terminal capability responses), restore, run and wait for the child, reinitialize, clear, and redraw. Keep the child's result; if child and reentry both fail, report both instead of letting `?` discard one. See the snippet below. |
 | Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
 
-Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/) demonstrates the reader-pause and restore/reinitialize boundary. Keep the existing fallible-setup warning below in mind: custom handoff cleanup should make independent best-effort attempts instead of assuming any single helper is transactional. A successful redraw proves only that the renderer recovered; reload any file, process, or remote state the child could have changed.
+Following Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/):
 
-Concretely, store `child_result`, collect reentry failures without `?`, then match or aggregate the two outcomes. Calling `try_init()?`, `clear()?`, or `draw()?` before inspecting `child_result` can silently replace the original child failure and violates the handoff contract.
+```rust
+use std::{io::stdout, process::{Command, ExitStatus}};
+use ratatui::crossterm::{execute, terminal::{enable_raw_mode, EnterAlternateScreen}};
+use color_eyre::eyre::eyre;
 
-## Widgets
+fn run_editor(terminal: &mut DefaultTerminal, app: &mut App) -> Result<ExitStatus> {
+    app.input.stop();                                    // async apps: cancel the EventStream task
+    ratatui::restore();
+    let child = Command::new("vim").arg(&app.path).status(); // keep it; no `?` yet
+    let reentry = enable_raw_mode()
+        .and_then(|()| execute!(stdout(), EnterAlternateScreen))
+        .and_then(|()| terminal.clear());                // next draw repaints every cell
+    app.input.start();
+    app.reload();                                        // the child may have changed state
+    match (child, reentry) {
+        (Ok(status), Ok(())) => { terminal.draw(|f| app.draw(f))?; Ok(status) }
+        (child, reentry) => Err(eyre!("child: {child:?}; reentry: {reentry:?}")),
+    }
+}
+```
+
+Reentry steps are not transactional (see the fallible-setup warning below), and a successful redraw proves only that the renderer recovered.
+
+### Widgets
 
 **Built-in:**
 - **`Block`** — borders, title, padding. The container for almost everything.
@@ -139,7 +161,7 @@ Concretely, store `child_result`, collect reentry failures without `?`, then mat
 - **`tui-logger`** — in-app log pane.
 - **`throbber-widgets-tui`** — spinners.
 
-## Layout
+### Layout
 
 Constraint-based using Cassowary (the same algorithm as iOS Auto Layout):
 
@@ -168,7 +190,7 @@ Constraint variants:
 
 Layouts cache by default — split once and reuse the resulting `Rect`s in the same frame.
 
-## Styling
+### Styling
 
 ```rust
 use ratatui::style::{Color, Modifier, Style, Stylize};
@@ -194,7 +216,7 @@ let span = "Hello".bold().yellow().on_black();
 - **Termwiz** — cross-platform, advanced features (Sixel, kitty image protocol). Choose if you need terminal graphics protocols. Authored by the WezTerm developer.
 - **mousefood** — `embedded-graphics` backend over `ratatui-core`, taking Ratatui's `no_std` support to embedded hardware displays.
 
-**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Crossterm 0.29 (April 2025) is the current stable; 0.28 is the legacy pin. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps — prefer `crossterm_0_29`, pick only the flag matching your Crossterm, and don't enable both.
+**Crossterm version conflicts** are a foot-gun: pulling two semver-incompatible Crossterm majors causes separate event queues and broken raw-mode tracking. Always run `cargo tree -p crossterm` and verify only one version. Crossterm 0.29 (April 2025) is the current stable; 0.28 is the legacy pin. Ratatui 0.30 exposes per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a specific Crossterm without forcing it on downstream apps; the default is 0.29, and if both flags end up enabled (feature unification) it is not an error — `crossterm_0_29` takes precedence. In app code, import Crossterm through the re-export (`use ratatui::crossterm`) rather than a separate `crossterm` dependency, so you always get the exact version Ratatui uses.
 
 ## State management patterns
 
@@ -225,43 +247,47 @@ Useful when state is complex and you want testable update logic.
 
 ## Async with Tokio
 
-The standard pattern: one task reads `crossterm::event::EventStream` into an `mpsc` channel; another task emits ticks at fixed intervals; the main loop `select!`s and calls `terminal.draw` on tick or input.
+The standard pattern: a cancellable task reads Crossterm's `EventStream` into an `mpsc` channel; the main loop `select!`s over that channel and a tick interval, and calls `terminal.draw` each pass. `EventStream` needs Crossterm's `event-stream` feature, which Ratatui does not enable: add `crossterm = { version = "0.29", features = ["event-stream"] }` matching Ratatui's Crossterm version so Cargo unifies them, and keep importing through `ratatui::crossterm`.
 
 ```rust
-use tokio::sync::mpsc;
-use crossterm::event::{Event, EventStream};
+use std::time::Duration;
 use futures::StreamExt;
+use ratatui::crossterm::event::{Event, EventStream};
+use tokio::{sync::mpsc, task::JoinHandle};
+use tokio_util::sync::CancellationToken;
 
-let (tx, mut rx) = mpsc::unbounded_channel::<AppEvent>();
-
-// Input task
-let input_tx = tx.clone();
-tokio::spawn(async move {
-    let mut events = EventStream::new();
-    while let Some(Ok(event)) = events.next().await {
-        let _ = input_tx.send(AppEvent::Crossterm(event));
-    }
-});
-
-// Tick task
-let tick_tx = tx.clone();
-tokio::spawn(async move {
-    let mut interval = tokio::time::interval(Duration::from_millis(250));
-    loop {
-        interval.tick().await;
-        let _ = tick_tx.send(AppEvent::Tick);
-    }
-});
+fn spawn_input(tx: mpsc::UnboundedSender<Event>, stop: CancellationToken) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        let mut events = EventStream::new();
+        loop {
+            tokio::select! {
+                _ = stop.cancelled() => break,
+                next = events.next() => match next {
+                    Some(Ok(event)) => { let _ = tx.send(event); }
+                    _ => break,
+                },
+            }
+        }
+    })
+}
 
 // Main loop
-loop {
+let (tx, mut rx) = mpsc::unbounded_channel();
+let stop = CancellationToken::new();
+let input = spawn_input(tx, stop.clone());
+let mut tick = tokio::time::interval(Duration::from_millis(250));
+while !app.should_quit {
     terminal.draw(|f| app.draw(f))?;
-    if let Some(event) = rx.recv().await {
-        app.handle(event);
-        if app.should_quit { break; }
+    tokio::select! {
+        Some(event) = rx.recv() => app.handle(event),
+        _ = tick.tick() => app.on_tick(),
     }
 }
+stop.cancel();
+input.await?;
 ```
+
+Cancel and await the reader before `ratatui::restore()` or before handing the terminal to a child (see [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff)); after reentry, spawn a fresh reader with a new token.
 
 For sync-only apps, `event::poll(Duration::from_millis(250))` then `event::read()` works without Tokio.
 
@@ -276,17 +302,17 @@ let backend = TestBackend::new(20, 5);
 let mut terminal = Terminal::new(backend)?;
 terminal.draw(|f| app.draw(f))?;
 terminal.backend().assert_buffer_lines([
-    "┌─ Demo ───────────┐",
+    "┌Demo──────────────┐",
     "│Counter: 0        │",
+    "│                  │",
+    "│                  │",
     "└──────────────────┘",
-    "                    ",
-    "                    ",
 ]);
 ```
 
 Pair with **`insta`** for snapshot testing — `insta::assert_snapshot!(terminal.backend())`. Snapshots are stored as text files and reviewed via `cargo insta review`. This is the officially documented recipe (ratatui.rs → Recipes → Testing), with one caveat straight from that page: **snapshots capture text only — color and style are not asserted.** When color matters (selected-row highlight, error styling), compare `Buffer`s instead: build the expected buffer with `Buffer::with_lines(...)`, apply `set_style` to the regions you care about, and `assert_eq!` against the backend's buffer — the official counter-app tutorial demonstrates exactly this.
 
-**Test at multiple sizes.** Resize bugs live at unusual dimensions, so run the same render across several `TestBackend` sizes — include odd ones like 79×23 alongside 80×24 and 200×50 — snapshotting each under a size-suffixed name (`app_79x23`). Parameterizing per-size with `rstest` (which ratatui itself uses for its own tests) is a natural fit, though that combination is community practice rather than an official recipe. Extracting layout math into a pure `fn compute_layout(area: Rect) -> ...` makes per-size assertions cheap — no terminal needed at all.
+**Test at multiple sizes.** Resize bugs live at the edges, so run the same render across the contract sizes — 80×24, 60 columns (e.g. 60×24), and your declared hard minimum — snapshotting each under a size-suffixed name (`app_60x24`). Parameterizing per-size with `rstest` (which ratatui itself uses for its own tests) is a natural fit, though that combination is community practice rather than an official recipe. Extracting layout math into a pure `fn compute_layout(area: Rect) -> ...` makes per-size assertions cheap — no terminal needed at all.
 
 Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) were reverted because the refactor that made the main loop testable dropped the initial notify event, so the app opened blank for one tick interval; the re-landed version (PR #2813, merged April 2026) restores that event. The caution: when you restructure an event loop so tests can drive it, the app's own startup path is what regresses, so cover first-draw behavior in the same tests. **openai/codex** makes insta snapshot coverage *mandatory* for any change that affects visible TUI output (workflow: `cargo insta pending-snapshots`, `cargo insta accept`).
 
@@ -305,6 +331,8 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
 
 - **clap** — argument parsing. Derive API:
   ```rust
+  use clap::{Parser, Subcommand};
+
   #[derive(Parser)]
   struct Cli {
       #[arg(short, long)]
@@ -313,10 +341,16 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
       #[command(subcommand)]
       command: Commands,
   }
+
+  #[derive(Subcommand)]
+  enum Commands {
+      /// List items
+      List,
+  }
   ```
   Best-in-class argparse with auto-generated help, shell completions, and validation.
 
-- **color-eyre** — installs a panic hook that prints rich error reports with source spans. Install it before `ratatui::init()` or `ratatui::run()`; Ratatui then wraps the reporting hook and restores terminal state before delegating to it.
+- **color-eyre** — installs a panic hook that prints rich error reports with span traces and backtraces. Install it before `ratatui::init()` or `ratatui::run()`; Ratatui then wraps the reporting hook and restores terminal state before delegating to it.
 
 - **owo-colors** — zero-allocation color formatting. Direct styling emits color; opt into its `supports-colors` feature and use `if_supports_color`, or add your own policy, when output must account for TTY capability and `NO_COLOR`. Recommended over `colored` (older, allocates) and `ansi_term` (unmaintained).
 
@@ -347,7 +381,7 @@ If you construct `Terminal` and configure Crossterm raw/alternate-screen state m
 color_eyre::install()?;
 let report_hook = std::panic::take_hook();
 std::panic::set_hook(Box::new(move |info| {
-    let _ = ratatui::restore();
+    ratatui::restore();
     report_hook(info);
 }));
 ```
@@ -384,7 +418,7 @@ siv.run();
 5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` are `StatefulWidget`s — you pass `&mut ListState` / `TableState` / `ScrollbarState` at render time; the state lives in your App struct, not the widget.
 6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
 7. **Layouts cache.** Split once and reuse the `Rect`s; don't re-split mid-frame for the same area.
-8. **`String::len()` is bytes, not cells.** Use `unicode_width::UnicodeWidthStr::width(s)` for display width.
+8. **`String::len()` is bytes, not cells.** Use `Line::width()` / `Span::width()` for Ratatui text, or `unicode_width::UnicodeWidthStr::width(s)` for raw strings.
 
 ---
 

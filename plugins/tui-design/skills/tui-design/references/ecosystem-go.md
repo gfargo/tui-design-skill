@@ -26,7 +26,7 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 | Subcommand framing for any of the above | **Cobra** or **urfave/cli** |
 | TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
 
-**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps and most new Go TUIs use. (`gh` itself is Cobra + Lipgloss + Glamour with no Bubble Tea; it is a CLI, not a TUI.)
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps and most new Go TUIs use. (`gh` is a Cobra CLI, not a full-screen TUI; it uses Lipgloss and Glamour for output and the Charm v2 stack — Bubble Tea, Bubbles, Huh — for interactive prompts.)
 
 ---
 
@@ -110,9 +110,12 @@ The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a tempor
 **Async via Cmds:**
 ```go
 func fetchData() tea.Msg {
-    data, err := http.Get(...)
+    resp, err := http.Get(url)
     if err != nil { return errMsg{err} }
-    return dataMsg{data}
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body) // *http.Response is not the data
+    if err != nil { return errMsg{err} }
+    return dataMsg{body}
 }
 
 // In Update, when you want to fetch:
@@ -126,7 +129,7 @@ return m, fetchData
 **Pitfalls:**
 - `len(string)` ≠ display width. Use `lipgloss.Width()`.
 - Goroutines never call `View()` directly — send via `program.Send(msg)`.
-- CJK/emoji width in the v2 stack goes through `charmbracelet/x/ansi` (uniseg-based grapheme clustering) — trust `lipgloss.Width()`, never `len()`.
+- CJK/emoji width in the v2 stack is computed by `charmbracelet/x/ansi` with grapheme clustering — trust `lipgloss.Width()`, never `len()`.
 - Don't `fmt.Println` — corrupts the screen. Use `tea.LogToFile("debug.log", "DEBUG")` (see **Debugging** below).
 - Cobra + Bubble Tea: don't write to stdout from `PreRun` (alt-screen eats it).
 
@@ -154,7 +157,7 @@ fmt.Println(titleStyle.Render("Hello, world"))
 - `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` — side-by-side.
 - `lipgloss.JoinVertical(lipgloss.Left, top, middle, bottom)` — stacked.
 - `lipgloss.Place(width, height, hPos, vPos, content)` — center/anchor in a box.
-- `lipgloss.Width(s)` / `lipgloss.Height(s)` — measure rendered output (handles ANSI and runewidth correctly).
+- `lipgloss.Width(s)` / `lipgloss.Height(s)` — measure rendered output (skips ANSI escapes, counts wide graphemes correctly).
 
 **No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
 
@@ -165,12 +168,13 @@ case tea.WindowSizeMsg:
     m.rightPaneWidth = msg.Width - m.leftPaneWidth
 ```
 
-**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants:
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants. Standalone (no Bubble Tea running):
 ```go
 hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
 lightDark := lipgloss.LightDark(hasDark)
 fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
 ```
+Inside a running Bubble Tea program, don't call `HasDarkBackground` — its terminal query competes with Bubble Tea for input. Ask the runtime instead: return `tea.RequestBackgroundColor` from `Init`, then handle `case tea.BackgroundColorMsg:` with `lipgloss.LightDark(msg.IsDark())` and rebuild your styles.
 The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
 
 **Sub-packages:**
@@ -190,7 +194,8 @@ The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you em
 - **`textinput`** — single-line input with placeholder, suggestions, validation.
 - **`textarea`** — multi-line input with line numbers.
 - **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering.
-- **`table`** — virtualized table with selection, sorting.
+- **`table`** — virtualized table with row selection (no built-in sorting; sort the rows yourself).
+- **`tree`** — navigable hierarchical tree, rendered with `lipgloss/tree`.
 - **`viewport`** — scrollable region for long content.
 - **`spinner`** — Braille/Meter/MiniDot/Dot/Line/Pulse/Points/Globe/Moon spinner styles.
 - **`progress`** — gradient-filled progress bar with percent.
@@ -246,13 +251,18 @@ case tea.KeyPressMsg:
     }
 ```
 
-The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free.
+The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free. `help.View(m.keys)` needs `keyMap` to implement `help.KeyMap`:
+
+```go
+func (k keyMap) ShortHelp() []key.Binding  { return []key.Binding{k.Up, k.Down, k.Quit} }
+func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Down}, {k.Quit}} }
+```
 
 ---
 
 ## Huh (charmbracelet/huh)
 
-Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — themes now take an `isDark` bool (e.g. `huh.ThemeCharm(isDark)`) instead of self-detecting.
+Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — built-in themes are now `func(isDark bool) *Styles`; wrap one as a `huh.Theme` with `form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))`. Huh supplies `isDark` itself from the `tea.BackgroundColorMsg` it receives, so an embedding parent should forward that message.
 
 ```go
 form := huh.NewForm(
@@ -445,6 +455,8 @@ teatest.RequireEqualOutput(t, out) // golden file: testdata/<TestName>.golden
 
 Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` block forever without it. Goldens are stored escaped (diffable text) and refreshed with `go test ./... -update`.
 
+**Test at the contract sizes:** golden-test 80×24, 60 columns, and your declared minimum (one golden per size, e.g. `TestView/60x24`). Exercise resize too — send `tea.WindowSizeMsg{Width: 60, Height: 24}` to `Update` in unit tests, or via `tm.Send(...)` mid-run in teatest — and assert the layout reflows rather than keeping the startup width.
+
 **Determinism in CI:** the #1 golden-file flake is color-profile detection — v2 wraps output in a `colorprofile.Writer`, and the emitted escapes vary with `TERM`/`COLORTERM`/`NO_COLOR`. Pin the profile (`tea.WithColorProfile(colorprofile.Ascii)` — v2-only; on v1 use `lipgloss.SetColorProfile(termenv.Ascii)`) and the term size, or goldens will flap. Bubble Tea's own teatest example is currently skipped over exactly this.
 
 **E2E:** PTY/expect practice is thin in Go — teatest deliberately avoids PTYs. For real-terminal visual regression, VHS golden output (`Output golden.ascii` in a tape) is the blessed heavyweight option; needs `ttyd` + `ffmpeg`, with `charmbracelet/vhs-action` for CI.
@@ -487,7 +499,7 @@ Then from a second terminal: `go tool pprof -http=:8080 http://localhost:6060/de
 - **lazygit** (gocui) — multi-pane git TUI; the canonical "lazy*" aesthetic.
 - **lazydocker** (gocui) — same paradigm for Docker.
 - **k9s** (tview) — Kubernetes TUI; command-mode navigation, drill-down stack.
-- **gh** (Cobra + Lipgloss) — GitHub CLI; not a full TUI, but excellent CLI design.
+- **gh** (Cobra + Lipgloss, Huh for prompts) — GitHub CLI; not a full TUI, but excellent CLI design.
 - **Crush** (Bubble Tea v2) — Charm's AI coding agent; the flagship production v2 app.
 - **glow** (Bubble Tea) — markdown reader.
 - **soft serve** (Wish + Bubble Tea) — SSH-served git UI.

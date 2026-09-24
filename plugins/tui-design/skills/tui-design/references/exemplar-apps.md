@@ -15,8 +15,8 @@ When the user asks about a design choice and you're unsure of the answer, find t
 - "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
 - "How do I keep my AI chat smooth at high token rates?" → Claude Code, Copilot CLI (Ink + `<Static>`).
 - "What's the spec for my undo system?" → lazygit's git-action stack.
-- "How should mouse work in my TUI?" → btop (full mouse), helix (none), lazygit (augmentation).
-- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (<50ms).
+- "How should mouse work in my TUI?" → btop (clickable keys and boxes), helix (keyboard-first; mouse on by default but never required), lazygit (augmentation).
+- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (sub-50ms startup as a design target).
 - "What does a polished setup wizard look like?" → @clack/prompts (create-vite, create-astro) — see `ecosystem-typescript.md`.
 - "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
 
@@ -25,7 +25,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **Entries, grouped:**
 - Git: [lazygit](#lazygit-go-gocui) · [gitui](#gitui-rust-ratatui)
 - Kubernetes / Docker: [k9s](#k9s-go-tview) · [lazydocker](#lazydocker-go-gocui)
-- Monitors: [btop / btop++](#btop--btop-c-rust-clone-as-bottom) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
+- Monitors: [btop / btop++](#btop--btop-c) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
 - Pickers and search: [fzf](#fzf-go) · [atuin](#atuin-rust-ratatui)
 - Editors: [helix](#helix-rust-custom-renderer) · [neovim](#neovim-c--lua)
 - File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-mostly-python-and-go)
@@ -44,11 +44,11 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 **What it does well:**
 - **Per-pane sub-tabs.** The Branches panel has Local / Remotes / Tags as `[`/`]` tabs.
-- **Undo/redo for git operations** (`z` / `Ctrl+z`) — including rebases. This is unusually thoughtful for a TUI.
-- **Subtle pulse animation** on background fetch — present without commanding attention.
+- **Undo/redo for git operations** (`z` / `Z`), driven by the reflog — so it can walk back a rebase, but not working-tree or stash changes, pushes, or branch creation, and not while a rebase is in progress. This is unusually thoughtful for a TUI.
+- **Unobtrusive background-fetch status** (a small spinner) — present without commanding attention.
 - **Custom commands and aliases** in YAML config (`config.yml`).
 - A "command log" pane showing what git commands actually ran (transparency).
-- A confirmation modal pattern that defaults to No.
+- Confirmation popups for destructive actions (Enter confirms, Esc cancels).
 
 **Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
 
@@ -76,11 +76,11 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 ---
 
-## btop / btop++ (C++; Rust clone as bottom)
+## btop / btop++ (C++)
 
 > System monitor. The pinnacle of widget dashboard layouts.
 
-**Layout:** widget dashboard. CPU graph (top-left), memory (top-right), network (bottom-left), processes table (bottom-right). All resizable, all rearrangeable, all configurable in `btop.conf` (a TOML-like `key = value` file).
+**Layout:** widget dashboard. CPU graph full-width on top; memory above network on the left; processes table on the right. Boxes can be toggled, swapped to alternate positions, and saved as presets — not drag-resized — all configurable in `btop.conf` (a TOML-like `key = value` file).
 
 **What it does well:**
 - **Truecolor gradient meters** that look genuinely beautiful.
@@ -96,7 +96,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 **Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
 
-**Stack:** C++ (btop), Rust (bottom — `btm`). Go's gotop pioneered the clone lineage, but cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat it as a current peer.
+**Stack:** C++ (btop). Related monitors: Rust's bottom (`btm`), inspired by gtop, gotop, and htop rather than by btop. cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat the original as a current peer.
 
 ---
 
@@ -123,7 +123,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > Modal editor. Selection-first, multi-cursor first.
 
-**Layout:** IDE three-panel — file explorer (toggleable; merged Jan 2025, navigate-only — no file management), main editor area (with multiple split views), bottom status + diagnostics. For most of its history helix had no tree at all — its identity was pickers instead of trees.
+**Layout:** main editor area (with multiple split views) plus a bottom statusline and diagnostics; everything else arrives as a picker. Even its file explorer (`Space e`, released in 25.07) is a directory-browsing picker, not a persistent sidebar tree — helix's identity is pickers instead of trees.
 
 **What it does well:**
 - **Tree-sitter** for syntax-aware text objects.
@@ -134,7 +134,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 **Pattern recipe:** selection-first editing and multi-cursor-as-primary are dissected in `references/interaction-patterns.md` → *The helix pattern — selection-first modal editing*.
 
-**Lessons:** modes don't have to be confusing. Strong cursor-shape + status-bar mode indication + which-key for leaders make modal apps approachable.
+**Lessons:** modes don't have to be confusing. helix shows the mode in the statusline (`NOR`/`INS`/`SEL`) plus which-key for leaders; by default the cursor is a block in every mode and `color-modes` is off, so per-mode cursor shapes and colors are opt-in config (`[editor.cursor-shape]`, `color-modes = true`) — worth enabling, and worth shipping on by default in your own modal app.
 
 **Stack:** Rust, custom rendering (Ratatui-adjacent).
 
@@ -149,7 +149,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **What it does well:**
 - **Async I/O everywhere.** Even directory listing is non-blocking. The UI never stalls.
 - **Built-in image preview** via Sixel / kitty / iTerm2 (auto-detected).
-- **Vim-style keybindings** with `:` command mode for less-common actions.
+- **Vim-style keybindings**, with `;` / `:` to run a shell command (`:` blocks until it finishes).
 - **Plugins in Lua** — extends without recompile.
 - **Tasks pane** for ongoing work (copies, transcodes).
 
@@ -215,7 +215,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 ## bottom / btm (Rust, Ratatui)
 
-> System monitor in Rust. The btop equivalent.
+> System monitor in Rust, inspired by gtop, gotop, and htop.
 
 **Layout:** widget dashboard, configurable.
 
@@ -243,7 +243,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 **Layout:** IDE three-panel — collection tree (left), request editor (main), response (bottom or right).
 
 **What it does well:**
-- **Empty states explain next action** — "No requests. Press `n` to create one."
+- **Empty states explain next action** — an empty collection says "Collection is empty. Press ctrl+s to save the current request."
 - **Multiple themes** (Catppuccin, Gruvbox, Tokyo Night, Solarized, custom).
 - **Vim keys** plus a "jump mode" for reaching any widget in two keystrokes.
 - **Import and export** of curl commands, Postman collections, and OpenAPI specs.
@@ -251,7 +251,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 - **Keyboard-first** — every action keyboard-reachable; mouse is augmentation.
 
 **Specific features worth copying:**
-- The empty-state pattern (`No X. Press `n` to create one.`) — never just say "No data."
+- The empty-state pattern (`X is empty. Press <key> to <action>.`) — never just say "No data."
 - Theme switching at runtime.
 - Jump mode: label every focusable widget with a letter so a keyboard user never tabs through a form.
 
@@ -271,13 +271,11 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 - **Multi-adapter** — DuckDB, SQLite, Postgres, MySQL/MariaDB, and ODBC from the maintainers, plus community adapters for many more databases, all from the same UI.
 - **Tree-sitter SQL** highlighting in the editor.
 - **Fast result virtualization** for million-row queries.
-- **Run-on-keystroke** option for ad-hoc exploration.
-- **Snippets** and history.
+- **Query history** (`F8`) as a searchable screen.
 
 **Specific features worth copying:**
 - The plugin/adapter pattern (clean abstraction → swap database backend).
 - Result virtualization for huge tables.
-- The decision to support both modal and modeless input in the editor.
 
 **Lessons:** when your TUI is a productivity tool, take performance seriously. Million-row results require real virtualization, not "render the first 1000."
 
@@ -410,7 +408,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 **Layout:** chat-like — input at the bottom, scrolling output above.
 
 **What they do well:**
-- **Streaming text rendering** without flicker (use `<Static>` for finalized history).
+- **Streaming text rendering** that aims to minimize flicker (use `<Static>` for finalized history).
 - **Status indicators** (thinking, tool-use, error states) without overwhelming.
 - **Inline diff rendering** for code changes.
 - **`/`-prefixed slash commands** for actions (clear, model switch, etc.).
@@ -426,10 +424,10 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 > Cross-shell prompt.
 
-**Why study:** not technically a TUI, but the **performance discipline** is exemplary. Starship runs on every prompt; it has to start in <50ms or users feel it.
+**Why study:** not technically a TUI, but the **performance discipline** is exemplary. Starship runs on every prompt, so startup is a budget users feel.
 
 **What it does well:**
-- **Sub-50ms cold start** as a hard requirement. Every feature added must not blow the budget.
+- **Sub-50ms startup as a design target.** Every feature added must not blow the budget.
 - **Per-module time budgets** — `scan_timeout` (30ms) and `command_timeout` (500ms) bound every module; a module that overruns is dropped from that prompt with a warning instead of delaying it.
 - **Single TOML config** with semantic blocks (one per "module": `[character]`, `[directory]`, `[git_branch]`).
 - **Cross-shell** — bash, zsh, fish, pwsh, ion, nu — all from one binary.

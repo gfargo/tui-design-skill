@@ -25,7 +25,7 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 
 All panels visible simultaneously in fixed positions. Focus shifts via Tab or numeric keys. The user builds spatial memory: "files are top-left, branches are below, diff is on the right."
 
-**Examples:** lazygit (5 left panels + 1 right), btop (CPU/mem/net/processes as 4 quadrants), htop (header / process list / F-key footer).
+**Examples:** lazygit (5 left panels + 1 right), btop (full-width CPU on top; memory above network on the left, processes on the right), htop (header / process list / F-key footer).
 
 **When to use:**
 - Users want to see multiple related views at once without switching.
@@ -84,7 +84,7 @@ Browser-style: navigate into deeper views with a back-stack, `Esc` returns to th
 
 Independent widgets in a grid, each owning its data lifecycle. Layout is configurable.
 
-**Examples:** bottom (btm), btop, glances, gtop. All let users define rows and column ratios in TOML.
+**Examples:** bottom (btm), btop, glances, gtop. Configurability varies: bottom defines rows and column ratios in TOML; btop toggles boxes and layout presets in `btop.conf`; glances uses an INI file; gtop has no layout config.
 
 **When to use:**
 - Monitoring/observability where users want to compose their own view.
@@ -103,7 +103,7 @@ Independent widgets in a grid, each owning its data lifecycle. Layout is configu
 
 Sidebar → main content → detail/output. The main panel often has tabs giving it multiple personalities.
 
-**Examples:** Posting (collection tree → request editor → response), Harlequin (catalog → editor → results), helix (file explorer + built-in pickers + diagnostics).
+**Examples:** Posting (collection tree → request editor → response), Harlequin (catalog → editor → results). helix is the counterexample: its file explorer is a picker, not a persistent sidebar.
 
 **When to use:**
 - Editor-like workflows where users compose then execute then inspect.
@@ -114,8 +114,8 @@ Sidebar → main content → detail/output. The main panel often has tabs giving
 - Mobile-style narrow terminals — too many panels to fit.
 
 **Implementation notes:**
-- Sidebar collapsible (`Ctrl+B` or similar). Users will toggle it.
-- Main panel tabs cycled with `[`/`]` or `Ctrl+Tab`.
+- Sidebar collapsible (`Ctrl+B` or similar — but `Ctrl+B` is tmux's default prefix, so keep an alternative). Users will toggle it.
+- Main panel tabs cycled with `[`/`]`. (`Ctrl+Tab` isn't reliably delivered without the kitty keyboard protocol or `modifyOtherKeys`.)
 - Output panel often docked bottom or right; resizable.
 
 ### 6. Overlay / popup
@@ -139,7 +139,7 @@ Appears over the shell, does one thing, exits.
 
 ### 7. Tabbed within panel
 
-Tab bars inside a larger layout, cycled with `[`/`]` or `Ctrl+Tab`.
+Tab bars inside a larger layout, cycled with `[`/`]` (`Ctrl+Tab` only where the enhanced keyboard protocol is active).
 
 **Examples:** lazygit's Local/Remotes/Tags tabs in the branches panel; lazydocker's Logs/Stats/Env/Config/Top tabs in the right pane.
 
@@ -236,7 +236,7 @@ border characters: render in panel's blue background
 
 **Solutions:**
 - Use the same background for panel and borders.
-- Or use one-eighth block characters (`▏▎▍`) as borders — Textual does this for themed apps.
+- Or use one-eighth block characters (`▏▕▔▁`) as borders — Textual does this for themed apps.
 
 ### ASCII fallback
 
@@ -245,7 +245,7 @@ For legacy SSH, Windows conhost, `TERM=dumb`, or any system where Unicode might 
 - Heavy → `=|+++` (or just bold the ASCII)
 - Rounded `╭╮╰╯` → `+`
 
-Detect via `$LANG` containing UTF-8 or `$LC_ALL`, and via terminal capability queries. Provide a config option (`--ascii`, `MYAPP_ASCII=1`) for explicit override.
+Detect via the first set of `$LC_ALL` → `$LC_CTYPE` → `$LANG` containing UTF-8, and via terminal capability queries. Provide a config option (`--ascii`, `MYAPP_ASCII=1`) for explicit override.
 
 ---
 
@@ -423,7 +423,7 @@ This is why a **drill-down model degrades better than a fixed grid**: when only 
 
 - **Lay out in relative units, never absolute positions:** percentages (Textual `width: 30%`), ratios (Ratatui `Ratio(num, den)`), `Min`/`Max`/`Fill` constraints (Ratatui), `fr` units (Textual `1fr`/`3fr`), flex (Ink/Yoga). Derive geometry from the current frame or latest known window dimensions, and invalidate cached rectangles whenever those dimensions change.
 - **Decide what's load-bearing.** When width runs out, what hides *first*? Usually: preview pane → secondary columns → low-priority table columns. Keep the primary view and the controls needed to operate it; a dedicated footer can collapse if those controls remain discoverable elsewhere. **Detail-on-Enter** is the escape hatch — it lets you hide columns/fields at narrow widths without losing access to the data.
-- **Truncate, don't wrap, in cells**; reserve a cell for the ellipsis. Tail-truncate paths, middle-truncate when the basename matters.
+- **Truncate, don't wrap, in cells**; reserve a cell for the ellipsis. Truncate paths at the start or middle so the filename survives; tail-truncate prose and IDs.
 - **Handle the framework's resize event** and re-layout from the current frame/window size. On POSIX this usually begins with `SIGWINCH`; Windows and higher-level frameworks expose different events. Coalesce rapid events only when layout work is expensive so resizing still feels immediate.
 - **Use 80×24 as a compatibility test baseline, not a universal hard minimum.** Define a smaller application-specific minimum from the content that must remain usable and test both sizes. `tmux split-window -h` is a free narrow-terminal test rig.
 
@@ -460,8 +460,9 @@ Combining 2–3 signals creates clear hierarchy. The current selection: reverse 
 
 When content exceeds column width:
 
-- **Tail truncation** (`/usr/local/share/...`) — for paths, where the tail is the leaf you're looking at. Used by eza, k9s.
-- **Middle truncation** (`/usr/.../file.txt`) — when the basename matters. Used by bat, helix.
+- **Start truncation** (`…/share/file.txt`) — for paths, so the filename you're looking at survives.
+- **Middle truncation** (`/usr/…/file.txt`) — for paths when the root is also useful context.
+- **Tail truncation** (`Connection refused whi…`) — for prose, names, and IDs, where the beginning carries the meaning.
 - **Wrap** — only for prose. Never wrap in cells of dense tables.
 
 Reserve a cell (or three for `...`) for the ellipsis. Don't truncate so aggressively that nothing remains: `... ` is useless.
@@ -542,7 +543,7 @@ For an action-rich full-screen app, use `key action · key action · key action`
 
 Examples:
 - htop: `F1Help F2Setup F3Search F4Filter F5Tree F6SortBy F7Nice- F8Nice+ F9Kill F10Quit`
-- lazygit: per-pane, e.g., in Files panel `space stage ↵ commit p push P pull r refresh ?`
+- lazygit: per-pane, e.g., in Files panel `space stage · c commit · P push · p pull · ?`
 
 Why this bar matters and how to auto-generate it from your keymap: `references/interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
 
@@ -561,7 +562,7 @@ The de facto modern default for indeterminate work: **Braille spinners**.
 Ten frames at ~80ms per frame (cli-spinners' `dots`) = smooth rotation. `cli-spinners` (the npm package, vendored everywhere) ships ~70+ named styles.
 
 **Rules:**
-- Show only after ~150–200ms — instant work shouldn't flash a spinner.
+- Show only after ~100–200ms — instant work shouldn't flash a spinner.
 - Stop with a final state symbol: `✓` (success), `✗` (failure), or just disappear.
 - Suppress entirely on non-TTY. CI logs shouldn't have spinners.
 
@@ -594,11 +595,11 @@ indicatif `MultiProgress`, rich `Progress` (multiple tasks), and listr2 `concurr
 
 ### Pulse / fade
 
-Ambient indication of background work without commanding attention. Used by lazygit's auto-fetch — a subtle dim pulse on the relevant panel. Useful when work is happening but doesn't need to be in the user's face.
+Ambient indication of background work without commanding attention. lazygit's auto-fetch, for example, shows only a small spinner and status message instead of a blocking dialog. Useful when work is happening but doesn't need to be in the user's face.
 
 ### Empty states and loading states
 
-**Empty states:** never just "No data." Say what to do next: "No requests. Press `n` to create one." Posting does this well.
+**Empty states:** never just "No data." Say what to do next: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
 
 **Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
 

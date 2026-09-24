@@ -47,7 +47,7 @@
       "framework": "Textual",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
-      "claim": "\"four major versions since the announcement, with 8.x current as of mid-2026\"",
+      "claim": "\"five major versions (4.0 through 8.0) since the May 2025 announcement, with 8.x current as of mid-2026\"",
       "pinned_version": "8.0.0",
       "granularity": "major",
       "registry": { "type": "pypi", "package": "textual" }

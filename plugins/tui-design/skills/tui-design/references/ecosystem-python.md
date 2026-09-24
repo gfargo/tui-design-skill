@@ -17,7 +17,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 | Full-screen TUI app | **Textual** |
 | CLI tool with pretty output (tables, panels, syntax) | **Rich** |
 | Interactive REPL or shell-like tool | **prompt_toolkit** |
-| One or two prompts inside a CLI | **questionary** (built on prompt_toolkit) or **InquirerPy** |
+| One or two prompts inside a CLI | **questionary** (built on prompt_toolkit); InquirerPy is unmaintained |
 | Argparse with type hints | **Typer** (decorator API on Click) |
 | Argparse decorator-style (no type hints) | **Click** |
 | Simple progress bar | **tqdm** (max performance) or **alive-progress** (polished, redirect-safe) |
@@ -30,7 +30,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Architectural model: reactive, async-first, message-passing.** Strongly inspired by web frameworks. App subclass + Widgets in a DOM-like tree (App → Screen → Widgets) + TCSS for layout/style + reactive attributes for state + Messages/Events for communication, all on asyncio.
 
-**Status:** Textualize the company wound down in mid-2025; Will McGugan maintains Textual and Rich as open source. If the user asks "isn't Textual dead?" — no. The release cadence says otherwise: four major versions since the announcement, with 8.x current as of mid-2026. Those majors did carry breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
+**Status:** Textualize the company wound down in mid-2025; Will McGugan maintains Textual and Rich as open source. If the user asks "isn't Textual dead?" — no. The release cadence says otherwise: five major versions (4.0 through 8.0) since the May 2025 announcement, with 8.x current as of mid-2026. Those majors did carry breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
 
 **Canonical structure:**
 
@@ -72,7 +72,7 @@ Textual's driver restores application mode from `App.run()` / `run_async()` clea
 | Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
 | SIGTERM | Desktop terminal drivers do not provide a general SIGTERM-to-`App.exit` contract. If a service requires graceful termination, let its platform-appropriate event-loop integration schedule `self.exit(...)`; do not restore the terminal directly in a low-level signal handler. SIGKILL cannot be cleaned up. |
 | Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
-| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Use the app resume signal to reload externally mutable data when needed. |
+| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Subscribe to `app_resume_signal` to reload externally mutable data when needed. |
 
 These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspending-the-application) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
 
@@ -161,27 +161,29 @@ Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: 
 
 ```python
 from textual.reactive import reactive
+from textual.widget import Widget
 
 class Counter(Widget):
     count: reactive[int] = reactive(0)
+    label: reactive[str] = reactive("")
 
     def watch_count(self, old: int, new: int) -> None:
-        # called automatically when count changes
-        self.refresh()
+        # called automatically when count changes; repaint is already automatic
+        self.log(f"count {old} -> {new}")
 
     def validate_count(self, value: int) -> int:
         # called before assignment; can clamp or transform
         return max(0, min(10, value))
 
-    def compute_display(self) -> str:
-        # derived attribute; auto-updates when count changes
+    def compute_label(self) -> str:
+        # derived, read-only reactive; recomputed when count changes
         return f"Count: {self.count}"
 
     def render(self) -> str:
-        return self.display
+        return self.label
 ```
 
-Execution order on assignment: **validate → assign → compute → watch**. Modifiers on `reactive(...)`:
+`compute_<name>` only runs for a declared reactive of that name (`label` here), and that reactive becomes read-only. Don't name one `display` — that's Widget's built-in visibility property. Execution order on assignment: **validate → assign → watch → compute**. Modifiers on `reactive(...)`:
 - `init=False` — don't fire watcher on initial assignment.
 - `always_update=True` — fire even when value didn't change.
 - `layout=True` — trigger a re-layout, not just a re-render.
@@ -249,13 +251,14 @@ async def action_delete(self) -> None:
 Textual has the best testing story of any TUI framework:
 
 ```python
+from textual.widgets import Label
+
 async def test_button_click():
-    app = HelloApp()
+    app = HelloApp()  # the example app above
     async with app.run_test(size=(80, 24)) as pilot:
-        await pilot.press("tab", "enter")
-        await pilot.click("#submit")
+        await pilot.click("#go")
         await pilot.pause()
-        assert app.query_one("#result", Static).content == "Done"
+        assert app.query_one("#greeting", Label).content == "Button pressed!"
 ```
 
 For SVG snapshots:
@@ -346,6 +349,8 @@ for item in track(items, description="Processing..."):
 
 **Components:** `Console`, markup (`[bold red]…[/]`), `Table`, `Panel`, `Columns`, `Tree`, `Syntax` (Pygments), `Markdown`, `Progress` (with multiple tasks), `Live` (animated regions), `RichHandler` for colorized logs, `install()` for pretty tracebacks.
 
+**Diagnostics belong on stderr:** use a separate `Console(stderr=True)` for errors and progress so stdout stays pipeable. Rich honors `NO_COLOR`.
+
 **`from rich.traceback import install; install()`** replaces the default Python traceback with a much better one — beautiful syntax highlighting and source context. Drop into any script for a free upgrade. (There is no `rich.install()`; the sibling `rich.pretty.install()` only pretty-prints REPL results.)
 
 **Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools; pip vendors Rich for its own output, and Textual, Harlequin, Posting, and most new Typer-based tools build on it. (Poetry uses cleo and Sphinx does not depend on Rich; do not cite them as Rich users.)
@@ -389,8 +394,8 @@ choice = questionary.select(
 - **Urwid** — pre-Textual TUI framework; mature and actively maintained again (v3.0.x through 2025, v4.0 in 2026) after years of dormancy. New projects should still use Textual.
 - **Blessed** — modernized curses wrapper, cross-platform via `jinxed`. For bespoke games/animations where you want fine control. Not recommended as a first choice.
 - **curses** — stdlib, Unix-only, lowest level. Avoid for new code unless you have a strict zero-dep requirement.
-- **InquirerPy** — Python port of Inquirer.js. Alternative to questionary.
-- **tqdm** — battle-tested progress bars, max performance, the default for ML/data scripts. Survives `print()` interleaving with `with logging_redirect_tqdm():`.
+- **InquirerPy** — Python port of Inquirer.js. Unmaintained (last release 0.3.4, June 2022); prefer questionary.
+- **tqdm** — battle-tested progress bars, max performance, the default for ML/data scripts. `with logging_redirect_tqdm():` routes `logging` output around the bar; it does not capture `print()` — use `tqdm.write()` for those.
 - **alive-progress** — animated, polished progress bars; better visual but slightly slower than tqdm.
 - **asciimatics** — animations + form-style TUIs. Niche; Textual has taken over its mindshare.
 

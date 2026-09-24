@@ -4,6 +4,8 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+## [1.7.3] — 2026-09-24
+
 Correctness patch after a September 2026 audit that checked every code sample and version-sensitive claim against tagged upstream sources, plus release-workflow hardening.
 
 ### Fixed

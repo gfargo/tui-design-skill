@@ -1,6 +1,6 @@
 {
   "name": "tui-design",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "Design, build, refactor, or review terminal interfaces — full-screen TUIs, interactive prompts, and command-line tools — with Bubble Tea, Ratatui, Textual, and Ink, plus universal patterns for layout, color, keybindings, and discoverability.",
   "author": {
     "name": "gfargo",

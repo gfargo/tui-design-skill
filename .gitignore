@@ -22,3 +22,6 @@ Thumbs.db
 
 # Generated evaluation runs (commit curated artifacts under evals/results/)
 evals/runs/
+
+# Rendered sample harnesses and their build products (scripts/check-samples.sh)
+tests/samples/.build/

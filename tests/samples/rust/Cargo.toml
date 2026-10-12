@@ -1,0 +1,17 @@
+# Compile-checks the Rust samples marked `check=rust/...` in the skill references.
+# Pins match scripts/reference-inventory.json; Cargo.lock locks the rest.
+[package]
+name = "tui-design-rust-samples"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+color-eyre = "0.6"
+crossterm = { version = "=0.29.0", features = ["event-stream"] }
+cursive = "0.21"
+futures = "0.3"
+ratatui = "=0.30.2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tokio-util = "0.7"

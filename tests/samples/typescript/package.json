@@ -1,0 +1,21 @@
+{
+  "name": "tui-design-typescript-samples",
+  "private": true,
+  "description": "Type-checks and tests the TypeScript samples marked check=typescript/... in the skill references.",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit && vitest run"
+  },
+  "devDependencies": {
+    "@clack/prompts": "1.8.1",
+    "@inquirer/prompts": "8.7.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "commander": "15.0.0",
+    "ink": "8.0.0",
+    "ink-testing-library": "4.0.0",
+    "react": "19.3.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
+  }
+}

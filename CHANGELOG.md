@@ -41,9 +41,13 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - `XDG_STATE_HOME` holds state that persists between restarts.
   - starship is described by its per-module time budgets.
 - **Demo-recording route:** screenshots and demo GIFs no longer route only to the separate `vhs-cli-demos` skill, which ships only with the `gfargo/skills` marketplace and was missing from every other install path. The skill uses `vhs-cli-demos` when it is installed and otherwise falls back to `cli-basics.md` → *Demo recordings*: a short VHS guide to tapes, `Set Columns`/`Set Rows` sizing, `Wait`, `Require`, and lossless GIF optimization. README → *Install* says where to get `vhs-cli-demos`.
+- **Rust samples:** the canonical app quits on Ctrl+C and Esc as well as `q`, because raw mode delivers Ctrl+C as a key event; the Tokio loop stops when the input reader ends instead of ticking forever with no way to quit; the Cursive sample builds with `cursive::default()`; the Elm sketch compiles.
+- **Python samples:** the canonical Textual app uses inline `CSS` instead of a `hello.tcss` that was never supplied; the Pilot test carries `@pytest.mark.asyncio` for pytest-asyncio's default strict mode; the worker sample passes `Static` to `query_one`; the modal sample has its imports; the Rich sample sends errors and progress to a stderr console; the questionary sample exits 130 on Ctrl-C instead of continuing with `None`.
+- **Go samples:** standalone Lipgloss output goes through `lipgloss.Println`, which downsamples for the terminal; the teatest sample uses `colorprofile.ASCII`; the debug-log snippet checks the `tea.LogToFile` error so logs cannot land in the TUI.
 
 ### Release engineering
 - `scripts/reference-inventory.json` tracks Ink 8.0.0 and Bubble Tea v2.1.0. Bubble Tea is now checked at minor precision, so a new minor release gets flagged. Source links point at the current tags and at a Textual anchor that exists.
+- **Sample checks:** 48 reference code fences carry a `check=<harness>/<name>` marker and are built and tested in CI (`.github/workflows/samples.yml`) against pinned versions: `go vet` and `go test` on Bubble Tea v2.1.0, Lipgloss v2.0.6, Bubbles v2.2.1, and Huh v2.0.3; `cargo check` and `cargo test` on Ratatui 0.30.2 with Crossterm 0.29; pytest on Textual 8.2.8 and Rich 15.0.0; `tsc --strict` and vitest on Ink 8.0.0. Wrapper code lives in `tests/samples/`, outside the packaged skill, and `validate-release.sh` fails when a marked sample has no harness template.
 
 ### Evaluation
 - `evals/v174-correction-evals.json` covers the corrected facts:

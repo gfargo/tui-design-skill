@@ -1,0 +1,20 @@
+#![allow(unused)]
+mod monolithic {
+    use ratatui::widgets::ListState;
+
+    struct Item;
+    enum Mode {}
+
+    <<sample rust/app-struct>>
+}
+
+mod elm {
+    use ratatui::Frame;
+
+    struct Model;
+    struct Cmd;
+
+    <<sample rust/elm>>
+}
+
+fn main() {}

@@ -50,7 +50,7 @@ Current major: **Ink 8** (8.0.x, October 2026). Ink 7 and 8 require **Node ≥ 2
 
 **Hello world:**
 
-```tsx
+```tsx check=typescript/ink-hello
 import React, {useState} from 'react';
 import {render, Text, Box, useInput, useApp} from 'ink';
 
@@ -102,7 +102,7 @@ Ink ships only a handful of components — everything else composes from these:
 
 Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, plus custom char strings.
 
-```tsx
+```tsx check=typescript/ink-layout
 <Box flexDirection="column" height="100%">
   <Box borderStyle="single">
     <Text>Header</Text>
@@ -154,7 +154,7 @@ Theming via theme objects passed at the root. @inkjs/ui has had no release since
 
 ## Testing — ink-testing-library
 
-```tsx
+```tsx check=typescript/ink-testing-library
 import {render} from 'ink-testing-library';
 
 const tick = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -229,7 +229,7 @@ Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "P
 
 `@clack/prompts` has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (bomb.sh/clack) and actively released. Used by **create-vite, `sv` (Svelte's CLI), and create-t3-app**, and inspired the Rust port `cliclack`; create-astro ships the same look through its own `@astrojs/cli-kit` rather than Clack.
 
-```ts
+```ts check=typescript/clack
 import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
 
 intro('create-my-app');
@@ -276,7 +276,7 @@ The visual style — blue-bordered connectors between prompts, single Unicode gl
 
 The modern modular rewrite of Inquirer — TypeScript-first packages that replaced the legacy monolithic `inquirer`. The workhorse for prompt-heavy CLIs:
 
-```ts
+```ts check=typescript/inquirer
 import {input, select, confirm, password} from '@inquirer/prompts';
 
 const name = await input({message: 'What is your name?'});
@@ -340,7 +340,7 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 
 **commander hello world:**
 
-```ts
+```ts check=typescript/commander
 import {Command} from 'commander';
 
 const program = new Command();

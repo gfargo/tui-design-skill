@@ -1,0 +1,14 @@
+def run_sample() -> None:
+    items = ["a", "b"]
+
+    def do_work(item: str) -> None:
+        pass
+
+    <<sample python/rich>>
+
+
+def test_results_on_stdout_diagnostics_on_stderr(capsys):
+    run_sample()
+    out, err = capsys.readouterr()
+    assert "alice@example.com" in out and "Greeting" in out
+    assert "file not found" not in out and "file not found" in err

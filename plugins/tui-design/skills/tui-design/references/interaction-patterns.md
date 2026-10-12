@@ -424,7 +424,7 @@ None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual 
 
 huh's real mechanism is **`Group.WithHideFunc(func() bool)`** — it hides/shows an entire group (a step's worth of fields) based on a predicate re-evaluated as form state changes. This operates at *group* granularity; per-field hiding is not shipped (open feature requests only) — don't present it as available. For recomputing one field from another's value, huh has `OptionsFunc`/`TitleFunc`/`DescriptionFunc`, which take a callback plus the fields they depend on and re-run automatically:
 
-```go
+```go check=go/huh-options-func
 huh.NewSelect[string]().
     OptionsFunc(func() []huh.Option[string] {
         return huh.NewOptions(statesForCountry(country)...)

@@ -1,0 +1,21 @@
+#![allow(unused)]
+use ratatui::crossterm::event::Event;
+use ratatui::{DefaultTerminal, Frame};
+
+#[derive(Default)]
+struct App {
+    should_quit: bool,
+}
+
+impl App {
+    fn draw(&self, _frame: &mut Frame) {}
+    fn handle(&mut self, _event: Event) {}
+    fn on_tick(&mut self) {}
+}
+
+async fn run(terminal: &mut DefaultTerminal, app: &mut App) -> color_eyre::Result<()> {
+    <<sample rust/async-input>>
+    Ok(())
+}
+
+fn main() {}

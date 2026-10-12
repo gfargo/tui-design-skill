@@ -38,12 +38,12 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Canonical structure:**
 
-```python
+```python check=python/hello-app
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Button, Label
 
 class HelloApp(App):
-    CSS_PATH = "hello.tcss"
+    CSS = "#greeting { padding: 1 2; }"  # or CSS_PATH = "hello.tcss"; that file must exist
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("d", "toggle_dark", "Toggle dark mode"),
@@ -98,7 +98,7 @@ Textual ships dozens. Categories:
 
 Layout is CSS:
 
-```css
+```css check=python/textual-layout
 Screen {
     layout: vertical;
 }
@@ -140,14 +140,14 @@ Concepts:
 Two ways to handle events:
 
 **1. Name convention:**
-```python
+```python check=python/on-handler
 def on_button_pressed(self, event: Button.Pressed) -> None:
     if event.button.id == "submit":
         ...
 ```
 
 **2. `@on` decorator with CSS selector** (preferred when you have many of the same widget type):
-```python
+```python check=python/on-decorator
 from textual import on
 
 @on(Button.Pressed, "#submit")
@@ -163,7 +163,7 @@ Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: 
 
 ## Reactive state
 
-```python
+```python check=python/reactive
 from textual.reactive import reactive
 from textual.widget import Widget
 
@@ -200,16 +200,17 @@ This is the heart of Textual's "reactive" claim — it's genuinely declarative s
 
 Handlers can be `async def`. The `@work` decorator turns methods into background workers:
 
-```python
+```python check=python/workers
 import httpx
 from textual import work
+from textual.widgets import Static
 
 @work(exclusive=True)
 async def fetch_data(self, url: str) -> None:
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         response.raise_for_status()
-    self.query_one("#result").update(response.text)
+    self.query_one("#result", Static).update(response.text)
 
 # For blocking code:
 @work(thread=True)
@@ -224,8 +225,11 @@ def compute_heavy(self) -> None:
 
 Push a screen on top for dialogs/modals:
 
-```python
+```python check=python/modal
+from textual import on, work
+from textual.app import ComposeResult
 from textual.screen import ModalScreen
+from textual.widgets import Button, Label
 
 class ConfirmDialog(ModalScreen[bool]):
     def compose(self) -> ComposeResult:
@@ -254,9 +258,11 @@ async def action_delete(self) -> None:
 
 Textual has the best testing story of any TUI framework:
 
-```python
+```python check=python/pilot-test
+import pytest
 from textual.widgets import Label
 
+@pytest.mark.asyncio  # or asyncio_mode = "auto"
 async def test_button_click():
     app = HelloApp()  # the example app above
     async with app.run_test(size=(80, 24)) as pilot:
@@ -325,16 +331,17 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 
 Immediate-mode output formatting — no input handling, no event loop. The de facto Python library for pretty CLI output. Used internally by Textual for rendering.
 
-```python
+```python check=python/rich
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.progress import track
 
 console = Console()
+err = Console(stderr=True)  # diagnostics and progress stay off stdout
 
 # Markup syntax (like BBCode)
-console.print("[bold red]Error:[/] file not found")
+err.print("[bold red]Error:[/] file not found")
 
 # Tables
 table = Table(title="Users")
@@ -347,7 +354,7 @@ console.print(table)
 console.print(Panel.fit("Hello, world!", title="Greeting", border_style="blue"))
 
 # Progress
-for item in track(items, description="Processing..."):
+for item in track(items, description="Processing...", console=err):
     do_work(item)
 ```
 
@@ -367,7 +374,7 @@ Two modes:
 
 **1. Prompt-style** — single-line input with completion, history, syntax highlighting:
 
-```python
+```python check=python/prompt-toolkit
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 
@@ -381,14 +388,17 @@ text = prompt("> ", completer=cmd_completer)
 
 For one-off prompts inside CLI tools, use **questionary** (built on prompt_toolkit) — much simpler API:
 
-```python
+```python check=python/questionary
+import sys
 import questionary
 
 answer = questionary.text("What's your name?").ask()
+if answer is None:  # .ask() turns Ctrl-C into None
+    sys.exit(130)
 choice = questionary.select(
     "Pick a color",
     choices=["red", "green", "blue"],
-).ask()
+).unsafe_ask()  # raises KeyboardInterrupt instead
 ```
 
 `.ask()` catches Ctrl-C, prints "Cancelled by user" and returns `None`; check for `None` and exit 130, or call `.unsafe_ask()` to get the `KeyboardInterrupt`. prompt_toolkit draws prompts on stdout by default, even when stdout is piped, so when stdout carries the result pass `output=create_output(stdout=sys.stderr)` (from `prompt_toolkit.output`). For a single select without questionary, prompt_toolkit 3.0.52+ has a built-in `choice()`.
@@ -412,7 +422,7 @@ choice = questionary.select(
 **argparse** — stdlib, no dependency. Verbose but capable. Since Python 3.14 it colorizes help and can suggest fixes for mistyped choices and subcommands (`suggest_on_error`, on by default in 3.15).
 
 **Click** — decorator-based, very popular:
-```python
+```python check=python/click
 import click
 
 @click.command()
@@ -425,7 +435,7 @@ def hello(name: str, count: int) -> None:
 ```
 
 **Typer** — type-hint-driven (FastAPI's author). The most ergonomic:
-```python
+```python check=python/typer
 import typer
 
 app = typer.Typer()

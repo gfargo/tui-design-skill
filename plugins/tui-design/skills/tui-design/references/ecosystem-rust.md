@@ -43,9 +43,9 @@ The mental model is **"UI = f(state)"**. You manage app state, the event loop, a
 
 **Canonical app structure:**
 
-```rust
+```rust check=rust/canonical
 use ratatui::{prelude::*, widgets::*, DefaultTerminal};
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use color_eyre::Result;
 
 fn main() -> Result<()> {
@@ -83,7 +83,11 @@ impl App {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Char('q') => self.should_quit = true,
+                    KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
+                    // raw mode delivers Ctrl+C as a key event, not SIGINT
+                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        self.should_quit = true
+                    }
                     KeyCode::Char('+') | KeyCode::Right => self.counter += 1,
                     KeyCode::Char('-') | KeyCode::Left => self.counter -= 1,
                     _ => {}
@@ -110,7 +114,7 @@ Ratatui owns rendering and terminal setup, but not the application event loop, s
 
 Following Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/):
 
-```rust
+```rust check=rust/editor-handoff
 use std::{io::stdout, process::{Command, ExitStatus}};
 use ratatui::crossterm::{execute, terminal::{enable_raw_mode, EnterAlternateScreen}};
 use color_eyre::eyre::eyre;
@@ -166,7 +170,7 @@ Reentry steps are not transactional (see the fallible-setup warning below), and 
 
 Constraint-based using Cassowary (the same algorithm as iOS Auto Layout):
 
-```rust
+```rust check=rust/layout
 use ratatui::layout::{Layout, Constraint};
 
 let [header, body, status] = Layout::vertical([
@@ -193,7 +197,7 @@ Layouts cache by default — split once and reuse the resulting `Rect`s in the s
 
 ### Styling
 
-```rust
+```rust check=rust/styling
 use ratatui::style::{Color, Modifier, Style, Stylize};
 
 // Direct API
@@ -224,7 +228,7 @@ let span = "Hello".bold().yellow().on_black();
 
 **1. Monolithic App struct** (simplest, used in most examples):
 
-```rust
+```rust check=rust/app-struct
 struct App {
     items: Vec<Item>,
     list_state: ListState,
@@ -236,10 +240,10 @@ struct App {
 
 **2. Elm Architecture** (Model + Message + update + view):
 
-```rust
+```rust check=rust/elm
 enum Msg { Increment, Decrement, Quit }
 
-fn update(model: &mut Model, msg: Msg) -> Option<Cmd> { /* ... */ }
+fn update(model: &mut Model, msg: Msg) -> Option<Cmd> { todo!() }
 fn view(model: &Model, frame: &mut Frame) { /* ... */ }
 ```
 
@@ -251,7 +255,7 @@ Useful when state is complex and you want testable update logic.
 
 The standard pattern: a cancellable task reads Crossterm's `EventStream` into an `mpsc` channel; the main loop `select!`s over that channel and a tick interval, and calls `terminal.draw` each pass. `EventStream` needs Crossterm's `event-stream` feature, which Ratatui does not enable: add `crossterm = { version = "0.29", features = ["event-stream"] }` matching Ratatui's Crossterm version so Cargo unifies them, and keep importing through `ratatui::crossterm`.
 
-```rust
+```rust check=rust/async-input
 use std::time::Duration;
 use futures::StreamExt;
 use ratatui::crossterm::event::{Event, EventStream};
@@ -281,7 +285,10 @@ let mut tick = tokio::time::interval(Duration::from_millis(250));
 while !app.should_quit {
     terminal.draw(|f| app.draw(f))?;
     tokio::select! {
-        Some(event) = rx.recv() => app.handle(event),
+        event = rx.recv() => match event {
+            Some(event) => app.handle(event),
+            None => break, // reader ended (EOF or error); stop instead of ticking with no input
+        },
         _ = tick.tick() => app.on_tick(),
     }
 }
@@ -297,7 +304,7 @@ For sync-only apps, `event::poll(Duration::from_millis(250))` then `event::read(
 
 `TestBackend` lets you assert against rendered output:
 
-```rust
+```rust check=rust/test-backend
 use ratatui::{backend::TestBackend, Terminal};
 
 let backend = TestBackend::new(20, 5);
@@ -334,7 +341,7 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
 ## Companion crates
 
 - **clap** — argument parsing. Derive API:
-  ```rust
+  ```rust check=rust/clap-derive
   use clap::{Parser, Subcommand};
 
   #[derive(Parser)]
@@ -372,7 +379,7 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
 
 A Ratatui app that exits badly can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer `ratatui::run()` for the complete managed lifecycle or `ratatui::init()` when the application needs to own the loop. Install any reporting hook first, then let Ratatui wrap it:
 
-```rust
+```rust check=rust/run
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     ratatui::run(|terminal| App::default().run(terminal))
@@ -381,7 +388,7 @@ fn main() -> color_eyre::Result<()> {
 
 If you construct `Terminal` and configure Crossterm raw/alternate-screen state manually, you own both normal and panic cleanup. In that case, wrap the existing reporting hook yourself:
 
-```rust
+```rust check=rust/panic-hook
 color_eyre::install()?;
 let report_hook = std::panic::take_hook();
 std::panic::set_hook(Box::new(move |info| {
@@ -396,10 +403,10 @@ Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; 
 
 **Cursive** (`cursive`) — callback-driven, retained-mode, ncurses-like. Widget-rich (Dialog, EditView, SelectView, TextArea, LinearLayout, StackView, etc.). Best for form-heavy apps with dialogs and menus where you want a higher-level API. Less popular than Ratatui but well-documented. The `cursive` crate has had no release since 0.21.1 (August 2024) even though its repo is active, and it depends on crossterm 0.28, so mixing it with Ratatui-ecosystem crates puts two crossterm versions in one build.
 
-```rust
-use cursive::{Cursive, views::TextView};
+```rust check=rust/cursive
+use cursive::views::TextView;
 
-let mut siv = Cursive::default();
+let mut siv = cursive::default(); // a runnable Cursive on the default backend
 siv.add_layer(TextView::new("Hello, world!"));
 siv.add_global_callback('q', |s| s.quit());
 siv.run();

@@ -1,0 +1,27 @@
+import pytest
+from textual.app import App, ComposeResult
+from textual.widgets import Button
+
+
+class NameConventionApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield Button("Submit", id="submit")
+
+    <<sample python/on-handler>>
+
+
+class DecoratorApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield Button("Submit", id="submit")
+        yield Button("Delete", id="delete", classes="danger")
+
+    <<sample python/on-decorator>>
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("app_class", [NameConventionApp, DecoratorApp])
+async def test_handlers_run(app_class):
+    app = app_class()
+    async with app.run_test() as pilot:
+        await pilot.click("#submit")
+        await pilot.pause()

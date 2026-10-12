@@ -1,0 +1,24 @@
+#![allow(unused)]
+use color_eyre::Result;
+use ratatui::{DefaultTerminal, Frame};
+
+struct Input;
+
+impl Input {
+    fn stop(&mut self) {}
+    fn start(&mut self) {}
+}
+
+struct App {
+    input: Input,
+    path: std::path::PathBuf,
+}
+
+impl App {
+    fn reload(&mut self) {}
+    fn draw(&self, _frame: &mut Frame) {}
+}
+
+<<sample rust/editor-handoff>>
+
+fn main() {}

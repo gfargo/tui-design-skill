@@ -1,0 +1,37 @@
+import pytest
+from prompt_toolkit.application import create_app_session
+from prompt_toolkit.input import create_pipe_input
+from prompt_toolkit.output import DummyOutput
+
+
+def prompt_toolkit_sample():
+    <<sample python/prompt-toolkit>>
+    return text
+
+
+def questionary_sample():
+    <<sample python/questionary>>
+    return answer, choice
+
+
+def run_with_keys(function, *keys):
+    with create_pipe_input() as pipe:
+        for key in keys:
+            pipe.send_text(key)
+        pipe.close()  # EOF after the scripted keys, so a prompt waiting for more fails instead of hanging
+        with create_app_session(input=pipe, output=DummyOutput()):
+            return function()
+
+
+def test_prompt_reads_a_command():
+    assert run_with_keys(prompt_toolkit_sample, "list\r") == "list"
+
+
+def test_questionary_answers():
+    assert run_with_keys(questionary_sample, "Ada\r", "\x1b[B\r") == ("Ada", "green")
+
+
+def test_questionary_ctrl_c_exits_130():
+    with pytest.raises(SystemExit) as raised:
+        run_with_keys(questionary_sample, "\x03")
+    assert raised.value.code == 130

@@ -1,0 +1,24 @@
+import pytest
+from textual.app import App, ComposeResult
+
+<<sample python/reactive>>
+
+
+class CounterApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield Counter()
+
+
+@pytest.mark.asyncio
+async def test_validate_clamps_and_compute_follows():
+    app = CounterApp()
+    async with app.run_test() as pilot:
+        counter = app.query_one(Counter)
+        counter.count = 99
+        await pilot.pause()
+        assert (counter.count, counter.label) == (10, "Count: 10")
+        counter.count = -3
+        await pilot.pause()
+        assert (counter.count, counter.label) == (0, "Count: 0")
+        with pytest.raises(AttributeError):
+            counter.label = "read-only"

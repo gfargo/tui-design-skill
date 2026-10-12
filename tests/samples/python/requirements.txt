@@ -1,0 +1,11 @@
+# Runs the Python samples marked `check=python/...` in the skill references.
+# Framework pins match scripts/reference-inventory.json.
+textual==8.2.8
+rich==15.0.0
+httpx==0.28.1
+prompt-toolkit==3.0.53
+questionary==2.1.1
+click==8.5.0
+typer==0.27.3
+pytest==9.1.1
+pytest-asyncio==1.4.0

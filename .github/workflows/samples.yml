@@ -1,0 +1,79 @@
+name: Check code samples
+
+# Builds and tests the reference code samples marked check=<harness>/<name>
+# against the framework versions pinned under tests/samples/.
+
+on:
+  pull_request:
+    paths:
+      - "plugins/tui-design/skills/tui-design/**"
+      - "tests/samples/**"
+      - "scripts/check-samples.*"
+      - ".github/workflows/samples.yml"
+  push:
+    branches: [main]
+    paths:
+      - "plugins/tui-design/skills/tui-design/**"
+      - "tests/samples/**"
+      - "scripts/check-samples.*"
+      - ".github/workflows/samples.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tests/samples/go/go.mod
+          cache-dependency-path: tests/samples/go/go.sum
+      - run: ./scripts/check-samples.sh go
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Rust 1.93.1
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustup default 1.93.1
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            tests/samples/.build/.cargo-target
+          key: samples-rust-1.93.1-${{ runner.os }}-${{ hashFiles('tests/samples/rust/Cargo.lock') }}
+      - run: ./scripts/check-samples.sh rust
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: tests/samples/python/requirements.txt
+      - run: python -m pip install -r tests/samples/python/requirements.txt
+      - run: ./scripts/check-samples.sh python
+
+  typescript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22.20.0
+          cache: npm
+          cache-dependency-path: tests/samples/typescript/package-lock.json
+      - run: ./scripts/check-samples.sh typescript

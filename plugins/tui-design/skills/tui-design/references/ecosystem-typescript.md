@@ -410,7 +410,7 @@ Retained-mode classics, pre-Ink era.
 
 ## Stack recommendations by project shape
 
-**Simple non-interactive CLI** (~50ms cold start, ~30 KB deps):
+**Simple non-interactive CLI** (~50ms cold start, 19 packages and under 1 MB installed):
 ```
 commander + picocolors + ora
 ```

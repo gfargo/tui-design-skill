@@ -4,8 +4,15 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Added
+- **Accessibility section:** `visual-patterns.md` → *Accessibility* gathers what was scattered across five files. It explains what screen readers hear in a terminal (every repaint is read as new text) and gives rules that work: append instead of repaint, status in words, flattened tables, numbered choices, labelled lines, errors written to be spoken, and a cursor kept on the focus. It also defines the plain-mode contract, compares framework support, and covers reduced motion. `SKILL.md`'s routing row and `--no-tui` bullet point to it; the ecosystem references keep their API specifics and link to it.
+
 ### Fixed
+- **Accessibility facts:** `textual serve` is no longer called an accessibility path; its xterm.js canvas runs with screen-reader mode off, and Textual has no screen-reader support. Huh's accessible mode is described field by field, including that it switches on by itself only for `TERM=dumb`. Ink's screen-reader renderer is opt-in and still rewrites the live region on every change. Ratatui's missing accessibility layer is listed as a pitfall.
 - **TypeScript guidance:** the simple non-interactive CLI stack (commander, picocolors, ora) installs 19 packages and about 0.9 MB, not "~30 KB".
+
+### Evaluation
+- `evals/v180-accessibility-evals.json` covers a Huh form made usable with a screen reader, what `--no-tui` must output, `textual serve` as an accessibility claim, and Ink's screen-reader live region.
 
 ## [1.7.4] — 2026-10-12
 

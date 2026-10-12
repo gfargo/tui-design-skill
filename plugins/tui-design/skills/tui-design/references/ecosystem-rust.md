@@ -430,6 +430,7 @@ siv.run();
 6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
 7. **Layouts cache.** Split once and reuse the `Rect`s; don't re-split mid-frame for the same area.
 8. **`String::len()` is bytes, not cells.** Use `Line::width()` / `Span::width()` for Ratatui text, or `unicode_width::UnicodeWidthStr::width(s)` for raw strings.
+9. **No accessibility layer.** Ratatui has no screen-reader support; [ratatui#2610](https://github.com/ratatui/ratatui/issues/2610) tracks it, and the experimental `tui-a11y` crate is Linux-only. Give screen-reader users a linear mode; see `visual-patterns.md` → *Accessibility*.
 
 ---
 

@@ -288,7 +288,7 @@ err := form.Run()
 
 Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect[T]`, `NewConfirm`, `NewFilePicker`, `NewNote` (display-only).
 
-**Accessibility:** `form.WithAccessible(true)` switches to plain prompts (line-by-line, no alt-screen) for screen readers and limited terminals — a genuinely thoughtful feature.
+**Accessibility:** `form.WithAccessible(true)` bypasses Bubble Tea and asks each field as a plain line-by-line prompt: a numbered list for `Select` (the user types the number), numbers toggled one at a time and `0` to finish for `MultiSelect`, `y`/`n` for `Confirm`, and validation errors printed before the prompt repeats. Huh turns it on by itself only for `TERM=dumb`, so expose your own switch. The README reads an `ACCESSIBLE` environment variable, and gh's `GH_ACCESSIBLE_PROMPTER` drives exactly this mode. Bubble Tea and Bubbles have nothing comparable, so the rest of the app needs its own linear mode; see `visual-patterns.md` → *Accessibility*.
 
 **Full-screen:** `tea.WithAltScreen()` is gone in v2 — declare it on the view instead: `form.WithViewHook(func(v tea.View) tea.View { v.AltScreen = true; return v })`.
 

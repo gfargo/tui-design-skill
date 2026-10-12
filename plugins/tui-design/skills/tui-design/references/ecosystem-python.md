@@ -303,7 +303,9 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 
 - **`textual serve app.py`** — serves the app over HTTP/WebSocket; runs in a browser tab. Same Python code, no changes.
 
-`textual serve` is genuinely unusual: same codebase runs in terminal, over SSH, or in a browser — and it's the best accessibility story in TUI-land, since browsers have real screen reader support. Prefer it (self-hosted; works with Textual 8.2) over **textual-web**, the hosted service, which has had no release since 0.8.0 in August 2024.
+`textual serve` is genuinely unusual: the same codebase runs in a terminal, over SSH, or in a browser. Prefer it (self-hosted; works with Textual 8.2) over **textual-web**, the hosted service, which has had no release since 0.8.0 in August 2024.
+
+**Accessibility:** `textual serve` is not an accessibility path. Its browser client paints the terminal grid with xterm.js on a canvas, with xterm's screen-reader mode off, so a screen reader gets no more than it would in a terminal. Textual itself has no screen-reader support; the roadmap item is still open. For reduced motion, `TEXTUAL_ANIMATIONS=none` (or setting `App.animation_level` to `"none"`) makes built-in animations jump to their end state and the loading indicator static; custom timers and spinners must check `app.animation_level` themselves. Design guidance: `visual-patterns.md` → *Accessibility*.
 
 ## Notable Textual apps
 

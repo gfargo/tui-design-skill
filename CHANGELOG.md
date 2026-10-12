@@ -4,6 +4,10 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+## [1.7.4] — 2026-10-12
+
+Correctness patch after an October 2026 freshness audit against current framework releases, plus CI that builds and tests the reference code samples so they cannot drift from real APIs.
+
 ### Fixed
 - **Current releases:**
   - Ink 8.0 (October 2026) is the current major. It needs React 19.3 and accepts only numbers for `minWidth`/`maxWidth`. It types `stdout` as a generic stream, so read the width from `useWindowSize()`, and `useInput` drops unrecognized terminal sequences.
@@ -12,7 +16,6 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - **Reserved keys:** `SKILL.md` no longer says to preserve flow control. It now matches the reserved-keys reference: `Ctrl+C` cancels or quits, `Ctrl+Z` suspends through the framework, and a full-screen app may bind `Ctrl+S`.
 - **Go guidance:**
   - Embedding a Huh form type-asserts the `huh.Model` that `Form.Update` returns.
-  - Standalone Lipgloss output uses `lipgloss.Println`, because v2 `Render` always emits truecolor.
   - New lazy-style apps use Bubble Tea. lazygit now keeps its own gocui fork on tcell v3, so gocui is no longer recommended.
   - Always render a default palette, because `BackgroundColorMsg` may never arrive. The parent of an embedded Huh form must request the background color itself.
   - `tea.Println` prints above an inline UI, and the TUI is gated on stdout being a terminal.
@@ -43,7 +46,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - **Demo-recording route:** screenshots and demo GIFs no longer route only to the separate `vhs-cli-demos` skill, which ships only with the `gfargo/skills` marketplace and was missing from every other install path. The skill uses `vhs-cli-demos` when it is installed and otherwise falls back to `cli-basics.md` → *Demo recordings*: a short VHS guide to tapes, `Set Columns`/`Set Rows` sizing, `Wait`, `Require`, and lossless GIF optimization. README → *Install* says where to get `vhs-cli-demos`.
 - **Rust samples:** the canonical app quits on Ctrl+C and Esc as well as `q`, because raw mode delivers Ctrl+C as a key event; the Tokio loop stops when the input reader ends instead of ticking forever with no way to quit; the Cursive sample builds with `cursive::default()`; the Elm sketch compiles.
 - **Python samples:** the canonical Textual app uses inline `CSS` instead of a `hello.tcss` that was never supplied; the Pilot test carries `@pytest.mark.asyncio` for pytest-asyncio's default strict mode; the worker sample passes `Static` to `query_one`; the modal sample has its imports; the Rich sample sends errors and progress to a stderr console; the questionary sample exits 130 on Ctrl-C instead of continuing with `None`.
-- **Go samples:** standalone Lipgloss output goes through `lipgloss.Println`, which downsamples for the terminal; the teatest sample uses `colorprofile.ASCII`; the debug-log snippet checks the `tea.LogToFile` error so logs cannot land in the TUI.
+- **Go samples:** standalone Lipgloss output goes through `lipgloss.Println`, which downsamples for the terminal, because v2 `Render` always emits truecolor; the teatest sample uses `colorprofile.ASCII`; the debug-log snippet checks the `tea.LogToFile` error so logs cannot land in the TUI.
 
 ### Release engineering
 - `scripts/reference-inventory.json` tracks Ink 8.0.0 and Bubble Tea v2.1.0. Bubble Tea is now checked at minor precision, so a new minor release gets flagged. Source links point at the current tags and at a Textual anchor that exists.

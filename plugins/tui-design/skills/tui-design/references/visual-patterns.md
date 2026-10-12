@@ -15,6 +15,7 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 - [Status bars, headers, footers](#status-bars-headers-footers)
 - [Progress indicators](#progress-indicators) (includes disconnected/stale-data and timeout/cancel UX)
 - [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
+- [Accessibility](#accessibility) (screen readers, the plain-mode contract, framework support, motion)
 - [Common visual pitfalls](#common-visual-pitfalls)
 
 ---
@@ -565,6 +566,7 @@ Ten frames at ~80ms per frame (cli-spinners' `dots`) = smooth rotation. `cli-spi
 - Show only after ~100–200ms — instant work shouldn't flash a spinner.
 - Stop with a final state symbol: `✓` (success), `✗` (failure), or just disappear.
 - Suppress entirely on non-TTY. CI logs shouldn't have spinners.
+- In plain, screen-reader, or reduced-motion mode, print one static line instead (see *Accessibility*).
 
 ### Determinate progress bars
 
@@ -661,6 +663,59 @@ The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII —
 - Lipgloss v2's `LightDark` (`AdaptiveColor` in v1/compat) and Textual's runtime theme switching abstract this.
 
 If you support both light and dark, default to "auto" and let users override with `--theme dark`.
+
+---
+
+## Accessibility
+
+Be honest about the medium. Screen readers announce what changed on screen. NVDA finds new text in a terminal by diffing its contents, and Windows Terminal reports text as it is written ([NVDA user guide](https://download.nvaccess.org/releases/2026.2/documentation/userGuide.html#DiffAlgo), [Windows Terminal accessibility notes](https://github.com/microsoft/terminal/blob/e90f9a534cae047fccddacc1ee813a82929662d5/doc/terminal-a11y-2023.md)). A full-screen UI repaints constantly, so a spinner frame, a re-highlighted menu row, or a redrawn panel is heard as new text, and the layout itself carries no structure a listener can navigate. No TUI framework fixes that. The dependable answer is a linear mode offered alongside the full-screen UI.
+
+### What works for screen-reader users
+
+These rules come from Sampath, Merrick, and Macvean's study of blind developers using CLIs ([CHI '21](https://doi.org/10.1145/3411764.3445544)) and from the screen-reader modes that current agent CLIs ship:
+
+- **Append; don't repaint.** Report a state change as a new line (`Saved notes.txt`) instead of redrawing a status bar, and keep output in scrollback rather than on the alternate screen.
+- **Say it in words.** End every command with a status line, because silent success leaves users guessing. Make progress an occasional line (`Uploaded 3 of 10`), not spinner frames or a bar, which are read out character by character.
+- **Flatten structure.** Turn table rows into labelled `Header: value` lines or offer `--format csv|json`; aligned columns force users to memorize column order. Drop borders, box drawing, and ASCII art, which are heard as symbol noise.
+- **Number the choices.** An arrow-key menu is re-read whenever the highlight moves; print a numbered list and read a typed answer.
+- **Label lines.** Prefix output kinds (`error:`, `warning:`, speaker names in a chat) so a listener knows what a line is before hearing it.
+- **Write errors to be spoken.** Say what failed and what to do next, without regexes or symbol-dense jargon.
+- **Keep the cursor on the focus.** Screen readers and magnifiers follow the terminal cursor, which full-screen apps usually hide. Leave it on the focused field or row, or return it to the prompt after printing.
+
+[Claude Code's screen-reader mode](https://code.claude.com/docs/en/accessibility) is the most complete published example: flat text without box drawing, `Header: value` tables, numbered menus, labelled lines, no fullscreen, and the terminal bell when it needs input.
+
+### The plain-mode contract
+
+`SKILL.md` requires a `--no-tui`-style mode when automation or accessibility needs linear output. Treat it as part of the product, not a degraded fallback. It must meet these terms:
+
+- It reaches every action the TUI offers; nothing is TUI-only.
+- It follows the rules above and the stream contract in `cli-basics.md` → *Stdin / stdout / stderr discipline*. Results go to stdout; prompts and progress go to stderr.
+- Meaning never depends on color, column position, or layout.
+- Every prompt has a flag or config equivalent, so the mode can run unattended.
+- Users turn it on once, through a flag, an environment variable, or a persistent setting, and it starts automatically when stdout is not a terminal. Don't count on detecting a screen reader. Ink, Gemini CLI, and Claude Code all require an explicit opt-in. gh's `GH_ACCESSIBLE_PROMPTER` and `GH_SPINNER_DISABLED`, with matching config keys, are the model.
+
+### Framework support
+
+None of these makes a full-screen app accessible by itself. Check the ecosystem reference before relying on a feature:
+
+| Stack | What exists | Details |
+|---|---|---|
+| Huh (Go) | Accessible mode: plain line-by-line prompts with numbered choices and no full-screen redraw. The app switches it on, and Huh does so itself only for `TERM=dumb` | `ecosystem-go.md` → *Huh* |
+| Bubble Tea, Bubbles | Nothing screen-reader-specific. Build the linear mode yourself and use Huh's accessible mode for prompts, as gh does | `ecosystem-go.md` → *Huh* |
+| Ink | `aria-*` props and an opt-in screen-reader renderer that prints linear text without borders or color; the live region is still rewritten on every change | `ecosystem-typescript.md` → *Weaknesses* |
+| Textual | No screen-reader support, and `textual serve` adds none. Built-in animations honor a reduced-motion level | `ecosystem-python.md` → *Dev tools* |
+| Ratatui | Nothing in the library; accessibility is an open tracking issue | `ecosystem-rust.md` → *Pitfalls* |
+
+### Motion
+
+- Treat animation as decoration with an off switch, and default it off in plain and screen-reader modes. No cross-tool reduced-motion variable exists, so name yours and document it, as gh (`GH_SPINNER_DISABLED`) and Textual (`TEXTUAL_ANIMATIONS=none`) do.
+- With motion off, print one static line (`Working…`) and then the final status, rather than a frozen spinner frame.
+- Never blink text (see *Typography in monospace*), and don't animate content the user is reading.
+
+### Keyboard, focus, and color
+
+- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least two cues besides color; see `interaction-patterns.md` → *Focus indicators*.
+- Color rules live in *Color and accessibility* and *Honor `NO_COLOR`* above. Keep a 16-color theme: those colors follow the user's terminal palette, including high-contrast palettes, while truecolor values override it.
 
 ---
 

@@ -16,7 +16,7 @@ Design terminal software that is calm, predictable, fast, and honest about the m
 | Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
 | TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
 | One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
-| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility | `references/visual-patterns.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
 | Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
 | Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
 | Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
@@ -74,7 +74,7 @@ For design questions, make the recommendation before explaining it. For implemen
 - Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
 - Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
 - Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
-- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
 
 ## Apply two review reflexes unprompted
 

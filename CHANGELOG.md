@@ -6,12 +6,18 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ### Added
 - **Accessibility section:** `visual-patterns.md` → *Accessibility* gathers what was scattered across five files. It explains what screen readers hear in a terminal (every repaint is read as new text) and gives rules that work: append instead of repaint, status in words, flattened tables, numbered choices, labelled lines, errors written to be spoken, and a cursor kept on the focus. It also defines the plain-mode contract, compares framework support, and covers reduced motion. `SKILL.md`'s routing row and `--no-tui` bullet point to it; the ecosystem references keep their API specifics and link to it.
+- **Terminal modes and protocols:** `interaction-patterns.md` gains a section on the modes a full-screen app turns on and must turn off: bracketed paste, the kitty keyboard protocol and `modifyOtherKeys`, mouse and focus reporting, synchronized output, cursor shape, window title, OSC 9;4 progress, OSC 133 prompt marks, grapheme clusters, color-depth detection, OSC 11 background queries, mode 2031 theme notifications, and tmux and SSH behavior. A table shows which modes Bubble Tea, crossterm/Ratatui, Textual, and Ink enable by default, and each item gives a safe default, a fallback, and what to restore on exit.
 
 ### Fixed
+- **Accessibility pointers:** the *Accessibility* framework table points at the TypeScript reference's real *Strengths and weaknesses* heading, and the focus rule asks for one non-color cue combined as *Focus indicators* describes.
 - **Accessibility facts:** `textual serve` is no longer called an accessibility path; its xterm.js canvas runs with screen-reader mode off, and Textual has no screen-reader support. Huh's accessible mode is described field by field, including that it switches on by itself only for `TERM=dumb`. Ink's screen-reader renderer is opt-in and still rewrites the live region on every change. Ratatui's missing accessibility layer is listed as a pitfall.
 - **TypeScript guidance:** the simple non-interactive CLI stack (commander, picocolors, ora) installs 19 packages and about 0.9 MB, not "~30 KB".
 
+### Release engineering
+- `scripts/reference-inventory.json` adds source links for the kitty keyboard protocol, the synchronized-output and color-palette-update specs, ConEmu's and Windows Terminal's OSC 9;4 docs, and the tmux 3.8 manual.
+
 ### Evaluation
+- `evals/v180-terminal-modes-evals.json` covers multi-line paste without bracketed paste, tearing and synchronized output, Shift+Enter and the kitty keyboard protocol, background-color queries over SSH and theme notifications, and restoring the cursor shape and window title.
 - `evals/v180-accessibility-evals.json` covers a Huh form made usable with a screen reader, what `--no-tui` must output, `textual serve` as an accessibility claim, and Ink's screen-reader live region.
 
 ## [1.7.4] — 2026-10-12

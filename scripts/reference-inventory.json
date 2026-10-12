@@ -75,6 +75,48 @@
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
       "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#suspendterminalcallback"
+    },
+    {
+      "id": "kitty-keyboard-protocol-spec",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://sw.kovidgoyal.net/kitty/keyboard-protocol/"
+    },
+    {
+      "id": "synchronized-output-spec",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md"
+    },
+    {
+      "id": "color-palette-update-spec",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://github.com/contour-terminal/contour/blob/ab57ab3288c3dca5ff727311cb3f1401bac30549/docs/vt-extensions/color-palette-update-notifications.md"
+    },
+    {
+      "id": "conemu-osc-progress-spec",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC"
+    },
+    {
+      "id": "windows-terminal-progress-doc",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences"
+    },
+    {
+      "id": "tmux-3-8-manual",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://github.com/tmux/tmux/blob/3.8/tmux.1"
     }
   ]
 }

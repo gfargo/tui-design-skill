@@ -254,7 +254,7 @@ Detect via the first set of `$LC_ALL` → `$LC_CTYPE` → `$LANG` containing UTF
 
 ### The three tiers
 
-Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier. SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier (detection details: `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*). SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
 
 ### Semantic tokens
 
@@ -658,7 +658,7 @@ The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII —
 
 ### Light/dark detection
 
-- OSC `]11;?` query — many terminals respond with their background color.
+- OSC `]11;?` query — many terminals respond with their background color; others never answer, so bound the wait. Mode 2031 reports later theme switches where supported. The query, timeout, and sentinel details are in `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*.
 - `$COLORFGBG` env var — set by some terminals (rxvt-derivatives).
 - Lipgloss v2's `LightDark` (`AdaptiveColor` in v1/compat) and Textual's runtime theme switching abstract this.
 
@@ -702,7 +702,7 @@ None of these makes a full-screen app accessible by itself. Check the ecosystem 
 |---|---|---|
 | Huh (Go) | Accessible mode: plain line-by-line prompts with numbered choices and no full-screen redraw. The app switches it on, and Huh does so itself only for `TERM=dumb` | `ecosystem-go.md` → *Huh* |
 | Bubble Tea, Bubbles | Nothing screen-reader-specific. Build the linear mode yourself and use Huh's accessible mode for prompts, as gh does | `ecosystem-go.md` → *Huh* |
-| Ink | `aria-*` props and an opt-in screen-reader renderer that prints linear text without borders or color; the live region is still rewritten on every change | `ecosystem-typescript.md` → *Weaknesses* |
+| Ink | `aria-*` props and an opt-in screen-reader renderer that prints linear text without borders or color; the live region is still rewritten on every change | `ecosystem-typescript.md` → *Strengths and weaknesses* |
 | Textual | No screen-reader support, and `textual serve` adds none. Built-in animations honor a reduced-motion level | `ecosystem-python.md` → *Dev tools* |
 | Ratatui | Nothing in the library; accessibility is an open tracking issue | `ecosystem-rust.md` → *Pitfalls* |
 
@@ -714,7 +714,7 @@ None of these makes a full-screen app accessible by itself. Check the ecosystem 
 
 ### Keyboard, focus, and color
 
-- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least two cues besides color; see `interaction-patterns.md` → *Focus indicators*.
+- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least one cue besides color (border weight, reverse video, or a marker), combined as `interaction-patterns.md` → *Focus indicators* describes.
 - Color rules live in *Color and accessibility* and *Honor `NO_COLOR`* above. Keep a 16-color theme: those colors follow the user's terminal palette, including high-contrast palettes, while truecolor values override it.
 
 ---

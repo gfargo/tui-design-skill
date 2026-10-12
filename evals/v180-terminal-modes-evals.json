@@ -1,0 +1,65 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Terminal-mode cases for interaction-patterns.md → Terminal modes and protocols (#38), checked against primary sources on 2026-10-12: xterm ctlseqs (Patch #411), the kitty keyboard protocol docs, contour's synchronized-output and color-palette-update specs, the ConEmu and Windows Terminal OSC 9;4 docs, tmux 3.8 CHANGES and tmux.1, OpenSSH 10.6 and Debian/Ubuntu ssh configs, and framework source at Bubble Tea v2.1.0, crossterm 0.29 / Ratatui 0.30.2, Textual 8.2.8, and Ink 8.0.0. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "evals": [
+    {
+      "id": "bracketed-paste-multiline",
+      "name": "bracketed-paste-multiline",
+      "prompt": "Users paste multi-line shell snippets into the single-line command input of our Ratatui TUI, and the app runs each pasted line as a separate command. What's going on, and how do we fix it?",
+      "files": [],
+      "assertions": [
+        "Identifies that without bracketed paste (mode 2004) pasted text arrives as ordinary keystrokes, so each pasted newline acts as Enter",
+        "Enables bracketed paste through crossterm (EnableBracketedPaste) and handles the resulting paste event, noting that crossterm and Ratatui do not enable it by default",
+        "Decides explicitly what a multi-line paste means for a single-line field (keep the first line, reject it, or switch to a multi-line editor) and never submits on a pasted newline",
+        "Disables bracketed paste on every exit path, including errors and panics, because Ratatui's restore() only undoes raw mode and the alternate screen"
+      ]
+    },
+    {
+      "id": "sync-output-tearing",
+      "name": "sync-output-tearing",
+      "prompt": "Our Ratatui dashboard tears visibly when it redraws a large table on every tick in kitty and WezTerm. Is there a terminal feature for this, and how do we use it safely?",
+      "files": [],
+      "assertions": [
+        "Recommends synchronized output (mode 2026), wrapping each frame in the begin and end sequences so the terminal paints it at once",
+        "Notes that Ratatui does not wrap draw calls automatically, so the app calls crossterm's BeginSynchronizedUpdate/EndSynchronizedUpdate (or sync_update) itself",
+        "Always sends the end sequence, including on error paths, because a terminal otherwise holds the frame until its own timeout",
+        "Gives a fallback for terminals without support or a way to detect support (DECRQM), such as writing each frame in one write and sending only changed cells"
+      ]
+    },
+    {
+      "id": "kitty-keyboard-shift-enter",
+      "name": "kitty-keyboard-shift-enter",
+      "prompt": "In our Bubble Tea v2 chat app, Shift+Enter should insert a newline and Enter should send. It works in kitty, but in some terminals and inside tmux Shift+Enter just sends. Why, and what should the design be?",
+      "files": [],
+      "assertions": [
+        "Explains that the legacy encoding sends the same byte for Enter and Shift+Enter, so telling them apart needs the kitty keyboard protocol (or xterm's modifyOtherKeys)",
+        "Notes that Bubble Tea v2 requests keyboard enhancements but terminals without the protocol, and tmux without extended-keys enabled, still deliver the legacy encoding",
+        "Keeps a newline binding that works in the legacy encoding and treats Shift+Enter as an accelerator, not the only way to insert a newline",
+        "Adjusts the shown key hints based on whether the terminal reported enhanced keyboard support"
+      ]
+    },
+    {
+      "id": "background-query-ssh",
+      "name": "background-query-ssh",
+      "prompt": "Our TUI picks light or dark colors by asking the terminal for its background color. Over SSH it sometimes stalls at startup, some terminals never seem to answer, and it never notices when the user switches their OS theme. How should this work?",
+      "files": [],
+      "assertions": [
+        "Renders immediately with a default palette and treats the background reply (OSC 11) as an upgrade, never blocking startup on it",
+        "Bounds the wait with a timeout and/or a sentinel query every terminal answers (such as DA1), because some terminals never reply to OSC 11",
+        "Uses dark/light change notifications (mode 2031) where the terminal supports them, re-querying the background when a report arrives",
+        "Turns mode 2031 off on exit and before handing the terminal to a child process"
+      ]
+    },
+    {
+      "id": "cursor-title-restore",
+      "name": "cursor-title-restore",
+      "prompt": "Our Ratatui editor switches to a bar cursor in insert mode and sets the window title to the open file's name. After quitting, users are left with a bar cursor and a stale title. What should we do on exit?",
+      "files": [],
+      "assertions": [
+        "Resets the cursor shape on every exit path (DECSCUSR 0, e.g. crossterm's SetCursorStyle::DefaultUserShape), because Ratatui's restore() does not",
+        "Acknowledges that the original cursor shape cannot be reliably queried and that some terminals (such as xterm) treat shape 0 as a blinking block rather than the user's setting",
+        "Saves the previous title with the title stack (push before setting, pop on exit), noting that some terminals ignore the stack and the old title may be lost there"
+      ]
+    }
+  ]
+}

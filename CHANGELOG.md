@@ -4,6 +4,9 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Fixed
+- **TypeScript guidance:** the simple non-interactive CLI stack (commander, picocolors, ora) installs 19 packages and about 0.9 MB, not "~30 KB".
+
 ## [1.7.4] — 2026-10-12
 
 Correctness patch after an October 2026 freshness audit against current framework releases, plus CI that builds and tests the reference code samples so they cannot drift from real APIs.

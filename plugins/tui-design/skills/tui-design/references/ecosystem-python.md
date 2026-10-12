@@ -39,7 +39,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Button, Label
 
 class HelloApp(App):
-    CSS_PATH = "hello.tcss"
+    CSS = "#greeting { padding: 1 2; }"  # or CSS_PATH = "hello.tcss"; that file must exist
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("d", "toggle_dark", "Toggle dark mode"),
@@ -199,13 +199,14 @@ Handlers can be `async def`. The `@work` decorator turns methods into background
 ```python
 import httpx
 from textual import work
+from textual.widgets import Static
 
 @work(exclusive=True)
 async def fetch_data(self, url: str) -> None:
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         response.raise_for_status()
-    self.query_one("#result").update(response.text)
+    self.query_one("#result", Static).update(response.text)
 
 # For blocking code:
 @work(thread=True)
@@ -221,7 +222,10 @@ def compute_heavy(self) -> None:
 Push a screen on top for dialogs/modals:
 
 ```python
+from textual import on, work
+from textual.app import ComposeResult
 from textual.screen import ModalScreen
+from textual.widgets import Button, Label
 
 class ConfirmDialog(ModalScreen[bool]):
     def compose(self) -> ComposeResult:
@@ -251,8 +255,10 @@ async def action_delete(self) -> None:
 Textual has the best testing story of any TUI framework:
 
 ```python
+import pytest
 from textual.widgets import Label
 
+@pytest.mark.asyncio  # or asyncio_mode = "auto"
 async def test_button_click():
     app = HelloApp()  # the example app above
     async with app.run_test(size=(80, 24)) as pilot:
@@ -328,9 +334,10 @@ from rich.panel import Panel
 from rich.progress import track
 
 console = Console()
+err = Console(stderr=True)  # diagnostics and progress stay off stdout
 
 # Markup syntax (like BBCode)
-console.print("[bold red]Error:[/] file not found")
+err.print("[bold red]Error:[/] file not found")
 
 # Tables
 table = Table(title="Users")
@@ -343,7 +350,7 @@ console.print(table)
 console.print(Panel.fit("Hello, world!", title="Greeting", border_style="blue"))
 
 # Progress
-for item in track(items, description="Processing..."):
+for item in track(items, description="Processing...", console=err):
     do_work(item)
 ```
 
@@ -378,13 +385,16 @@ text = prompt("> ", completer=cmd_completer)
 For one-off prompts inside CLI tools, use **questionary** (built on prompt_toolkit) — much simpler API:
 
 ```python
+import sys
 import questionary
 
 answer = questionary.text("What's your name?").ask()
+if answer is None:  # .ask() turns Ctrl-C into None
+    sys.exit(130)
 choice = questionary.select(
     "Pick a color",
     choices=["red", "green", "blue"],
-).ask()
+).unsafe_ask()  # raises KeyboardInterrupt instead
 ```
 
 ---

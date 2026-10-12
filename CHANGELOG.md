@@ -4,6 +4,11 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Fixed
+- **Rust samples:** the canonical app quits on Ctrl+C and Esc as well as `q`, because raw mode delivers Ctrl+C as a key event; the Tokio loop stops when the input reader ends instead of ticking forever with no way to quit; the Cursive sample builds with `cursive::default()`; the Elm sketch compiles.
+- **Python samples:** the canonical Textual app uses inline `CSS` instead of a `hello.tcss` that was never supplied; the Pilot test carries `@pytest.mark.asyncio` for pytest-asyncio's default strict mode; the worker sample passes `Static` to `query_one`; the modal sample has its imports; the Rich sample sends errors and progress to a stderr console; the questionary sample exits 130 on Ctrl-C instead of continuing with `None`.
+- **Go samples:** standalone Lipgloss output goes through `lipgloss.Println`, which downsamples for the terminal; the teatest sample uses `colorprofile.ASCII`; the debug-log snippet checks the `tea.LogToFile` error so logs cannot land in the TUI.
+
 ## [1.7.3] — 2026-09-24
 
 Correctness patch after a September 2026 audit that checked every code sample and version-sensitive claim against tagged upstream sources, plus release-workflow hardening.

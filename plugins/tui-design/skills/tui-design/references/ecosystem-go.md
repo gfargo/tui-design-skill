@@ -150,7 +150,7 @@ var titleStyle = lipgloss.NewStyle().
     BorderStyle(lipgloss.RoundedBorder()).
     BorderForeground(lipgloss.Color("63"))
 
-fmt.Println(titleStyle.Render("Hello, world"))
+lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the terminal; fmt.Println would not
 ```
 
 **Layout helpers:**
@@ -441,7 +441,7 @@ v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials
 ```go
 tm := teatest.NewTestModel(t, newModel(),
     teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
-    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.Ascii)), // v2 only
+    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.ASCII)), // v2 only
 )
 teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
     return bytes.Contains(b, []byte("ready"))
@@ -469,7 +469,11 @@ Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` blo
 
 ```go
 if len(os.Getenv("DEBUG")) > 0 {
-    f, _ := tea.LogToFile("debug.log", "debug")
+    f, err := tea.LogToFile("debug.log", "debug")
+    if err != nil {
+        fmt.Fprintln(os.Stderr, "fatal:", err) // otherwise logs land in the TUI
+        os.Exit(1)
+    }
     defer f.Close()
 }
 ```

@@ -45,7 +45,7 @@ The mental model is **"UI = f(state)"**. You manage app state, the event loop, a
 
 ```rust
 use ratatui::{prelude::*, widgets::*, DefaultTerminal};
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use color_eyre::Result;
 
 fn main() -> Result<()> {
@@ -83,7 +83,11 @@ impl App {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Char('q') => self.should_quit = true,
+                    KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
+                    // raw mode delivers Ctrl+C as a key event, not SIGINT
+                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        self.should_quit = true
+                    }
                     KeyCode::Char('+') | KeyCode::Right => self.counter += 1,
                     KeyCode::Char('-') | KeyCode::Left => self.counter -= 1,
                     _ => {}
@@ -237,7 +241,7 @@ struct App {
 ```rust
 enum Msg { Increment, Decrement, Quit }
 
-fn update(model: &mut Model, msg: Msg) -> Option<Cmd> { /* ... */ }
+fn update(model: &mut Model, msg: Msg) -> Option<Cmd> { todo!() }
 fn view(model: &Model, frame: &mut Frame) { /* ... */ }
 ```
 
@@ -279,7 +283,10 @@ let mut tick = tokio::time::interval(Duration::from_millis(250));
 while !app.should_quit {
     terminal.draw(|f| app.draw(f))?;
     tokio::select! {
-        Some(event) = rx.recv() => app.handle(event),
+        event = rx.recv() => match event {
+            Some(event) => app.handle(event),
+            None => break, // reader ended (EOF or error); stop instead of ticking with no input
+        },
         _ = tick.tick() => app.on_tick(),
     }
 }
@@ -393,9 +400,9 @@ Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; 
 **Cursive** (`cursive`) — callback-driven, retained-mode, ncurses-like. Widget-rich (Dialog, EditView, SelectView, TextArea, LinearLayout, StackView, etc.). Best for form-heavy apps with dialogs and menus where you want a higher-level API. Less popular than Ratatui but stable and well-documented.
 
 ```rust
-use cursive::{Cursive, views::TextView};
+use cursive::views::TextView;
 
-let mut siv = Cursive::default();
+let mut siv = cursive::default(); // a runnable Cursive on the default backend
 siv.add_layer(TextView::new("Hello, world!"));
 siv.add_global_callback('q', |s| s.quit());
 siv.run();

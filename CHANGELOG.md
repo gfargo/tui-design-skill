@@ -40,6 +40,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - commander has no built-in shell completions.
   - `XDG_STATE_HOME` holds state that persists between restarts.
   - starship is described by its per-module time budgets.
+- **Demo-recording route:** screenshots and demo GIFs no longer route only to the separate `vhs-cli-demos` skill, which ships only with the `gfargo/skills` marketplace and was missing from every other install path. The skill uses `vhs-cli-demos` when it is installed and otherwise falls back to `cli-basics.md` → *Demo recordings*: a short VHS guide to tapes, `Set Columns`/`Set Rows` sizing, `Wait`, `Require`, and lossless GIF optimization. README → *Install* says where to get `vhs-cli-demos`.
 
 ### Release engineering
 - `scripts/reference-inventory.json` tracks Ink 8.0.0 and Bubble Tea v2.1.0. Bubble Tea is now checked at minor precision, so a new minor release gets flagged. Source links point at the current tags and at a Textual anchor that exists.

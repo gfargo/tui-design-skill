@@ -19,7 +19,7 @@ Design terminal software that is calm, predictable, fast, and honest about the m
 | Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility | `references/visual-patterns.md` |
 | Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
 | Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
-| Screenshots or demo recordings | Use the separate `vhs-cli-demos` skill |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
 
 Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
 

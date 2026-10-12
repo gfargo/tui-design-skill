@@ -6,9 +6,9 @@
       "framework": "Bubble Tea",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
-      "claim": "\"v2 is stable (v2.0.0 shipped February 2026 ...; current is v2.0.x)\"",
-      "pinned_version": "2.0.8",
-      "granularity": "major",
+      "claim": "\"v2 is stable (v2.0.0 shipped February 2026 ...; current is v2.1.x, and Go 1.26+ is required since v2.0.10)\"",
+      "pinned_version": "2.1.0",
+      "granularity": "minor",
       "registry": { "type": "go_proxy", "module": "github.com/charmbracelet/bubbletea/v2" }
     },
     {
@@ -16,14 +16,14 @@
       "framework": "Bubble Tea",
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
-      "url": "https://github.com/charmbracelet/bubbletea/blob/v2.0.8/exec.go"
+      "url": "https://github.com/charmbracelet/bubbletea/blob/v2.1.0/exec.go"
     },
     {
       "id": "bubbletea-tea-go-source",
       "framework": "Bubble Tea",
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
-      "url": "https://github.com/charmbracelet/bubbletea/blob/v2.0.8/tea.go"
+      "url": "https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go"
     },
     {
       "id": "ratatui-current-line",
@@ -57,15 +57,15 @@
       "framework": "Textual",
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
-      "url": "https://textual.textualize.io/guide/app/#suspending-the-application"
+      "url": "https://textual.textualize.io/guide/app/#suspend-context-manager"
     },
     {
       "id": "ink-current-major",
       "framework": "Ink",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
-      "claim": "\"Current major: Ink 7 (7.1.x as of mid-2026)\"",
-      "pinned_version": "7.1.1",
+      "claim": "\"Current major: Ink 8 (8.0.x, October 2026)\"",
+      "pinned_version": "8.0.0",
       "granularity": "minor",
       "registry": { "type": "npm", "package": "ink" }
     },
@@ -74,7 +74,7 @@
       "framework": "Ink",
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
-      "url": "https://github.com/vadimdemedes/ink/blob/v7.1.1/readme.md#suspendterminalcallback"
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#suspendterminalcallback"
     }
   ]
 }

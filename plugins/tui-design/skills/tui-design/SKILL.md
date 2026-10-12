@@ -72,7 +72,7 @@ For design questions, make the recommendation before explaining it. For implemen
 - Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
 - Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
 - Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
-- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve terminal-reserved behavior such as interrupt, suspend, and flow control.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
 - Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
 - Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output.
 

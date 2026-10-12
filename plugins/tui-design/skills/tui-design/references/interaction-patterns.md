@@ -331,13 +331,13 @@ The fight between camps:
 
 - Textual treats mouse as first-class with `:hover`, click, scroll wheel.
 - btop makes every highlighted key clickable and scrolls lists with the wheel.
-- lazygit selects on click.
+- lazygit selects on click, range-selects by dragging, and reorders commits by dragging (v0.64+).
 - Modern users expect to be able to click things.
 
 ### Anti-mouse
 
-- vim, helix, fzf purists.
-- Mouse interferes with terminal text-selection (Shift bypasses in most emulators).
+- vim purists, and keyboard-first users of any tool (helix and fzf turn the mouse on by default but never require it).
+- Mouse capture takes over click-and-drag text selection; users must hold a bypass modifier (Shift in most terminals, Option in iTerm2, Fn in Terminal.app).
 - Adds complexity without speed benefit for power users.
 
 ### The pragmatic compromise
@@ -355,7 +355,7 @@ Don't require mouse for:
 - Power-user actions.
 - Anything that should work over a serial console or restricted SSH.
 
-**Document the Shift-bypass** for text selection. When mouse capture is on, regular click-drag selects via the app, not via the terminal. Users learn this pattern from one app and transfer it.
+**Document the selection bypass** for your users' terminals, since the modifier isn't always Shift, and offer a way to turn mouse capture off. When mouse capture is on, regular click-drag selects via the app, not via the terminal. Users learn this pattern from one app and transfer it.
 
 ---
 
@@ -439,7 +439,7 @@ There's no single widely adopted TUI convention for settings persistence. Choose
 
 - **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
 - **Explicit Apply / Save / Cancel**: appropriate when changes must be validated together, committed atomically, trigger an expensive reload, or update a remote system. Show dirty state, make `Esc` behavior explicit, and confirm before discarding meaningful edits.
-- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` to open the raw config file in the user's editor; changes require an app restart to take effect.
+- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` in the Status panel to open the raw config file in the user's editor. Since v0.44, lazygit reloads the changed file when its terminal regains focus; only a few settings (refresh and fetch intervals, update checks) still need a restart, and lazygit says which. If you take this route, reload on focus or file change rather than demanding a restart.
 
 There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
 
@@ -455,7 +455,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 **Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
 
-**Libraries:** Lipgloss v2 has `Style.Hyperlink(url)`; Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issues #563/#1227); workarounds (the `hyperrat` crate, the `tui-link` repo) exist but work around the buffer model rather than fixing it.
+**Libraries:** Lipgloss v2 has `Style.Hyperlink(url)`; Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issue #1227); workarounds (the `hyperrat` crate, the `tui-link` repo) exist but work around the buffer model rather than fixing it.
 
 **Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
 
@@ -463,7 +463,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 `ESC ] 52 ; c ; <base64 payload> ESC \` asks the emulator to set the system clipboard — from anywhere, including over SSH. Practical limits: the common ceiling comes from xterm/hterm's 100,000-byte maximum sequence length, ≈74,994 bytes of decoded text; older kitty builds capped far lower. Keep payloads to tens of KB or chunk them.
 
-**tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs the outer terminal's `Ms` terminfo capability. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
+**tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs tmux to know the outer terminal handles OSC 52: an `Ms` terminfo entry, or (tmux 3.6+) the terminal's device-attributes reply. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
 
 **Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and other terminals may apply similar focus gates, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
 
@@ -471,7 +471,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 ### OSC 9 / 777 — desktop notifications
 
-`ESC ] 9 ; message ESC \` (OSC 9, iTerm2-originated) has the widest support: kitty, WezTerm, Ghostty, iTerm2, foot. OSC 777 (`ESC ] 777 ; notify ; title ; body ESC \`) adds a title where supported (WezTerm, Ghostty, foot); a reasonable strategy is 777 where you know it works, else 9. tmux swallows both unless wrapped in DCS passthrough with `allow-passthrough on` (tmux 3.3+).
+`ESC ] 9 ; message ESC \` (OSC 9, iTerm2-originated) has the widest support: kitty, WezTerm, Ghostty, iTerm2, foot. Never start the message with digits and a semicolon: `OSC 9;n` is also ConEmu's command namespace (`9;4` is a progress bar), parsed by Windows Terminal, Ghostty, and tmux 3.7+, so `3; tests failed` becomes a command or gets dropped. Prefix the text (`build: 3 tests failed`) or use OSC 777. OSC 777 (`ESC ] 777 ; notify ; title ; body ESC \`) adds a title where supported (WezTerm, Ghostty, foot); a reasonable strategy is 777 where you know it works, else 9. tmux swallows both unless wrapped in DCS passthrough with `allow-passthrough on` (tmux 3.3+).
 
 **Etiquette:** notify only when long-running work finishes (or fails) while the user is likely elsewhere — build done, tests finished, deploy complete. Fire once, keep it short, prefer in-UI status when the app has focus. Never notify for routine events or things the user just did.
 
@@ -484,7 +484,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 ## The fzf pattern in detail
 
-The "instant fuzzy filter" interaction has spread far beyond fzf itself: telescope.nvim, atuin, zoxide, helix's `Space+f`, Textual's command palette, k9s's `/`, lazygit's `/`.
+The instant-filter interaction has spread far beyond fzf itself: telescope.nvim, atuin, zoxide, helix's `Space+f`, and Textual's command palette match fuzzily; k9s's `/` (regex) and lazygit's `/` (substring by default) keep the instant filter with a stricter matcher.
 
 The pattern:
 
@@ -540,7 +540,7 @@ Used by: k9s, helix (`:` ex-commands), weechat (`/` slash-commands), aerc.
 
 **Pros:** fast for power users, scales to many commands.
 
-**Cons:** demands tab-completion or a discoverability layer (k9s shows aliases in `?`). Without it, users won't know what's possible.
+**Cons:** demands tab-completion or a discoverability layer — k9s suggests completions as you type in `:` mode and lists every alias in its own view (`Ctrl-A`). Without that, users won't know what's possible.
 
 **When to use:** when there are many resource types or actions, and users will repeat them often.
 

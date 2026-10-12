@@ -253,7 +253,7 @@ Detect via the first set of `$LC_ALL` → `$LC_CTYPE` → `$LANG` containing UTF
 
 ### The three tiers
 
-Design in three layers (monochrome / 16 ANSI / 256-truecolor); SKILL.md → *Meaning and access* states the contract this section expands. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier. SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
 
 ### Semantic tokens
 
@@ -323,7 +323,7 @@ Avoid red + green as the only distinction. If you must use them, add letters or 
 
 [no-color.org](https://no-color.org) is a 2018 informal standard. Respect it: when `NO_COLOR` is present with a non-empty value, suppress automatic color output. An explicit user choice such as `--color=always` may override that default if the tool documents the precedence.
 
-`ripgrep`, `bat`, `eza`, `delta`, `fd`, `gh`, and `cargo` honor it. Library behavior varies: some detect it automatically, while others require an optional capability feature or an application-level gate. For example, `owo-colors` only consults terminal and environment support when its `supports-colors` feature and `if_supports_color` path are used. Make `NO_COLOR` part of the app's semantic color policy instead of assuming a styling dependency will enforce it.
+`ripgrep`, `bat`, `eza`, `fd`, `gh`, `cargo`, and `htop` (3.5+) honor it. Library behavior varies: some detect it automatically, while others require an optional capability feature or an application-level gate. For example, `owo-colors` only consults terminal and environment support when its `supports-colors` feature and `if_supports_color` path are used. Make `NO_COLOR` part of the app's semantic color policy instead of assuming a styling dependency will enforce it.
 
 Provide tool-specific `MYAPP_NO_COLOR` and `MYAPP_FORCE_COLOR` for finer control. Keep precedence consistent with the policy in `references/cli-basics.md` → *Color*.
 
@@ -341,7 +341,7 @@ You can't change font size. Typography signals are limited but useful:
 | **Underline** | OSC 8 hyperlinks, shortcut hints | Wide support; meaningful |
 | **Reverse video** | Cursor row, current selection | Works on every terminal back to VT100 |
 | **Strikethrough** | Cancelled / deleted items | Limited support |
-| **Blink** | Don't | Disabled in most modern terminals; accessibility hazard |
+| **Blink** | Don't | Some modern terminals render it (WezTerm, kitty 0.43+); distracting and an accessibility hazard |
 
 **Reverse video is the canonical "current selection" signal.** It's the most reliable and most readable. Use it for the highlighted row in lists, the current cell in tables, the cursor position.
 

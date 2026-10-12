@@ -80,8 +80,9 @@
       "prompt": "Our Ink CLI runs on Node 20 LTS. I want the newest Ink, chalk, and commander plus Ink's API for suspending the UI while $EDITOR runs. Which versions should I pin?",
       "files": [],
       "assertions": [
-        "Says Ink 7 requires Node 22, so a Node 20 deployment should stay on Ink 6",
-        "Says chalk 6 and commander 15 also require Node 22 and recommends chalk 5 and commander 14 for Node 20",
+        "Says Ink 7 and later, including the current Ink 8, require Node 22, so a deployment that must stay on Node 20 is limited to Ink 6",
+        "Says chalk 6 and commander 15 also require Node 22 and names chalk 5 and commander 14 as the Node 20 pins",
+        "Says Node 20 reached end-of-life in April 2026 and recommends moving to Node 22 or 24, treating the Node 20 pins as a temporary bridge rather than the long-term answer",
         "Says the resumable suspendTerminal API arrived in Ink 7.1, so it is not available on Ink 6",
         "Offers a Node 20 fallback for the editor handoff, or recommends upgrading Node, rather than presenting suspendTerminal as available"
       ]

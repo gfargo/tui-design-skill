@@ -42,7 +42,7 @@ The skill uses progressive disclosure: its 139-line `SKILL.md` carries the workf
 - `ecosystem-rust.md` — Ratatui, Crossterm, color-eyre panic safety, Cursive, clap, cliclack, async with Tokio
 - `ecosystem-python.md` — Textual (TCSS, reactive, workers, Pilot testing, `textual serve`), Rich, prompt_toolkit, Typer, questionary
 - `ecosystem-typescript.md` — Ink (used by Claude Code, GitHub Copilot CLI, Gemini CLI), @clack/prompts, @inquirer/prompts, OpenTUI, color-library tradeoffs, argparse comparison
-- `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs, plus shell integration hooks, shipping/update/telemetry etiquette, and first-run auth flows
+- `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs, plus shell integration hooks, shipping/update/telemetry etiquette, and first-run auth flows, and a VHS fallback for demo recordings
 - `visual-patterns.md` — deep dive on the 7 layouts, inline vs alt-screen (and the receipt-pattern exit contract), borders, color tiers, semantic tokens, density, the clutter audit, responsive design (the breakpoint ladder + the floor), tables, status bars, progress, disconnected/timeout states, theming, Nerd Font icon conventions
 - `interaction-patterns.md` — keybinding philosophies, focus management, forms and settings-screen design, OSC 8/52/9 (hyperlinks, clipboard-over-SSH, notifications), the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
 - `exemplar-apps.md` — case studies of lazygit, k9s, btop, fzf, helix, yazi, atuin, htop, Posting, Harlequin, Claude Code, starship, and others
@@ -132,6 +132,16 @@ cd ~/.claude/skills
 git clone https://github.com/gfargo/tui-design-skill.git
 ln -s tui-design-skill/plugins/tui-design/skills/tui-design tui-design
 ```
+
+### Optional: screenshots and demo GIFs
+
+The skill hands screenshot and demo-GIF requests to the `vhs-cli-demos` skill when it is installed and otherwise falls back to its own short VHS guidance. `vhs-cli-demos` lives in the [`gfargo/skills`](https://github.com/gfargo/skills) marketplace:
+
+```bash
+npx --yes skills@1.5.22 add gfargo/skills --skill vhs-cli-demos -a claude-code
+```
+
+In Claude Code, `/plugin install terminal@gfargo-skills` installs it together with that marketplace's own copy of `tui-design`, so use that bundle instead of Option A, not alongside it.
 
 ---
 
@@ -285,6 +295,7 @@ tui-design-skill/
 │   ├── v170-lifecycle-evals.json
 │   ├── v171-correction-evals.json
 │   ├── v173-correction-evals.json
+│   ├── v174-correction-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

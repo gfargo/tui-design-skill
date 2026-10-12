@@ -120,7 +120,7 @@ For multi-step work: hide noisy logs behind a progress indicator while things su
 
 **Force color** when `FORCE_COLOR` is set (in the chalk/supports-color convention, `FORCE_COLOR=0` instead forces color *off*) or `--color=always` is passed. Treat `CLICOLOR_FORCE` ([bixense.com/clicolors](https://bixense.com/clicolors/)) as another force signal, still subordinate to `NO_COLOR`; some older tools read `CLICOLOR=0` as off.
 
-Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Document any different policy.
+Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental. A sensible order is: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection. At the same level, a disable signal wins; for example, if both `NO_COLOR` and `FORCE_COLOR` are set, disable color unless an explicit `--color=always` overrides them. Runtimes split on this: Python 3.13 lets `NO_COLOR` win, while Node.js and [force-color.org](https://force-color.org/) let `FORCE_COLOR` win (and force-color.org treats any non-empty value, even `0`, as on). Document whichever order you pick and test both variables together.
 
 Use color sparingly: red for errors, dim for secondary text, bold for headings, cyan/blue for paths. **Never color-only** signaling — pair with a word or symbol.
 
@@ -258,9 +258,18 @@ These end up in bug reports — make them easy to copy. If your tool talks to a 
 
 ### Shell completions
 
-Generate for bash, zsh, fish, pwsh. Most modern frameworks (Cobra, Click/Typer, clap, commander, yargs, oclif, picocli) emit them automatically. Wire them up.
+Generate for bash, zsh, fish, pwsh. Cobra, Click/Typer, yargs, and picocli generate them from the command definition; clap needs the `clap_complete` crate and oclif needs `@oclif/plugin-autocomplete`; commander has no built-in support ([commander.js#2008](https://github.com/tj/commander.js/issues/2008)), so add a completion package or write the scripts. Wire them up.
 
 Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
+
+### Demo recordings
+
+For screenshots and demo GIFs of a CLI or TUI, use the `vhs-cli-demos` skill when it is installed. Otherwise record with [VHS](https://github.com/charmbracelet/vhs), which needs `ttyd` and `ffmpeg` on `PATH`:
+
+- Script the scene in a `.tape` file and render it with `vhs demo.tape`. `vhs new demo.tape` writes a starter tape; `vhs record > demo.tape` captures a live session to edit.
+- Pin everything that changes the frame: `Set Columns` and `Set Rows` (VHS 0.12+; older releases take pixel `Width`/`Height`) at a size whose layout you have tested, `Set FontSize`, `Set Theme`, and `Env` for other inputs such as `TZ` or `LANG`.
+- Put setup and cleanup between `Hide` and `Show`, wait for slow output with `Wait+Screen /regex/` instead of a guessed `Sleep`, and declare each program the tape needs with `Require` so a missing one fails before recording.
+- `Screenshot demo.png` captures a still and `Output demo.gif` records motion. Shrink GIFs losslessly with `gifsicle -O3` before publishing; `charmbracelet/vhs-action` regenerates them in CI.
 
 ---
 
@@ -271,7 +280,7 @@ Two patterns:
 1. **Single-command** — `grep`, `cp`, `rg`. Simple tools.
 2. **Multi-command** — `git foo`, `gh foo`, `docker foo`. Tools with many objects.
 
-For multi-command, **clig.dev recommends noun-verb**:
+For multi-command tools, **noun-verb** is the more common order (clig.dev says either order works, but noun-verb "seems to be more common"):
 - `docker container create` (noun-verb), not `docker create container`.
 - `gh pr list`, `gh issue close`, `gh repo clone`.
 
@@ -336,7 +345,7 @@ This is what `git`, `docker`, `kubectl` all use. Predictable.
 |---|---|---|
 | `XDG_CONFIG_HOME` | `~/.config` | User config |
 | `XDG_DATA_HOME` | `~/.local/share` | Persistent user data |
-| `XDG_STATE_HOME` | `~/.local/state` | Logs, history, ephemeral state |
+| `XDG_STATE_HOME` | `~/.local/state` | History, logs, recent files — state that persists between restarts |
 | `XDG_CACHE_HOME` | `~/.cache` | Regenerable cache |
 | `XDG_RUNTIME_DIR` | (no default) | Sockets, pipes, mode 0700 |
 
@@ -390,7 +399,7 @@ Two patterns dominate, and both are legitimate:
 
 **Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
 
-**Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
+**Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
 
 **If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): with a default umask, three subcommands (`codeartifact login`, `iam create-virtual-mfa-device`, `deploy register`) wrote credential and config files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
 
@@ -400,7 +409,7 @@ Two patterns dominate, and both are legitimate:
 
 ### Startup time
 
-- **<100ms** — feels instant. `starship` is obsessive about this, with sub-50ms startup as a design target; it has to be (runs on every prompt).
+- **<100ms** — feels instant. `starship` is obsessive about this — it has to be (runs on every prompt) — and bounds each module with `scan_timeout` (30ms) and `command_timeout` (500ms).
 - **100–500ms** — fast.
 - **500ms–2s** — annoying.
 - **2s+** — users avoid the tool.
@@ -466,7 +475,7 @@ If you check for updates: check async, cache the result (once a day is the norm 
 
 ### Telemetry, if you collect it
 
-`DO_NOT_TRACK=1` is a real, named convention, but adoption is thin: netdata, tilt, and since 2026 the GitHub CLI honor it, while Homebrew, Gatsby, Syncthing, and the .NET SDK each rejected patches to add it and kept their own variables (`HOMEBREW_NO_ANALYTICS`, `GATSBY_TELEMETRY_DISABLED`, `DOTNET_CLI_TELEMETRY_OPTOUT`), and Next.js, Vercel CLI, Prisma, and Netlify CLI ignore it too. Its own author disowned the proposal in 2024. The practical pattern: ship your own clearly-named opt-out (an env var plus a `tool telemetry disable` subcommand, following gh and Next.js), auto-skip in CI, and honor `DO_NOT_TRACK=1` as a cheap courtesy on top — it costs one env lookup. Disclose before collecting: Homebrew shows its analytics notice before analytics are ever sent, so a user can opt out before any data leaves the machine. And never let an opt-out be silently overridden — Netlify CLI once fired a telemetry event *reporting that the user had disabled telemetry*, undermining the opt-out it was supposed to respect. Treat an opt-out flag as an absolute veto, checked first, no exceptions.
+`DO_NOT_TRACK=1` is a real, named convention, but adoption is thin: netdata, tilt, and since 2026 the GitHub CLI honor it, while Homebrew, Gatsby, Syncthing, and the .NET SDK each rejected patches to add it and kept their own variables (`HOMEBREW_NO_ANALYTICS`, `GATSBY_TELEMETRY_DISABLED`, `DOTNET_CLI_TELEMETRY_OPTOUT`), and Next.js, Vercel CLI, Prisma, and Netlify CLI ignore it too. Its own author disowned the proposal in 2024. The practical pattern: ship your own clearly-named opt-out (an env var plus a `tool telemetry disable` subcommand, as Next.js does; gh uses `GH_TELEMETRY` plus a `telemetry` config key, and `GH_TELEMETRY` overrides `DO_NOT_TRACK`), auto-skip in CI, and honor `DO_NOT_TRACK=1` as a cheap courtesy on top — it costs one env lookup. Disclose before collecting: Homebrew shows its analytics notice before analytics are ever sent, so a user can opt out before any data leaves the machine. And never let an opt-out be silently overridden — Netlify CLI once fired a telemetry event *reporting that the user had disabled telemetry*, undermining the opt-out it was supposed to respect. Treat an opt-out flag as an absolute veto, checked first, no exceptions.
 
 ---
 
@@ -487,12 +496,12 @@ If you check for updates: check async, cache the result (once a day is the norm 
 - **fd** — regex by default, colorized, gitignore-aware; `-x cmd {}` simpler than `find -exec`.
 - **bat** — TTY-aware (colorizes/pages on terminal, plain `cat` when piped); `--plain`/`-p`; honors `$BAT_PAGER`/`$PAGER`.
 - **jq** — tiny startup; `-r` raw output, `-c` compact NDJSON, `-s` slurp; help-on-empty-invocation.
-- **httpie / xh** — human-friendly HTTP; pretty on TTY, raw on pipe; xh exists specifically to fix httpie's startup latency.
+- **httpie / xh** — human-friendly HTTP; pretty on TTY, raw on pipe; xh reimplements httpie's interface in Rust with a focus on performance.
 - **kubectl** — rich `-o` (`json`, `yaml`, `wide`, `name`, `jsonpath`, `go-template`, `custom-columns`); tab completion from API; `--dry-run=client|server`.
 - **docker** — multi-level subcommands; parallel per-layer progress bars during pulls; backward-compat aliases (`docker ps` ≡ `docker container ls`).
 - **delta** — side-by-side diff via git's `core.pager`; demonstrates plug-in via stdin.
 - **eza** (formerly exa) — defaults closer to `ls -lh --color`; git status integration; `--tree`.
-- **starship** — cross-shell prompt; sub-50ms startup as a design target; single TOML config.
+- **starship** — cross-shell prompt; per-module time budgets (`scan_timeout`, `command_timeout`); single TOML config.
 
 ---
 

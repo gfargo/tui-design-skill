@@ -1,0 +1,131 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.7.4 correctness regressions for facts corrected after the October 2026 freshness audit, checked against tagged upstream sources (bubbletea v2.1.0, huh v2.0.3, lipgloss v2.0.6, ratatui 0.30.2, ratatui-textarea 0.9.3, tokio select! semantics, Ink 8.0.0 release notes, the Node.js release schedule, Typer 0.26.0 release notes, pytest-textual-snapshot 1.1.0 metadata, Claude Code fullscreen docs, the Copilot CLI changelog, and lazygit's go.mod). The ratatui-select-reader-ends and ratatui-ctrl-c-raw-mode cases grade sample fixes that land with the reference sample checks (#42). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "evals": [
+    {
+      "id": "huh-v2-embedding",
+      "name": "huh-v2-embedding",
+      "prompt": "I'm embedding a huh v2 form inside my Bubble Tea v2 model. My model has a `form *huh.Form` field. What should my Update and View look like so the form receives messages?",
+      "files": [],
+      "assertions": [
+        "Type-asserts the huh.Model returned by form.Update back to *huh.Form instead of assigning it directly to the *huh.Form field",
+        "Returns or batches the tea.Cmd that form.Update produces",
+        "Composes the form's string view into the parent's tea.View rather than returning the string as the view",
+        "Requests the terminal background color from the parent program (Huh does not request it itself) and forwards the resulting message to the form"
+      ]
+    },
+    {
+      "id": "lipgloss-v2-printing",
+      "name": "lipgloss-v2-printing",
+      "prompt": "My non-interactive Go CLI uses Lipgloss v2 styles and prints with fmt.Println(style.Render(msg)). Is that fine when stdout is piped or NO_COLOR is set?",
+      "files": [],
+      "assertions": [
+        "Says Lipgloss v2 Render always emits full-color escape sequences regardless of the output",
+        "Recommends lipgloss.Println, Sprint, or Fprint, which detect the output's color profile and downsample or strip color for pipes and NO_COLOR",
+        "Does not recommend lipgloss.SetColorProfile or a renderer-based fix, which were removed in v2"
+      ]
+    },
+    {
+      "id": "ratatui-textarea-crate",
+      "name": "ratatui-textarea-crate",
+      "prompt": "Which crate should I use for a multi-line text editor widget with vim/emacs-style bindings in a Ratatui 0.30 app?",
+      "files": [],
+      "assertions": [
+        "Recommends ratatui-textarea, maintained under the ratatui organization",
+        "Says tui-textarea 0.7 depends on ratatui 0.29 and is unmaintained, so it does not fit a Ratatui 0.30 app",
+        "Warns against pulling in a second crossterm version, or imports crossterm through ratatui::crossterm"
+      ]
+    },
+    {
+      "id": "ratatui-select-reader-ends",
+      "name": "ratatui-select-reader-ends",
+      "prompt": "My Ratatui app's Tokio loop is `loop { tokio::select! { Some(event) = rx.recv() => app.handle(event), _ = tick.tick() => app.on_tick() } if app.quit { break } }`, with a separate task reading crossterm events into the channel. What happens if that reader task exits?",
+      "files": [],
+      "assertions": [
+        "Explains that when rx.recv() returns None the Some(event) pattern fails, select! disables that branch, and the loop keeps ticking with no input",
+        "Notes the user cannot quit because Ctrl+C arrives as a key event in raw mode, not as SIGINT",
+        "Fixes it by matching the None case and breaking out or returning an error",
+        "Restores the terminal on that exit path"
+      ]
+    },
+    {
+      "id": "ratatui-ctrl-c-raw-mode",
+      "name": "ratatui-ctrl-c-raw-mode",
+      "prompt": "My Ratatui app quits on `q`. Users report that Ctrl+C does nothing. Why, and what should the key handling be?",
+      "files": [],
+      "assertions": [
+        "Explains that raw mode clears ISIG, so Ctrl+C is delivered as a key event instead of SIGINT",
+        "Handles KeyCode::Char('c') with the CONTROL modifier as quit or cancel, alongside q and optionally Esc",
+        "Acts only on KeyEventKind::Press so key-release events are ignored"
+      ]
+    },
+    {
+      "id": "ink8-new-project",
+      "name": "ink8-new-project",
+      "prompt": "We're starting a new Ink CLI today. Which Ink, React, and Node versions should we target, and can I still read the terminal width from useStdout().stdout.columns?",
+      "files": [],
+      "assertions": [
+        "Names Ink 8 as the current major, requiring Node 22 or newer and React 19.3 or newer",
+        "Recommends Node 22 or 24 and does not recommend Node 20, which reached end-of-life in April 2026",
+        "Says Ink 8 types stdout as a generic Node stream, so stdout.columns no longer type-checks, and recommends useWindowSize()",
+        "Mentions at least one other Ink 8 breaking change, such as number-only minWidth and maxWidth or useInput dropping unrecognized terminal sequences"
+      ]
+    },
+    {
+      "id": "cjs-require-esm",
+      "name": "cjs-require-esm",
+      "prompt": "Our CLI is still CommonJS on Node 22. Do we have to pin chalk 4 and an old Ink to keep using require()?",
+      "files": [],
+      "assertions": [
+        "Says Node 22.12 and later (and 20.19) can require() synchronous ES modules, so ESM-only packages such as chalk and commander no longer force old pins",
+        "Says Ink cannot be loaded with require() because its dependency graph uses top-level await, which fails with ERR_REQUIRE_ASYNC_MODULE",
+        "Recommends await import('ink') or a bundler for Ink in a CommonJS program"
+      ]
+    },
+    {
+      "id": "typer-vendored-click",
+      "name": "typer-vendored-click",
+      "prompt": "I want to add Trogon (or another Click plug-in) to my Typer app so users get a TUI for the CLI. How do I wire it up?",
+      "files": [],
+      "assertions": [
+        "Says Typer 0.26 and later vendor Click instead of depending on it, so Click plug-ins and extracting the Click app are no longer supported",
+        "Says Trogon breaks with Typer 0.26 or later and is unmaintained",
+        "Offers a concrete path, such as pinning typer below 0.26, writing the CLI with Click directly, or building the TUI separately"
+      ]
+    },
+    {
+      "id": "ai-chat-rendering-tradeoff",
+      "name": "ai-chat-rendering-tradeoff",
+      "prompt": "I'm building an AI chat client for the terminal with streaming responses. Should I keep the transcript inline with Ink's <Static>, the way Claude Code does it, or use the alternate screen?",
+      "files": [],
+      "assertions": [
+        "Corrects the premise: Claude Code's fullscreen renderer uses the alternate screen and renders only visible messages, and GitHub Copilot CLI uses the alternate screen, while Gemini CLI stays inline",
+        "Explains that inline rendering keeps the terminal's scrollback, search, and copy, but its cost grows with the transcript",
+        "Explains that an alternate-screen renderer keeps memory flat and avoids flicker but must rebuild search, copy, and export to scrollback",
+        "Recommends keeping an inline or plain fallback for screen readers or users who prefer scrollback"
+      ]
+    },
+    {
+      "id": "gocui-new-app",
+      "name": "gocui-new-app",
+      "prompt": "I'm building a lazygit-style multi-panel Go TUI. Should I use gocui like lazygit does?",
+      "files": [],
+      "assertions": [
+        "Says lazygit copied its gocui fork into its own repository (pkg/gocui) on tcell v3, so there is no maintained upstream gocui to depend on",
+        "Recommends Bubble Tea, or tview for widget-heavy apps, for a new project",
+        "Does not recommend adding jesseduffield/gocui as a dependency"
+      ]
+    },
+    {
+      "id": "textual-snapshot-pytest9",
+      "name": "textual-snapshot-pytest9",
+      "prompt": "After upgrading to pytest 9, my Textual snapshot tests started writing .raw files instead of SVGs and my async Pilot tests error out. What changed?",
+      "files": [],
+      "assertions": [
+        "Says pytest-textual-snapshot 1.1.0 pins syrupy 4.8, which requires pytest below 9, so pip falls back to 1.0.0",
+        "Recommends pinning pytest below 9 for snapshot suites until the plugin is updated",
+        "Says async Textual tests need pytest-asyncio with asyncio_mode = \"auto\" or an explicit asyncio marker"
+      ]
+    }
+  ]
+}

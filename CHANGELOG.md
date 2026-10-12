@@ -5,12 +5,60 @@ All notable changes to the `tui-design` skill are documented here. The format is
 ## [Unreleased]
 
 ### Fixed
+- **Current releases:**
+  - Ink 8.0 (October 2026) is the current major. It needs React 19.3 and accepts only numbers for `minWidth`/`maxWidth`. It types `stdout` as a generic stream, so read the width from `useWindowSize()`, and `useInput` drops unrecognized terminal sequences.
+  - Bubble Tea v2.1 is current and needs Go 1.26.
+  - Node 20 and Python 3.10 are end-of-life. The references now target Node 22 or 24 and Python 3.11+, and keep the Ink 6 / chalk 5 / commander 14 pins only as a bridge for Node 20.
+- **Reserved keys:** `SKILL.md` no longer says to preserve flow control. It now matches the reserved-keys reference: `Ctrl+C` cancels or quits, `Ctrl+Z` suspends through the framework, and a full-screen app may bind `Ctrl+S`.
+- **Go guidance:**
+  - Embedding a Huh form type-asserts the `huh.Model` that `Form.Update` returns.
+  - Standalone Lipgloss output uses `lipgloss.Println`, because v2 `Render` always emits truecolor.
+  - New lazy-style apps use Bubble Tea. lazygit now keeps its own gocui fork on tcell v3, so gocui is no longer recommended.
+  - Always render a default palette, because `BackgroundColorMsg` may never arrive. The parent of an embedded Huh form must request the background color itself.
+  - `tea.Println` prints above an inline UI, and the TUI is gated on stdout being a terminal.
+  - Glamour v2, Wish's filter ordering, golden-file storage, the spinner list and tcell v3 are now described accurately, and Syncthing is credited to Kong rather than urfave/cli.
+- **Rust guidance:**
+  - `ratatui-textarea` replaces `tui-textarea`, which requires Ratatui 0.29.
+  - Corrected descriptions of the Termina backend, the six `ratatui/templates`, the PTY layer of the official snapshot recipe, `clap_complete`, tui-logger's features and cursive's release status.
+  - The profiling notes match cargo-flamegraph and samply.
+- **Python guidance:**
+  - Typer 0.26 vendors Click, so Click plug-ins, including Trogon, no longer work with it. Trogon is also unmaintained.
+  - questionary returns `None` on `Ctrl-C`, and prompt_toolkit draws on stdout unless redirected.
+  - Snapshot suites pin `pytest<9`, and async tests need pytest-asyncio.
+  - Posting 3 is a Go rewrite.
+  - The Textual suspend link points at an anchor that exists.
+- **TypeScript guidance:**
+  - CommonJS programs can `require()` chalk, commander, Clack and Inquirer on Node 20.19+/22.12+, but must load Ink with `import()`.
+  - ink-testing-library input tests work on Ink 6.8–8 when they await after each write.
+  - @inkjs/ui inputs are uncontrolled, and terminal-kit has no Sixel support.
+  - The listr2, commander, yargs, Clack, OpenTUI and Pastel facts are current.
+- **Exemplars and patterns:**
+  - The AI chat case study now presents two options: inline `<Static>` history, or an alternate-screen virtualized transcript. Claude Code's fullscreen renderer and Copilot CLI use the alternate screen.
+  - lazygit reloads its config on focus, k9s filters by regex, and helix and fzf enable the mouse by default.
+  - OSC 9 notification text must not start with `<digits>;`.
+  - delta does not read `NO_COLOR`, and `FORCE_COLOR` precedence differs by runtime.
+  - commander has no built-in shell completions.
+  - `XDG_STATE_HOME` holds state that persists between restarts.
+  - starship is described by its per-module time budgets.
+- **Demo-recording route:** screenshots and demo GIFs no longer route only to the separate `vhs-cli-demos` skill, which ships only with the `gfargo/skills` marketplace and was missing from every other install path. The skill uses `vhs-cli-demos` when it is installed and otherwise falls back to `cli-basics.md` → *Demo recordings*: a short VHS guide to tapes, `Set Columns`/`Set Rows` sizing, `Wait`, `Require`, and lossless GIF optimization. README → *Install* says where to get `vhs-cli-demos`.
 - **Rust samples:** the canonical app quits on Ctrl+C and Esc as well as `q`, because raw mode delivers Ctrl+C as a key event; the Tokio loop stops when the input reader ends instead of ticking forever with no way to quit; the Cursive sample builds with `cursive::default()`; the Elm sketch compiles.
 - **Python samples:** the canonical Textual app uses inline `CSS` instead of a `hello.tcss` that was never supplied; the Pilot test carries `@pytest.mark.asyncio` for pytest-asyncio's default strict mode; the worker sample passes `Static` to `query_one`; the modal sample has its imports; the Rich sample sends errors and progress to a stderr console; the questionary sample exits 130 on Ctrl-C instead of continuing with `None`.
 - **Go samples:** standalone Lipgloss output goes through `lipgloss.Println`, which downsamples for the terminal; the teatest sample uses `colorprofile.ASCII`; the debug-log snippet checks the `tea.LogToFile` error so logs cannot land in the TUI.
 
 ### Release engineering
+- `scripts/reference-inventory.json` tracks Ink 8.0.0 and Bubble Tea v2.1.0. Bubble Tea is now checked at minor precision, so a new minor release gets flagged. Source links point at the current tags and at a Textual anchor that exists.
 - **Sample checks:** 48 reference code fences carry a `check=<harness>/<name>` marker and are built and tested in CI (`.github/workflows/samples.yml`) against pinned versions: `go vet` and `go test` on Bubble Tea v2.1.0, Lipgloss v2.0.6, Bubbles v2.2.1, and Huh v2.0.3; `cargo check` and `cargo test` on Ratatui 0.30.2 with Crossterm 0.29; pytest on Textual 8.2.8 and Rich 15.0.0; `tsc --strict` and vitest on Ink 8.0.0. Wrapper code lives in `tests/samples/`, outside the packaged skill, and `validate-release.sh` fails when a marked sample has no harness template.
+
+### Evaluation
+- `evals/v174-correction-evals.json` covers the corrected facts:
+  - Huh embedding and Lipgloss v2 printing
+  - ratatui-textarea, the Tokio `select!` reader exit and raw-mode `Ctrl+C`
+  - Ink 8 floors and API changes, and CommonJS `require(esm)`
+  - Typer vendoring Click
+  - the AI chat rendering trade-off
+  - gocui for new apps
+  - pytest-textual-snapshot on pytest 9
+- The v1.7.3 `ink-suspend-node20` rubric now expects answers to say Node 20 is end-of-life and to treat the Node 20 pins as a bridge. No recorded bundle uses that eval set.
 
 ## [1.7.3] — 2026-09-24
 

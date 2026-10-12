@@ -13,10 +13,10 @@ When the user asks about a design choice and you're unsure of the answer, find t
 - "How should I make searching fast?" → fzf, atuin.
 - "How do I handle a million-row table?" → Harlequin, Toolong.
 - "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
-- "How do I keep my AI chat smooth at high token rates?" → Claude Code, Copilot CLI (Ink + `<Static>`).
+- "How do I keep my AI chat smooth at high token rates?" → Claude Code and Copilot CLI (alternate screen, virtualized transcript) versus Gemini CLI (inline, Ink `<Static>` history).
 - "What's the spec for my undo system?" → lazygit's git-action stack.
 - "How should mouse work in my TUI?" → btop (clickable keys and boxes), helix (keyboard-first; mouse on by default but never required), lazygit (augmentation).
-- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (sub-50ms startup as a design target).
+- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (per-module time budgets).
 - "What does a polished setup wizard look like?" → @clack/prompts (create-vite, create-astro) — see `ecosystem-typescript.md`.
 - "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
 
@@ -31,7 +31,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 - File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-mostly-python-and-go)
 - IDE-style apps: [Posting](#posting-python-textual) · [Harlequin](#harlequin-python-textual)
 - Viewers: [Toolong](#toolong-python-textual) · [Glow](#glow-go-bubble-tea)
-- Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript-ink)
+- Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript)
 - CLI output discipline: [starship](#starship-rust-no-ui-framework) · [yt-dlp / aria2](#yt-dlp--aria2-cli-but-excellent-terminal-output)
 
 ---
@@ -52,7 +52,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 **Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
 
-**Stack:** Go, gocui (jesseduffield's fork), YAML config.
+**Stack:** Go, gocui (jesseduffield's fork, copied into the lazygit repo as `pkg/gocui` in April 2026) on tcell v3, YAML config.
 
 ---
 
@@ -65,14 +65,14 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 **What it does well:**
 - **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes. Different resources get different actions.
 - **Sortable columns** via Shift+letter (`shift-n` name, `shift-a` age, `shift-o` the selected column).
-- **Fuzzy filter** (`/`) to narrow huge lists in real time.
+- **Instant filter** (`/`) to narrow huge lists in real time — regex by default; `/-f` switches to fuzzy matching.
 - **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
 - **Plugin system** for custom actions (`plugins.yaml`).
 - **Status-header** showing the current "address" of where you are.
 
 **Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
 
-**Stack:** Go, tview, YAML config, K8s client-go.
+**Stack:** Go, derailed's forks of tview and tcell (`derailed/tview`, `derailed/tcell`), YAML config, K8s client-go.
 
 ---
 
@@ -115,7 +115,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 **Lessons:** speed is a feature. Users summon fzf hundreds of times a day; making it 50ms instead of 200ms transforms the experience.
 
-**Stack:** Go, no UI framework — direct terminal manipulation.
+**Stack:** Go, no UI framework — its own renderer on Unix, tcell on Windows.
 
 ---
 
@@ -257,7 +257,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 **Lessons:** Postman-style apps don't have to be GUIs. A well-designed TUI can replace bulky Electron apps and be faster, more keyboard-friendly, and offline-friendly.
 
-**Stack:** Python, Textual, with `httpx` for HTTP.
+**Stack:** Python, Textual, with `httpx` for HTTP. That is the released Posting 2.x line; `main` now holds Posting 3, a Go rewrite, so cite Posting 2 when you need a Textual example.
 
 ---
 
@@ -322,7 +322,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 **Lessons:** git operations on huge repos can be slow. If your tool wraps git, the user experience hinges on whether you keep the UI responsive. Threading-pool with progress events is the pattern.
 
-**Stack:** Rust, Ratatui, `git2` library.
+**Stack:** Rust, Ratatui, `git2` plus `gix` (gitoxide).
 
 ---
 
@@ -330,7 +330,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 > Docker TUI. Same paradigm as lazygit.
 
-**Layout:** persistent multi-panel — sidebar with Project / Containers / Images / Volumes / Networks, main panel showing details (Logs / Stats / Env / Config / Top tabs).
+**Layout:** persistent multi-panel — sidebar with Project / Containers / Services / Images / Volumes / Networks, main panel showing details (Logs / Stats / Env / Config / Top tabs).
 
 **What it does well:**
 - **Tabbed-within-panel** in the main panel — `[`/`]` cycle Logs/Stats/Env/Config/Top.
@@ -377,7 +377,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 **Lessons:** when working with potentially-huge data, virtualization is the difference between "it works on my 10MB sample" and "it works in production on 50GB rotated logs." Plan for it from day one.
 
-**Stack:** Python, Textual.
+**Stack:** Python, Textual. Toolong has had no release since April 2024; study it for the design, not as a maintained dependency.
 
 ---
 
@@ -397,26 +397,29 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 - The decision to ship as both a CLI (`glow README.md` pipes to terminal) and a TUI (`glow` opens the picker).
 - Glamour's themes as JSON — define style once, apply everywhere.
 
-**Stack:** Go, Bubble Tea, Glamour.
+**Stack:** Go, Bubble Tea v2 (since Glow 3), Glamour.
 
 ---
 
-## Claude Code, GitHub Copilot CLI, Gemini CLI (TypeScript, Ink)
+## Claude Code, GitHub Copilot CLI, Gemini CLI (TypeScript)
 
 > AI coding assistants in the terminal.
 
-**Layout:** chat-like — input at the bottom, scrolling output above.
+**Layout:** chat-like — transcript above, input pinned at the bottom.
+
+**Two render models, both shipping:**
+- **Inline, append-only** — Gemini CLI's default and Claude Code's classic renderer. Finalized turns go to native scrollback (Ink's `<Static>` or an equivalent), so the terminal's own scrollback, search, and copy work for free. The cost grows with the transcript: long streaming sessions can flicker, jump the scroll position, and grow memory.
+- **Alternate screen with a virtualized transcript** — Claude Code's fullscreen renderer (a research preview; the default for users who first ran Claude Code on or after May 6, 2026; `/tui` switches) and Copilot CLI (default since 1.0.8, no opt-out since 1.0.12). Only visible messages render, so memory stays flat and nothing flickers. The cost: the app must rebuild what the terminal gave for free — search, copy, exporting the transcript to scrollback — and keep an inline fallback. Claude Code forces its classic renderer in screen-reader mode.
 
 **What they do well:**
-- **Streaming text rendering** that aims to minimize flicker (use `<Static>` for finalized history).
 - **Status indicators** (thinking, tool-use, error states) without overwhelming.
 - **Inline diff rendering** for code changes.
 - **`/`-prefixed slash commands** for actions (clear, model switch, etc.).
 - **Shell integration** — paste files, run commands, read working directory.
 
-**Lessons:** for any streaming/chat-like TUI, the architecture is "append-only history above + interactive input below." Use `<Static>` (or equivalent) for the history so finalized turns don't re-render. This is what lets these apps stay smooth at high token rates.
+**Lessons:** a chat TUI is something users live in, so it faces the same inline-versus-alt-screen choice as any other app (`visual-patterns.md` → *Inline, alt-screen, or overlay*). Inline with `<Static>` for finalized turns is the simpler start. Move to the alternate screen with a virtualized transcript when sessions run long, and ship search, copy, scrollback export, and an inline or accessible fallback with it.
 
-**Stack:** TypeScript, Ink, React, Yoga.
+**Stack:** TypeScript. Ink's README lists all three as users, and Gemini CLI renders with a fork of Ink (React, Yoga); the internals of Claude Code's and Copilot CLI's alternate-screen renderers aren't documented.
 
 ---
 
@@ -427,8 +430,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 **Why study:** not technically a TUI, but the **performance discipline** is exemplary. Starship runs on every prompt, so startup is a budget users feel.
 
 **What it does well:**
-- **Sub-50ms startup as a design target.** Every feature added must not blow the budget.
-- **Per-module time budgets** — `scan_timeout` (30ms) and `command_timeout` (500ms) bound every module; a module that overruns is dropped from that prompt with a warning instead of delaying it.
+- **Per-module time budgets instead of a single startup number** — `scan_timeout` (30ms) and `command_timeout` (500ms) bound every module; a module that overruns is dropped from that prompt with a warning instead of delaying it.
 - **Single TOML config** with semantic blocks (one per "module": `[character]`, `[directory]`, `[git_branch]`).
 - **Cross-shell** — bash, zsh, fish, pwsh, ion, nu — all from one binary.
 

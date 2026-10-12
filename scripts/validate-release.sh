@@ -216,6 +216,8 @@ if any(path.name == ".DS_Store" for path in skill_dir.rglob(".DS_Store")):
 print(f"Validated skill metadata and content for {version}")
 PY
 
+python3 "$repo_root/scripts/check-samples.py" verify
+
 python3 -m unittest discover -s "$repo_root/tests" -v
 
 build_a="$(mktemp -d "${TMPDIR:-/tmp}/tui-design-validate-a.XXXXXX")"

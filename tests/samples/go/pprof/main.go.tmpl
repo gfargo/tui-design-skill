@@ -1,0 +1,9 @@
+package main
+
+<<sample go/pprof until="if os.Getenv">>
+
+import "os"
+
+func main() {
+	<<sample go/pprof from="if os.Getenv">>
+}

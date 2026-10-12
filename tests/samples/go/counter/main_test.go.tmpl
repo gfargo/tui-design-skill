@@ -1,0 +1,22 @@
+package main
+
+import (
+	"bytes"
+	"io"
+	"testing"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
+	"github.com/charmbracelet/x/exp/teatest/v2"
+)
+
+func newModel() model { return model{} }
+
+<<sample go/update-test>>
+
+// teatestSample is type-checked but never run: its golden output depends on
+// renderer frame timing, the flake the reference itself warns about.
+func teatestSample(t *testing.T) {
+	<<sample go/teatest>>
+}

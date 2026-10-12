@@ -34,7 +34,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Canonical structure:**
 
-```python
+```python check=python/hello-app
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Button, Label
 
@@ -94,7 +94,7 @@ Textual ships dozens. Categories:
 
 Layout is CSS:
 
-```css
+```css check=python/textual-layout
 Screen {
     layout: vertical;
 }
@@ -136,14 +136,14 @@ Concepts:
 Two ways to handle events:
 
 **1. Name convention:**
-```python
+```python check=python/on-handler
 def on_button_pressed(self, event: Button.Pressed) -> None:
     if event.button.id == "submit":
         ...
 ```
 
 **2. `@on` decorator with CSS selector** (preferred when you have many of the same widget type):
-```python
+```python check=python/on-decorator
 from textual import on
 
 @on(Button.Pressed, "#submit")
@@ -159,7 +159,7 @@ Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: 
 
 ## Reactive state
 
-```python
+```python check=python/reactive
 from textual.reactive import reactive
 from textual.widget import Widget
 
@@ -196,7 +196,7 @@ This is the heart of Textual's "reactive" claim — it's genuinely declarative s
 
 Handlers can be `async def`. The `@work` decorator turns methods into background workers:
 
-```python
+```python check=python/workers
 import httpx
 from textual import work
 from textual.widgets import Static
@@ -221,7 +221,7 @@ def compute_heavy(self) -> None:
 
 Push a screen on top for dialogs/modals:
 
-```python
+```python check=python/modal
 from textual import on, work
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
@@ -254,7 +254,7 @@ async def action_delete(self) -> None:
 
 Textual has the best testing story of any TUI framework:
 
-```python
+```python check=python/pilot-test
 import pytest
 from textual.widgets import Label
 
@@ -327,7 +327,7 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 
 Immediate-mode output formatting — no input handling, no event loop. The de facto Python library for pretty CLI output. Used internally by Textual for rendering.
 
-```python
+```python check=python/rich
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -370,7 +370,7 @@ Two modes:
 
 **1. Prompt-style** — single-line input with completion, history, syntax highlighting:
 
-```python
+```python check=python/prompt-toolkit
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 
@@ -384,7 +384,7 @@ text = prompt("> ", completer=cmd_completer)
 
 For one-off prompts inside CLI tools, use **questionary** (built on prompt_toolkit) — much simpler API:
 
-```python
+```python check=python/questionary
 import sys
 import questionary
 
@@ -416,7 +416,7 @@ choice = questionary.select(
 **argparse** — stdlib, no dependency. Verbose but capable.
 
 **Click** — decorator-based, very popular:
-```python
+```python check=python/click
 import click
 
 @click.command()
@@ -429,7 +429,7 @@ def hello(name: str, count: int) -> None:
 ```
 
 **Typer** — built on Click, type-hint-driven (FastAPI's author). The most ergonomic:
-```python
+```python check=python/typer
 import typer
 
 app = typer.Typer()

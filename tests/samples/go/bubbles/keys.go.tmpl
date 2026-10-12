@@ -1,0 +1,23 @@
+package bubbles
+
+import (
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+)
+
+<<sample go/key-bindings until="// In Update">>
+
+<<sample go/help-keymap>>
+
+// keysModel hosts the sample's Update fragment.
+type keysModel struct{}
+
+func (m keysModel) Init() tea.Cmd  { return nil }
+func (m keysModel) View() tea.View { return tea.NewView("") }
+
+func (m keysModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	<<sample go/key-bindings from="case tea.KeyPressMsg:">>
+	}
+	return m, nil
+}

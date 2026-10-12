@@ -9,6 +9,9 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - **Python samples:** the canonical Textual app uses inline `CSS` instead of a `hello.tcss` that was never supplied; the Pilot test carries `@pytest.mark.asyncio` for pytest-asyncio's default strict mode; the worker sample passes `Static` to `query_one`; the modal sample has its imports; the Rich sample sends errors and progress to a stderr console; the questionary sample exits 130 on Ctrl-C instead of continuing with `None`.
 - **Go samples:** standalone Lipgloss output goes through `lipgloss.Println`, which downsamples for the terminal; the teatest sample uses `colorprofile.ASCII`; the debug-log snippet checks the `tea.LogToFile` error so logs cannot land in the TUI.
 
+### Release engineering
+- **Sample checks:** 48 reference code fences carry a `check=<harness>/<name>` marker and are built and tested in CI (`.github/workflows/samples.yml`) against pinned versions: `go vet` and `go test` on Bubble Tea v2.1.0, Lipgloss v2.0.6, Bubbles v2.2.1, and Huh v2.0.3; `cargo check` and `cargo test` on Ratatui 0.30.2 with Crossterm 0.29; pytest on Textual 8.2.8 and Rich 15.0.0; `tsc --strict` and vitest on Ink 8.0.0. Wrapper code lives in `tests/samples/`, outside the packaged skill, and `validate-release.sh` fails when a marked sample has no harness template.
+
 ## [1.7.3] — 2026-09-24
 
 Correctness patch after a September 2026 audit that checked every code sample and version-sensitive claim against tagged upstream sources, plus release-workflow hardening.

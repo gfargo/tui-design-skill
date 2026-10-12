@@ -1,0 +1,11 @@
+#![allow(unused)]
+<<sample rust/canonical until="fn main">>
+
+<<sample rust/canonical from="#[derive(Default)]">>
+
+#[test]
+fn renders_the_canonical_app() -> color_eyre::Result<()> {
+    let app = App::default();
+    <<sample rust/test-backend>>
+    Ok(())
+}

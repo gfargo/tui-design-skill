@@ -1,0 +1,59 @@
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import pytest
+from textual.app import App, ComposeResult
+
+<<sample python/workers>>
+
+
+def expensive_sync_thing() -> str:
+    return "computed"
+
+
+class WorkerApp(App[None]):
+    # The sample shows the methods unindented; bind them onto an app here.
+    fetch_data = fetch_data
+    compute_heavy = compute_heavy
+
+    def compose(self) -> ComposeResult:
+        yield Static(id="result")
+
+    def update_result(self, result: str) -> None:
+        self.query_one("#result", Static).update(result)
+
+
+class _Handler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        body = b"fetched"
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args) -> None:
+        pass
+
+
+@pytest.mark.asyncio
+async def test_async_worker_fetches(monkeypatch):
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        app = WorkerApp()
+        async with app.run_test() as pilot:
+            await app.fetch_data(f"http://127.0.0.1:{server.server_port}/").wait()
+            await pilot.pause()
+            assert str(app.query_one("#result", Static).content) == "fetched"
+    finally:
+        server.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_thread_worker_updates_through_call_from_thread():
+    app = WorkerApp()
+    async with app.run_test() as pilot:
+        await app.compute_heavy().wait()
+        await pilot.pause()
+        assert str(app.query_one("#result", Static).content) == "computed"

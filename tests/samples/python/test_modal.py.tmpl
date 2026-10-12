@@ -1,0 +1,26 @@
+import pytest
+from textual.app import App
+
+<<sample python/modal>>
+
+
+class DeleteApp(App[None]):
+    BINDINGS = [("x", "delete", "Delete")]
+    action_delete = action_delete
+    deleted = False
+
+    async def do_delete(self) -> None:
+        self.deleted = True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("button", "deleted"), [("#yes", True), ("#no", False)])
+async def test_confirm_dialog(button, deleted):
+    app = DeleteApp()
+    async with app.run_test() as pilot:
+        await pilot.press("x")
+        await pilot.pause()
+        assert isinstance(app.screen, ConfirmDialog)
+        await pilot.click(button)
+        await pilot.pause()
+        assert app.deleted is deleted

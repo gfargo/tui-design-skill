@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22.20.0
       - name: Lint release scripts
-        run: shellcheck scripts/package-skill.sh scripts/validate-release.sh scripts/validate-evidence.sh
+        run: shellcheck scripts/package-skill.sh scripts/validate-release.sh scripts/validate-evidence.sh scripts/check-samples.sh
       - name: Validate Claude plugin metadata
         run: npx --yes @anthropic-ai/claude-code@2.1.233 plugin validate --strict .
       - name: Validate manifests, content, and package

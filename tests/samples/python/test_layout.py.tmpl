@@ -1,0 +1,21 @@
+import pytest
+from textual.app import App, ComposeResult
+from textual.containers import Vertical
+from textual.widgets import DataTable, Static
+
+
+class LayoutApp(App[None]):
+    CSS_PATH = "layout.tcss"
+
+    def compose(self) -> ComposeResult:
+        yield Vertical(Static("nav"), id="sidebar")
+        with Vertical(id="main"):
+            yield DataTable()
+            yield Static("failed", classes="error")
+
+
+@pytest.mark.asyncio
+async def test_stylesheet_parses_and_applies():
+    app = LayoutApp()
+    async with app.run_test(size=(80, 24)):
+        assert app.query_one("#sidebar").region.width == 30  # border included

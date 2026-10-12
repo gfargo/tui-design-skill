@@ -147,7 +147,26 @@ cd tui-design-skill
 ./scripts/package-skill.sh        # writes dist/tui-design.skill
 ```
 
-The output is `dist/tui-design.skill`—a deterministic zip containing the exact ten-file `tui-design/` allowlist (`SKILL.md`, `agents/openai.yaml`, and eight references), ready to install in a compatible agent. Packaging rejects symlinks, generated files, caches, and undeclared resources. It requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer.
+The output is `dist/tui-design.skill`—a deterministic zip containing the exact ten-file `tui-design/` allowlist (`SKILL.md`, `agents/openai.yaml`, and eight references), ready to install in a compatible agent. Packaging rejects symlinks, generated files, caches, and undeclared resources. It requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, sample markers, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer.
+
+### Code-sample checks
+
+CI compiles and tests the pasteable samples in the references against pinned framework versions (`.github/workflows/samples.yml`), so they cannot drift from real APIs. A fence opts in with a `check=<harness>/<name>` word after its language, such as ```` ```go check=go/counter ````; short illustrative fragments stay unmarked.
+
+Each harness in `tests/samples/` (`go`, `rust`, `python`, `typescript`) is a small project pinned by its lockfile. Its `*.tmpl` files hold the wrapper code a sample needs (imports, `main`, stub types, tests) and a placeholder line such as `<<sample go/counter>>` where the sample goes. A placeholder can take `from="…"`, `until="…"`, and `drop="…"` line prefixes to use part of a sample, for example to place a fence's declarations at package level and its trailing `case` fragment inside a wrapper `switch`. `./scripts/check-samples.py verify`, which `validate-release.sh` runs, fails when a marked sample has no template or a template names a missing sample.
+
+To mark a sample, add `check=<harness>/<name>` to its fence, put `<<sample <harness>/<name>>>` in a `.tmpl` file of that harness with any wrapper it needs, and run the checks. Each harness needs its own toolchain: Go 1.26+, Cargo, Node 22+, and a Python with the harness requirements installed:
+
+```bash
+python3 -m venv tests/samples/.build/venv
+tests/samples/.build/venv/bin/pip install -r tests/samples/python/requirements.txt
+```
+
+```bash
+PYTHON=tests/samples/.build/venv/bin/python ./scripts/check-samples.sh
+```
+
+Pass harness names (`./scripts/check-samples.sh rust typescript`) to check a subset. Rendered projects land in the gitignored `tests/samples/.build/`; compile errors point at the rendered file, and the render step prints which reference line each sample came from. Keep the harness pins in step with `scripts/reference-inventory.json`.
 
 ## Evaluation
 
@@ -218,6 +237,7 @@ tui-design-skill/
 │   └── workflows/
 │       ├── release.yml               # validates + attaches the tagged .skill release asset
 │       ├── validate.yml              # validates pull requests and main
+│       ├── samples.yml               # builds and tests marked reference code samples
 │       └── reference-freshness.yml   # weekly + on-demand framework-reference audit
 ├── scripts/
 │   ├── eval_harness.py           # records, scores, and validates model eval runs
@@ -225,10 +245,14 @@ tui-design-skill/
 │   ├── reference-inventory.json  # explicit list of version-sensitive references to audit
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
 │   ├── validate-release.sh       # checks metadata, content, eval JSON, and package output
+│   ├── check-samples.py          # extracts marked code samples into their harnesses
+│   ├── check-samples.sh          # builds and tests the rendered sample harnesses
 │   └── validate-evidence.sh      # revalidates committed eval evidence from any checkout
 ├── tests/
 │   ├── test_eval_harness.py      # runner/scoring/integrity integration tests
 │   ├── test_reference_freshness.py # freshness-audit unit/CLI tests (offline fixture server)
+│   ├── test_check_samples.py     # sample-extraction unit tests
+│   ├── samples/                  # Go, Rust, Python, and TypeScript sample harnesses
 │   └── test_packaging.py         # exact package-contract regression tests
 ├── plugins/
 │   └── tui-design/

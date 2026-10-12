@@ -50,7 +50,7 @@ The Elm Architecture in Go, and the most widely used Go TUI framework. Pure func
 
 **Canonical structure:**
 
-```go
+```go check=go/counter
 type model struct {
     count int
 }
@@ -108,7 +108,7 @@ The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a tempor
 - `tea.WithColorProfile(p)` — force a specific color profile; the testing hook for golden-file output.
 
 **Async via Cmds:**
-```go
+```go check=go/fetch-cmd
 func fetchData() tea.Msg {
     resp, err := http.Get(url)
     if err != nil { return errMsg{err} }
@@ -141,7 +141,7 @@ CSS-in-Go declarative styling — immutable `Style` values rendered to ANSI stri
 
 **Canonical use:**
 
-```go
+```go check=go/lipgloss-style
 var titleStyle = lipgloss.NewStyle().
     Bold(true).
     Foreground(lipgloss.Color("#FAFAFA")).
@@ -161,7 +161,7 @@ lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the termi
 
 **No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
 
-```go
+```go check=go/window-size
 case tea.WindowSizeMsg:
     m.width, m.height = msg.Width, msg.Height
     m.leftPaneWidth = msg.Width / 3
@@ -169,7 +169,7 @@ case tea.WindowSizeMsg:
 ```
 
 **Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants. Standalone (no Bubble Tea running):
-```go
+```go check=go/light-dark
 hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
 lightDark := lipgloss.LightDark(hasDark)
 fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
@@ -207,7 +207,7 @@ The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you em
 
 **Embedding pattern:**
 
-```go
+```go check=go/bubbles-embedding
 type model struct {
     list list.Model
     keys keyMap
@@ -228,7 +228,7 @@ func (m model) View() tea.View {
 
 **Declarative keys with `key.Binding`:**
 
-```go
+```go check=go/key-bindings
 type keyMap struct {
     Up   key.Binding
     Down key.Binding
@@ -253,7 +253,7 @@ case tea.KeyPressMsg:
 
 The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free. `help.View(m.keys)` needs `keyMap` to implement `help.KeyMap`:
 
-```go
+```go check=go/help-keymap
 func (k keyMap) ShortHelp() []key.Binding  { return []key.Binding{k.Up, k.Down, k.Quit} }
 func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Down}, {k.Quit}} }
 ```
@@ -264,7 +264,7 @@ func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Dow
 
 Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — built-in themes are now `func(isDark bool) *Styles`; wrap one as a `huh.Theme` with `form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))`. Huh supplies `isDark` itself from the `tea.BackgroundColorMsg` it receives, so an embedding parent should forward that message.
 
-```go
+```go check=go/huh-form
 form := huh.NewForm(
     huh.NewGroup(
         huh.NewSelect[string]().
@@ -316,7 +316,7 @@ Retained-mode, callback-based — the traditional ncurses style. Built on **tcel
 
 **Hello world:**
 
-```go
+```go check=go/tview-hello
 app := tview.NewApplication()
 list := tview.NewList().
     AddItem("First", "First item", 'a', nil).
@@ -344,7 +344,7 @@ Minimalist views-as-buffers — each `View` implements `io.Writer`. The aestheti
 
 **Hello world:**
 
-```go
+```go check=go/gocui-hello
 g, _ := gocui.NewGui(gocui.OutputNormal, true)
 defer g.Close()
 
@@ -380,7 +380,7 @@ g.MainLoop()
 
 **Cobra** (`spf13/cobra`) — the dominant subcommand framework for Go. Powers kubectl, gh, hugo, helm, docker. Struct-literal command tree:
 
-```go
+```go check=go/cobra-commands
 var rootCmd = &cobra.Command{
     Use:   "myapp",
     Short: "A short description",
@@ -425,7 +425,7 @@ When the user wants pretty CLI output (no full-screen UI):
 
 **Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
 
-```go
+```go check=go/update-test
 func TestQuitKey(t *testing.T) {
     m := newModel()
     updated, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"}) // v2 rune key
@@ -438,7 +438,7 @@ v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials
 
 **Layer 2 — teatest** runs the real program against in-memory buffers (no PTY, works in bare CI containers). For Bubble Tea v2 import `github.com/charmbracelet/x/exp/teatest/v2` — teatest did **not** move to charm.land; plain `x/exp/teatest` is the v1 line. Both are pseudo-versioned experiments, but teatest/v2 is what maintainers point to as the official harness.
 
-```go
+```go check=go/teatest
 tm := teatest.NewTestModel(t, newModel(),
     teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
     teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.ASCII)), // v2 only
@@ -467,7 +467,7 @@ Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` blo
 
 **stdout is off-limits while the program runs** — Bubble Tea holds the terminal in raw mode on the alternate screen, so `fmt.Println` output gets swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
 
-```go
+```go check=go/log-to-file
 if len(os.Getenv("DEBUG")) > 0 {
     f, err := tea.LogToFile("debug.log", "debug")
     if err != nil {
@@ -484,7 +484,7 @@ Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — th
 
 **Profiling a sluggish TUI:** Bubble Tea's README documents no profiling recipe of its own, so this is standard Go tooling — but the shape that actually works for a TUI is `net/http/pprof` on a loopback port, not file-based `pprof.StartCPUProfile`. A background goroutine serving on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there's no SIGINT/flush ceremony to get right. This is what Charm's own `crush` does, gated behind an env var:
 
-```go
+```go check=go/pprof
 import (
     "net/http"
     _ "net/http/pprof"

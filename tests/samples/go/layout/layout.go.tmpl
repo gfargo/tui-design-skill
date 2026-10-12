@@ -1,0 +1,15 @@
+package layout
+
+import tea "charm.land/bubbletea/v2"
+
+type model struct {
+	width, height                 int
+	leftPaneWidth, rightPaneWidth int
+}
+
+func (m model) update(msg tea.Msg) model {
+	switch msg := msg.(type) {
+	<<sample go/window-size>>
+	}
+	return m
+}

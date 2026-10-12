@@ -1,0 +1,24 @@
+package fetch
+
+import (
+	"io"
+	"net/http"
+
+	tea "charm.land/bubbletea/v2"
+)
+
+var url = "https://example.com/data"
+
+type errMsg struct{ err error }
+type dataMsg struct{ body []byte }
+
+type model struct{}
+
+func (m model) Init() tea.Cmd  { return nil }
+func (m model) View() tea.View { return tea.NewView("") }
+
+<<sample go/fetch-cmd until="// In Update">>
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	<<sample go/fetch-cmd from="return m, fetchData">>
+}

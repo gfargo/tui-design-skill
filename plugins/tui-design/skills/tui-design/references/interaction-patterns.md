@@ -218,7 +218,7 @@ You're in a mode (NORMAL, INSERT, etc.). Keystrokes interpreted differently per 
 
 **Requires:**
 - Persistent mode indicator (status bar color or label).
-- Distinct cursor shapes per mode (block in NORMAL, bar in INSERT, underline in REPLACE).
+- Distinct cursor shapes per mode (block in NORMAL, bar in INSERT, underline in REPLACE), reset on exit (see *Terminal modes and protocols* → *Output*).
 - A way to learn modes — usually a tutorial or readme.
 
 **Trade-offs:**
@@ -423,16 +423,7 @@ None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual 
 
 ### Dynamic/conditional fields
 
-huh's real mechanism is **`Group.WithHideFunc(func() bool)`** — it hides/shows an entire group (a step's worth of fields) based on a predicate re-evaluated as form state changes. This operates at *group* granularity; per-field hiding is not shipped (open feature requests only) — don't present it as available. For recomputing one field from another's value, huh has `OptionsFunc`/`TitleFunc`/`DescriptionFunc`, which take a callback plus the fields they depend on and re-run automatically:
-
-```go check=go/huh-options-func
-huh.NewSelect[string]().
-    OptionsFunc(func() []huh.Option[string] {
-        return huh.NewOptions(statesForCountry(country)...)
-    }, &country) // recomputed whenever `country` changes
-```
-
-Textual's equivalent is the `watch_<name>` convention on a `reactive()` attribute — when the reactive value changes, Textual calls `watch_<name>(old, new)`, and the idiomatic way to hide a dependent widget inside it is `widget.display = False` (removes from layout) or `.visible = False` (hides without reflowing).
+Show or hide dependent fields as earlier answers change, and recompute choices from those answers. Check what your framework ships before designing around it: Huh hides whole groups, not single fields (`ecosystem-go.md` → *Huh*), and Textual hides a dependent widget from a reactive watcher (`ecosystem-python.md` → *Reactive state*).
 
 ### Settings-screen behavior — be honest about what's settled
 
@@ -543,12 +534,7 @@ The pattern:
 5. **Enter** to confirm; **Esc** to cancel.
 6. **Optional preview pane** (right side) showing detail of hovered result.
 
-Implementation rules:
-- **Sub-100ms updates** as the user types.
-- **Match count visible** — `123/45678`.
-- **Highlight matched substring** within each result.
-- **Smart-case** by default (lowercase = case-insensitive).
-- **Sensible result ranking** — exact matches first, then prefix, then substring.
+Implementation rules: everything in *Search and filter* → *Filter* (sub-100ms updates, match count, highlighting, smart case), plus **sensible result ranking** — exact matches first, then prefix, then substring.
 
 For Go: `sahilm/fuzzy` or `lithammer/fuzzysearch`. For Rust: `nucleo` (used by helix) or `skim`'s matcher. For Python: `rapidfuzz`. For TS/JS: `fuse.js` or `fzy.js`.
 

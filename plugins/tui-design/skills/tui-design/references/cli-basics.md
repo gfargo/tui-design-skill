@@ -72,11 +72,7 @@ Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FR
 
 Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
 
-**Never accept secrets via `--password=…`** — leaks via `ps`, shell history, `docker inspect`, debug logs. Use:
-- `--password-file path/to/secret`
-- `--password-stdin` (read from stdin)
-- OS keychains (macOS Keychain, libsecret, Windows Credential Manager)
-- `git-credential-*` helpers
+Never accept a secret as a flag value; see *Secrets — what NOT to do*.
 
 ---
 
@@ -384,7 +380,7 @@ Never accept secrets via `--password=`, `--token=`, etc. on the command line. Th
 - Process accounting.
 
 **Use instead:**
-- Credential files with restrictive permissions.
+- Credential files with restrictive permissions (`--password-file path/to/secret`).
 - Stdin (`--password-stdin`).
 - AF_UNIX sockets.
 - OS keychains (gh uses macOS Keychain / libsecret / Windows Credential Manager).

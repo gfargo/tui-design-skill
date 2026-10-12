@@ -202,7 +202,7 @@ Each file exports a default React component plus optional `args`/`options` Zod s
 - Yoga flexbox is genuinely good for terminal layout.
 - Render-to-string and `stdin.write` input tests work with ink-testing-library (await after each write); add PTY tests for end-to-end keyboard flows.
 - React Devtools work (`DEV=true` env var).
-- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
+- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Inline stays the default, and the option applies only in interactive mode; it is ignored in CI or with piped stdout. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
 - Used by some of the most-deployed CLIs in the world.
 
 **Weaknesses:**

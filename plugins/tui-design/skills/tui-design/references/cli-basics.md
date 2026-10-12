@@ -262,6 +262,15 @@ Generate for bash, zsh, fish, pwsh. Most modern frameworks (Cobra, Click/Typer, 
 
 Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
 
+### Demo recordings
+
+For screenshots and demo GIFs of a CLI or TUI, use the `vhs-cli-demos` skill when it is installed. Otherwise record with [VHS](https://github.com/charmbracelet/vhs), which needs `ttyd` and `ffmpeg` on `PATH`:
+
+- Script the scene in a `.tape` file and render it with `vhs demo.tape`. `vhs new demo.tape` writes a starter tape; `vhs record > demo.tape` captures a live session to edit.
+- Pin everything that changes the frame: `Set Columns` and `Set Rows` (VHS 0.12+; older releases take pixel `Width`/`Height`) at a size whose layout you have tested, `Set FontSize`, `Set Theme`, and `Env` for other inputs such as `TZ` or `LANG`.
+- Put setup and cleanup between `Hide` and `Show`, wait for slow output with `Wait+Screen /regex/` instead of a guessed `Sleep`, and declare each program the tape needs with `Require` so a missing one fails before recording.
+- `Screenshot demo.png` captures a still and `Output demo.gif` records motion. Shrink GIFs losslessly with `gifsicle -O3` before publishing; `charmbracelet/vhs-action` regenerates them in CI.
+
 ---
 
 ## Subcommands

@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Generative BUILD-task evals across Go/Rust/TS. Hypothesis: base models write working TUI code but often omit screen-mode choices, crash-safe terminal restoration, resize handling, nonblocking I/O, virtualization, semantic color / NO_COLOR, reserved-key discipline, and discoverability. Prompts deliberately omit those requirements so the skill's value is whether it supplies them by default. Validated 2026-05-31: with-skill 100% (27/27) vs baseline 82% (24/27). Updated 2026-07-03 for Bubble Tea v1/v2 APIs. Updated 2026-08-18 to accept current framework-managed cleanup while rejecting Bubble Tea's harmful ReleaseTerminal/RestoreTerminal defer pattern.",
+  "notes": "Generative BUILD-task evals across Go/Rust/TS. Hypothesis: base models write working TUI code but often omit screen-mode choices, crash-safe terminal restoration, resize handling, nonblocking I/O, virtualization, semantic color / NO_COLOR, reserved-key discipline, and discoverability. Prompts deliberately omit those requirements so the skill's value is whether it supplies them by default. An unrecorded 2026-05-31 run observed with-skill 27/27 vs baseline 24/27; no evidence bundle was committed, so treat it as an unverified historical observation, not a measured result. Updated 2026-07-03 for Bubble Tea v1/v2 APIs. Updated 2026-08-18 to accept current framework-managed cleanup while rejecting Bubble Tea's harmful ReleaseTerminal/RestoreTerminal defer pattern.",
   "evals": [
     {
       "id": 0,

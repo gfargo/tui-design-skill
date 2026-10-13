@@ -116,7 +116,7 @@ These results don't establish a population-level effect and don't transfer to ot
 
 - **Cross-family grader:** Claude Opus 5.5 graded these Codex answers. The grader never saw the condition, so any preference for Claude-style answers affects both conditions, but it may lower Codex's absolute scores.
 - **Low effort:** the model ran at its lowest reasoning effort, by choice. Higher effort may change both conditions.
-- **Rubric conflict:** `lazygit-config-format` assertion 4 asks the answer to choose a config format from the app's own needs, but the prompt asks to mirror lazygit's conventions, and the skill's *Configuration formats* list never states that rule. Every trial on both hosts and in both conditions failed it. The rubric is left unchanged here so the recorded eval-set hash stays valid.
+- **Rubric conflict:** `lazygit-config-format` assertion 4 asks the answer to choose a config format from the app's own needs, but the prompt asks to mirror lazygit's conventions, and the skill's *Configuration formats* list never states that rule. Every trial on both hosts and in both conditions failed it. The rubric was left unchanged for this study so the recorded eval-set hash stays valid, and was corrected afterward: the assertion now checks that the answer doesn't present one format as the TUI standard.
 
 ## Evidence bundles
 

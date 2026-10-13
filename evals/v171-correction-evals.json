@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.7.1 correctness regressions for facts corrected after a full reference audit against package registries, changelogs, and tagged sources (Rich, Cobra v1.2+, Wish v2.0.3, lazygit, btop, cli-spinners, tview's concurrency wiki, DO_NOT_TRACK adoption history). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "notes": "Focused v1.7.1 correctness regressions for facts corrected after a full reference audit against package registries, changelogs, and tagged sources (Rich, Cobra v1.2+, Wish v2.0.3, lazygit, btop, cli-spinners, tview's concurrency wiki, DO_NOT_TRACK adoption history). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. The lazygit-config-format rubric was corrected after the v1.8.0 evidence round: its fourth assertion asked for a format chosen from the app's own needs, which conflicts with a prompt that asks to mirror lazygit, and it failed in every recorded trial on both hosts. It now checks that the answer doesn't present one format as the TUI standard. The v1.8.0 bundles keep the original eval-set hash and are validated against their recorded snapshot.",
   "evals": [
     {
       "id": "rich-traceback-install",
@@ -23,7 +23,7 @@
         "Says lazygit's config is YAML (config.yml) under the XDG config directory",
         "Does not describe lazygit's config as TOML",
         "Says k9s plugins are defined in plugins.yaml",
-        "Recommends choosing a config format from the app's own needs rather than presenting one format as the TUI standard"
+        "Does not present one config format as the TUI standard, and ties the recommendation to matching lazygit, as the user asked, or to the app's own needs"
       ]
     },
     {

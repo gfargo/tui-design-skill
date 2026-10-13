@@ -141,7 +141,7 @@ These results don't establish a population-level effect and don't transfer to ot
 
 - **Same-family grader:** Claude Opus 5.5 graded Claude Opus 5.5's answers. The grader never saw the condition, but self-preference can't be ruled out. The Codex study uses the same grader, so any bias toward Claude-style answers would affect both of its conditions.
 - **Ceiling:** five of six with-skill conditions scored 96.5% or higher, so these sets can't show further improvement for this model.
-- **Rubric conflict:** `lazygit-config-format` assertion 4 asks the answer to choose a config format from the app's own needs, but the prompt asks to mirror lazygit's conventions, and the skill's *Configuration formats* list never states that rule. Every trial on both hosts and in both conditions failed it. The rubric is left unchanged here so the recorded eval-set hash stays valid.
+- **Rubric conflict:** `lazygit-config-format` assertion 4 asks the answer to choose a config format from the app's own needs, but the prompt asks to mirror lazygit's conventions, and the skill's *Configuration formats* list never states that rule. Every trial on both hosts and in both conditions failed it. The rubric was left unchanged for this study so the recorded eval-set hash stays valid, and was corrected afterward: the assertion now checks that the answer doesn't present one format as the TUI standard.
 - **Knowledge cutoff:** the two largest case gains (`ink-suspend-node20` and `ink-suspend-terminal`) test facts released after the model's training data. They show the skill supplying current facts, not better reasoning.
 
 ## Evidence bundles

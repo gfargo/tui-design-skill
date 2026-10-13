@@ -220,7 +220,7 @@ let span = "Hello".bold().yellow().on_black();
 
 - **Crossterm** — default, cross-platform (Linux/macOS/Windows), pure Rust, MIT. Use this unless you have a specific reason not to.
 - **Termion** — Unix-only, older, smaller. Choose only if you want Unix-only and minimal dependencies.
-- **Termwiz** — cross-platform, advanced features (Sixel, kitty image protocol). Choose if you need terminal graphics protocols. Authored by the WezTerm developer.
+- **Termwiz** — cross-platform terminal library from the WezTerm project. The library can encode Sixel, iTerm2, and kitty image sequences, but Ratatui's termwiz backend doesn't expose them; for images in a Ratatui app, use `ratatui-image`, which works with Crossterm by default.
 - **Termina** — `termina` feature (`TerminaBackend`, Ratatui 0.30.2+), built on the Helix editor's terminal library, which sits between Crossterm and Termwiz and targets newer VT extensions such as the kitty keyboard protocol. `ratatui::init()` is Crossterm-only, so set up raw mode and cleanup through Termina yourself. Newer and less proven than Crossterm; choose it only when you need what it exposes.
 - **mousefood** — `embedded-graphics` backend over `ratatui-core`, taking Ratatui's `no_std` support to embedded hardware displays.
 

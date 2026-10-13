@@ -36,6 +36,14 @@ class _FixtureHandler(http.server.BaseHTTPRequestHandler):
         elif self.path == "/gone":
             self.send_response(410)
             self.end_headers()
+        elif self.path == "/npm/fixture-pkg/latest":
+            body = json.dumps(
+                {"version": "8.0.0", "engines": {"node": ">=22"}, "peerDependencies": {"react": ">=19.3.0"}}
+            ).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(body)
         elif self.path == "/forbidden":
             self.send_response(403)
             self.end_headers()
@@ -166,6 +174,57 @@ class ReferenceFreshnessUnitTest(unittest.TestCase):
         self.assertEqual(status, "unknown")
         self.assertIn("network error", detail)
 
+    def _patched_manifest_fetcher(self, fetcher=None):
+        def fetch_fixture_manifest(registry, timeout):
+            return self.module.http_get_json(self.base_url(f"/npm/{registry['package']}/latest"), timeout)
+
+        return mock.patch.dict(self.module.MANIFEST_FETCHERS, {"fixture": fetcher or fetch_fixture_manifest})
+
+    def engine_entry(self, **fields: str) -> dict:
+        return {
+            "id": "fixture-engine",
+            "framework": "Fixture",
+            "kind": "engine_floor",
+            "file": "fixture.md",
+            "claim": "fixture floor",
+            "registry": {"type": "fixture", "package": "fixture-pkg"},
+            "fields": fields or {"engines.node": ">=22", "peerDependencies.react": ">=19.3.0"},
+        }
+
+    def test_evaluate_engine_floor_reports_current_from_the_served_manifest(self) -> None:
+        with self._patched_manifest_fetcher():
+            status, detail = self.module.evaluate_engine_floor(self.engine_entry(), timeout=5)
+        self.assertEqual(status, "current")
+        self.assertIn("latest 8.0.0 declares engines.node >=22", detail)
+
+    def test_evaluate_engine_floor_reports_a_changed_floor_as_stale(self) -> None:
+        with self._patched_manifest_fetcher():
+            status, detail = self.module.evaluate_engine_floor(self.engine_entry(**{"engines.node": ">=20"}), timeout=5)
+        self.assertEqual(status, "stale")
+        self.assertIn("engines.node is '>=22', expected '>=20'", detail)
+
+    def test_evaluate_engine_floor_missing_field_is_stale(self) -> None:
+        with self._patched_manifest_fetcher():
+            status, detail = self.module.evaluate_engine_floor(self.engine_entry(**{"engines.bun": ">=1.3"}), timeout=5)
+        self.assertEqual(status, "stale")
+        self.assertIn("engines.bun is None", detail)
+
+    def test_evaluate_engine_floor_fetch_failure_is_unknown(self) -> None:
+        def fail(registry, timeout):
+            raise OSError("offline")
+
+        with self._patched_manifest_fetcher(fail):
+            status, _ = self.module.evaluate_engine_floor(self.engine_entry(), timeout=5)
+        self.assertEqual(status, "unknown")
+
+    def test_evaluate_engine_floor_rejects_bad_entries(self) -> None:
+        bad = dict(self.engine_entry(), fields={})
+        with self._patched_manifest_fetcher(), self.assertRaises(self.module.AuditError):
+            self.module.evaluate_engine_floor(bad, timeout=5)
+        unknown = dict(self.engine_entry(), registry={"type": "nope", "package": "x"})
+        with self.assertRaises(self.module.AuditError):
+            self.module.evaluate_engine_floor(unknown, timeout=5)
+
     def test_load_inventory_rejects_duplicate_ids(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "inventory.json"
@@ -199,6 +258,9 @@ class ReferenceFreshnessUnitTest(unittest.TestCase):
         for entry in references:
             if entry["kind"] == "pinned_version":
                 self.assertIn(entry["registry"]["type"], self.module.REGISTRY_FETCHERS)
+            if entry["kind"] == "engine_floor":
+                self.assertIn(entry["registry"]["type"], self.module.MANIFEST_FETCHERS)
+                self.assertTrue(entry["fields"])
 
     def _patched_fetcher(self, fetcher):
         return mock.patch.dict(self.module.REGISTRY_FETCHERS, {"fixture": fetcher})

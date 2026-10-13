@@ -117,6 +117,236 @@
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
       "url": "https://github.com/tmux/tmux/blob/3.8/tmux.1"
+    },
+    {
+      "id": "huh-v2-theme-api",
+      "framework": "Huh",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"Huh v2 ... wrap one as a huh.Theme with form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))\" (Theme/ThemeFunc API as of v2.0.3)",
+      "pinned_version": "2.0.3",
+      "granularity": "minor",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/huh/v2"
+      }
+    },
+    {
+      "id": "bubbles-v2-table-tree",
+      "framework": "Bubbles",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"table — virtualized table with row selection (no built-in sorting)\"; tree is listed (as of v2.2.1)",
+      "pinned_version": "2.2.1",
+      "granularity": "minor",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/bubbles/v2"
+      }
+    },
+    {
+      "id": "urfave-cli-v3-line",
+      "framework": "urfave/cli",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"urfave/cli (github.com/urfave/cli/v3; v3 has been the stable line since 2025, v2 is maintenance-only)\"",
+      "pinned_version": "3.14.0",
+      "granularity": "major",
+      "registry": {
+        "type": "go_proxy",
+        "module": "github.com/urfave/cli/v3"
+      }
+    },
+    {
+      "id": "gh-go-mod",
+      "framework": "Bubble Tea",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/cli/cli/blob/trunk/go.mod"
+    },
+    {
+      "id": "crossterm-current-line",
+      "framework": "Ratatui",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "claim": "\"Crossterm 0.29 (April 2025) is the current stable\"",
+      "pinned_version": "0.29.0",
+      "granularity": "minor",
+      "registry": {
+        "type": "crates_io",
+        "crate": "crossterm"
+      }
+    },
+    {
+      "id": "tui-logger-line",
+      "framework": "Ratatui",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "claim": "\"tui-logger (0.18.x, actively maintained)\"",
+      "pinned_version": "0.18.3",
+      "granularity": "minor",
+      "registry": {
+        "type": "crates_io",
+        "crate": "tui-logger"
+      }
+    },
+    {
+      "id": "ratatui-crossterm-features",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui-crossterm/Cargo.toml"
+    },
+    {
+      "id": "inquirerpy-last-release",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"InquirerPy ... Unmaintained (last release 0.3.4, June 2022)\"",
+      "pinned_version": "0.3.4",
+      "granularity": "patch",
+      "registry": {
+        "type": "pypi",
+        "package": "inquirerpy"
+      }
+    },
+    {
+      "id": "ink-engine-floors",
+      "framework": "Ink",
+      "kind": "engine_floor",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"Ink 7 and 8 require Node ≥ 22; Ink 8 also requires React ≥ 19.3\"",
+      "registry": {
+        "type": "npm",
+        "package": "ink"
+      },
+      "fields": {
+        "engines.node": ">=22",
+        "peerDependencies.react": ">=19.3.0"
+      }
+    },
+    {
+      "id": "ink-testing-library-latest",
+      "framework": "Ink",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"ink-testing-library 4.0.0 was built against Ink 5 / React 18\" (still the latest release)",
+      "pinned_version": "4.0.0",
+      "granularity": "patch",
+      "registry": {
+        "type": "npm",
+        "package": "ink-testing-library"
+      }
+    },
+    {
+      "id": "commander-major-floor",
+      "framework": "Ink",
+      "kind": "engine_floor",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"commander ... v15 is ESM-only and needs Node ≥ 22.12\"",
+      "registry": {
+        "type": "npm",
+        "package": "commander"
+      },
+      "fields": {
+        "engines.node": ">=22.12.0"
+      }
+    },
+    {
+      "id": "chalk-major-floor",
+      "framework": "Ink",
+      "kind": "engine_floor",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"chalk 6 requires Node ≥ 22\"",
+      "registry": {
+        "type": "npm",
+        "package": "chalk"
+      },
+      "fields": {
+        "engines.node": ">=22"
+      }
+    },
+    {
+      "id": "opentui-engines",
+      "framework": "Ink",
+      "kind": "engine_floor",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"@opentui/core 0.6+ declares engines of Bun ≥ 1.3.14 or Node ≥ 26.4\"",
+      "registry": {
+        "type": "npm",
+        "package": "@opentui/core"
+      },
+      "fields": {
+        "engines.bun": ">=1.3.14",
+        "engines.node": ">=26.4.0"
+      }
+    },
+    {
+      "id": "neo-blessed-last-release",
+      "framework": "Ink",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"neo-blessed ... also unmaintained (last publish 0.2.0, June 2018)\"",
+      "pinned_version": "0.2.0",
+      "granularity": "patch",
+      "registry": {
+        "type": "npm",
+        "package": "neo-blessed"
+      }
+    },
+    {
+      "id": "ink-aria-release",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/releases/tag/v6.2.0"
+    },
+    {
+      "id": "ink-suspend-terminal-release",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/releases/tag/v7.1.0"
+    },
+    {
+      "id": "node-styletext-history",
+      "framework": "Node.js",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://nodejs.org/api/util.html#utilstyletextformat-text-options"
+    },
+    {
+      "id": "node-parseargs-history",
+      "framework": "Node.js",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://nodejs.org/api/util.html#utilparseargsconfig"
+    },
+    {
+      "id": "commander-major",
+      "framework": "Ink",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"commander ... v15 is ESM-only\" (current major 15)",
+      "pinned_version": "15.0.0",
+      "granularity": "major",
+      "registry": {
+        "type": "npm",
+        "package": "commander"
+      }
+    },
+    {
+      "id": "chalk-major",
+      "framework": "Ink",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"chalk 6\" (current major 6)",
+      "pinned_version": "6.0.1",
+      "granularity": "major",
+      "registry": {
+        "type": "npm",
+        "package": "chalk"
+      }
     }
   ]
 }

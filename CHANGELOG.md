@@ -27,11 +27,20 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - References drop from 37,015 to 36,641 words.
 
 ### Fixed
+- **Unconfirmed claims resolved:**
+  - Huh's standalone `form.Run()` never requests the background color, so it always renders the light variant. The Go reference now shows how to detect the background first and pin the variant, and notes that Huh's upgrade-guide `WithTheme(huh.ThemeCharm(isDark))` example doesn't compile against v2.0.3.
+  - The Termwiz line no longer implies that Ratatui's termwiz backend exposes images; `ratatui-image` is the path.
+  - urwid's release dates are exact.
+  - The gitui snapshot PRs (#2411 merged then reverted, #2813 merged 2026-04-07), crush's test files, and Ratatui #1227 were checked and kept.
 - **Accessibility pointers:** the *Accessibility* framework table points at the TypeScript reference's real *Strengths and weaknesses* heading, and the focus rule asks for one non-color cue combined as *Focus indicators* describes.
 - **Accessibility facts:** `textual serve` is no longer called an accessibility path; its xterm.js canvas runs with screen-reader mode off, and Textual has no screen-reader support. Huh's accessible mode is described field by field, including that it switches on by itself only for `TERM=dumb`. Ink's screen-reader renderer is opt-in and still rewrites the live region on every change. Ratatui's missing accessibility layer is listed as a pitfall.
 - **TypeScript guidance:** the simple non-interactive CLI stack (commander, picocolors, ora) installs 19 packages and about 0.9 MB, not "~30 KB".
 
 ### Release engineering
+- **Wider freshness coverage:**
+  - `check-reference-freshness.py` gains an `engine_floor` kind that reads `engines` and peer ranges from the latest npm manifest, with offline fixture tests.
+  - The inventory now tracks Huh, Bubbles, urfave/cli, Crossterm, tui-logger, InquirerPy, ink-testing-library, commander, chalk, neo-blessed, the Ink, commander, chalk, and OpenTUI engine floors, and source links for gh's `go.mod`, Ratatui's Crossterm features, Ink's aria and `suspendTerminal` releases, and Node's `styleText` and `parseArgs` docs.
+  - 35 entries in total, all current.
 - **Release validation hardening:**
   - The packaged-file allowlist lives in `scripts/skill-files.txt`, which the packager, the validator, and the packaging tests all read. It previously appeared in five places.
   - The validator parses frontmatter keys with an anchored pattern, so a folded (`>-`) description passes.

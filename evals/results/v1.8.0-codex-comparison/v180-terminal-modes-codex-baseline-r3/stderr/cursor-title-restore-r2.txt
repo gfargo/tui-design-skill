@@ -1,0 +1,22 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-bamu6ftq
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133b0-d385-7542-992d-7339e0832865
+--------
+user
+Our Ratatui editor switches to a bar cursor in insert mode and sets the window title to the open file's name. After quitting, users are left with a bar cursor and a stale title. What should we do on exit?
+
+codex
+On exit, restore the cursor style to the terminal’s default and restore the previous window title.
+
+With Crossterm, use `SetCursorStyle::DefaultUserShape` and bracket your title change with `PushTitle` / `PopTitle` where supported. Don’t hard-code a block cursor or an empty title; users may have their own defaults.
+
+Include these in your terminal cleanup alongside showing the cursor, leaving the alternate screen, and disabling raw mode. Run cleanup on normal exits, errors, and panics.
+tokens used
+2,113

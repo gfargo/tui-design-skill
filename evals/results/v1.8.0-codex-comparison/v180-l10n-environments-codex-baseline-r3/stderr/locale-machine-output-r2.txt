@@ -1,0 +1,27 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-qxg5eicl
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133cd-2793-7f50-b3f1-a70458fccfad
+--------
+user
+Our CLI prints file sizes like 1,234.5 MB in its human table and also has a --json mode. A user in Germany says a script that parses our output broke after they set LANG=de_DE.UTF-8. What should our rules be?
+
+codex
+Treat human display and machine output as separate contracts.
+
+- **`--json` must be locale-independent.** Emit sizes as integer bytes, for example `{"size_bytes":1234500000}`. JSON numbers never use grouping separators or decimal commas. Keep keys and unit definitions stable across locales.
+- **Choose and document a human-formatting policy.** Either use a fixed format everywhere or honor the user’s locale consistently. Under German formatting, `1,234.5 MB` becomes `1.234,5 MB`. If your existing table has effectively been a stable interface, changing its default formatting deserves compatibility consideration.
+- **Tell scripts to use `--json`.** Human tables can change spacing, precision, units, translations, and separators. Don’t promise that they are parseable unless you explicitly support that contract.
+- **Keep machine stdout clean.** In JSON mode, send diagnostics to stderr and omit progress indicators, colors, and explanatory text from stdout.
+
+For this CLI, I’d preserve the existing human format by default, offer localized formatting explicitly if useful, and make JSON with integer byte counts the supported scripting interface.
+
+Also investigate the actual locale source: `LC_ALL` overrides `LC_NUMERIC`, which overrides `LANG` for numeric formatting. Setting `LANG` alone may not explain the behavior if those variables are present.
+tokens used
+2,340

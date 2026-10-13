@@ -1,0 +1,43 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v180-accessibility-claude-baseline-r3",
+  "created_at": "2026-10-13T06:13:51Z",
+  "run_manifest_sha256": "b184c7ed2151af1e98443b5c839cf8c72633ebaa3145bbfbf75bc8451ea92475",
+  "grades_file": "grades.json",
+  "grades_sha256": "c7cdcf2cb295bfe5c0961b677cf67ac8a79d59c84a7c3b9a9f9adc33ee7289b7",
+  "passed": 42,
+  "total": 57,
+  "pass_rate": 0.7368421052631579,
+  "by_case": [
+    {
+      "case_id": "bubbletea-form-screen-reader",
+      "case_name": "bubbletea-form-screen-reader",
+      "passed": 11,
+      "total": 15,
+      "pass_rate": 0.7333333333333333
+    },
+    {
+      "case_id": "no-tui-output-contract",
+      "case_name": "no-tui-output-contract",
+      "passed": 15,
+      "total": 18,
+      "pass_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "textual-serve-accessibility",
+      "case_name": "textual-serve-accessibility",
+      "passed": 4,
+      "total": 9,
+      "pass_rate": 0.4444444444444444
+    },
+    {
+      "case_id": "ink-screen-reader-live-region",
+      "case_name": "ink-screen-reader-live-region",
+      "passed": 12,
+      "total": 15,
+      "pass_rate": 0.8
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

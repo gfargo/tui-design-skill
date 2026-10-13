@@ -1,0 +1,43 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6qafm9i6
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1339f-bab8-7680-9972-27d154373f7a
+--------
+user
+I'm adding opt-in telemetry to my CLI. Is DO_NOT_TRACK the standard opt-out that Homebrew, Gatsby, and the .NET SDK follow, or should I define my own?
+
+codex
+I’ll check the opt-out variables those tools document and how they relate to `DO_NOT_TRACK`.
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+`DO_NOT_TRACK=1` is a **community proposal, not a universal standard followed by those three tools**. Their documented opt-outs are:
+
+| Tool | Telemetry opt-out |
+|---|---|
+| [Homebrew](https://docs.brew.sh/Analytics) | `HOMEBREW_NO_ANALYTICS=1` or `brew analytics off` |
+| [Gatsby](https://www.gatsbyjs.com/docs/telemetry/) | `GATSBY_TELEMETRY_DISABLED=1` or `gatsby telemetry --disable` |
+| [.NET SDK](https://learn.microsoft.com/en-us/dotnet/core/tools/telemetry) | `DOTNET_CLI_TELEMETRY_OPTOUT=1` or `true` |
+
+The [DO_NOT_TRACK proposal](https://donottrack.sh/) recommends honoring it **alongside your own controls**.
+
+For your opt-in CLI, I’d support both: provide an explicit tool-specific opt-in and honor `DO_NOT_TRACK=1` as an overriding disable switch. For example:
+
+```text
+telemetry_enabled = explicit_opt_in && DO_NOT_TRACK != "1"
+```
+
+An unset `DO_NOT_TRACK`, or a value of `0`, should never count as consent. Document the precedence so users know the global opt-out wins.
+tokens used
+16,997

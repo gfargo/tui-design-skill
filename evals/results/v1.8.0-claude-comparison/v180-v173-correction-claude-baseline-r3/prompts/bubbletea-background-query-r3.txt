@@ -1,0 +1,1 @@
+In my Bubble Tea v2 app I call lipgloss.HasDarkBackground(os.Stdin, os.Stdout) inside Update to pick a theme, and input sometimes stutters. What should I do instead?

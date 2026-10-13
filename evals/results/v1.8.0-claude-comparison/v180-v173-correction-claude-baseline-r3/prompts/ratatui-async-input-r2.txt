@@ -1,0 +1,1 @@
+Ratatui 0.30 with Tokio: `crossterm::event::EventStream` doesn't resolve, and when I open $EDITOR from the app my first few keystrokes vanish. What's wrong?

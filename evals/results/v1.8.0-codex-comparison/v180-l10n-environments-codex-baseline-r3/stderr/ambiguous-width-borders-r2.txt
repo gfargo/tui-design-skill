@@ -1,0 +1,37 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6024xyd1
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133cb-fe58-72f3-ba4b-c224b0254545
+--------
+user
+Japanese users of our Go TUI report that the rounded box borders and the bullet markers are misaligned, but everything looks fine for us. What's going on?
+
+codex
+I’ll check how the TUI draws borders and measures character widths, since Japanese terminals can render some symbols wider than others.
+exec
+/bin/zsh -lc "pwd; rg --files -g '"'!vendor'"' -g '"'!node_modules'"' -g 'AGENTS.md' -g 'go.mod' -g '*.go' -g 'README*' -g '*terminal*'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6024xyd1
+ exited 1 in 0ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6024xyd1
+
+codex
+This is probably a **Unicode East Asian Ambiguous width mismatch**.
+
+Rounded border characters such as `╭ ╮ ╰ ╯` and the bullet `•` have ambiguous width: some terminals render them as **one column**, while terminals configured for East Asian text may render them as **two columns**. If your Go TUI counts each as one column, its padding and cursor positions no longer match what the terminal draws.
+
+That explains why it works for you but breaks for some Japanese users. The deciding factor is the terminal’s width configuration, sometimes influenced by locale—not the user’s language alone.
+
+To address it:
+
+- Check your width library, often `go-runewidth` or a dependency used by your TUI framework. Its ambiguous-width setting must match the terminal.
+- Offer a width setting users can override; locale detection isn’t always reliable.
+- Provide an ASCII fallback for borders and bullets (`+`, `-`, `|`, `*`) for predictable alignment.
+
+Also ensure layout uses **terminal display width**, not `len(s)` or rune count. Neither correctly measures how many screen columns Unicode text occupies.
+tokens used
+2,775

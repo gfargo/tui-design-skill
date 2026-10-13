@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I want undo in my git TUI to work like lazygit's. Which keys does lazygit use for undo and redo, and can it undo a push or a discarded working-tree change?

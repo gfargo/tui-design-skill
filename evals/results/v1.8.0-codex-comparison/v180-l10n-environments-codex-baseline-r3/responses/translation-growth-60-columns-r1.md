@@ -1,0 +1,10 @@
+Change the layout now so translated strings don’t have to fit English-sized boxes. Treat **60 columns as a supported layout**, with 80 columns as the expanded version.
+
+- **Make the table responsive.** Give each column a minimum width and a priority. At 60 columns, hide or combine lower-priority columns, or show each task on two lines. Let the task title use the remaining space. Include borders, padding, and separators in the width budget.
+- **Measure terminal cells, not bytes or character counts.** Japanese characters commonly occupy two cells; combining marks may occupy none. Use ANSI-aware display-width and truncation helpers, such as `lipgloss.Width` and `ansi.Truncate`, and verify their behavior with your pinned versions. Avoid slicing strings by byte or rune count.
+- **Define overflow behavior.** Truncate task titles with an ellipsis and offer a detail view for the full text. Let headers use translator-provided short variants. German and Finnish compounds can be long, so don’t depend on spaces for wrapping.
+- **Replace the single-line footer with responsive help.** Show essential actions in compact mode, wrap between complete key-hint pairs, and offer a key for full help. Bubble Tea’s Bubbles `help` and `key` packages can support this. Keep keybindings stable unless you deliberately localize them; translate their descriptions separately.
+- **Separate messages from layout.** Use complete messages with named placeholders, rather than concatenating fragments. Allow locale-specific dates and plural forms—especially Finnish—and avoid padding inside translation strings.
+- **Give translators context and alternatives.** Explain where each string appears, provide screenshots at 60 and 80 columns, and request short labels where needed. Specify limits in **display cells**, with overflow handled by the application.
+
+Before handoff, exercise the UI at 60 and 80 columns with expanded pseudo-translations, Japanese text, combining characters, and long unbroken words. Check resizing, selection visibility, headers, and help. Translators should be choosing natural wording; the layout should absorb the variation.

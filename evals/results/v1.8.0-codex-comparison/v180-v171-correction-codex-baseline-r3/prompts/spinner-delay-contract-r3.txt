@@ -1,0 +1,1 @@
+For a one-shot CLI that usually finishes in under 50ms but sometimes takes several seconds, should the spinner appear the instant work starts? Which Braille frames should I use?

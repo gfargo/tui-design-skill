@@ -1,0 +1,1 @@
+Users paste multi-line shell snippets into the single-line command input of our Ratatui TUI, and the app runs each pasted line as a separate command. What's going on, and how do we fix it?

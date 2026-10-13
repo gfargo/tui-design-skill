@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Upgrading to Huh v2, `form.WithTheme(huh.ThemeCharm(true))` no longer compiles. What's the right call, and how does the form know whether the background is dark?

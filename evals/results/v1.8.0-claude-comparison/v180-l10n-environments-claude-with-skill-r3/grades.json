@@ -1,0 +1,315 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-l10n-environments-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "translation-growth-60-columns-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It says German and Finnish words grow most in short strings like column headers and footer actions, and says to budget for short strings to double or triple."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recomputes column widths from lipgloss.Width of the translated header and widest value on locale load and resize, instead of using the English header width."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a lengthened pseudo-locale with markers and a full-width pseudo-locale, and says to test with them before translations arrive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It gives a 60\u201379 width band (status becomes a symbol, short headers, MM-DD dates), drops a column below 60, truncates cells with \u2026 and moves full values to a detail view, keeps ? help visible while dropping lower-priority hints, and shows a German example at 60 columns."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to use lipgloss.Width instead of len(), notes that \u7d5e\u308a\u8fbc\u307f is 4 characters but 8 cells, and gives translators budgets in cells."
+        }
+      ]
+    },
+    {
+      "trial_id": "translation-growth-60-columns-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States German/Finnish are long and that short strings grow the most (100\u2013200% for <10 chars), naming column headers and footer hints."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says to stop sizing from English and compute column widths at runtime from the wider of the translated header and data."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a pseudo-locale with ~50% longer, marker-wrapped strings plus a fullwidth variant, tested before translations arrive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Defines 60\u201379 and sub-60 bands: drop Owner to a detail view, truncate Title with an ellipsis, cut headers with full text in ? help, and keep ? help visible in the footer."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Explains that \u671f\u9650 is 2 characters but 4 cells, that len()/rune counts misalign, and to use lipgloss.Width()."
+        }
+      ]
+    },
+    {
+      "trial_id": "translation-growth-60-columns-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States translations grow most on short strings, allowing 100\u2013200% for strings under 10 characters, and names headers, statuses and key hints."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Computes column widths in WindowSizeMsg from lipgloss.Width of the current locale's header and widest value, and says to stop sizing from English."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a pseudo-locale with strings about 50% longer, wrapped in markers, plus a fullwidth CJK variant, all before translations exist."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Shows a German mockup at 60 columns where Priority moves to the detail view, titles truncate with an ellipsis, footer hints drop from the end with ? help kept early, and a too-small message names the real minimum."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Says to measure in cells, gives \u512a\u5148\u5ea6 as 6 cells not 3, warns against len() and fmt rune padding, and covers ambiguous-width characters."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States Ctrl+B is tmux's default prefix and tmux never passes it to the pane's program."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explains escape-time wait of 500 ms before tmux 3.5 and documents `set -sg escape-time 10`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a plain normal-mode key like `b` or a leader sequence, avoiding Ctrl+B and screen's Ctrl+A, with a keymap test enforcing this."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Suggests checking $TMUX to change footer/help hints and to show an escape-time hint or doctor check."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States Ctrl+B is tmux's default prefix and tmux catches it and never passes it to the pane program."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explains escape-time wait, 500 ms before 3.5, and documents `set -sg escape-time 10` in tmux.conf."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends `\\` or Space b as primary binding and tests that actions have a binding other than Ctrl+A/Ctrl+B."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Suggests checking $TMUX (and $ZELLIJ/$STY) to show working hints and to check escape-time with a notice."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Ctrl+B is tmux's default prefix and that tmux consumes it, so the app never receives it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that tmux holds a lone ESC for escape-time, gives the 500 ms default before 3.5, and suggests documenting `set -sg escape-time 10`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends a non-Ctrl/Alt binding such as `\\` or a leader sequence, and notes that screen uses Ctrl+A."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer suggests showing the working binding in hints when `$TMUX` is set, and detecting tmux to check escape-time and show a hint."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names East Asian Ambiguous width and lists the box-drawing characters and markers like \u2022 and \u2026. It also says terminals can be set to draw them double-width."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that go-runewidth switches to wide under ja/ko/zh locales while the terminal may be set differently, and that the mismatch can go either way."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says to reproduce with iTerm2's ambiguous-wide setting on. It recommends an ASCII border fallback and swapping in markers that are narrow in every setting."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names East Asian Ambiguous width. It says box-drawing characters such as \u256d\u256e\u2570\u256f\u2500\u2502 and markers such as \u2022 and \u2026 are ambiguous, and that terminals can be set to draw them double-width."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that go-runewidth counts ambiguous characters as wide under ja/ko/zh locales while the terminal may draw them narrow, and that the mismatch can go either way."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends turning on iTerm2's 'Ambiguous characters are double-width' setting to reproduce the issue, offering an ASCII border fallback via a flag, and switching to markers that are not in the ambiguous class, such as \u25b8 and \u2713."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names East Asian Ambiguous width (UAX #11). It lists the box-drawing characters and markers such as \u2022 and \u2026 as ambiguous, and says terminals have a setting to draw them two cells wide."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says go-runewidth treats ambiguous characters as wide under ja/ko/zh locales while other libraries treat them as narrow, and it walks through both directions of the mismatch."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends reproducing with iTerm2's ambiguous-wide option turned on and doing a manual per-release check with that setting. It also offers an --ascii border fallback and swapping to narrow-class markers."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the human table follows the user's locale through a locale library, and gives examples of separators and grouping that differ, such as de_DE 1.234,5 and French or Indian English groupings."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer requires --json, --plain and CSV output to be byte-identical across locales, using raw integers with no grouping and LC_NUMERIC pinned to C so the decimal point stays fixed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer gives the LC_ALL > LC_NUMERIC > LANG precedence and says setlocale makes printf print commas and strtod parse them, so machine output must be locale-independent."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Rule 1 says to format the human table for the user's locale with a locale library, and gives the German example where the separators are swapped."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Rules 2 and 3 require --json, --plain, and CSV to be byte-identical in every locale, with C-locale numbers, no grouping, and raw integer bytes."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It gives the LC_ALL, then LC_NUMERIC, then LANG precedence, and warns that printf and LC_NUMERIC-aware formatters corrupt JSON. Its fix is to set LC_NUMERIC=C so machine output doesn't depend on the locale."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Rule 1 says the human table should be formatted with the locale, and gives German, French and Indian separator and grouping examples using a locale library."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It requires --json and --plain to be byte-identical under any LANG/LC_ALL/LC_NUMERIC, using raw numbers from the JSON encoder or pinning LC_NUMERIC=C, so the output has a fixed decimal point and no grouping."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names LANG, LC_ALL and LC_NUMERIC and explains that locale-aware printf prints 1234,5 under de_DE, so machine output must not rely on the locale; LC_ALL > LC_NUMERIC > LANG precedence is not spelled out."
+        }
+      ]
+    }
+  ]
+}

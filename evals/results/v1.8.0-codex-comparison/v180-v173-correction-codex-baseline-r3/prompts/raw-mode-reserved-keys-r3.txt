@@ -1,0 +1,1 @@
+My full-screen Bubble Tea app wants Ctrl+S for save and Ctrl+C for copy. Someone told me those keys never reach a terminal app because the terminal eats them. Is that true?

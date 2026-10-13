@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building a lazygit-style multi-pane tool and want to mirror lazygit's configuration conventions. What file format and location does lazygit use, and does k9s use the same format for its plugins?

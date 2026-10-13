@@ -1,0 +1,50 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v180-terminal-modes-codex-baseline-r3",
+  "created_at": "2026-10-13T05:27:20Z",
+  "run_manifest_sha256": "4f2b9c164afd6287926a4ef9163e74afcb595585fd7159a2c1981625ace33ca9",
+  "grades_file": "grades.json",
+  "grades_sha256": "77b483214f30578b931d435b87fc43ed97a45104ca9e362e7778b0ecce19e48b",
+  "passed": 37,
+  "total": 57,
+  "pass_rate": 0.6491228070175439,
+  "by_case": [
+    {
+      "case_id": "bracketed-paste-multiline",
+      "case_name": "bracketed-paste-multiline",
+      "passed": 7,
+      "total": 12,
+      "pass_rate": 0.5833333333333334
+    },
+    {
+      "case_id": "sync-output-tearing",
+      "case_name": "sync-output-tearing",
+      "passed": 10,
+      "total": 12,
+      "pass_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "kitty-keyboard-shift-enter",
+      "case_name": "kitty-keyboard-shift-enter",
+      "passed": 10,
+      "total": 12,
+      "pass_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "background-query-ssh",
+      "case_name": "background-query-ssh",
+      "passed": 7,
+      "total": 12,
+      "pass_rate": 0.5833333333333334
+    },
+    {
+      "case_id": "cursor-title-restore",
+      "case_name": "cursor-title-restore",
+      "passed": 3,
+      "total": 9,
+      "pass_rate": 0.3333333333333333
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

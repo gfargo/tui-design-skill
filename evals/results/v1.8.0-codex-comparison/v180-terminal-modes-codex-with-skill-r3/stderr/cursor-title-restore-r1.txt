@@ -1,0 +1,610 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-7b1hdse_
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133b9-0355-7781-88dd-4c414dff929b
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our Ratatui editor switches to a bar cursor in insert mode and sets the window title to the open file's name. After quitting, users are left with a bar cursor and a stale title. What should we do on exit?
+
+codex
+I’ll read the tui-design skill and check its guidance on terminal cleanup.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-7b1hdse_
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "rg -n -C 7 'cursor|title|restore|panic' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-7b1hdse_
+ succeeded in 0ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-10-- [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-11-- [Focus management](#focus-management)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-12-- [Search and filter](#search-and-filter)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-13-- [Multi-select](#multi-select)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-14-- [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-15-- [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-16-- [Forms and settings screens](#forms-and-settings-screens)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:17:- [Terminal modes and protocols](#terminal-modes-and-protocols) (paste, keyboard, mouse, focus, sync output, cursor, title, progress, color queries, terminal environments)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-18-- [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-19-- Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-20-- [Common interaction pitfalls](#common-interaction-pitfalls)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-21-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-22----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-23-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-24-## Keybinding philosophies
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-132-## Reserved keys — preserve what users expect
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-133-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-134-In cooked (line) mode these keys belong to the terminal driver and shell. In raw mode — which every full-screen framework enables — they arrive as ordinary keypresses: no SIGINT, SIGTSTP, or XOFF is generated unless your app produces that behavior itself.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-135-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-136-| Key | Expected behavior |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-137-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-138-| **Ctrl+C** | Interrupt — cancel the current operation or quit cleanly |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:139:| **Ctrl+Z** | Suspend — restore the terminal, stop, and redraw on `fg` |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-140-| **Ctrl+\\** | Abort — SIGQUIT (core dump) in cooked mode |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-141-| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control, for line-mode programs where the tty driver still sees them |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-142-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:143:A full-screen app *may* handle these keys, and real ones do: helix binds `Ctrl-c` to toggle comments and `Ctrl-s` to `save_selection`; nano and micro save on `Ctrl+S`. What you owe users is the expected behavior, not a hands-off policy: keep `Ctrl+C` as cancel/quit unless there's a strong reason not to (and then offer an obvious exit), and implement `Ctrl+Z` suspend through the framework's support so the terminal is restored. Flow-control freezes (and the `stty -ixon` workaround) only matter for cooked-mode programs; raw mode as set by `cfmakeraw` also clears `IXON`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-144-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-145-Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-146-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-147----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-148-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-149-## Discoverability — the four-layer pattern
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-150-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-214-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-215-### Modal (vim-style)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-216-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-217-You're in a mode (NORMAL, INSERT, etc.). Keystrokes interpreted differently per mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-218-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-219-**Requires:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-220-- Persistent mode indicator (status bar color or label).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:221:- Distinct cursor shapes per mode (block in NORMAL, bar in INSERT, underline in REPLACE), reset on exit (see *Terminal modes and protocols* → *Output*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-222-- A way to learn modes — usually a tutorial or readme.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-223-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-224-**Trade-offs:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-225-- Pro: dense keybindings (no Ctrl/Alt needed for most operations).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-226-- Pro: composable operators (`d` + motion = delete-by-motion).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-227-- Con: confusion if mode is weakly indicated.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-228-- Con: muscle memory required.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-258-- Which footer hints show.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-259-- The visual highlight (border color, reverse video on selection).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-260-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-261-### Focus indicators (in order of strength)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-262-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-263-1. **Border color change** — strongest. The focused panel's border becomes the accent color.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-264-2. **Border weight** — thin → thick. Subtle but works.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:265:3. **Title color/weight** — bold + accent on focused panel title.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-266-4. **Background tint** — subtle but be careful (background-leak issues with borders).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-267-5. **Selection visible** — only the focused panel shows reverse-video selection; unfocused panels show muted selection.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-268-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-269-Combine 2–3 of these for unambiguous indication.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-270-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-271-### Focus navigation
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-272-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-363-## Undo / redo
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-364-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-365-Hard for non-editor apps, but lazygit notably offers `z` (undo) / `Z` (redo) for git actions recorded in the reflog — commits, checkouts, resets, even a whole botched rebase. It is honest about the limits: working-tree and stash changes, pushes, and branch creation can't be undone, and undo is unavailable mid-rebase. Even bounded, this is a *huge* user comfort feature for destructive tools.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-366-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-367-**Two implementation strategies:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-368-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-369-1. **Action stack** — model every user action as a reversible operation. On undo, pop and reverse.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:370:2. **State snapshots** — periodically snapshot full state; undo restores a snapshot. Cheaper to implement but coarser.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-371-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-372-For destructive actions without undo, use modal confirmation. **Never silently destroy.**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-373-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-374----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-375-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-376-## Confirmation patterns
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-377-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-435-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-436-There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-437-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-438----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-439-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-440-## Terminal modes and protocols
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-441-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:442:Full-screen apps switch terminal modes on with DECSET (`CSI ? n h`) and must switch each one off (`CSI ? n l`) on every exit path, including errors, panics, and suspend. That is the lifecycle contract in `SKILL.md`. Frameworks restore what they enable, but nothing you enable yourself: Ratatui's `restore()` undoes only raw mode and the alternate screen. Treat every capability query as optional. A terminal or multiplexer may answer late or never, so render a working default first and wait for replies with a timeout. xterm's [control sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html) define the classic modes; newer ones have their own specs, linked below.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-443-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-444-### What each framework turns on
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-445-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-446-| Mode | Bubble Tea v2 | crossterm / Ratatui | Textual | Ink 8 |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-447-|---|---|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-448-| Bracketed paste (2004) | On | Off | On | While a paste hook is mounted |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-449-| Kitty keyboard | On (disambiguate), plus `modifyOtherKeys` | Off | On (disambiguate, all keys, associated text) | Opt-in |
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-459-- **Bracketed paste (2004).** The terminal wraps a paste in `CSI 200~` … `CSI 201~`, so the app can tell pasted text from typing. Without it, kitty and Ghostty turn a pasted newline into Enter, and the app may run half a paste as commands. Enable it for any free-text input, and decide per field what a multi-line paste means: a single-line field should keep the first line or refuse, never submit. xterm, kitty, Ghostty, and foot neutralize escape characters inside a paste so it cannot end itself early; don't assume every terminal does.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-460-- **Kitty keyboard protocol.** Push enhancement flags with `CSI > flags u` and pop them with `CSI < u` on exit; `CSI ? u` asks whether the terminal supports it ([spec](https://sw.kovidgoyal.net/kitty/keyboard-protocol/)). The first flag, "disambiguate", makes Shift+Enter, Ctrl+Enter, Ctrl+Tab, and Ctrl+I distinct from their legacy twins and sends plain Esc as its own code, so the app no longer guesses whether Esc starts an Alt sequence. Flag 2 adds key-release events. kitty, foot, Alacritty 0.13+, Ghostty, Windows Terminal 1.25+, and WezTerm (with `enable_kitty_keyboard`) support it; xterm's `modifyOtherKeys` (`CSI > 4 ; 2 m`) covers some of the same keys. Treat the extra keys as accelerators. Every action still needs a binding that works in the legacy encoding, which is what reaches you inside tmux, whose `extended-keys` option is off by default.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-461-- **Mouse reporting.** Mode 1000 reports clicks, 1002 adds drags, and 1003 adds every pointer move. Pair any of them with 1006 (SGR encoding), which reports releases and columns past 223. Enable the smallest mode the UI needs, since 1003 sends an event on every pointer move. crossterm's `EnableMouseCapture` turns on all of them at once. Any mouse mode takes over the terminal's own text selection; see *Mouse support* for the bypass and the off switch.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-462-- **Focus reports (1004).** The terminal sends `CSI I` and `CSI O` when its window gains or loses focus. Use them to pause animation and polling in the background and to refresh stale data on return; lazygit dims its panels on focus loss and refreshes on focus. tmux forwards them only with `focus-events on`, which is off by default.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-463-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-464-### Output
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-465-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:466:- **Synchronized output (2026).** Wrap each frame in `CSI ? 2026 h` … `CSI ? 2026 l` so the terminal paints it at once instead of tearing mid-redraw ([spec](https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md)), and detect support with DECRQM (`CSI ? 2026 $ p`). Always send the end sequence, error paths included; a terminal releases a stuck frame only after its own timeout (150 ms in Alacritty, 1 s in Ghostty, 2 s in kitty). kitty, WezTerm, foot, Alacritty, Ghostty, iTerm2, Windows Terminal 1.23.20211+, and tmux 3.7+ support it. Without it, write each frame in one `write`, send only changed cells, and hide the cursor while drawing.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:467:- **Cursor shape (DECSCUSR, `CSI n SP q`).** Pair shapes with modes (block in normal mode, bar in insert; see *Modal vs modeless*), and reset with `CSI 0 SP q` on exit. Windows Terminal, foot, and Ghostty read 0 as the user's configured cursor, but xterm reads it as a blinking block; only xterm patch 411 and later restore the user's choice, with `CSI 7 SP q`. The current shape can't be reliably queried, so it can't be saved. Ratatui's `restore()` doesn't touch the shape, so an app that sets one resets it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:468:- **Window title (OSC 2).** Set a title only when it helps users find the window, for example the open file or the remote host. Push the old title with `CSI 22 ; 0 t` before setting yours and pop it with `CSI 23 ; 0 t` on exit. xterm, kitty, foot, iTerm2, Alacritty, and tmux keep that stack; WezTerm, Ghostty, and Windows Terminal ignore it, so the user's title is lost there. Bubble Tea clears the title on exit rather than restoring it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-469-- **Progress (OSC 9;4).** `OSC 9 ; 4 ; state ; percent ST` shows progress on the tab or taskbar; state 0 removes it, 1 is normal, 2 error, 3 indeterminate, and 4 paused ([ConEmu](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC), [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences)). Windows Terminal, Ghostty 1.2+, kitty, iTerm2, and tmux 3.7+ understand it. A terminal that knows only OSC 9 notifications may pop it up as a notification, so send it where you know it is supported, and clear it with state 0 on every exit. Bubble Tea's view-level progress bar sends it without checking.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-470-- **Shell-integration marks (OSC 133).** Prompt marks (`A` prompt, `B` input, `C` output, `D;exit-code` end) let a terminal jump between prompts, select one command's output, and show its exit status ([proposal](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/6b555699e41ab47ce210610d1a17cfc1662ec8d7/proposals/semantic-prompts.md)). A REPL should mark its own prompts, adding `aid=` when it runs inside a shell that marks them too; a full-screen TUI should not.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-471-- **Grapheme clusters (2027).** With mode 2027 on, the terminal sizes cells by grapheme cluster, so emoji sequences and combining marks take the width the app computed ([spec](https://github.com/contour-terminal/contour/blob/b719d05aed54f29ee7d629f5dd7d760b2f4b4320/docs/vt-extensions/unicode-core.md)). Bubble Tea turns it on when the terminal reports support; the other frameworks don't. Where it is off, app and terminal can still disagree; kitty, for one, segments graphemes without implementing 2027. Test emoji-heavy rows on the terminals you support.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-472-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-473-### Color and appearance
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-474-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-475-- **Color depth.** `COLORTERM=truecolor` (or `24bit`) is the [convention](https://github.com/termstandard/colors/blob/caf0bb949ad64307d938a055f7fbec76ce65d91e/README.md#truecolor-detection) for 24-bit color; `TERM` alone proves little, since most terminals call themselves `xterm-256color`. Libraries read it differently: chalk 6 accepts only `truecolor` (with `24bit` it falls back to whatever `TERM` suggests), and crossterm consults `TERM` only when `COLORTERM` is unset. The variable is also the first thing lost over SSH. OpenSSH forwards no environment variables by default, and only recent Debian and Ubuntu releases send and accept `COLORTERM` at both ends. tmux 3.6+ sets `COLORTERM=truecolor` in its panes and downsamples for the outer terminal. To recover truecolor remotely, ask the terminal (XTGETTCAP `RGB`, which Bubble Tea's capability request sends) or let users set it; otherwise fall back to 256 colors over the 16-color theme from `visual-patterns.md` → *Color in depth*.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-479-### Terminal environments
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-480-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-481-The same app runs inside multiplexers, over SSH, and on Windows consoles. Each changes which keys arrive and which modes work:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-482-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-483-| Environment | What breaks | Detect | Fallback |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-484-|---|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-485-| tmux | The prefix `Ctrl+B` never reaches the app. A lone Esc waits `escape-time` before delivery (500 ms before 3.5, 10 ms since). Since 3.8 the `mouse` option defaults to on: unless the app enables mouse reporting, a plain drag starts tmux's copy-mode selection and the wheel enters copy mode (except on the alternate screen), while Ctrl-drag, Alt-drag, and Alt+right-click always belong to tmux | `$TMUX`, `TERM_PROGRAM=tmux` | Never make `Ctrl+B` the only path to an action; document the `tmux.conf` options below |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:486:| GNU screen | The prefix `Ctrl+A` never reaches the app. Truecolor is dropped unless `truecolor on` (5.0+); OSC sequences other than titles and colors are discarded; the alternate screen is off by default. The default flow control (`auto`) still passes Ctrl+S and Ctrl+Q to raw-mode apps on Linux, but `flow on` swallows them | `$STY`, `TERM=screen*` | 256-color theme; no OSC-dependent feature without a fallback; clear the screen on exit |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-487-| Zellij | Its default mode captures `Ctrl+G/P/T/N/H/S/O/Q/B` and many Alt keys. The Unlock-First preset (0.41+) frees the Ctrl keys but keeps its Alt bindings | `$ZELLIJ` | Keep a non-Ctrl, non-Alt path to every action; point users at Unlock-First |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-488-| SSH | Every capability query costs a network round trip; `COLORTERM` usually doesn't arrive; the remote may lack terminfo for the local terminal (kitty's `xterm-kitty`, Ghostty's entry); OSC 52 is the only clipboard path | `$SSH_TTY`, `$SSH_CONNECTION` | Bounded query timeouts, truecolor from a query or a user setting, `TERM=xterm-256color` when terminfo is missing (kitty's `kitten ssh` and Ghostty's SSH integration copy it over) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-489-| Windows | No SIGTSTP, SIGWINCH, or SIGCONT: no job-control suspend, and resize arrives as console events. The legacy console has no VT processing before the Windows 10 Anniversary Update. Windows Terminal sets no `TERM` or `COLORTERM` | `WT_SESSION` (Windows Terminal) | A non-suspend path to the shell; target Windows Terminal, the default since Windows 11 22H2. Go, Rust, and Python write Unicode through the wide console API, so no `chcp 65001` is needed |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-490-| CI, pipes | No TTY: no prompts, no full-screen UI | `CI`, stdout not a terminal | `cli-basics.md` → *Interactivity* and *Output design* |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-491-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-492-Sources: [tmux.1](https://github.com/tmux/tmux/blob/3.8/tmux.1) and [CHANGES](https://github.com/tmux/tmux/blob/3.8/CHANGES) at 3.8, [screen.1](https://git.savannah.gnu.org/cgit/screen.git/tree/src/doc/screen.1?h=v.5.0.2) at 5.0.2, [Zellij's keybinding presets](https://zellij.dev/documentation/keybinding-presets.html), [Microsoft's console VT notes](https://devblogs.microsoft.com/commandline/new-experimental-console-features/), and the [Windows 11 default-terminal announcement](https://devblogs.microsoft.com/commandline/windows-terminal-is-now-the-default-in-windows-11/).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-493-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-517-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-518-**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and other terminals may apply similar focus gates, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-519-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-520-**Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-521-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-522-### OSC 9 / 777 — desktop notifications
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-523-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:524:`ESC ] 9 ; message ESC \` (OSC 9, iTerm2-originated) has the widest support: kitty, WezTerm, Ghostty, iTerm2, foot. Never start the message with digits and a semicolon: `OSC 9;n` is also ConEmu's command namespace (`9;4` is a progress bar), parsed by Windows Terminal, Ghostty, and tmux 3.7+, so `3; tests failed` becomes a command or gets dropped. Prefix the text (`build: 3 tests failed`) or use OSC 777. OSC 777 (`ESC ] 777 ; notify ; title ; body ESC \`) adds a title where supported (WezTerm, Ghostty, foot); a reasonable strategy is 777 where you know it works, else 9. tmux swallows both unless wrapped in DCS passthrough with `allow-passthrough on` (tmux 3.3+).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-525-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-526-**Etiquette:** notify only when long-running work finishes (or fails) while the user is likely elsewhere — build done, tests finished, deploy complete. Fire once, keep it short, prefer in-UI status when the app has focus. Never notify for routine events or things the user just did.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-527-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-528-### The rest of the family, in one line each
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-529-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-530-- **OSC 11** (background color) and **mode 2031** (dark/light changes) — see *Terminal modes and protocols* → *Color and appearance*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-531-- **OSC 9;4** (progress) and **OSC 133** (prompt marks) — see *Terminal modes and protocols* → *Output*.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-592-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-593-**Case study:** `references/exemplar-apps.md` → *k9s*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-594-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-595----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-596-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-597-## The helix pattern — selection-first modal editing
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-598-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:599:Helix's bet against vim: select first, then act. `wd` selects-word-then-deletes (vs vim's `dw` "delete-word"). Multi-cursor is core. Tree-sitter integration. `Space` opens which-key.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-600-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-601-**Why it matters for general TUI design:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-602-- **Selection-then-act** has visual feedback before the destructive action — users see what they're about to delete.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:603:- **Multi-cursor** as primary scales beautifully for batch edits.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-604-- **Which-key for leader keys** is a discoverability pattern any modal app should consider.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-605-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-606-You probably won't build a modal editor, but the *visual-feedback-before-action* principle is widely applicable: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-607-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-608-**Case study:** `references/exemplar-apps.md` → *helix*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-609-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-610----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-611-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-612-## Common interaction pitfalls
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-613-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-614-1. **Broken reserved-key expectations** — Ctrl+C that neither cancels nor quits, Ctrl+Z that doesn't suspend cleanly.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-615-2. **No focus indication.** Users tab around guessing which panel is active.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:616:3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-617-4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-618-5. **`Esc` doesn't back up or dismiss** where the UI establishes a navigation stack or modal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-619-6. **No discoverable key help** in an action-rich app; `?` is conventional, but an equivalent visible route is fine.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-620-7. **Filter that's slow** (>100ms updates).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-621-8. **Destructive single-letter without confirmation or undo.** Either confirm or implement undo.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-622-9. **Inconsistent meanings for the same key across panels** without a footer hint bar to explain.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-623-10. **Mouse-only actions** with no keyboard equivalent.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-7-**Contents:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-8-- [Quick recommendation](#quick-recommendation)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-9-- [Ratatui](#ratatui-ratatuiratatui) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout](#layout) · [Styling](#styling)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-10-- [Backends](#backends-crossterm-vs-termion-vs-termwiz)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-11-- [State management](#state-management-patterns) · [Async with Tokio](#async-with-tokio)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-12-- [Testing](#testing) · [Debugging](#debugging)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-13-- [Companion crates](#companion-crates)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:14:- [Panic safety](#panic-and-error-safety--the-critical-pattern)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-15-- [Alternatives to Ratatui](#alternatives-to-ratatui)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-16-- [Pitfalls](#pitfalls)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-17-- [Notable Rust TUI apps](#notable-rust-tui-apps-to-study)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-18-- [CLI design in Rust](#cli-design-in-rust)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-19-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-20-## Quick recommendation
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-21-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-24-| Modern TUI in Rust | **Ratatui + Crossterm** |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-25-| Form-heavy app with dialogs/menus | **Cursive** (callback-driven, retained-mode) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-26-| React-like declarative TUI | **iocraft** (newer, hooks + JSX-style + taffy flexbox) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-27-| Argument parsing for CLIs | **clap** (derive API) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-28-| Pretty terminal colors | **owo-colors** (zero-allocation, recommended) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-29-| Non-TUI progress bars | **indicatif** |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-30-| Interactive prompts (one-shot) | **inquire** (modern) or **dialoguer** (stable) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:31:| Rich panic/error reports | **color-eyre** |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-32-| Fancy modern wizards (Clack-style) | **cliclack** |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-33-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-34-**Default: Ratatui + Crossterm + clap + color-eyre.** Start from `cargo generate ratatui/templates` and pick one of its six templates by app size: `simple` or `event-driven` for sync apps, `simple-async` or `event-driven-async` when you need Tokio, and `component` (Tokio, action channel, config, logging) only for large multi-pane apps.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-35-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-36----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-37-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-38-## Ratatui (ratatui/ratatui)
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-48-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-49-use color_eyre::Result;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-50-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-51-fn main() -> Result<()> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-52-    color_eyre::install()?;            // install reporting before Ratatui wraps the hook
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-53-    let mut terminal = ratatui::init();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-54-    let result = App::default().run(&mut terminal);
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:55:    ratatui::restore();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-56-    result
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-57-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-58-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-59-#[derive(Default)]
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-60-struct App {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-61-    counter: i32,
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-62-    should_quit: bool,
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-70-        }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-71-        Ok(())
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-72-    }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-73-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-74-    fn draw(&self, frame: &mut Frame) {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-75-        frame.render_widget(
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-76-            Paragraph::new(format!("Counter: {}", self.counter))
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:77:                .block(Block::bordered().title("Demo")),
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-78-            frame.area(),
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-79-        );
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-80-    }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-81-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-82-    fn handle_events(&mut self) -> Result<()> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-83-        if let Event::Key(key) = event::read()? {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-84-            if key.kind == KeyEventKind::Press {
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-95-            }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-96-        }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-97-        Ok(())
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-98-    }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-99-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-100-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-101-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:102:`ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-103-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-104-### Lifecycle and terminal handoff
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-105-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-106-Ratatui owns rendering and terminal setup, but not the application event loop, subprocesses, or general process-signal policy. Prefer the managed API and make every external lifecycle event converge on the loop boundary.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-107-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-108-| Boundary | Ratatui 0.30 contract |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-109-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:110:| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-111-| SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:112:| Interactive child | Stop the input reader first (a still-running reader steals the child's keystrokes and terminal capability responses), restore, run and wait for the child, reinitialize, clear, and redraw. Keep the child's result; if child and reentry both fail, report both instead of letting `?` discard one. See the snippet below. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-113-| Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-114-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-115-Following Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/):
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-116-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-117-```rust check=rust/editor-handoff
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-118-use std::{io::stdout, process::{Command, ExitStatus}};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-119-use ratatui::crossterm::{execute, terminal::{enable_raw_mode, EnterAlternateScreen}};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-120-use color_eyre::eyre::eyre;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-121-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-122-fn run_editor(terminal: &mut DefaultTerminal, app: &mut App) -> Result<ExitStatus> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-123-    app.input.stop();                                    // async apps: cancel the EventStream task
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:124:    ratatui::restore();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-125-    let child = Command::new("vim").arg(&app.path).status(); // keep it; no `?` yet
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-126-    let reentry = enable_raw_mode()
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-127-        .and_then(|()| execute!(stdout(), EnterAlternateScreen))
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-128-        .and_then(|()| terminal.clear());                // next draw repaints every cell
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-129-    app.input.start();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-130-    app.reload();                                        // the child may have changed state
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-131-    match (child, reentry) {
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-138-Reentry steps are not transactional (see the fallible-setup warning below), and a successful redraw proves only that the renderer recovered.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-139-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-140-**Inline viewport:** `Terminal::with_options` with `Viewport::Inline(height)` renders below the prompt instead of on the alternate screen. To emit permanent log or output lines above the live UI, use `Terminal::insert_before`: inserted lines push the viewport down, then scroll into scrollback above it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-141-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-142-### Widgets
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-143-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-144-**Built-in:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:145:- **`Block`** — borders, title, padding. The container for almost everything.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-146-- **`Paragraph`** — text with wrap, alignment, scroll offset.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-147-- **`List`** + **`ListState`** — selectable list with virtualized rendering.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-148-- **`Table`** + **`TableState`** — selectable table, virtualized.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-149-- **`Tabs`** — tab bar.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-150-- **`Chart`** — line/scatter chart with X/Y axes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-151-- **`BarChart`** — horizontal or vertical bars.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-152-- **`Gauge`** / **`LineGauge`** — progress indicator.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-294-        _ = tick.tick() => app.on_tick(),
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-295-    }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-296-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-297-stop.cancel();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-298-input.await?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-299-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-300-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:301:Cancel and await the reader before `ratatui::restore()` or before handing the terminal to a child (see [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff)); after reentry, spawn a fresh reader with a new token.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-302-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-303-For sync-only apps, `event::poll(Duration::from_millis(250))` then `event::read()` works without Tokio.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-304-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-305-## Testing
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-306-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-307-`TestBackend` lets you assert against rendered output:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-308-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-323-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-324-Pair with **`insta`** for snapshot testing — `insta::assert_snapshot!(terminal.backend())`. Snapshots are stored as text files and reviewed via `cargo insta review`. This is the officially documented recipe (ratatui.rs → Recipes → Testing), with one caveat straight from that page: **snapshots capture text only — color and style are not asserted.** When color matters (selected-row highlight, error styling), compare `Buffer`s instead: build the expected buffer with `Buffer::with_lines(...)`, apply `set_style` to the regions you care about, and `assert_eq!` against the backend's buffer — the official counter-app tutorial demonstrates exactly this.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-325-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-326-For the lifecycle layer TestBackend can't reach (event loop, key handling, raw-mode setup and teardown, exit code), the same official recipe now shows a PTY end-to-end test with `termlens`: spawn `env!("CARGO_BIN_EXE_<app>")` at a fixed size, wait for visible text, send keys, and snapshot `terminal.screen()` with insta. Keep it to one or two flows, and pin termlens's version because the crate is new (2026).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-327-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-328-**Test at multiple sizes.** Resize bugs live at the edges, so run the same render across the contract sizes — 80×24, 60 columns (e.g. 60×24), and your declared hard minimum — snapshotting each under a size-suffixed name (`app_60x24`). Parameterizing per-size with `rstest` (which ratatui itself uses for its own tests) is a natural fit, though that combination is community practice rather than an official recipe. Extracting layout math into a pure `fn compute_layout(area: Rect) -> ...` makes per-size assertions cheap — no terminal needed at all.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-329-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:330:Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) were reverted because the refactor that made the main loop testable dropped the initial notify event, so the app opened blank for one tick interval; the re-landed version (PR #2813, merged April 2026) restores that event. The caution: when you restructure an event loop so tests can drive it, the app's own startup path is what regresses, so cover first-draw behavior in the same tests. **openai/codex** keeps its Ratatui TUI (`codex-rs/tui`) under broad insta coverage, about 200 snapshot files of rendered output, so any change to visible TUI output surfaces as a snapshot diff to review (`cargo insta pending-snapshots`, `cargo insta accept`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-331-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-332-## Debugging
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-333-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-334-`println!` and `dbg!` are broken inside a running TUI: raw mode stops newline processing — crossterm's docs say it directly, "`println!` can't be used, use `write!` instead" — and anything printed is stomped by the next draw or hidden entirely under the alt screen. The working options:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-335-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-336-- **Log to a file and tail it** (official recipe): `tracing` + `tracing-subscriber` (env-filter) writing to a plain file with ANSI disabled, then `tail -f app.log` in a second terminal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-337-- **In-app debug pane** (official recipe): keep `show_debug: bool` in app state, split off a column when toggled, and render `format!("{state:#?}")` into it.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-359-  enum Commands {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-360-      /// List items
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-361-      List,
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-362-  }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-363-  ```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-364-  Best-in-class argument parsing with auto-generated help and validation; shell completions come from the companion `clap_complete` crate.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-365-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:366:- **color-eyre** — installs a panic hook that prints rich error reports with span traces and backtraces. Install it before `ratatui::init()` or `ratatui::run()`; Ratatui then wraps the reporting hook and restores terminal state before delegating to it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-367-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-368-- **owo-colors** — zero-allocation color formatting. Direct styling emits color; opt into its `supports-colors` feature and use `if_supports_color`, or add your own policy, when output must account for TTY capability and `NO_COLOR`. Recommended over `colored` (older, allocates) and `ansi_term` (unmaintained).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-369-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-370-- **indicatif** — progress bars for non-TUI CLIs. Auto-hides on non-TTY.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-371-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-372-- **inquire** — modern interactive prompts (text, select, multi-select, confirm). The Rust answer to Inquirer.js.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-373-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-375-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-376-- **cliclack** — port of the JS Clack library; modern wizard-style prompts with Unicode connectors.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-377-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-378-- **ratatui-image** — image display in Ratatui apps via Sixel/kitty/iTerm2 protocols.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-379-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-380-## Panic and error safety — the critical pattern
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-381-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:382:A Ratatui app that exits badly can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer `ratatui::run()` for the complete managed lifecycle or `ratatui::init()` when the application needs to own the loop. Install any reporting hook first, then let Ratatui wrap it:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-383-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-384-```rust check=rust/run
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-385-fn main() -> color_eyre::Result<()> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-386-    color_eyre::install()?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-387-    ratatui::run(|terminal| App::default().run(terminal))
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-388-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-389-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-390-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:391:If you construct `Terminal` and configure Crossterm raw/alternate-screen state manually, you own both normal and panic cleanup. In that case, wrap the existing reporting hook yourself:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-392-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:393:```rust check=rust/panic-hook
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-394-color_eyre::install()?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:395:let report_hook = std::panic::take_hook();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:396:std::panic::set_hook(Box::new(move |info| {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:397:    ratatui::restore();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-398-    report_hook(info);
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-399-}));
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-400-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-401-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:402:Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; those managed APIs already install it. The fallible helpers are not transactional: `try_init()` can return after an earlier setup step changed terminal state, and `try_restore()` stops at its first teardown error. If the caller requires fallible setup or teardown, handle an error with independent best-effort cleanup attempts (disable raw mode, leave the alternate screen, disable mouse/paste modes, show the cursor) rather than assuming one returned `Err` rolled everything back. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, inject setup/teardown failures and verify normal exit, returned errors, and panics in a PTY.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-403-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-404-## Alternatives to Ratatui
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-405-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-406-**Cursive** (`cursive`) — callback-driven, retained-mode, ncurses-like. Widget-rich (Dialog, EditView, SelectView, TextArea, LinearLayout, StackView, etc.). Best for form-heavy apps with dialogs and menus where you want a higher-level API. Less popular than Ratatui but well-documented. The `cursive` crate has had no release since 0.21.1 (August 2024) even though its repo is active, and it depends on crossterm 0.28, so mixing it with Ratatui-ecosystem crates puts two crossterm versions in one build.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-407-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-408-```rust check=rust/cursive
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-409-use cursive::views::TextView;
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-420-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-421-**Ratzilla** (`ratatui/ratzilla`) — run Ratatui apps in the browser via WASM; maintained under the ratatui org. Handy for demos and web playgrounds of terminal apps.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-422-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-423-**Original `tui-rs`** — the predecessor to Ratatui, archived. Migrate to Ratatui.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-424-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-425-## Pitfalls
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-426-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:427:1. **Panic without terminal restore.** Use the panic hook pattern above.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-428-2. **Crossterm version skew.** Run `cargo tree -p crossterm`; ensure one version.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-429-3. **Naive redraw loop.** Don't busy-loop calling `draw`. Use `event::poll(timeout)` for sync, `tokio::select!` for async.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-430-4. **On Windows, both Press and Release events fire.** Filter with `key.kind == KeyEventKind::Press`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-431-5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` are `StatefulWidget`s — you pass `&mut ListState` / `TableState` / `ScrollbarState` at render time; the state lives in your App struct, not the widget.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-432-6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-433-7. **`String::len()` is bytes, not cells.** Use `Line::width()` / `Span::width()` for Ratatui text, or `unicode_width::UnicodeWidthStr::width(s)` for raw strings.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-434-8. **No accessibility layer.** Ratatui has no screen-reader support; [ratatui#2610](https://github.com/ratatui/ratatui/issues/2610) tracks it, and the experimental `tui-a11y` crate is Linux-only. Give screen-reader users a linear mode; see `visual-patterns.md` → *Accessibility*.
+
+exec
+/bin/zsh -lc "rg -n -C 4 'DECSCUSR|title stack|PushTitle|PopTitle|DefaultUserShape|cursor shape|window title' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/{ecosystem-rust,interaction-patterns}.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-7b1hdse_
+ succeeded in 0ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-217-You're in a mode (NORMAL, INSERT, etc.). Keystrokes interpreted differently per mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-218-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-219-**Requires:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-220-- Persistent mode indicator (status bar color or label).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:221:- Distinct cursor shapes per mode (block in NORMAL, bar in INSERT, underline in REPLACE), reset on exit (see *Terminal modes and protocols* → *Output*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-222-- A way to learn modes — usually a tutorial or readme.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-223-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-224-**Trade-offs:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-225-- Pro: dense keybindings (no Ctrl/Alt needed for most operations).
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-463-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-464-### Output
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-465-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-466-- **Synchronized output (2026).** Wrap each frame in `CSI ? 2026 h` … `CSI ? 2026 l` so the terminal paints it at once instead of tearing mid-redraw ([spec](https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md)), and detect support with DECRQM (`CSI ? 2026 $ p`). Always send the end sequence, error paths included; a terminal releases a stuck frame only after its own timeout (150 ms in Alacritty, 1 s in Ghostty, 2 s in kitty). kitty, WezTerm, foot, Alacritty, Ghostty, iTerm2, Windows Terminal 1.23.20211+, and tmux 3.7+ support it. Without it, write each frame in one `write`, send only changed cells, and hide the cursor while drawing.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:467:- **Cursor shape (DECSCUSR, `CSI n SP q`).** Pair shapes with modes (block in normal mode, bar in insert; see *Modal vs modeless*), and reset with `CSI 0 SP q` on exit. Windows Terminal, foot, and Ghostty read 0 as the user's configured cursor, but xterm reads it as a blinking block; only xterm patch 411 and later restore the user's choice, with `CSI 7 SP q`. The current shape can't be reliably queried, so it can't be saved. Ratatui's `restore()` doesn't touch the shape, so an app that sets one resets it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-468-- **Window title (OSC 2).** Set a title only when it helps users find the window, for example the open file or the remote host. Push the old title with `CSI 22 ; 0 t` before setting yours and pop it with `CSI 23 ; 0 t` on exit. xterm, kitty, foot, iTerm2, Alacritty, and tmux keep that stack; WezTerm, Ghostty, and Windows Terminal ignore it, so the user's title is lost there. Bubble Tea clears the title on exit rather than restoring it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-469-- **Progress (OSC 9;4).** `OSC 9 ; 4 ; state ; percent ST` shows progress on the tab or taskbar; state 0 removes it, 1 is normal, 2 error, 3 indeterminate, and 4 paused ([ConEmu](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC), [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences)). Windows Terminal, Ghostty 1.2+, kitty, iTerm2, and tmux 3.7+ understand it. A terminal that knows only OSC 9 notifications may pop it up as a notification, so send it where you know it is supported, and clear it with state 0 on every exit. Bubble Tea's view-level progress bar sends it without checking.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-470-- **Shell-integration marks (OSC 133).** Prompt marks (`A` prompt, `B` input, `C` output, `D;exit-code` end) let a terminal jump between prompts, select one command's output, and show its exit status ([proposal](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/6b555699e41ab47ce210610d1a17cfc1662ec8d7/proposals/semantic-prompts.md)). A REPL should mark its own prompts, adding `aid=` when it runs inside a shell that marks them too; a full-screen TUI should not.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-471-- **Grapheme clusters (2027).** With mode 2027 on, the terminal sizes cells by grapheme cluster, so emoji sequences and combining marks take the width the app computed ([spec](https://github.com/contour-terminal/contour/blob/b719d05aed54f29ee7d629f5dd7d760b2f4b4320/docs/vt-extensions/unicode-core.md)). Bubble Tea turns it on when the terminal reports support; the other frameworks don't. Where it is off, app and terminal can still disagree; kitty, for one, segments graphemes without implementing 2027. Test emoji-heavy rows on the terminals you support.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-612-## Common interaction pitfalls
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-613-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-614-1. **Broken reserved-key expectations** — Ctrl+C that neither cancels nor quits, Ctrl+Z that doesn't suspend cleanly.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-615-2. **No focus indication.** Users tab around guessing which panel is active.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:616:3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-617-4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-618-5. **`Esc` doesn't back up or dismiss** where the UI establishes a navigation stack or modal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-619-6. **No discoverable key help** in an action-rich app; `?` is conventional, but an equivalent visible route is fine.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-620-7. **Filter that's slow** (>100ms updates).
+
+codex
+Explicitly undo both changes on every exit path—normal quit, errors, and panics. Ratatui’s `restore()` handles standard terminal teardown but does **not** reset cursor shape or restore your title.
+
+- **Cursor:** emit `\x1b[0 q` (DECSCUSR reset). This requests the terminal default; some terminals restore the user’s configured shape, while older xterm uses a blinking block. The previous shape cannot be reliably queried and saved.
+- **Title:** before setting the first file title, push the existing title with `\x1b[22;0t`. On exit, pop it with `\x1b[23;0t`. Push once per session, not on every file change.
+
+Title restoration depends on terminal support: WezTerm, Ghostty, and Windows Terminal ignore the title stack. For those, offer an option to disable title changes or use an explicit fallback; clearing the title does not restore the original.
+
+Keep Ratatui’s managed lifecycle, add your custom cleanup before panic reporting, and attempt each cleanup step independently so one failure does not prevent the rest. Verify quitting from insert mode, returned errors, and panics in a real terminal.
+tokens used
+16,808

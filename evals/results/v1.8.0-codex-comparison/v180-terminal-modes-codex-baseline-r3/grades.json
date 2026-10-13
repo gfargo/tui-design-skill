@@ -1,0 +1,390 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-terminal-modes-codex-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "bracketed-paste-multiline-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says that without bracketed paste, pasted text arrives as ordinary input and each newline becomes an Enter key event that submits a line."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer enables EnableBracketedPaste and handles Event::Paste, but it never says that crossterm and Ratatui leave bracketed paste off by default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explicitly rejects multiline pastes, mentions a multiline editor as the alternative, and comments that the paste branch must never submit."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer mentions disabling on cleanup 'including error paths' but says nothing about panics or that Ratatui's restore() leaves bracketed paste enabled."
+        }
+      ]
+    },
+    {
+      "trial_id": "bracketed-paste-multiline-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says that without bracketed paste mode, pasted text arrives as ordinary key events and each newline looks like Enter, which triggers the submit handler."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It enables EnableBracketedPaste and handles Event::Paste, but never says that crossterm and Ratatui leave bracketed paste off by default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explicitly frames the multiline policy as a choice (join with spaces, use a multiline editor, or reject with a message), and its Paste handler never submits."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says to disable bracketed paste in error and panic cleanup, but does not explain that Ratatui's restore() only undoes raw mode and the alternate screen and so won't do this for you."
+        }
+      ]
+    },
+    {
+      "trial_id": "bracketed-paste-multiline-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that without bracketed paste, pasted text enters the normal input stream and each newline becomes an Enter key event that triggers submission. It does not name mode 2004, but the mechanism is correct."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer enables EnableBracketedPaste and handles Event::Paste, but it never states that crossterm and Ratatui leave bracketed paste off by default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer picks a strict policy of rejecting the whole multi-line paste, offers multi-line review as the alternative, and comments 'Never submit from this branch.'"
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to run DisableBracketedPaste during cleanup, including error and panic cleanup. It does not explain that Ratatui's restore() leaves bracketed paste enabled."
+        }
+      ]
+    },
+    {
+      "trial_id": "sync-output-tearing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends DEC private mode 2026, shows the CSI ?2026h/l begin and end sequences, and says the terminal displays the completed frame at once."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The code calls crossterm's BeginSynchronizedUpdate/EndSynchronizedUpdate manually, but the answer never says Ratatui doesn't do this itself; it even suggests a Ratatui version might already synchronize draws."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code sends the end marker even when draw fails, and the answer adds a drop guard and panic-hook cleanup, warning not to rely on the emulator timeout."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says unsupported terminals generally ignore the sequences, describes DECRQM detection with `CSI ? 2026 $ p`, and advises relying on Ratatui's diffing instead of full repaints."
+        }
+      ]
+    },
+    {
+      "trial_id": "sync-output-tearing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends synchronized output (DEC private mode 2026), gives the ESC[?2026h/l sequences, and brackets each frame so the terminal holds the display until the frame is complete."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Has the app call crossterm's BeginSynchronizedUpdate/EndSynchronizedUpdate around Terminal::draw itself, which implies Ratatui does not do this automatically, though it never says so outright."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says to always send the end sequence, sends it even when draw() fails, suggests an RAII Drop guard for panics, and notes the terminal's watchdog timeout is not a substitute."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Gives DECRQM (CSI ? 2026 $ p) detection with a bounded timeout and says unsupported terminals ignore the sequences, so rendering still works without the improvement."
+        }
+      ]
+    },
+    {
+      "trial_id": "sync-output-tearing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends synchronized output (DEC mode 2026), gives the CSI ? 2026 h/l sequences, and wraps the whole Terminal::draw so the frame is presented at once."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Shows the app calling crossterm's BeginSynchronizedUpdate/EndSynchronizedUpdate itself, but never says that Ratatui does not do this wrapping automatically."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code sends EndSynchronizedUpdate even when drawing fails, recommends an RAII guard for panics and cleanup paths, and warns against relying on emulator timeouts."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says unsupported terminals ignore the commands, describes DECRQM detection with CSI ? 2026 $ p, and warns against inferring support from $TERM."
+        }
+      ]
+    },
+    {
+      "trial_id": "kitty-keyboard-shift-enter-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Explains that Enter and Shift+Enter often send the same `\\r` byte, so the Shift is lost, and that kitty's enhanced keyboard protocol is needed to encode the modifier."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says Bubble Tea v2 interprets these events only when enhancements are enabled and supported, and that inside tmux the version and extended-key configuration must also cooperate."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends an always-advertised Ctrl+J newline binding (line feed, distinct from CR), with Shift+Enter as an extra shortcut where supported."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Recommends a fixed hint ('Enter send \u00b7 Ctrl+J newline') and warns against inferring Shift+Enter support from the protocol response, so hints are never adjusted based on reported support."
+        }
+      ]
+    },
+    {
+      "trial_id": "kitty-keyboard-shift-enter-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says traditional input encodes both keys as the same carriage-return byte (`\\r`) and that enhanced protocols like kitty's carry the Shift modifier."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends requesting Bubble Tea v2's keyboard enhancements, and says tmux's extended-key configuration matters and any layer can collapse Shift+Enter to plain Enter."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says to always provide an alternate newline binding such as Ctrl+J, with Shift+Enter used only when distinguishable."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to make help capability-aware: show Shift+Enter when enhanced disambiguation is available, otherwise advertise the alternate binding."
+        }
+      ]
+    },
+    {
+      "trial_id": "kitty-keyboard-shift-enter-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Enter and Shift+Enter often produce the same byte (`\\r`), so Shift is unrecoverable, and that kitty's enhanced keyboard protocol encodes modifiers explicitly."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer only tells the reader to request enhanced reporting and says tmux 'versions and configuration matter'; it never says Bubble Tea v2 requests enhancements while legacy terminals and tmux without extended-keys still send the legacy encoding."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends always providing a portable newline shortcut such as Ctrl+O, with Shift+Enter used only when it can be distinguished."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to adapt the help to observed capabilities rather than `$TERM` or the presence of tmux."
+        }
+      ]
+    },
+    {
+      "trial_id": "background-query-ssh-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to render immediately with a fallback palette, send OSC 11 without delaying the first frame, and treat no reply as \"unknown.\""
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It bounds detection with a short 200\u2013500 ms deadline and treats a missing reply as normal, though it does not mention a DA1 sentinel."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It enables mode 2031 and handles the 997 reports, but it updates the palette directly from the dark/light report rather than re-querying the background color when a report arrives."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It only says to restore changed terminal modes on exit and never mentions disabling 2031 before handing the terminal to a child process."
+        }
+      ]
+    },
+    {
+      "trial_id": "background-query-ssh-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to render immediately with the fallback palette, never block startup, and let a valid late reply still update the theme."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It sets a short deadline of roughly 100\u2013300 ms because SSH adds latency and some terminals never reply; it does not mention a DA1 sentinel, but the assertion accepts a timeout alone."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It recommends enabling mode 2031 notifications where supported, but never says to re-query the background when a notification arrives; its requery advice covers only resume, focus gain and polling."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says to disable mode 2031 during cleanup, but does not mention turning it off before handing the terminal to a child process."
+        }
+      ]
+    },
+    {
+      "trial_id": "background-query-ssh-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to render immediately with a documented fallback, then update if detection succeeds, and frames detection as never a startup prerequisite."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer gives the OSC 11 query a bounded deadline of a few hundred milliseconds and says to keep rendering, which bounds the wait with a timeout."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends subscribing to private mode 2031 notifications where supported and says a notification can trigger a fresh OSC 11 query."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer says to restore changed modes on exit but never mentions disabling mode 2031 before handing the terminal to a child process."
+        }
+      ]
+    },
+    {
+      "trial_id": "cursor-title-restore-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `SetCursorStyle::DefaultUserShape` on normal exit, errors and panics, and says showing the cursor alone won't reset its shape. It does not name Ratatui's restore() explicitly."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says the original cursor shape can't be queried, and never mentions that xterm and some other terminals treat shape 0 as a blinking block."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer pairs PushTitle and PopTitle and adds 'where supported', but it never warns that terminals ignoring the stack will lose the old title."
+        }
+      ]
+    },
+    {
+      "trial_id": "cursor-title-restore-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends SetCursorStyle::DefaultUserShape and running cleanup on normal exits, errors, and panics. It does not say Ratatui's restore() omits this, but the core behavior is present."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says the original shape cannot be queried. It also does not mention that xterm treats shape 0 as a blinking block."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer brackets the title with PushTitle/PopTitle 'where supported', but it does not warn that terminals ignoring the stack may lose the old title."
+        }
+      ]
+    },
+    {
+      "trial_id": "cursor-title-restore-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `SetCursorStyle::DefaultUserShape`, says to run cleanup on normal exit, error paths and panics, and notes that Ratatui's restoration alone may not undo cursor styles."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says the original cursor shape can't be queried, and never mentions that xterm and similar terminals treat shape 0 as a blinking block."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer only mentions push/pop support in passing; it doesn't prescribe pushing before setting and popping on exit, or warn that some terminals ignore the title stack."
+        }
+      ]
+    }
+  ]
+}

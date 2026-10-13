@@ -1,0 +1,27 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-vts5g2vo
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1338d-4d42-7d32-aee5-e3ff20ecb556
+--------
+user
+My file list column is 30 cells wide and paths like /usr/local/share/applications/org.example.Viewer.desktop overflow. Should I cut the end and add an ellipsis?
+
+codex
+Prefer **middle truncation** for paths: preserve the root and filename, since the filename usually matters most.
+
+For a 30-cell column:
+```text
+/usr/…/example.Viewer.desktop
+```
+
+If the filename alone is too long, truncate its stem while preserving the extension. Show the full path on focus or in a details pane.
+
+Measure **terminal display cells**, not string length—Unicode characters can occupy zero, one, or two cells.
+tokens used
+2,093

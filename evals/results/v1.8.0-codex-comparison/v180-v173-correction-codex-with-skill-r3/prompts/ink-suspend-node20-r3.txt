@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our Ink CLI runs on Node 20 LTS. I want the newest Ink, chalk, and commander plus Ink's API for suspending the UI while $EDITOR runs. Which versions should I pin?

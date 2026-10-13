@@ -1,0 +1,720 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-v173-correction-claude-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "lazygit-undo-scope-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says redo is Ctrl+Z (`<c-z>`), but lazygit's default redo key is Z."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains that undo is built on the git reflog and lists checkouts, commits, resets, rebases and amends as covered."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states that pushes, discarded working-tree changes, staging and stash operations cannot be undone."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It advises making clear in the UI that pushes are never undoable, but it never recommends confirming actions that fall outside undo scope; for discards it suggests snapshotting instead."
+        }
+      ]
+    },
+    {
+      "trial_id": "lazygit-undo-scope-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer gives undo as z but says redo is Ctrl+Z and explicitly 'not Shift+Z', which contradicts Z for redo."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains that undo is built on the reflog and lists commits, rebases, checkouts and other reflog-logged actions as undoable."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says plainly that pushes, discarded working-tree changes and stash operations cannot be undone."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It recommends confirming the reversing command before undo runs, but never tells the user's tool to state its undo scope or to confirm out-of-scope actions such as push or discard."
+        }
+      ]
+    },
+    {
+      "trial_id": "lazygit-undo-scope-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States `z` is undo and `Z` (Shift+z) is redo, with no mention of Ctrl+z."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explains that lazygit reads the git reflog and undoes HEAD movements such as commits, resets, rebases, checkouts and amends."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says plainly that pushes, discarded working-tree changes, staging and stash operations cannot be undone."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends the honest option of not making pushes undoable and showing \"can't undo\" in the confirmation step, which covers both stating scope and confirming out-of-scope actions."
+        }
+      ]
+    },
+    {
+      "trial_id": "raw-mode-reserved-keys-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Bubble Tea's MakeRaw turns off IXON and ISIG, so Ctrl+S and Ctrl+C arrive as tea.KeyMsg events."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer places the XOFF freeze and SIGINT behavior in cooked mode at a shell prompt and says this doesn't apply to the raw-mode app."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer warns that Ctrl+C means 'get me out of here' and says to keep an obvious, on-screen quit path such as q, Esc or Ctrl+Q."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer calls Ctrl+S for save 'safe to use' and makes no claim that vim or helix bind it to save, though it doesn't name nano or micro."
+        }
+      ]
+    },
+    {
+      "trial_id": "raw-mode-reserved-keys-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Bubble Tea's raw mode turns off IXON and ISIG, so Ctrl+S and Ctrl+C arrive as bytes 0x13 and 0x03 and become key messages."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says the claim holds only for programs in the terminal's default cooked mode, and treats terminal-emulator bindings as per-environment exceptions."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Caveat 1 says users instinctively press Ctrl+C to escape, calls for a clearly shown quit key, and suggests quitting when nothing is selected."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer endorses binding Ctrl+S to save without attributing it to vim or helix, though it never names nano or micro as precedent."
+        }
+      ]
+    },
+    {
+      "trial_id": "raw-mode-reserved-keys-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Bubble Tea enables raw mode, which clears IXON and ISIG, so Ctrl+S and Ctrl+C arrive as ordinary bytes and key messages."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer ties the flow-control freeze to cooked mode and line-reading CLIs, and to the period before raw mode starts or after the app exits."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer warns that users expect Ctrl+C to interrupt or quit, and says to provide an obvious exit (q, esc, Ctrl+Q) shown in the help bar."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer endorses binding Ctrl+S for save as safe and never claims vim or helix use it, though it does not name nano or micro as precedent."
+        }
+      ]
+    },
+    {
+      "trial_id": "huh-v2-theme-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states huh.ThemeCharm has signature func(isDark bool) *huh.Styles and that themes are no longer prebuilt *Styles values."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Its code example uses WithTheme(huh.ThemeFunc(huh.ThemeCharm))."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explains that the form receives a tea.BackgroundColorMsg, calls msg.IsDark(), and passes the result to the theme function, so the bool is no longer hard-coded."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It tells an embedding parent model to pass every message to m.form.Update, including tea.BackgroundColorMsg, and warns that swallowing it breaks detection."
+        }
+      ]
+    },
+    {
+      "trial_id": "huh-v2-theme-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the built-in themes are now plain functions with signature func(isDark bool) *huh.Styles, wrapped via the ThemeFunc adapter."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer gives form.WithTheme(huh.ThemeFunc(huh.ThemeCharm)) as the call."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explains that the hasDarkBg flag is set from tea.BackgroundColorMsg via msg.IsDark() and passed to theme.Theme on each render."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "For the embedded case, the answer tells the parent to request tea.RequestBackgroundColor and pass messages through m.form.Update so the BackgroundColorMsg reaches the form."
+        }
+      ]
+    },
+    {
+      "trial_id": "huh-v2-theme-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states built-in themes like ThemeCharm are plain functions with signature func(isDark bool) *Styles, and that calling it returns *Styles, which doesn't implement Theme."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer gives form.WithTheme(huh.ThemeFunc(huh.ThemeCharm)) as the fix."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explains that the hasDarkBg flag only changes when a tea.BackgroundColorMsg arrives, and that theme.Theme(f.hasDarkBg) is called at render time."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "For an embedded form, the answer tells the parent to request tea.RequestBackgroundColor and keep forwarding every msg, including BackgroundColorMsg, to m.form.Update."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-background-query-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says it sends an OSC 11 query and blocks reading stdin, competing with Bubble Tea's own stdin reader."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Returns tea.RequestBackgroundColor from Init and handles tea.BackgroundColorMsg in Update."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Uses lipgloss.LightDark(isDark) where isDark comes from msg.IsDark()."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States the helper is meant for standalone Lip Gloss use outside a Bubble Tea program."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-background-query-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says HasDarkBackground sends an OSC 11 query and reads the reply from stdin, competing with Bubble Tea's input reader."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Returns tea.RequestBackgroundColor from Init and handles tea.BackgroundColorMsg in Update."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Uses msg.IsDark() and lipgloss.LightDark(isDark) to choose the color variants."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Closes by saying HasDarkBackground belongs in plain Lip Gloss programs that don't run Bubble Tea."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-background-query-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the call writes OSC 11 and reads stdin, so it competes with Bubble Tea's input reader and keystrokes can be lost."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer returns tea.RequestBackgroundColor from Init and handles tea.BackgroundColorMsg in Update."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer uses lipgloss.LightDark(isDark), where isDark comes from msg.IsDark()."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer keeps HasDarkBackground only for calling in main before the Bubble Tea program starts, and never mentions standalone Lipgloss use without Bubble Tea."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-async-input-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says EventStream only exists with crossterm's event-stream feature and that ratatui doesn't turn it on."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends adding crossterm at the same 0.29 version ratatui uses with the feature, and suggests importing through the ratatui::crossterm re-export to stay on one version."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explains that the app's still-alive EventStream reader keeps reading stdin and takes the first bytes before the editor sees them."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The code cancels and awaits the reader task before leaving the alternate screen, spawns a new reader after re-entering, and calls terminal.clear() to force a redraw."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-async-input-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says EventStream exists only with crossterm's `event-stream` feature and that Ratatui doesn't enable it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends depending on crossterm at the same version Ratatui uses (0.29) so the features merge and `ratatui::crossterm` and `crossterm` are the same crate, and suggests `cargo tree -d -i crossterm` to check."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explains that the still-alive EventStream or input task keeps reading the TTY and takes the editor's first keystrokes."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Its steps drop or cancel the reader (awaiting the JoinHandle) before leaving the alternate screen, then re-enter, call `terminal.clear()` (which makes the next draw repaint fully) and create a new EventStream."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-async-input-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says EventStream exists only with crossterm's `event-stream` feature and that Ratatui doesn't turn it on."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It tells the user to use the same crossterm version as Ratatui, verify a single version with `cargo tree -i crossterm`, and notes that `ratatui::crossterm` then yields the same types."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It identifies the still-alive EventStream background reader as what reads the editor's first bytes."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The code cancels and awaits the reader task before leaving the alternate screen, then re-enters, calls `terminal.clear()` to force a full redraw, and spawns a fresh reader."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-computed-reactive-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Textual only calls compute_<name> for attributes declared as reactive or var, so compute_display is ignored."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Widget.display is a built-in boolean that controls visibility and maps to CSS display."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The fix declares label = reactive(\"\") together with a compute_label method."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer never states the order validate, assign, compute, then watch."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-computed-reactive-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Textual only calls compute_<name> when a reactive named <name> is declared, so compute_display is ignored."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that Widget.display is a built-in bool property that controls visibility."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The fix declares label = reactive(\"\") together with a matching compute_label method."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer gives no ordering of reactive stages, so it avoids the incorrect sequence."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-computed-reactive-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Textual looks for compute_<name> only when a reactive called <name> is declared, so compute_display is never called."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer identifies display as a built-in bool property inherited from DOMNode that controls whether the widget is visible."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The fix declares label = reactive(\"\") together with a compute_label method."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer never describes the order in which reactive steps run."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-node20-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends Ink 6 for Node 20 but only speculates that a newer major 'may require Node 22'; it does not state that Ink 7+ and Ink 8 require Node 22."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It names commander 14 and says v15 requires Node \u226522.12, but it never says chalk 6 requires Node 22, so only half of the point is made."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states Node 20 reached EOL on April 30, 2026, and recommends moving to Node 22 or 24, framing the Node 20 pins as something to use only if they must stay on Node 20."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It claims Ink has no dedicated suspend/resume API and never mentions suspendTerminal or Ink 7.1."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It offers an unmount/spawnSync/re-render fallback and a setRawMode alternative, recommends upgrading Node, and does not present suspendTerminal as available."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-node20-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends Ink ^6 for Node 20 but never says Ink 7/8 exist or require Node 22; it only hedges 'if a later Ink major exists'."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It names commander 14 and says commander 15 needs Node 22.12, but it pins chalk 5 without saying chalk 6 requires Node 22."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It never mentions Node 20 end-of-life or recommends moving to Node 22/24."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It claims Ink has no built-in suspend API and does not mention suspendTerminal or Ink 7.1."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It gives an unmount/spawnSync/re-render fallback that works on Node 20 and does not present suspendTerminal as available."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-node20-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer pins Ink 6.x for Node 20 but never says Ink 7 or Ink 8 require Node 22; it only says to check Ink 7's engines if it exists."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It says commander v15 likely needs Node 22+ and names chalk 5.x and commander 14.x, but it never says chalk 6 requires Node 22."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states Node 20 reached end-of-life on 2026-04-30 and recommends moving to Node 22 or 24 to get the real latest versions."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It claims Ink has no official suspend API and never mentions suspendTerminal arriving in Ink 7.1."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It gives an unmount, spawnSync, re-render fallback for the editor handoff and does not present suspendTerminal as available."
+        }
+      ]
+    },
+    {
+      "trial_id": "path-truncation-side-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends left truncation with a `\u2026/` prefix and middle truncation for long basenames, so the filename stays visible."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says when end truncation is the right choice, such as for prose or prefix-meaningful identifiers."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explicitly says to measure display width with wcwidth rather than string length, and mentions CJK and emoji widths."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer recommends showing the selected row's full path in a status line or footer."
+        }
+      ]
+    },
+    {
+      "trial_id": "path-truncation-side-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends shortening from the left or middle so the filename stays whole, for example `/\u2026/org.example.Viewer.desktop`."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says when end truncation is the right choice, such as for prose, descriptions, or prefix-meaningful identifiers."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says to measure in cells rather than characters or bytes, cites wcwidth/wcswidth, and covers wide and zero-width characters."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer recommends showing the full path in a status line or footer for the selected row, or on hover or focus."
+        }
+      ]
+    },
+    {
+      "trial_id": "path-truncation-side-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends shortening from the left or middle so the filename stays visible, e.g. `\u2026/org.example.Viewer.desktop`."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Never says end truncation is still right for prose, descriptions, or prefix-meaningful identifiers; it only argues against end truncation for paths."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explicitly says to measure display cells, not characters, citing CJK/emoji widths and wcwidth."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends showing the untruncated path of the focused row in a status bar or footer."
+        }
+      ]
+    },
+    {
+      "trial_id": "smart-case-defaults-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table lists both fzf and fd with a default of smart case."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states ripgrep is case-sensitive by default and gives -S / --smart-case as the opt-in."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends using smart case for the whole query in a TUI filter box."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never mentions keeping filtering responsive, showing a match count, or highlighting matches."
+        }
+      ]
+    },
+    {
+      "trial_id": "smart-case-defaults-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table lists smart case as the default for both fzf and fd."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says ripgrep is case-sensitive by default and that smart case is opt-in via -S / --smart-case."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explicitly recommends smart case for the filter box."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer does not discuss responsiveness, match counts, or highlighting matches."
+        }
+      ]
+    },
+    {
+      "trial_id": "smart-case-defaults-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table lists smart case as the default for both fzf and fd."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states ripgrep is case-sensitive by default and lists -S/--smart-case as the flag that enables smart case."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The recommendation section says to make smart case the default for the filter box."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer suggests showing the current case mode but never mentions responsiveness, a match count, or highlighting matches."
+        }
+      ]
+    }
+  ]
+}

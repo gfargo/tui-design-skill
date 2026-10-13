@@ -1,0 +1,416 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-f6gcwcri
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133a4-eb82-77d1-ab93-1a8ada9c8e33
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm designing a btop-style dashboard. btop refreshes its CPU box every 100ms and the process table every 2s, so should every widget in my app run its own timer?
+
+codex
+I’ll read the tui-design skill and use its guidance to assess how to schedule the dashboard’s refreshes.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-f6gcwcri
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "rg -n -C 7 'btop|timer|refresh|cadence|schedul|tick' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/{exemplar-apps,visual-patterns}.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-f6gcwcri
+ succeeded in 0ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-4-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-5-For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`. This file is the case-study companion.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-6-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-7-## How to use this file
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-8-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-9-When the user asks about a design choice and you're unsure of the answer, find the analogous case here:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-10-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:11:- "How should I lay out a dashboard?" → btop, bottom, htop.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-12-- "How should drilling-down work?" → k9s, lazydocker.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-13-- "How should I make searching fast?" → fzf, atuin.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-14-- "How do I handle a million-row table?" → Harlequin, Toolong.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-15-- "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-16-- "How do I keep my AI chat smooth at high token rates?" → Claude Code and Copilot CLI (alternate screen, virtualized transcript) versus Gemini CLI (inline, Ink `<Static>` history).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-17-- "What's the spec for my undo system?" → lazygit's git-action stack.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:18:- "How should mouse work in my TUI?" → btop (clickable keys and boxes), helix (keyboard-first; mouse on by default but never required), lazygit (augmentation).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-19-- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (per-module time budgets).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-20-- "What does a polished setup wizard look like?" → @clack/prompts (create-vite, create-astro) — see `ecosystem-typescript.md`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:21:- "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-22-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-23-Concrete examples beat abstract principles for design questions. When in doubt, point at the app and the user can study its source.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-24-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-25-**Entries, grouped:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-26-- Git: [lazygit](#lazygit-go-gocui) · [gitui](#gitui-rust-ratatui)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-27-- Kubernetes / Docker: [k9s](#k9s-go-tview) · [lazydocker](#lazydocker-go-gocui)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:28:- Monitors: [btop / btop++](#btop--btop-c) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-29-- Pickers and search: [fzf](#fzf-go) · [atuin](#atuin-rust-ratatui)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-30-- Editors: [helix](#helix-rust-custom-renderer) · [neovim](#neovim-c--lua)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-31-- File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-mostly-python-and-go)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-32-- IDE-style apps: [Posting](#posting-python-textual) · [Harlequin](#harlequin-python-textual)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-33-- Viewers: [Toolong](#toolong-python-textual) · [Glow](#glow-go-bubble-tea)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-34-- Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-35-- CLI output discipline: [starship](#starship-rust-no-ui-framework) · [yt-dlp / aria2](#yt-dlp--aria2-cli-but-excellent-terminal-output)
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-62-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-63-**Layout:** drill-down stack with command-mode navigation. Top status header (cluster, context, namespace), main resource list, footer hints. Drill into a resource → full-screen detail view → `Esc` back.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-64-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-65-**What it does well:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-66-- **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes. Different resources get different actions.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-67-- **Sortable columns** via Shift+letter (`shift-n` name, `shift-a` age, `shift-o` the selected column).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-68-- **Instant filter** (`/`) to narrow huge lists in real time — regex by default; `/-f` switches to fuzzy matching.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:69:- **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-70-- **Plugin system** for custom actions (`plugins.yaml`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-71-- **Status-header** showing the current "address" of where you are.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-72-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-73-**Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-74-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-75-**Stack:** Go, derailed's forks of tview and tcell (`derailed/tview`, `derailed/tcell`), YAML config, K8s client-go.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-76-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-77----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-78-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:79:## btop / btop++ (C++)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-80-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-81-> System monitor. The pinnacle of widget dashboard layouts.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-82-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:83:**Layout:** widget dashboard. CPU graph full-width on top; memory above network on the left; processes table on the right. Boxes can be toggled, swapped to alternate positions, and saved as presets — not drag-resized — all configurable in `btop.conf` (a TOML-like `key = value` file).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-84-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-85-**What it does well:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-86-- **Truecolor gradient meters** that look genuinely beautiful.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:87:- **One tunable refresh rate** (`update_ms`, default 2000) that every box shares; each box keeps its own scroll, focus, and graph history.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-88-- **Mouse support** that doesn't get in your way: highlighted keys and boxes are clickable, lists scroll with the wheel, and there is no drag-resize to fight.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-89-- **Theme system** with dozens of community themes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-90-- **Help modal (`h`, `?`, or F1)** that's actually informative, organized by widget.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-91-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-92-**Specific features worth copying:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-93-- Widget independence for focus, scroll, and layout (boxes can be shown, hidden, and rearranged individually).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-94-- Theme system as one `.theme` file per theme (a simple `theme[key]="#hex"` format).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-95-- The decision to default to truecolor and degrade — most users have it now.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-96-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:97:**Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-98-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:99:**Stack:** C++ (btop). Related monitors: Rust's bottom (`btm`), inspired by gtop, gotop, and htop rather than by btop. cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat the original as a current peer.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-100-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-101----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-102-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-103-## fzf (Go)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-104-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-105-> The fuzzy finder. Pattern-defining.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-106-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-23-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-24-## The seven canonical layouts in detail
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-25-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-26-### 1. Persistent multi-panel
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-27-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-28-All panels visible simultaneously in fixed positions. Focus shifts via Tab or numeric keys. The user builds spatial memory: "files are top-left, branches are below, diff is on the right."
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-29-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:30:**Examples:** lazygit (5 left panels + 1 right), btop (full-width CPU on top; memory above network on the left, processes on the right), htop (header / process list / F-key footer).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-31-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-32-**When to use:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-33-- Users want to see multiple related views at once without switching.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-34-- The data is observed at a glance (monitors, dashboards).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-35-- Numeric panel jumps make sense (`1`–`5`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-36-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-37-**When to avoid:**
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-82-- `Esc` always backs up one level. The user should never feel trapped.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-83-- Implement a stack of view-state objects. On push, save the current view; on pop, restore.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-84-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-85-### 4. Widget dashboard
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-86-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-87-Independent widgets in a grid, each owning its data lifecycle. Layout is configurable.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-88-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:89:**Examples:** bottom (btm), btop, glances, gtop. Configurability varies: bottom defines rows and column ratios in TOML; btop toggles boxes and layout presets in `btop.conf`; glances uses an INI file; gtop has no layout config.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-90-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-91-**When to use:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-92-- Monitoring/observability where users want to compose their own view.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:93:- Each widget has its own update cadence.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-94-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-95-**When to avoid:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-96-- Static data layouts — config overhead doesn't earn its keep.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-97-- Users who want a single curated experience.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-98-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-99-**Implementation notes:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-100-- Define a config schema (TOML/YAML) early. Users *will* want to customize.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-101-- Each widget should be independently scrollable/expandable.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:102:- Mouse-resize is rare; btop, for example, offers click-to-focus and scroll but no drag-resize.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-103-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-104-### 5. IDE three-panel
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-105-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-106-Sidebar → main content → detail/output. The main panel often has tabs giving it multiple personalities.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-107-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-108-**Examples:** Posting (collection tree → request editor → response), Harlequin (catalog → editor → results). helix is the counterexample: its file explorer is a picker, not a persistent sidebar.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-109-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-198-- **Single line**: `─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼`
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-199-- **Heavy**: `━ ┃ ┏ ┓ ┗ ┛ ┣ ┫ ┳ ┻ ╋`
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-200-- **Double**: `═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬`
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-201-- **Rounded**: `╭ ╮ ╰ ╯` (combined with single-line straights)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-202-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-203-### The aesthetic landscape
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-204-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:205:- **Single-line** — default for most modern TUIs (lazygit, k9s, btop, htop). Reads cleanly without dominating.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-206-- **Rounded corners** — the Charm aesthetic (Bubble Tea apps, gum, glow). Slightly softer; modern.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-207-- **Heavy** — emphasis. Use sparingly — for the focused panel border, or a "hot" warning state.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-208-- **Double** — reads as "DOS." Avoid for modern apps unless you're going for retro.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-209-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-210-### When to use borders
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-211-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-212-- The pane has dynamic content needing a visible boundary.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-297-| Red | Error, deleted, danger, offline |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-298-| Yellow | Warning, modified, pending, in-progress |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-299-| Cyan / Blue | Info, paths, links, hints |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-300-| Magenta | Special, highlights, attention without alarm |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-301-| Dim / gray | Secondary, disabled, metadata, timestamps |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-302-| Bold (any color) | Title, primary content, emphasis |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-303-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:304:Stick to conventions. A green error message confuses everyone.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-305-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-306-### Color and accessibility
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-307-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-308-About 8% of males have red-green color vision deficiency. Don't rely on color alone:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-309-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-310-- Pair color with **letters**: lazygit shows file status as `M` (modified, yellow), `A` (added, green), `D` (deleted, red), `??` (untracked, cyan). Even if color is invisible, the letters carry meaning.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-311-- Pair color with **symbols**: delta's `+` and `-` line prefixes work in monochrome.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-350-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-351-## Density: pack vs pad
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-352-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-353-You have a fixed grid. Two strategies:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-354-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-355-### Pack (high density)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-356-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:357:Examples: htop, btop, k9s.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-358-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-359-Used when:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-360-- Data is scanned at a glance.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-361-- It updates in real time.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-362-- Users read horizontally across rows.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-363-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-364-Tactics:
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-606-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-607-**Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-608-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-609-**Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-610-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-611-**Disconnected, stale, or hung states:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-612-- Keep the last-known-good view visible, dimmed, with a "stale" or "reconnecting" marker instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:613:- Never let a transient failure rewrite persistent config. btop has an open bug where a temporarily unavailable GPU permanently rewrites the user's saved widget layout instead of hiding the metric until it returns.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-614-- Show elapsed time once a wait passes a second or two, and let `Esc` cancel the in-flight request. There is no TUI convention for an automatic give-up time, so prefer elapsed time and cancel over picking one.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-615-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-616----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-617-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-618-## Theming systems
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-619-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-620-Most production TUIs support themes. The canonical approach:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-621-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-622-1. **Define semantic tokens** (`status.error`, `text.muted`, etc.).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-623-2. **Define palette mappings** as TOML/YAML/CSS — one file per theme.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-624-3. **Allow theme selection** via config, env var, or runtime command.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-625-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-626-### Configuration formats
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-627-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:628:- **TOML** — bottom, helix, starship, alacritty (since 0.13); btop's `btop.conf` is a TOML-like `key = value` file.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-629-- **YAML** — lazygit (`config.yml`), lazydocker, k9s (including `plugins.yaml`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-630-- **Flag files / git config** — bat's config file is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives in `.gitconfig` under `[delta]`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-631-- **TCSS (Textual CSS)** — Textual apps; live-reloads.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-632-- **JSON** — VS Code-style; less common in TUIs.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-633-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-634-### Community palettes for themeable, broadly distributed apps
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md-635-
+
+exec
+/bin/zsh -lc "sed -n '79,105p' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-f6gcwcri
+ succeeded in 0ms:
+## btop / btop++ (C++)
+
+> System monitor. The pinnacle of widget dashboard layouts.
+
+**Layout:** widget dashboard. CPU graph full-width on top; memory above network on the left; processes table on the right. Boxes can be toggled, swapped to alternate positions, and saved as presets — not drag-resized — all configurable in `btop.conf` (a TOML-like `key = value` file).
+
+**What it does well:**
+- **Truecolor gradient meters** that look genuinely beautiful.
+- **One tunable refresh rate** (`update_ms`, default 2000) that every box shares; each box keeps its own scroll, focus, and graph history.
+- **Mouse support** that doesn't get in your way: highlighted keys and boxes are clickable, lists scroll with the wheel, and there is no drag-resize to fight.
+- **Theme system** with dozens of community themes.
+- **Help modal (`h`, `?`, or F1)** that's actually informative, organized by widget.
+
+**Specific features worth copying:**
+- Widget independence for focus, scroll, and layout (boxes can be shown, hidden, and rearranged individually).
+- Theme system as one `.theme` file per theme (a simple `theme[key]="#hex"` format).
+- The decision to default to truecolor and degrade — most users have it now.
+
+**Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
+
+**Stack:** C++ (btop). Related monitors: Rust's bottom (`btm`), inspired by gtop, gotop, and htop rather than by btop. cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat the original as a current peer.
+
+---
+
+## fzf (Go)
+
+> The fuzzy finder. Pattern-defining.
+
+codex
+No—use an **app-owned refresh scheduler**, with different sampling intervals only where needed.
+
+The premise about btop needs correcting: the skill’s btop reference describes **one shared, configurable `update_ms` interval, defaulting to 2000ms**, rather than separate CPU and process timers. Widgets independently own focus, scrolling, and graph history.
+
+For your dashboard:
+
+- Start with a shared refresh clock for cheap data sources.
+- If CPU sampling needs 100ms and process collection needs 2s, register those deadlines with the scheduler. Different cadences don’t require widget-owned timers.
+- Run expensive collection asynchronously, deliver results to application state, and coalesce redraws. Keep one owner of terminal rendering.
+- Prevent overlapping collections and skip missed ticks instead of accumulating work. Handle keyboard input immediately, regardless of sampling intervals.
+
+**Sampling and rendering are separate:** moving the process selection should redraw immediately using cached data, without waiting for another process scan.
+
+Give a widget a separate cadence when its source warrants it—not simply because it is a separate box.
+tokens used
+13,658

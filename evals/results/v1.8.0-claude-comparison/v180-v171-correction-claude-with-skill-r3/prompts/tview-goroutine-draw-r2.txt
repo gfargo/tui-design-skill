@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+In my tview app a background goroutine polls an API and updates a Table. Is it safe to call app.Draw() from that goroutine, and where do tview deadlocks actually come from?

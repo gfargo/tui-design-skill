@@ -1,0 +1,22 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q_hl1hdj
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1339a-ad78-7230-9391-946bb936b88e
+--------
+user
+My editor-like TUI should bind Ctrl+S to save, the way vim and helix do. Is that safe by default?
+
+codex
+Not universally. Many terminals enable **XON/XOFF software flow control** by default, where Ctrl+S pauses terminal output and Ctrl+Q resumes it. Your TUI may never receive Ctrl+S, making it appear frozen.
+
+Ctrl+S is a reasonable save binding if your TUI disables `IXON` while running—often handled by the terminal library’s raw mode—and restores the original terminal settings on exit. Verify your library does this; “raw mode” implementations vary. Keep an alternative save command available.
+
+Also, Vim and Helix normally save with `:w`; Ctrl+S isn’t their standard save binding.
+tokens used
+11,975

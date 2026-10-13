@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Is running our Textual app with `textual serve` a good way to make it accessible to screen-reader users, since browsers have good screen-reader support?

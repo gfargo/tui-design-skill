@@ -1,0 +1,38 @@
+`--no-tui` should provide a **plain-text, linear interface**, not a borderless version of the dashboard. Screen readers still struggle with columns, cursor movement, and information conveyed only by position or color.
+
+For a dashboard, a good default is to print one snapshot and exit:
+
+```text
+Service status
+Updated: 2026-10-13 14:32:05 UTC
+
+Summary: 3 services; 2 healthy; 1 degraded.
+
+Service: API
+Status: Healthy
+Requests per second: 142
+Error rate: 0.2%
+
+Service: Worker
+Status: Degraded
+Queue depth: 87
+Reason: Jobs are taking longer than expected.
+
+Service: Database
+Status: Healthy
+Connections: 12 of 100
+```
+
+The mode should:
+
+- Use labeled values and a predictable reading order, with a summary first.
+- Express status and meaning in words, including anything conveyed through color, icons, charts, or spatial grouping.
+- Emit ordinary text without ANSI escapes, cursor control, animation, or terminal clearing.
+- Avoid padding into columns or requiring a wide terminal.
+- Preserve access to useful actions through CLI subcommands or options if the TUI supports interaction.
+
+Make continuous monitoring explicit with something like `--no-tui --watch`. Append timestamped changes without rewriting earlier output; avoid repeatedly dumping unchanged data.
+
+Keep machine-readable output separate, such as `--format json`. Detect redirected output or a noninteractive terminal and default to the plain-text mode there, too.
+
+The key acceptance test is: **can someone understand the state and perform the relevant tasks by reading the output sequentially, without seeing the screen?** Removing borders alone doesn't meet that test.

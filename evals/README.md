@@ -75,3 +75,35 @@ python3 scripts/eval_harness.py validate \
   --summary evals/runs/RUN_ID/summary.json \
   --require-completed
 ```
+
+## Runners and grader
+
+`scripts/runners/` holds the commands that recorded the v1.8.0 Claude and Codex evidence. Each runner follows the harness contract: it reads one prompt on stdin, writes one answer on stdout, and runs without a shell. Each one starts the host CLI in an empty temporary directory with the user's installed skills, plugins, MCP servers, and settings switched off, so a baseline trial cannot load an installed copy of tui-design.
+
+- `claude_runner.py` wraps `claude -p` with `--disable-slash-commands`, an empty `--strict-mcp-config`, `--setting-sources project`, and only the Read, Glob, and Grep tools. A with-skill prompt names the skill directory, and only that directory is added with `--add-dir`.
+- `codex_runner.py` wraps `codex exec` in a read-only, ephemeral sandbox with `--ignore-user-config` and web search disabled. Every `SKILL.md` under `~/.agents/skills` and `$CODEX_HOME/skills` is disabled through `skills.config`; Codex's bundled system skills stay available in both conditions.
+- `claude_grader.py` grades a finished run blind. For each trial it sends the grading prompt, the case question, the numbered assertions, and the answer, without the condition, host, or model. It requires one `{passed, note}` entry per assertion, writes schema-v5 grades with `kind: "model"` and a one-sentence note on every assertion, and copies the grading prompt into the run directory.
+
+Set `CLAUDE_BIN` or `CODEX_BIN` when the binary on `PATH` is not the one to record. Record the version of the binary you actually ran:
+
+```bash
+CLAUDE_BIN=/path/to/claude python3 scripts/eval_harness.py run \
+  --eval-set evals/v173-correction-evals.json --condition with-skill \
+  --provider Anthropic --model claude-opus-5-5 --runner-version "Claude Code 2.1.295" \
+  --repeat 3 --timeout 1200 \
+  -- python3 scripts/runners/claude_runner.py --model claude-opus-5-5
+
+CODEX_BIN=/path/to/codex python3 scripts/eval_harness.py run \
+  --eval-set evals/v173-correction-evals.json --condition baseline \
+  --provider OpenAI --model gpt-6.1-sol \
+  --runner-version "codex-cli 0.160.0 (model_reasoning_effort=low)" \
+  --repeat 3 --timeout 1200 \
+  -- python3 scripts/runners/codex_runner.py --model gpt-6.1-sol --effort low
+
+CLAUDE_BIN=/path/to/claude python3 scripts/runners/claude_grader.py \
+  --run evals/runs/RUN_ID/run.json \
+  --grading-prompt evals/grading/v180-direct-rubric-v1.md \
+  --model claude-opus-5-5 --runner-version "Claude Code 2.1.295" --jobs 4
+```
+
+The harness records the git commit and dirty state when each run starts, so leave the worktree untouched until every run in a batch has started. Before committing bundles, check that every manifest records `"dirty": false`.

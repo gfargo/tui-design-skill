@@ -631,6 +631,8 @@ Most production TUIs support themes. The canonical approach:
 - **TCSS (Textual CSS)** — Textual apps; live-reloads.
 - **JSON** — VS Code-style; less common in TUIs.
 
+No format is the TUI standard. Matching the tool your users already configure, as when mirroring lazygit, is a good reason to use its format; otherwise choose the one that suits your own settings.
+
 ### Community palettes for themeable, broadly distributed apps
 
 If theming is part of the product, either ship popular palettes or document how to import them:

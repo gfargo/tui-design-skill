@@ -4,7 +4,11 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Changed
+- **Configuration formats:** `visual-patterns.md` → *Configuration formats* now says that no format is the TUI standard, and that matching a tool your users already configure, such as lazygit, is a good reason to use its format.
+
 ### Evaluation
+- **lazygit-config-format rubric:** the fourth assertion asked for a format chosen from the app's own needs, which conflicted with a prompt that asks to mirror lazygit; it failed in all 12 v1.8.0 trials on both hosts. It now checks that the answer doesn't present one format as the TUI standard and ties its recommendation to matching lazygit or to the app's needs. The recorded bundles keep the original eval-set hash.
 - **Two-host evidence:** `evals/results/v1.8.0-claude-comparison/` and `evals/results/v1.8.0-codex-comparison/` record baseline and with-skill runs of the v1.7.1, v1.7.3, and three v1.8.0 eval sets, plus the v1.7 lifecycle set on Claude, with three repetitions per case and a report for each host. With the skill, Claude Code (`claude-opus-5-5`) and the Codex CLI (`gpt-6.1-sol`, low effort) both scored higher on every completed set.
 - **Isolated runners and a blind grader:** `scripts/runners/` adds Claude Code and Codex runners that switch off installed skills, plugins, MCP servers, user settings, and web search, and a Claude grader that never sees the condition and records a note for every assertion. `evals/README.md` → *Runners and grader* documents them.
 - **Rubric-only labels:** the eval sets without a recorded run (`evals.json`, `build-evals.json`, the tier-2 and tier-3 sets, v1.5.1, v1.6.0, and v1.7.4) say so in their notes.

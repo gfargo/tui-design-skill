@@ -4,6 +4,14 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Release engineering
+- **Frozen schema requirements:**
+  - `scripts/eval_harness.py` names each schema version's evidence requirements in one `SCHEMA_REQUIREMENTS` table.
+  - Validation checks `requires(version, name)` instead of comparing version numbers.
+  - A test pins the published sets.
+  - `evals/README.md` → *When a new schema version is justified* records the policy: new versions need a new evidence requirement, bump only the changed artifact, and share `$defs`.
+  - Behavior for existing bundles is unchanged.
+
 ## [1.8.0] — 2026-10-12
 
 Content and tooling release that completes most of the September 2026 audit roadmap. It adds accessibility, terminal-mode, localization, and terminal-environment guidance; gives each topic one owning reference; compiles and tests the reference code samples in CI; and hardens release validation and reference-freshness checks.

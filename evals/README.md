@@ -17,6 +17,14 @@ Schema v5 adds `skill_invocation_path` to run manifests. A with-skill prompt rea
 
 Once a schema version is published, its rules never change. A behavioral change that would make an existing valid artifact invalid — a newly required field, a stricter check, a renamed property — always ships as a new schema version (its own `evals/schema/vN/` directory and a bump to the harness's `SCHEMA_VERSION` and `SUPPORTED_SCHEMA_VERSIONS`), never as an edit to a published version's files or validation rules. Fixing a mistake in a past release does not mean rewriting or reinterpreting that release's committed evidence: historical run/grades/summary bundles keep the schema version, hashes, and meaning they were recorded with, validated only against their own recorded source snapshot (see the run checklist below), not against whatever the referenced skill or eval-set files contain today.
 
+### When a new schema version is justified
+
+Schema growth is frozen until new evidence needs it. A new version must add an evidence requirement that published versions cannot express: something a reviewer could not otherwise verify, such as v4's linked grading prompt or v5's recorded skill path. A refactor, a renamed field, or a convenience is not a reason for a new version.
+
+- **Name the requirement.** `scripts/eval_harness.py` lists each version's requirements in `SCHEMA_REQUIREMENTS`, and validation code checks `requires(version, name)` rather than comparing version numbers. A new version is a new entry that keeps every earlier requirement and adds at least one. `tests/test_eval_harness.py` pins the published sets, so editing a published version fails the suite.
+- **Version only what changed.** Bump only the artifact whose contract changes (run, grades, or summary) and relax the harness's same-version check at that point; don't copy unchanged schema files into a new directory.
+- **Share definitions.** New schema files reference a shared definitions file with `$ref` instead of repeating `$defs`. Published `evals/schema/v3`–`v5` files stay byte-for-byte unchanged, because recorded bundles reference them by URI.
+
 The harness cannot prove that an arbitrary runner honored caller-reported settings. Evidence reviewers should compare the run manifest with the runner command or provider record. Exact runner arguments remain private by default because they may contain credentials or signed URLs.
 
 ## Run checklist

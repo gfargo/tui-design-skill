@@ -24,7 +24,7 @@ Ratatui dominates Rust TUI development — thousands of crates build on it. Fork
 | Modern TUI in Rust | **Ratatui + Crossterm** |
 | Form-heavy app with dialogs/menus | **Cursive** (callback-driven, retained-mode) |
 | React-like declarative TUI | **iocraft** (newer, hooks + JSX-style + taffy flexbox) |
-| Argparse for CLI | **clap** (derive API) |
+| Argument parsing for CLIs | **clap** (derive API) |
 | Pretty terminal colors | **owo-colors** (zero-allocation, recommended) |
 | Non-TUI progress bars | **indicatif** |
 | Interactive prompts (one-shot) | **inquire** (modern) or **dialoguer** (stable) |
@@ -195,7 +195,7 @@ Constraint variants:
 - `Ratio(num, den)` — fraction.
 - `Fill(weight)` — proportional to weight (prefer over `Percentage` when ratios are simple).
 
-Layouts cache by default — split once and reuse the resulting `Rect`s in the same frame.
+Ratatui caches split results by default (the `layout-cache` feature keeps an LRU keyed by area and layout), so re-splitting the same area is cheap; splitting once per frame and passing the `Rect`s down is still the simpler structure.
 
 ### Styling
 
@@ -338,7 +338,7 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
 - **tui-logger** (0.18.x, actively maintained) — the ready-made in-app log widget, built on `log`, with `slog` and `tracing` support behind the `slog-support` and `tracing-support` features; the official debug recipe points to it as an alternative.
 - **Debuggers:** attach from a *second* terminal (`lldb -p <pid>` / `gdb -p`) or use an IDE debugger so the debug console is separate from the app's terminal — stopping the process in its own terminal leaves you at a prompt that's still in raw mode + alt screen. (Convention rather than official doctrine, but it follows directly from the raw-mode behavior.)
 
-**Profiling:** `cargo flamegraph` (perf on Linux, xctrace on macOS) is the standard tool, and its README suggests `samply` as an alternative with better macOS support; ratatui.rs has no profiling recipe. One real gotcha: you normally end a recording with Ctrl+C, which the terminal sends as SIGINT to the whole foreground process group (flamegraph ignores it so it can still write the graph). Under `crossterm::terminal::enable_raw_mode()`, Ctrl+C is an ordinary key event your app's loop has to interpret, and no SIGINT is sent. Either give your app a quit key that restores the terminal and exits normally (flamegraph then finishes as usual), or attach to an already-running process with `flamegraph --pid <pid>` (`samply record -p <pid>` is Linux-only in samply 0.13.1). For async task time in a Ratatui+Tokio app, `tokio-console` (via the `console-subscriber` crate) shows per-task poll/wake/busy time live. The recurring real-world slow path, seen across several ratatui GitHub issues (high CPU in `terminal.draw`, a `Table` widget laggy at 15k rows): it's rarely widget construction itself — Ratatui's immediate-mode model rebuilding widgets every frame is by design and meant to be cheap — the actual cost is accidental O(n) work smuggled into the render closure, like eagerly collecting a large `Vec` or recomputing string widths on every draw instead of caching outside the loop.
+**Profiling:** use `cargo flamegraph` (perf on Linux, xctrace on macOS) or `samply`; ratatui.rs has no profiling recipe. In raw mode Ctrl+C is a key event, not SIGINT, so it won't end a recording. Quit through your app's own key, or attach to a running app with `flamegraph --pid <pid>`. In Tokio apps, `tokio-console` (via `console-subscriber`) shows per-task poll and busy time. The usual slow path isn't widget construction, which Ratatui expects every frame, but O(n) work inside the render closure, such as collecting a large `Vec` or recomputing string widths on every draw.
 
 ## Companion crates
 
@@ -361,7 +361,7 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
       List,
   }
   ```
-  Best-in-class argparse with auto-generated help and validation; shell completions come from the companion `clap_complete` crate.
+  Best-in-class argument parsing with auto-generated help and validation; shell completions come from the companion `clap_complete` crate.
 
 - **color-eyre** — installs a panic hook that prints rich error reports with span traces and backtraces. Install it before `ratatui::init()` or `ratatui::run()`; Ratatui then wraps the reporting hook and restores terminal state before delegating to it.
 
@@ -430,9 +430,8 @@ siv.run();
 4. **On Windows, both Press and Release events fire.** Filter with `key.kind == KeyEventKind::Press`.
 5. **Stateful widgets need state ownership.** `List`, `Table`, `Scrollbar` are `StatefulWidget`s — you pass `&mut ListState` / `TableState` / `ScrollbarState` at render time; the state lives in your App struct, not the widget.
 6. **Mouse capture disables terminal text selection.** Most emulators bypass with Shift; document this.
-7. **Layouts cache.** Split once and reuse the `Rect`s; don't re-split mid-frame for the same area.
-8. **`String::len()` is bytes, not cells.** Use `Line::width()` / `Span::width()` for Ratatui text, or `unicode_width::UnicodeWidthStr::width(s)` for raw strings.
-9. **No accessibility layer.** Ratatui has no screen-reader support; [ratatui#2610](https://github.com/ratatui/ratatui/issues/2610) tracks it, and the experimental `tui-a11y` crate is Linux-only. Give screen-reader users a linear mode; see `visual-patterns.md` → *Accessibility*.
+7. **`String::len()` is bytes, not cells.** Use `Line::width()` / `Span::width()` for Ratatui text, or `unicode_width::UnicodeWidthStr::width(s)` for raw strings.
+8. **No accessibility layer.** Ratatui has no screen-reader support; [ratatui#2610](https://github.com/ratatui/ratatui/issues/2610) tracks it, and the experimental `tui-a11y` crate is Linux-only. Give screen-reader users a linear mode; see `visual-patterns.md` → *Accessibility*.
 
 ---
 
@@ -461,7 +460,7 @@ When the user is building something similar, point them at the relevant repo. Ra
 
 For non-TUI CLIs:
 
-- **clap** for argparse.
+- **clap** for argument parsing.
 - **indicatif** for progress bars and spinners (auto-hides on non-TTY).
 - **owo-colors** for terminal colors; use its `supports-colors` feature plus `if_supports_color`, or an explicit app policy, to honor terminal capability and `NO_COLOR`.
 - **anyhow** or **color-eyre** for error reporting.

@@ -10,6 +10,13 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ### Changed
 - **One owner per topic:** filter behavior, footer-hint content, cursor-shape mode indication, secrets handling, and startup budgets for summoned tools each have one full treatment, and the other copies are one-line pointers. The framework APIs for inline versus alternate-screen mode and for dynamic Huh and Textual forms moved from the pattern references into the ecosystem references. References shrink from 4,287 to 4,271 lines.
+- **Trimmed hedging and repetition:**
+  - The stale-data and timeout paragraphs in `visual-patterns.md` and the `DO_NOT_TRACK` history in `cli-basics.md` became short rules.
+  - Rust's profiling paragraph was halved.
+  - Textual's testing claim, TCSS live reload, and Cobra's `PreRun` warning are each stated once, and Textual's `add_rows` correction moved to *Pitfalls*.
+  - Ratatui's layout-cache advice is one consistent sentence.
+  - "argparse" now means only Python's module; elsewhere the text says "argument parsing".
+  - References drop from 37,015 to 36,641 words.
 
 ### Fixed
 - **Accessibility pointers:** the *Accessibility* framework table points at the TypeScript reference's real *Strengths and weaknesses* heading, and the focus rule asks for one non-color cue combined as *Focus indicators* describes.

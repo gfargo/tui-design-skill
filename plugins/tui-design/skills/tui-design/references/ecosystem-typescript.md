@@ -1,7 +1,7 @@
 # TypeScript / JavaScript ecosystem — Ink, Clack, Inquirer
 
 The Node.js ecosystem splits along two axes:
-- **Pretty CLI** (argparse + color + prompts/spinners) vs **full TUI**.
+- **Pretty CLI** (argument parsing + color + prompts/spinners) vs **full TUI**.
 - **Imperative/retained-mode** vs **declarative/React-style**.
 
 **Ink has effectively won the high-end TUI space.** It powers Claude Code, GitHub Copilot CLI, Gemini CLI, Cloudflare Wrangler, Gatsby CLI, Prisma, Shopify CLI, Linear's internal CLI, Canva CLI, and tap. Anthropic's Claude Code is publicly TypeScript + React + Ink + Yoga + Bun.
@@ -27,11 +27,11 @@ The Node.js ecosystem splits along two axes:
 | Prompt-heavy CLI (many questions) | **@inquirer/prompts** (the modern modular rewrite) |
 | Single elegant spinner | **ora** |
 | Hierarchical task runner | **listr2** |
-| Argparse, simple | **commander** (de facto default) |
-| Argparse, validation-heavy | **yargs** |
+| Argument parsing, simple | **commander** (de facto default) |
+| Argument parsing, validation-heavy | **yargs** |
 | Heroku-class plugin CLI | **oclif** (Salesforce's framework) |
-| Argparse, TS-first, lightweight | **citty** (UnJS) |
-| Tiny argparse | **cac** (one ~20 KB file, no deps) or `node:util.parseArgs` |
+| Argument parsing, TS-first, lightweight | **citty** (UnJS) |
+| Tiny argument parser | **cac** (one ~20 KB file, no deps) or `node:util.parseArgs` |
 | Terminal colors, performance-critical | **picocolors** |
 | Terminal colors, classic API | **chalk** |
 | Single boxed message | **boxen** |
@@ -334,7 +334,7 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 | **citty** | Growing | TS-first, declarative | UnJS ecosystem (Nuxt, Nitro, unbuild) |
 | **cac** | Niche | One ~20 KB file, no deps | Vite uses it; ESM-only since v7 |
 | **oclif** | Plugin marketplace | Class-per-command | Heroku, Salesforce, Shopify CLI; heaviest startup of the group |
-| **node:util.parseArgs** | stdlib | Argparse only | Experimental in Node 18, stable since Node 20; zero-dep; Mocha 12 moved to it from yargs |
+| **node:util.parseArgs** | stdlib | Argument parsing only | Experimental in Node 18, stable since Node 20; zero-dep; Mocha 12 moved to it from yargs |
 
 **Startup overhead** grows from the stdlib parser and cac, through commander and yargs, to oclif's plugin loader at the heavy end. Measure your own binary with `hyperfine 'mycli --version'` rather than trusting published numbers; for frequently-invoked CLIs the difference matters.
 

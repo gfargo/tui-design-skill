@@ -150,6 +150,34 @@ class EvalHarnessTest(unittest.TestCase):
         )
         return Path(completed.stdout.strip())
 
+    def test_schema_requirements_are_frozen_and_cumulative(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("eval_harness_under_test", HARNESS)
+        harness = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(harness)
+        v3 = {
+            "schema_uri",
+            "runner_provenance",
+            "generation_metadata",
+            "grader_kind",
+            "grader_prompt_sha256",
+            "model_grader_provenance",
+        }
+        # Published versions are frozen: changing any of these sets breaks committed evidence.
+        expected = {2: set(), 3: v3, 4: v3 | {"grading_prompt_file"}, 5: v3 | {"grading_prompt_file", "skill_invocation_path"}}
+        self.assertEqual({version: set(rules) for version, rules in harness.SCHEMA_REQUIREMENTS.items()}, expected)
+        versions = sorted(harness.SCHEMA_REQUIREMENTS)
+        self.assertEqual(harness.SCHEMA_VERSION, versions[-1])
+        for older, newer in zip(versions, versions[1:]):
+            # Each new version adds at least one evidence requirement and drops none.
+            self.assertLess(harness.SCHEMA_REQUIREMENTS[older], harness.SCHEMA_REQUIREMENTS[newer])
+        for version in versions:
+            if harness.requires(version, "schema_uri"):
+                self.assertTrue((REPO_ROOT / f"evals/schema/v{version}").is_dir(), version)
+        with self.assertRaises(harness.HarnessError):
+            harness.requires(5, "not-a-requirement")
+
     def test_run_score_validate_and_detect_tampering(self) -> None:
         runs = self.work / "runs"
         echo_runner = "import sys; print('ANSWER\\n' + sys.stdin.read(), end='')"

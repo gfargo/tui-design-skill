@@ -3,8 +3,9 @@
 
 Reads the explicit inventory in scripts/reference-inventory.json and, for each
 entry, either compares a pinned framework version against that framework's
-primary package registry ("pinned_version") or checks that a cited source
-link still resolves ("source_link"). This script never edits skill content or
+primary package registry ("pinned_version"), compares declared engine or
+peer ranges in a package's latest manifest ("engine_floor"), or checks that a
+cited source link still resolves ("source_link"). This script never edits skill content or
 the inventory; it only reports what a human should review. Network or parse
 failures are reported as "unknown", not "stale"/"broken", so a transient
 outage or a scraper-hostile 403 does not fail CI on its own.
@@ -28,6 +29,8 @@ GITHUB_BLOB_RE = re.compile(r"^https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/
 VERSION_RE = re.compile(r"(\d+)(?:\.(\d+))?(?:\.(\d+))?")
 GRANULARITY_LENGTH = {"major": 1, "minor": 2, "patch": 3, "exact": 3}
 REVIEW_STATUSES = {"stale", "broken"}
+KINDS = {"pinned_version", "source_link", "engine_floor"}
+KIND_LABELS = {"pinned_version": "pinned version", "source_link": "source link", "engine_floor": "engine floor"}
 
 
 class AuditError(RuntimeError):
@@ -71,6 +74,17 @@ REGISTRY_FETCHERS = {
     "crates_io": fetch_crates_io_latest,
     "pypi": fetch_pypi_latest,
     "npm": fetch_npm_latest,
+}
+
+
+def fetch_npm_latest_manifest(registry: dict[str, Any], timeout: float) -> dict[str, Any]:
+    return http_get_json(f"https://registry.npmjs.org/{registry['package']}/latest", timeout)
+
+
+# engine_floor entries read a declared field (engines, peer ranges) from the
+# latest published manifest rather than its version number.
+MANIFEST_FETCHERS = {
+    "npm": fetch_npm_latest_manifest,
 }
 
 
@@ -136,6 +150,41 @@ def evaluate_pinned_version(entry: dict[str, Any], timeout: float) -> tuple[str,
     return "stale", f"pinned {pinned_raw} — latest is {latest_raw} ({granularity})"
 
 
+def manifest_field(manifest: dict[str, Any], dotted: str) -> Any:
+    value: Any = manifest
+    for part in dotted.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return None
+        value = value[part]
+    return value
+
+
+def evaluate_engine_floor(entry: dict[str, Any], timeout: float) -> tuple[str, str]:
+    registry = entry.get("registry") or {}
+    fetcher = MANIFEST_FETCHERS.get(registry.get("type"))
+    if fetcher is None:
+        raise AuditError(f"{entry.get('id')}: unknown manifest registry type {registry.get('type')!r}")
+    fields = entry.get("fields")
+    if not isinstance(fields, dict) or not fields or not all(isinstance(value, str) for value in fields.values()):
+        raise AuditError(f"{entry.get('id')}: fields must map manifest paths to expected strings")
+    try:
+        manifest = fetcher(registry, timeout)
+    except AuditError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - any fetch/network failure is inconclusive, not a hard error
+        return "unknown", f"could not fetch the latest manifest ({registry.get('type')}): {exc}"
+    version = manifest.get("version", "?")
+    changed = []
+    for path, expected in fields.items():
+        actual = manifest_field(manifest, path)
+        if actual != expected:
+            changed.append(f"{path} is {actual!r}, expected {expected!r}")
+    if changed:
+        return "stale", f"latest {version}: " + "; ".join(changed)
+    declared = ", ".join(f"{path} {value}" for path, value in fields.items())
+    return "current", f"latest {version} declares {declared}"
+
+
 def evaluate_source_link(entry: dict[str, Any], timeout: float) -> tuple[str, str]:
     url = entry.get("url")
     if not isinstance(url, str) or not url:
@@ -171,18 +220,20 @@ def load_inventory(path: Path) -> list[dict[str, Any]]:
         if entry_id in seen:
             raise AuditError(f"duplicate reference id: {entry_id!r}")
         seen.add(entry_id)
-        if entry.get("kind") not in ("pinned_version", "source_link"):
-            raise AuditError(f"{entry_id}: kind must be 'pinned_version' or 'source_link'")
+        if entry.get("kind") not in KINDS:
+            raise AuditError(f"{entry_id}: kind must be one of {', '.join(sorted(KINDS))}")
     return references
 
 
 def run_audit(references: list[dict[str, Any]], timeout: float) -> list[dict[str, Any]]:
+    evaluators = {
+        "pinned_version": evaluate_pinned_version,
+        "source_link": evaluate_source_link,
+        "engine_floor": evaluate_engine_floor,
+    }
     results = []
     for entry in references:
-        if entry["kind"] == "pinned_version":
-            status, detail = evaluate_pinned_version(entry, timeout)
-        else:
-            status, detail = evaluate_source_link(entry, timeout)
+        status, detail = evaluators[entry["kind"]](entry, timeout)
         results.append({**entry, "status": status, "detail": detail})
     return results
 
@@ -196,7 +247,7 @@ def render_report(results: list[dict[str, Any]]) -> str:
     for framework in sorted(by_framework):
         lines.append(f"== {framework} ==")
         for result in by_framework[framework]:
-            label = "pinned version" if result["kind"] == "pinned_version" else "source link"
+            label = KIND_LABELS[result["kind"]]
             target = result.get("claim") or result.get("url")
             lines.append(f"[{result['status']}] {label}: {target}")
             lines.append(f"    {result['detail']}")

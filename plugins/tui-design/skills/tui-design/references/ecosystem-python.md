@@ -412,7 +412,7 @@ choice = questionary.select(
 
 ## Other libraries
 
-- **Urwid** — pre-Textual TUI framework; mature and actively maintained again (v3.0.x through 2025, v4.0 in 2026) after years of dormancy. New projects should still use Textual.
+- **Urwid** — pre-Textual TUI framework; mature and actively maintained again (3.0 in May 2025, 4.0 in March 2026, 4.2.x as of October 2026) after years of dormancy. New projects should still use Textual.
 - **Blessed** — modernized curses wrapper, cross-platform via `jinxed`. For bespoke games/animations where you want fine control. Not recommended as a first choice.
 - **curses** — stdlib, Unix-only, lowest level. Avoid for new code unless you have a strict zero-dep requirement.
 - **InquirerPy** — Python port of Inquirer.js. Unmaintained (last release 0.3.4, June 2022); prefer questionary.

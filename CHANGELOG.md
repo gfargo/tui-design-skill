@@ -4,8 +4,12 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
-### Changed
-- **Configuration formats:** `visual-patterns.md` → *Configuration formats* now says that no format is the TUI standard, and that matching a tool your users already configure, such as lazygit, is a good reason to use its format.
+## [1.8.1] — 2026-10-13
+
+Evidence release for the 1.8 line. It records baseline and with-skill runs on Claude Code and Codex, measures implicit triggering on both hosts, freezes eval-schema growth, and fixes one guidance gap the runs exposed.
+
+### Fixed
+- **Configuration formats:** `visual-patterns.md` → *Configuration formats* now says that no format is the TUI standard, and that matching a tool your users already configure, such as lazygit, is a good reason to use its format. The guidance listed formats but never stated that rule, which the v1.7.1 rubric expected.
 
 ### Release engineering
 - **Frozen schema requirements:**
@@ -355,7 +359,8 @@ Freshness and accuracy pass on the ecosystem references. No structural changes; 
 
 Initial release. Universal TUI/CLI design principles in `SKILL.md` routing to eight reference files covering the Go, Rust, Python, and TypeScript ecosystems plus CLI basics, visual patterns, interaction patterns, and exemplar apps.
 
-[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/gfargo/tui-design-skill/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/gfargo/tui-design-skill/compare/v1.7.4...v1.8.0
 [1.7.4]: https://github.com/gfargo/tui-design-skill/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/gfargo/tui-design-skill/compare/v1.7.2...v1.7.3

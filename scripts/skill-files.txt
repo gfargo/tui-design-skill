@@ -1,0 +1,13 @@
+# The exact files packaged into tui-design.skill, relative to the skill
+# directory, in C-locale sort order (the archive order). package-skill.sh,
+# validate-release.sh, and tests/test_packaging.py all read this list.
+SKILL.md
+agents/openai.yaml
+references/cli-basics.md
+references/ecosystem-go.md
+references/ecosystem-python.md
+references/ecosystem-rust.md
+references/ecosystem-typescript.md
+references/exemplar-apps.md
+references/interaction-patterns.md
+references/visual-patterns.md

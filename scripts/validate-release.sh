@@ -26,19 +26,16 @@ expected_tag = sys.argv[2]
 skill_dir = root / "plugins/tui-design/skills/tui-design"
 skill_file = skill_dir / "SKILL.md"
 agent_file = skill_dir / "agents/openai.yaml"
-expected_skill_files = {
-    "SKILL.md",
-    "agents/openai.yaml",
-    "references/cli-basics.md",
-    "references/ecosystem-go.md",
-    "references/ecosystem-python.md",
-    "references/ecosystem-rust.md",
-    "references/ecosystem-typescript.md",
-    "references/exemplar-apps.md",
-    "references/interaction-patterns.md",
-    "references/visual-patterns.md",
-}
-expected_skill_dirs = {"agents", "references"}
+files_list = root / "scripts/skill-files.txt"
+expected_skill_list = [
+    line.strip()
+    for line in files_list.read_text().splitlines()
+    if line.strip() and not line.lstrip().startswith("#")
+]
+if expected_skill_list != sorted(expected_skill_list):
+    raise SystemExit("scripts/skill-files.txt must list files in sorted (C-locale) order")
+expected_skill_files = set(expected_skill_list)
+expected_skill_dirs = {str(Path(name).parent) for name in expected_skill_files if "/" in name}
 
 actual_skill_files = set()
 actual_skill_dirs = set()
@@ -86,16 +83,50 @@ if expected_tag and expected_version != version:
 changelog = (root / "CHANGELOG.md").read_text()
 if f"## [{version}]" not in changelog:
     raise SystemExit(f"CHANGELOG.md has no section for {version}")
+repository = "https://github.com/gfargo/tui-design-skill"
+link_targets = dict(re.findall(r"^\[([^\]]+)\]:\s*(\S+)\s*$", changelog, flags=re.MULTILINE))
+if link_targets.get("Unreleased") != f"{repository}/compare/v{version}...HEAD":
+    raise SystemExit(f"CHANGELOG.md needs [Unreleased]: {repository}/compare/v{version}...HEAD")
+for heading_version in re.findall(r"^## \[(\d+\.\d+\.\d+)\]", changelog, flags=re.MULTILINE):
+    if heading_version not in link_targets:
+        raise SystemExit(f"CHANGELOG.md has no compare link for [{heading_version}]")
 
 text = skill_file.read_text()
 match = re.match(r"\A---\n(.*?)\n---\n", text, flags=re.DOTALL)
 if not match:
     raise SystemExit("SKILL.md must begin with YAML frontmatter")
-frontmatter_keys = [line.split(":", 1)[0] for line in match.group(1).splitlines() if ":" in line]
+frontmatter = match.group(1)
+# Keys start at column 0; indented lines continue a folded or literal scalar.
+frontmatter_keys = re.findall(r"^([A-Za-z_][A-Za-z0-9_-]*):", frontmatter, flags=re.MULTILINE)
 if frontmatter_keys != ["name", "description"]:
     raise SystemExit(f"SKILL.md frontmatter keys must be name, description; got {frontmatter_keys}")
-if not re.search(r"^name:\s+tui-design$", match.group(1), flags=re.MULTILINE):
+if not re.search(r"^name:\s+tui-design$", frontmatter, flags=re.MULTILINE):
     raise SystemExit("SKILL.md frontmatter name must match its directory")
+description_match = re.search(r"^description:[ \t]*(.*)$((?:\n[ \t]+.*)*)", frontmatter, flags=re.MULTILINE)
+head_value = description_match.group(1).strip()
+continuation = [line.strip() for line in description_match.group(2).splitlines() if line.strip()]
+if head_value in {">", ">-", "|", "|-", ">+", "|+"}:
+    skill_description = " ".join(continuation)
+else:
+    skill_description = " ".join([head_value.strip("'\""), *continuation])
+if not skill_description:
+    raise SystemExit("SKILL.md frontmatter description is empty")
+
+
+def normalize_description(value):
+    return re.sub(r"\s*—\s*", "—", re.sub(r"\s+", " ", value)).strip()
+
+
+skill_first_sentence = normalize_description(re.split(r"(?<=\.)\s", skill_description, maxsplit=1)[0]).rstrip(".")
+plugin_description = plugin.get("description", "")
+if plugin_description != marketplace_plugin.get("description"):
+    raise SystemExit("plugin.json and marketplace.json plugin descriptions differ")
+if not normalize_description(plugin_description).startswith(skill_first_sentence):
+    raise SystemExit(
+        "manifest descriptions must start with SKILL.md's first description sentence: "
+        f"{skill_first_sentence!r}"
+    )
+
 if len(text.splitlines()) > 200:
     raise SystemExit(f"SKILL.md exceeds the 200-line core budget: {len(text.splitlines())}")
 
@@ -242,23 +273,16 @@ while IFS= read -r entry; do
       ;;
   esac
 done <<< "$archive_entries"
-python3 - "$build_a/tui-design.skill" <<'PY'
+python3 - "$build_a/tui-design.skill" "$repo_root/scripts/skill-files.txt" <<'PY'
 import sys
 import zipfile
 from pathlib import Path
 
 archive = Path(sys.argv[1])
 expected = [
-    "tui-design/SKILL.md",
-    "tui-design/agents/openai.yaml",
-    "tui-design/references/cli-basics.md",
-    "tui-design/references/ecosystem-go.md",
-    "tui-design/references/ecosystem-python.md",
-    "tui-design/references/ecosystem-rust.md",
-    "tui-design/references/ecosystem-typescript.md",
-    "tui-design/references/exemplar-apps.md",
-    "tui-design/references/interaction-patterns.md",
-    "tui-design/references/visual-patterns.md",
+    "tui-design/" + line.strip()
+    for line in Path(sys.argv[2]).read_text().splitlines()
+    if line.strip() and not line.lstrip().startswith("#")
 ]
 with zipfile.ZipFile(archive) as package:
     names = package.namelist()

@@ -2,8 +2,8 @@ name: Reference freshness audit
 
 # Lightweight maintenance aid: checks whether the pinned framework versions
 # and cited source links in the skill's ecosystem references have drifted
-# or gone dead. It never edits content — see scripts/reference-inventory.json
-# and evals/README.md-adjacent docs in README.md for the maintenance contract.
+# or gone dead. It never edits content. The maintenance contract is in
+# scripts/reference-inventory.json and README.md → Reference freshness.
 
 on:
   workflow_dispatch:

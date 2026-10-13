@@ -41,9 +41,23 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - `check-reference-freshness.py` gains an `engine_floor` kind that reads `engines` and peer ranges from the latest npm manifest, with offline fixture tests.
   - The inventory now tracks Huh, Bubbles, urfave/cli, Crossterm, tui-logger, InquirerPy, ink-testing-library, commander, chalk, neo-blessed, the Ink, commander, chalk, and OpenTUI engine floors, and source links for gh's `go.mod`, Ratatui's Crossterm features, Ink's aria and `suspendTerminal` releases, and Node's `styleText` and `parseArgs` docs.
   - 35 entries in total, all current.
+- **Release validation hardening:**
+  - The packaged-file allowlist lives in `scripts/skill-files.txt`, which the packager, the validator, and the packaging tests all read. It previously appeared in five places.
+  - The validator parses frontmatter keys with an anchored pattern, so a folded (`>-`) description passes.
+  - The validator requires the `plugin.json` and `marketplace.json` descriptions to match each other and to start with `SKILL.md`'s first description sentence.
+  - The validator requires a compare link for every changelog version and an `[Unreleased]` link from the current version.
+  - New tests cover the validator's failure modes, schema-v5 run, grades, and summary conformance (with `jsonschema`), and `validate-evidence.sh`. The evidence script now reports a recorded commit that is missing from the repository by name.
+  - The validate workflow runs on Python 3.9 and 3.14.
 - `scripts/reference-inventory.json` adds source links for the kitty keyboard protocol, the synchronized-output and color-palette-update specs, ConEmu's and Windows Terminal's OSC 9;4 docs, and the tmux 3.8 manual.
 
 ### Evaluation
+- **Honest eval provenance:**
+  - `build-evals.json`'s 27/27 vs 24/27 figure is labelled an unverified historical observation, since no bundle was committed.
+  - `trigger-evals.json` is labelled unverified and notes that its harness measured a slash command, not the plugin skill.
+  - `tier3-content-evals.json` no longer cites briefs that aren't in the repository.
+  - `v170-lifecycle-evals.json` asks for a run in the current schema.
+  - `GRADER-CORRECTION.md` files record that the v1.7.0 lifecycle bundles were graded by a Codex agent despite `grader.kind: "human"`; the hashed artifacts are unchanged.
+  - The pre-harness v1.6.0 report is documented as informal notes.
 - `evals/v180-l10n-environments-evals.json` covers translation growth at 60 columns, a tmux prefix and Esc-delay collision, ambiguous-width borders under a Japanese locale, and locale-independent machine output.
 - `evals/v180-terminal-modes-evals.json` covers multi-line paste without bracketed paste, tearing and synchronized output, Shift+Enter and the kitty keyboard protocol, background-color queries over SSH and theme notifications, and restoring the cursor shape and window title.
 - `evals/v180-accessibility-evals.json` covers a Huh form made usable with a screen reader, what `--no-tui` must output, `textual serve` as an accessibility claim, and Ink's screen-reader live region.
@@ -318,3 +332,19 @@ Freshness and accuracy pass on the ecosystem references. No structural changes; 
 ## [1.0.0]
 
 Initial release. Universal TUI/CLI design principles in `SKILL.md` routing to eight reference files covering the Go, Rust, Python, and TypeScript ecosystems plus CLI basics, visual patterns, interaction patterns, and exemplar apps.
+
+[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.7.4...HEAD
+[1.7.4]: https://github.com/gfargo/tui-design-skill/compare/v1.7.3...v1.7.4
+[1.7.3]: https://github.com/gfargo/tui-design-skill/compare/v1.7.2...v1.7.3
+[1.7.2]: https://github.com/gfargo/tui-design-skill/compare/v1.7.1...v1.7.2
+[1.7.1]: https://github.com/gfargo/tui-design-skill/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/gfargo/tui-design-skill/compare/v1.6.1...v1.7.0
+[1.6.1]: https://github.com/gfargo/tui-design-skill/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/gfargo/tui-design-skill/compare/v1.5.1...v1.6.0
+[1.5.1]: https://github.com/gfargo/tui-design-skill/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/gfargo/tui-design-skill/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/gfargo/tui-design-skill/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/gfargo/tui-design-skill/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/gfargo/tui-design-skill/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/gfargo/tui-design-skill/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/gfargo/tui-design-skill/releases/tag/v1.0.0

@@ -3,15 +3,15 @@
 
 For every trial, the grader receives the preserved grading-prompt file, the
 case's numbered rubric assertions, and the trial's response, and must return
-{"results": [bool, ...]} with one boolean per assertion. It is not told the run's
-condition, provider, or model. Each raw grader reply is kept under
+{"results": [{"passed": bool, "note": str}, ...]} with one entry per assertion.
+It is not told the run's condition, provider, or model. Each raw grader reply is kept under
 grader-responses/ in the run directory for audit, and the grading prompt is
 copied into the run directory so the grades link to it (schema v4+).
 
 Usage:
   python3 scripts/runners/claude_grader.py --run evals/runs/RUN/run.json \\
     --grading-prompt evals/grading/v180-direct-rubric-v1.md \\
-    --model claude-opus-5-5 --runner-version "Claude Code 2.1.295"
+    --model claude-opus-5-5 --runner-version "Claude Code 2.1.295" --jobs 4
 Set CLAUDE_BIN to choose the Claude Code binary (default: `claude` on PATH).
 """
 
@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -43,9 +44,12 @@ def parse_results(reply, count):
     if not match:
         raise ValueError("no JSON object in grader reply")
     results = json.loads(match.group(0)).get("results")
-    if not isinstance(results, list) or len(results) != count or not all(isinstance(item, bool) for item in results):
-        raise ValueError(f"expected {count} booleans, got {results!r}")
-    return results
+    if not isinstance(results, list) or len(results) != count:
+        raise ValueError(f"expected {count} results, got {results!r}")
+    for item in results:
+        if not (isinstance(item, dict) and isinstance(item.get("passed"), bool) and isinstance(item.get("note"), str) and item["note"].strip()):
+            raise ValueError(f"expected {{passed: bool, note: str}}, got {item!r}")
+    return [(item["passed"], item["note"].strip()) for item in results]
 
 
 def main():
@@ -55,6 +59,7 @@ def main():
     parser.add_argument("--model", required=True)
     parser.add_argument("--runner-version", required=True)
     parser.add_argument("--prompt-version", default="v180-direct-rubric-v1")
+    parser.add_argument("--jobs", type=int, default=1, help="trials to grade concurrently")
     args = parser.parse_args()
 
     run_dir = args.run.resolve().parent
@@ -75,8 +80,8 @@ def main():
         "--disable-slash-commands", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
         "--setting-sources", "project", "--no-session-persistence", "--tools", "", "--output-format", "text",
     ]
-    trials = []
-    for trial in manifest["trials"]:
+
+    def grade(trial):
         case = cases[str(trial["case_id"])]
         assertions = case["assertions"]
         response = (run_dir / trial["response_file"]).read_text()
@@ -87,22 +92,25 @@ def main():
         )
         last_error = None
         for _attempt in range(3):
-            reply = call_grader(command_prefix, grader_input)
             try:
+                reply = call_grader(command_prefix, grader_input)
                 results = parse_results(reply, len(assertions))
                 break
-            except ValueError as error:
+            except (RuntimeError, ValueError) as error:
                 last_error = error
         else:
             raise SystemExit(f"{trial['trial_id']}: grader reply unusable after 3 attempts: {last_error}")
         (raw_dir / f"{trial['trial_id']}.json").write_text(reply)
-        trials.append(
-            {
-                "trial_id": trial["trial_id"],
-                "assertions": [{"index": index, "passed": passed} for index, passed in enumerate(results)],
-            }
-        )
-        print(f"graded {trial['trial_id']}: {sum(results)}/{len(results)}", file=sys.stderr)
+        print(f"graded {trial['trial_id']}: {sum(passed for passed, _ in results)}/{len(results)}", file=sys.stderr)
+        return {
+            "trial_id": trial["trial_id"],
+            "assertions": [
+                {"index": index, "passed": passed, "notes": note} for index, (passed, note) in enumerate(results)
+            ],
+        }
+
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        trials = list(pool.map(grade, manifest["trials"]))
 
     grades = {
         "schema_version": 5,

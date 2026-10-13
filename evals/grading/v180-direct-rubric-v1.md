@@ -9,8 +9,10 @@ For each assertion, decide whether the answer satisfies it:
 - An assertion phrased as "does NOT …" is `true` when the answer avoids the named mistake.
 - Judge each assertion independently. Do not reward length, confidence, or formatting.
 
+For every assertion, write one short sentence of evidence: what the answer says or does that satisfies the assertion, or what it omits or gets wrong. Refer to the answer's content, not to the assertion's wording.
+
 Reply with a single JSON object and nothing else:
 
-{"results": [true, false, ...]}
+{"results": [{"passed": true, "note": "..."}, {"passed": false, "note": "..."}]}
 
-The array must have exactly one boolean per assertion, in the order given.
+The array must have exactly one entry per assertion, in the order given.

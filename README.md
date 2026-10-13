@@ -218,7 +218,9 @@ Use `--prepare-only` when the model interface cannot be called as a command; it 
 
 The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
 
-The v1.7 lifecycle evidence under `evals/results/v1.7.0-lifecycle-forward-test/` is a single clean-source snapshot: five framework and cross-framework cases, 25/25 human-graded assertions, schema-v3 runner and grading provenance, and a summary that the harness recomputes from the complete trial set.
+`evals/results/v1.6.0-forward-test/` predates the harness (schema 1, recorded from a dirty working tree, no `run.json`); it holds informal design notes, is not validated, and is not evidence of model behavior.
+
+The v1.7 lifecycle evidence under `evals/results/v1.7.0-lifecycle-forward-test/` is a single clean-source snapshot: five framework and cross-framework cases, 25/25 assertions graded by a Codex agent (the bundle's `grader.kind` says `human`; see its `GRADER-CORRECTION.md`), schema-v3 runner and grading provenance, and a summary that the harness recomputes from the complete trial set.
 
 The repeated comparison under [`evals/results/v1.7.0-lifecycle-comparison/`](evals/results/v1.7.0-lifecycle-comparison/comparison.md) runs the same five cases three times per condition with the exact v1.7 runner, model, reasoning effort, eval set, and skill snapshot. The isolated baseline scored 63/75 (84%) and the explicit with-skill condition scored 69/75 (92%); all three paired repetitions measured the same +8 percentage-point difference. The report preserves case-level outcomes, variance, limitations, and complete schema-v4 evidence bundles.
 

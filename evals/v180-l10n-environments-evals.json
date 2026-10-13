@@ -1,0 +1,53 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Localization and terminal-environment cases for visual-patterns.md → Localization and interaction-patterns.md → Terminal environments (#40), checked against primary sources on 2026-10-12: IBM's globalization guidelines (text expansion), Microsoft's pseudo-localization guidance, the terminal-wg BiDi recommendation and terminal issue trackers, UAX #11 rev. 46 and EastAsianWidth.txt 17.0, go-runewidth v0.0.31, POSIX.1-2024 chapters 7-8 and printf, tmux 3.8 tmux.1/CHANGES, GNU screen 5.0.2 screen.1 and source, Zellij keybinding presets, and Microsoft's console and Windows Terminal posts. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash.",
+  "evals": [
+    {
+      "id": "translation-growth-60-columns",
+      "name": "translation-growth-60-columns",
+      "prompt": "We're translating our Bubble Tea task manager into German, Finnish, and Japanese. The layout has a 4-column table and a footer of key hints, sized for English at 80 columns. Many users run it in a 60-column tmux split. What should we change before translators deliver strings?",
+      "files": [],
+      "assertions": [
+        "Warns that translated strings grow, and that short strings such as column headers and footer hints grow proportionally the most",
+        "Sizes columns from the rendered (translated) text rather than hard-coding widths to the English labels",
+        "Recommends testing with a pseudo-locale (lengthened, marked strings) before real translations exist",
+        "Pressure-tests the 60-column case with long strings and says what truncates, hides, or moves to help when labels don't fit",
+        "Measures display width in terminal cells (CJK characters take two cells), not string length"
+      ]
+    },
+    {
+      "id": "tmux-prefix-collision",
+      "name": "tmux-prefix-collision",
+      "prompt": "Our TUI uses Ctrl+B to toggle the sidebar and Esc to leave insert mode. Users inside tmux say the sidebar shortcut does nothing and Esc feels laggy. What's happening and how should we design around it?",
+      "files": [],
+      "assertions": [
+        "Explains that Ctrl+B is tmux's default prefix, so tmux consumes it before the app sees it",
+        "Explains that tmux holds a lone Esc for escape-time before passing it on (500 ms before tmux 3.5) and suggests documenting a lower setting",
+        "Keeps an alternative binding for the sidebar that does not collide with common multiplexer prefixes (tmux Ctrl+B, screen Ctrl+A)",
+        "Suggests detecting tmux (for example via $TMUX) to adjust hints or documentation rather than silently failing"
+      ]
+    },
+    {
+      "id": "ambiguous-width-borders",
+      "name": "ambiguous-width-borders",
+      "prompt": "Japanese users of our Go TUI report that the rounded box borders and the bullet markers are misaligned, but everything looks fine for us. What's going on?",
+      "files": [],
+      "assertions": [
+        "Identifies East Asian Ambiguous width: box-drawing characters and markers such as • and … are ambiguous, and terminals can be set to draw them wide",
+        "Notes that the app's width calculation and the terminal's setting can disagree (for example, go-runewidth treats ambiguous characters as wide under ja/ko/zh locales while the terminal may not, or the reverse)",
+        "Recommends testing with the terminal's ambiguous-width setting enabled and offering an ASCII border fallback or narrow-class markers"
+      ]
+    },
+    {
+      "id": "locale-machine-output",
+      "name": "locale-machine-output",
+      "prompt": "Our CLI prints file sizes like 1,234.5 MB in its human table and also has a --json mode. A user in Germany says a script that parses our output broke after they set LANG=de_DE.UTF-8. What should our rules be?",
+      "files": [],
+      "assertions": [
+        "Formats human output with the user's locale (decimal separators and digit grouping differ)",
+        "Keeps machine output (--json or --plain) locale-independent, with a fixed decimal point and no grouping",
+        "Notes that locale settings (LC_NUMERIC, LC_ALL, LANG precedence) change how numbers print and parse, so machine-readable formatting must not depend on them"
+      ]
+    }
+  ]
+}

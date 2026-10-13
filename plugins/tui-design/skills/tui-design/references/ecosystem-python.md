@@ -80,6 +80,8 @@ Textual's driver restores application mode from `App.run()` / `run_async()` clea
 
 These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspend-context-manager) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
 
+**Inline mode:** `app.run(inline=True)` (since 0.55) renders below the prompt instead of on the alternate screen. Set its height with CSS on `Screen`, as in `Screen { &:inline { height: 50vh; } }`. Inline mode is not supported on Windows.
+
 ## Widgets
 
 Textual ships dozens. Categories:
@@ -195,6 +197,8 @@ class Counter(Widget):
 - `recompose=True` — re-run `compose()` (rebuild children).
 
 This is the heart of Textual's "reactive" claim — it's genuinely declarative state-driven UI.
+
+**Hiding dependent widgets:** when one value controls another widget, react in `watch_<name>(old, new)` on the `reactive()` attribute, and hide the dependent widget with `widget.display = False` (removes it from layout) or `.visible = False` (hides it without reflowing).
 
 ## Async and workers
 

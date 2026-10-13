@@ -137,6 +137,8 @@ fn run_editor(terminal: &mut DefaultTerminal, app: &mut App) -> Result<ExitStatu
 
 Reentry steps are not transactional (see the fallible-setup warning below), and a successful redraw proves only that the renderer recovered.
 
+**Inline viewport:** `Terminal::with_options` with `Viewport::Inline(height)` renders below the prompt instead of on the alternate screen. To emit permanent log or output lines above the live UI, use `Terminal::insert_before`: inserted lines push the viewport down, then scroll into scrollback above it.
+
 ### Widgets
 
 **Built-in:**

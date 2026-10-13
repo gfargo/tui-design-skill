@@ -136,7 +136,7 @@ Appears over the shell, does one thing, exits.
 
 **Implementation notes:**
 - Buffer choice (inline vs alt screen) and the exit contract are covered in full below — see *Inline, alt-screen, or overlay*.
-- Sub-100ms startup is non-negotiable — users summon these dozens of times a day.
+- Startup time is part of the design, because users summon these dozens of times a day; budgets are in `cli-basics.md` → *Startup time*.
 
 ### 7. Tabbed within panel
 
@@ -167,10 +167,7 @@ Before choosing a layout, choose a screen buffer. The **alternate screen** is a 
 
 ### Mechanics per framework
 
-- **Bubble Tea v2** — inline is the default. Alt screen is a declarative field on the view: `v := tea.NewView(...); v.AltScreen = true`. Because it's set per-frame, an app can switch between inline and alt-screen at runtime.
-- **Ink** — inline by default. Since Ink 7, the `alternateScreen: true` render option gives a vim-style alt screen that restores the previous terminal content on exit (interactive mode only — ignored in CI or with piped stdout).
-- **Textual** — `app.run(inline=True)` (since 0.55). Height is controlled with CSS on `Screen`: `Screen { &:inline { height: 50vh; } }`. Inline mode is not supported on Windows.
-- **Ratatui** — `Viewport::Inline(height)` via `Terminal::with_options`. To emit permanent log/output lines above the live UI, `Terminal::insert_before` is the sanctioned pattern: inserted lines push the viewport down, then scroll into scrollback above it.
+All four frameworks support both modes. How each enters the alternate screen or stays inline, and how it prints permanent lines above an inline UI, is in its ecosystem reference: `ecosystem-go.md`, `ecosystem-rust.md`, and `ecosystem-python.md` → *Lifecycle and terminal handoff*, and `ecosystem-typescript.md` → *Strengths and weaknesses*.
 
 ### The fzf model — bounded inline viewport
 
@@ -474,11 +471,7 @@ Show which column is currently sorted: `▲` ascending, `▼` descending. Place 
 
 ### Filtering
 
-When filtering a list:
-
-- Show count: `123/45678` (the fzf convention).
-- Highlight matched substring within results.
-- Sub-100ms response — anything slower feels broken.
+Filter behavior (response time, match count, highlighting, smart case) is defined in `interaction-patterns.md` → *Search and filter*.
 
 ### Wide tables on narrow terminals
 
@@ -535,18 +528,12 @@ Some apps merge status and footer into one line. Some skip the header. Complex f
 
 - Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
 - Auto-fade after a few seconds (or replace with idle state).
-- Vim-style mode indicators with **distinct cursor shapes**: block in NORMAL, bar in INSERT, underline in REPLACE.
+- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Modal (vim-style)*).
 - Color-coded: green = OK / saved, yellow = pending, red = error.
 
 ### Footer hint bar
 
-For an action-rich full-screen app, use `key action · key action · key action`. Use `·` (middle dot) or `|` as separator. Show 3–5 shortcuts, updated per context (panel, mode). A small inline prompt can show its complete controls adjacent to the prompt instead.
-
-Examples:
-- htop: `F1Help F2Setup F3Search F4Filter F5Tree F6SortBy F7Nice- F8Nice+ F9Kill F10Quit`
-- lazygit: per-pane, e.g., in Files panel `space stage · c commit · P push · p pull · ?`
-
-Why this bar matters and how to auto-generate it from your keymap: `references/interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+Lay hints out as `key action · key action · key action`, with `·` (middle dot) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Which shortcuts to show, how many, and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
 
 ---
 

@@ -101,7 +101,7 @@ Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumab
 
 The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
 
-**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`.
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`. Inline is the default, and because these fields are read every frame, an app can switch between inline and the alternate screen at runtime.
 
 **Important options:**
 - `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
@@ -287,6 +287,15 @@ err := form.Run()
 ```
 
 Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect[T]`, `NewConfirm`, `NewFilePicker`, `NewNote` (display-only).
+
+**Dynamic forms:** huh's real mechanism is **`Group.WithHideFunc(func() bool)`** — it hides/shows an entire group (a step's worth of fields) based on a predicate re-evaluated as form state changes. This operates at *group* granularity; per-field hiding is not shipped (open feature requests only) — don't present it as available. For recomputing one field from another's value, huh has `OptionsFunc`/`TitleFunc`/`DescriptionFunc`, which take a callback plus the fields they depend on and re-run automatically:
+
+```go check=go/huh-options-func
+huh.NewSelect[string]().
+    OptionsFunc(func() []huh.Option[string] {
+        return huh.NewOptions(statesForCountry(country)...)
+    }, &country) // recomputed whenever `country` changes
+```
 
 **Accessibility:** `form.WithAccessible(true)` bypasses Bubble Tea and asks each field as a plain line-by-line prompt: a numbered list for `Select` (the user types the number), numbers toggled one at a time and `0` to finish for `MultiSelect`, `y`/`n` for `Confirm`, and validation errors printed before the prompt repeats. Huh turns it on by itself only for `TERM=dumb`, so expose your own switch. The README reads an `ACCESSIBLE` environment variable, and gh's `GH_ACCESSIBLE_PROMPTER` drives exactly this mode. Bubble Tea and Bubbles have nothing comparable, so the rest of the app needs its own linear mode; see `visual-patterns.md` → *Accessibility*.
 

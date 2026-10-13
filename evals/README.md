@@ -114,4 +114,12 @@ CLAUDE_BIN=/path/to/claude python3 scripts/runners/claude_grader.py \
   --model claude-opus-5-5 --runner-version "Claude Code 2.1.295" --jobs 4
 ```
 
+`trigger_probe.py` measures implicit activation instead of answer quality. It sends each query in a trigger-eval set, unchanged, to Claude Code with only this repository's plugin loaded, or to Codex with only a project-scoped copy of the skill enabled. It records whether the model loaded the skill, the tool calls behind that verdict, and per-query and per-category rates:
+
+```bash
+CLAUDE_BIN=/path/to/claude python3 scripts/runners/trigger_probe.py --host claude \
+  --model claude-opus-5-5 --runner-version "Claude Code 2.1.295" \
+  --eval-set evals/v180-trigger-evals.json --repeat 3 --jobs 3 --output evals/runs/trigger-claude
+```
+
 The harness records the git commit and dirty state when each run starts, so leave the worktree untouched until every run in a batch has started. Before committing bundles, check that every manifest records `"dirty": false`.

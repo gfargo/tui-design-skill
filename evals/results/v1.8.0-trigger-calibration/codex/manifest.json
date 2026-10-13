@@ -1,0 +1,25 @@
+{
+  "artifact_type": "tui-design-trigger-calibration",
+  "created_at": "2026-10-13T10:32:34Z",
+  "host": "codex",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "low",
+  "runner_version": "codex-cli 0.160.0",
+  "invocation": "codex exec with only a project-scoped copy of the skill enabled",
+  "trigger_rule": "a command that reads tui-design/SKILL.md",
+  "eval_set": "evals/v180-trigger-evals.json",
+  "eval_set_sha256": "ef56e0d27dc36def30e084032b417f05370a0d6b2dbb6a0d1726c44de7abd6e1",
+  "skill_description": "Design, build, refactor, or review terminal interfaces\u2014full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying \u201cTUI.\u201d Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.",
+  "skill_description_sha256": "65f36b1b15c50c367bb96a8f879048807bf18ca16c54fea96f4301a8fdf17960",
+  "skill_sha256": "47f010b6bce41aa544f02f6f00eddba328a159949fd90b1602eec0de400d7ed8",
+  "repetitions": 3,
+  "git": {
+    "commit": "5773b620ba9e80e6e338982ba034d0a73d239ef2",
+    "branch": "agent/issue-21-trigger-calibration",
+    "dirty": false
+  },
+  "host_metadata": {
+    "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+    "python": "3.14.4"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.7.0 lifecycle regressions. The rubrics distinguish final shutdown from temporary terminal handoff using primary behavior from Bubble Tea v2.0.8, Ratatui 0.30.2, Textual v8.2.8, and Ink v7.1.1. Prompts and assertions are specifications, not evidence of model lift; comparative claims require a completed schema-v3 run against one immutable source snapshot.",
+  "notes": "Focused v1.7.0 lifecycle regressions. The rubrics distinguish final shutdown from temporary terminal handoff using primary behavior from Bubble Tea v2.0.8, Ratatui 0.30.2, Textual v8.2.8, and Ink v7.1.1. Prompts and assertions are specifications, not evidence of model lift; comparative claims require a completed run in the current schema against one immutable source snapshot.",
   "evals": [
     {
       "id": "bubble-tea-editor-handoff",

@@ -35,6 +35,13 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - `scripts/reference-inventory.json` adds source links for the kitty keyboard protocol, the synchronized-output and color-palette-update specs, ConEmu's and Windows Terminal's OSC 9;4 docs, and the tmux 3.8 manual.
 
 ### Evaluation
+- **Honest eval provenance:**
+  - `build-evals.json`'s 27/27 vs 24/27 figure is labelled an unverified historical observation, since no bundle was committed.
+  - `trigger-evals.json` is labelled unverified and notes that its harness measured a slash command, not the plugin skill.
+  - `tier3-content-evals.json` no longer cites briefs that aren't in the repository.
+  - `v170-lifecycle-evals.json` asks for a run in the current schema.
+  - `GRADER-CORRECTION.md` files record that the v1.7.0 lifecycle bundles were graded by a Codex agent despite `grader.kind: "human"`; the hashed artifacts are unchanged.
+  - The pre-harness v1.6.0 report is documented as informal notes.
 - `evals/v180-l10n-environments-evals.json` covers translation growth at 60 columns, a tmux prefix and Esc-delay collision, ambiguous-width borders under a Japanese locale, and locale-independent machine output.
 - `evals/v180-terminal-modes-evals.json` covers multi-line paste without bracketed paste, tearing and synchronized output, Shift+Enter and the kitty keyboard protocol, background-color queries over SSH and theme notifications, and restoring the cursor shape and window title.
 - `evals/v180-accessibility-evals.json` covers a Huh form made usable with a screen reader, what `--no-tui` must output, `textual serve` as an accessibility claim, and Ink's screen-reader live region.

@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our TUI uses Ctrl+B to toggle the sidebar and Esc to leave insert mode. Users inside tmux say the sidebar shortcut does nothing and Esc feels laggy. What's happening and how should we design around it?

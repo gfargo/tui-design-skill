@@ -190,7 +190,13 @@ for path in sorted((root / "evals").glob("*.json")):
         if len(query_ids) != len(set(query_ids)):
             raise SystemExit(f"trigger eval ids must be unique: {path.relative_to(root)}")
         for case in data["queries"]:
-            if not isinstance(case.get("query"), str) or not isinstance(case.get("should_trigger"), bool):
+            expected = case.get("should_trigger")
+            # Ambiguous prompts have no expected outcome; every other prompt needs one.
+            if case.get("category") == "ambiguous":
+                expected_ok = expected is None
+            else:
+                expected_ok = isinstance(expected, bool)
+            if not isinstance(case.get("query"), str) or not expected_ok:
                 raise SystemExit(f"invalid trigger eval: {path.relative_to(root)} id={case.get('id')!r}")
         continue
     if not isinstance(data.get("evals"), list):

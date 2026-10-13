@@ -216,7 +216,9 @@ python3 scripts/eval_harness.py validate \
 
 Use `--prepare-only` when the model interface cannot be called as a command; it still generates the exact baseline or with-skill prompts and records the intended provider and model. The validator continues to accept schema-v2 artifacts. Evidence is portable: schema-v5 runs record the absolute skill path their with-skill prompts embedded as `skill_invocation_path`, so any checkout can reconstruct and verify them, and older with-skill bundles take that path through `--recorded-skill-path`. When eval or skill inputs have changed since a run, point `--source-root` at a clean checkout of the commit recorded in its `run.json`; `./scripts/validate-evidence.sh` does that for every committed bundle and runs in CI. See [`evals/README.md`](evals/README.md), `python3 scripts/eval_harness.py --help`, and the integration tests for the complete artifact contract.
 
-The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded. Trigger-rate measurements remain separate; `evals/trigger-evals.json` labels the previous measurement historical until the revised description is rerun through a host's implicit-invocation path.
+The reviewed v1.6.1 evidence under `evals/results/v1.6.1-forward-test/` is a complete single-snapshot run of all seven correction cases: 25/25 assertions with exact provider, model, runner, source commit, skill hash, raw outputs, grades, and summary recorded.
+
+Trigger rates are measured separately, through each host's install path and with prompts that never name the skill. The v1.8.0 calibration in [`evals/results/v1.8.0-trigger-calibration/`](evals/results/v1.8.0-trigger-calibration/report.md) ran 42 prompts three times on each host. Positive prompts triggered 57/57 on both Claude Code (`claude-opus-5-5`) and Codex (`gpt-6.1-sol`, low effort). Adjacent prompts triggered 0/45 on Claude and 1/45 on Codex, and unrelated prompts 0/9 on both, so the description is unchanged. `evals/trigger-evals.json` keeps the earlier, unverified measurement for reference.
 
 `evals/results/v1.6.0-forward-test/` predates the harness (schema 1, recorded from a dirty working tree, no `run.json`); it holds informal design notes, is not validated, and is not evidence of model behavior.
 
@@ -266,7 +268,7 @@ tui-design-skill/
 │       └── reference-freshness.yml   # weekly + on-demand framework-reference audit
 ├── scripts/
 │   ├── eval_harness.py           # records, scores, and validates model eval runs
-│   ├── runners/                  # isolated Claude Code and Codex runners and the blind grader
+│   ├── runners/                  # isolated Claude Code and Codex runners, the blind grader, and the trigger probe
 │   ├── check-reference-freshness.py # audits pinned framework versions and source links
 │   ├── reference-inventory.json  # explicit list of version-sensitive references to audit
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
@@ -319,6 +321,7 @@ tui-design-skill/
 │   ├── v180-accessibility-evals.json
 │   ├── v180-l10n-environments-evals.json
 │   ├── v180-terminal-modes-evals.json
+│   ├── v180-trigger-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

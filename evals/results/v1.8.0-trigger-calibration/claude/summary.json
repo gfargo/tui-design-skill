@@ -1,0 +1,363 @@
+{
+  "completed_at": "2026-10-13T10:43:09Z",
+  "per_category": {
+    "positive": {
+      "triggered": 57,
+      "trials": 57,
+      "invalid": 0
+    },
+    "adjacent": {
+      "triggered": 0,
+      "trials": 45,
+      "invalid": 0
+    },
+    "ambiguous": {
+      "triggered": 6,
+      "trials": 15,
+      "invalid": 0
+    },
+    "negative": {
+      "triggered": 0,
+      "trials": 9,
+      "invalid": 0
+    }
+  },
+  "per_query": [
+    {
+      "id": "P01",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P02",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P03",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P04",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P05",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P06",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P07",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P08",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P09",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P10",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P11",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P12",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P13",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P14",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P15",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P16",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P17",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P18",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "P19",
+      "category": "positive",
+      "should_trigger": true,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N01",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N02",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N03",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N04",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N05",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N06",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N07",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N08",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N09",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N10",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N11",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N12",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N13",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N14",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "N15",
+      "category": "adjacent",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "A01",
+      "category": "ambiguous",
+      "should_trigger": null,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "A02",
+      "category": "ambiguous",
+      "should_trigger": null,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "A03",
+      "category": "ambiguous",
+      "should_trigger": null,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "A04",
+      "category": "ambiguous",
+      "should_trigger": null,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "A05",
+      "category": "ambiguous",
+      "should_trigger": null,
+      "triggered": 3,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "C01",
+      "category": "negative",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "C02",
+      "category": "negative",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    },
+    {
+      "id": "C03",
+      "category": "negative",
+      "should_trigger": false,
+      "triggered": 0,
+      "trials": 3,
+      "invalid": 0
+    }
+  ]
+}

@@ -7,6 +7,14 @@ All notable changes to the `tui-design` skill are documented here. The format is
 ### Added
 - **Accessibility section:** `visual-patterns.md` → *Accessibility* gathers what was scattered across five files. It explains what screen readers hear in a terminal (every repaint is read as new text) and gives rules that work: append instead of repaint, status in words, flattened tables, numbered choices, labelled lines, errors written to be spoken, and a cursor kept on the focus. It also defines the plain-mode contract, compares framework support, and covers reduced motion. `SKILL.md`'s routing row and `--no-tui` bullet point to it; the ecosystem references keep their API specifics and link to it.
 - **Terminal modes and protocols:** `interaction-patterns.md` gains a section on the modes a full-screen app turns on and must turn off: bracketed paste, the kitty keyboard protocol and `modifyOtherKeys`, mouse and focus reporting, synchronized output, cursor shape, window title, OSC 9;4 progress, OSC 133 prompt marks, grapheme clusters, color-depth detection, OSC 11 background queries, mode 2031 theme notifications, and tmux and SSH behavior. A table shows which modes Bubble Tea, crossterm/Ratatui, Textual, and Ink enable by default, and each item gives a safe default, a fallback, and what to restore on exit.
+- **Localization:** `visual-patterns.md` → *Localization*:
+  - Translation growth: short labels grow most, per IBM's and Microsoft's figures.
+  - Pseudo-locale testing at the 60-column floor.
+  - Right-to-left text: which terminals reorder it, and what a full-screen app should do.
+  - Ambiguous-width characters, which include nearly all box drawing and common markers.
+  - Locale-aware human output with locale-independent machine output.
+  - POSIX locale precedence.
+- **Terminal environments:** *Terminal modes and protocols* → *Multiplexers and SSH* is now a matrix of what breaks, how to detect it, and the fallback. It covers tmux (prefix, `escape-time`, 3.8's default mouse bindings), GNU screen (prefix, truecolor off by default, dropped OSC, flow control), Zellij (captured Ctrl and Alt keys, Unlock-First), SSH, Windows (no job-control signals, VT history, `WT_SESSION`), and CI.
 
 ### Changed
 - **One owner per topic:** filter behavior, footer-hint content, cursor-shape mode indication, secrets handling, and startup budgets for summoned tools each have one full treatment, and the other copies are one-line pointers. The framework APIs for inline versus alternate-screen mode and for dynamic Huh and Textual forms moved from the pattern references into the ecosystem references. References shrink from 4,287 to 4,271 lines.
@@ -27,6 +35,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
 - `scripts/reference-inventory.json` adds source links for the kitty keyboard protocol, the synchronized-output and color-palette-update specs, ConEmu's and Windows Terminal's OSC 9;4 docs, and the tmux 3.8 manual.
 
 ### Evaluation
+- `evals/v180-l10n-environments-evals.json` covers translation growth at 60 columns, a tmux prefix and Esc-delay collision, ambiguous-width borders under a Japanese locale, and locale-independent machine output.
 - `evals/v180-terminal-modes-evals.json` covers multi-line paste without bracketed paste, tearing and synchronized output, Shift+Enter and the kitty keyboard protocol, background-color queries over SSH and theme notifications, and restoring the cursor shape and window title.
 - `evals/v180-accessibility-evals.json` covers a Huh form made usable with a screen reader, what `--no-tui` must output, `textual serve` as an accessibility claim, and Ink's screen-reader live region.
 

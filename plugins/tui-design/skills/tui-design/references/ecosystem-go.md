@@ -530,6 +530,7 @@ Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows (Terminal, co
 - Older `cmd.exe` doesn't support all ANSI; target Windows Terminal (Windows 10+).
 - `Ctrl+Z` (SIGTSTP) doesn't exist on Windows; that's fine, just don't rely on suspend behavior universally.
 - Mouse events differ slightly; libraries abstract this but test on Windows if it's a target.
+- Environment differences (signals, `WT_SESSION`, Unicode output, multiplexer keys): `interaction-patterns.md` → *Terminal environments*.
 
 For SSH-served TUIs, **Wish** is the right answer — it handles per-session terminal capabilities (the client's truecolor support, not the server's) and gives you middleware for auth, logging, rate limiting.
 

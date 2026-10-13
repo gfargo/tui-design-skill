@@ -35,6 +35,10 @@ if not commit:
 print(commit, manifest["condition"], manifest["schema_version"])
 PY
 )
+  if ! git -C "$repo_root" cat-file -e "$commit^{commit}" 2>/dev/null; then
+    echo "error: $manifest records commit $commit, which is not in this repository; fetch the full history (git fetch --unshallow)" >&2
+    exit 1
+  fi
   snapshot="$snapshots/$commit"
   if [ ! -d "$snapshot" ]; then
     mkdir -p "$snapshot"

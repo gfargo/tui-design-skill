@@ -11,45 +11,57 @@ skill_dir="$repo_root/plugins/tui-design/skills/tui-design"
 skill_name="tui-design"
 out_dir="${1:-$repo_root/dist}"
 
-[ -f "$skill_dir/SKILL.md" ] || { echo "error: SKILL.md not found at $skill_dir" >&2; exit 1; }
-[ -f "$skill_dir/agents/openai.yaml" ] || { echo "error: agents/openai.yaml not found at $skill_dir" >&2; exit 1; }
-[ -d "$skill_dir/references" ] || { echo "error: references not found at $skill_dir/references" >&2; exit 1; }
 
-expected_files=(
-  "SKILL.md"
-  "agents/openai.yaml"
-  "references/cli-basics.md"
-  "references/ecosystem-go.md"
-  "references/ecosystem-python.md"
-  "references/ecosystem-rust.md"
-  "references/ecosystem-typescript.md"
-  "references/exemplar-apps.md"
-  "references/interaction-patterns.md"
-  "references/visual-patterns.md"
-)
+files_list="$repo_root/scripts/skill-files.txt"
+[ -f "$files_list" ] || { echo "error: file allowlist not found at $files_list" >&2; exit 1; }
+
+# One allowlist, shared with validate-release.sh and tests/test_packaging.py.
+# A while-read loop keeps this working on macOS's bash 3.2 (no mapfile).
+expected_files=()
+while IFS= read -r line || [ -n "$line" ]; do
+  case "$line" in
+    ''|'#'*) continue ;;
+  esac
+  expected_files+=("$line")
+done < "$files_list"
+[ "${#expected_files[@]}" -gt 0 ] || { echo "error: $files_list lists no files" >&2; exit 1; }
+
+is_expected_file() {
+  local candidate
+  for candidate in "${expected_files[@]}"; do
+    [ "$candidate" = "$1" ] && return 0
+  done
+  return 1
+}
+
+is_expected_dir() {
+  local candidate
+  for candidate in "${expected_files[@]}"; do
+    case "$candidate" in
+      "$1"/*) return 0 ;;
+    esac
+  done
+  return 1
+}
 
 # The installable artifact has an exact allowlist. Reject symlinks, caches,
 # generated files, and new resources until the release contract is updated.
 while IFS= read -r -d '' source_entry; do
   relative="${source_entry#"$skill_dir"/}"
-  case "$relative" in
-    agents|references)
-      if [ ! -d "$source_entry" ] || [ -L "$source_entry" ]; then
-        echo "error: expected a real directory in skill source: $relative" >&2
-        exit 1
-      fi
-      ;;
-    SKILL.md|agents/openai.yaml|references/cli-basics.md|references/ecosystem-go.md|references/ecosystem-python.md|references/ecosystem-rust.md|references/ecosystem-typescript.md|references/exemplar-apps.md|references/interaction-patterns.md|references/visual-patterns.md)
-      if [ ! -f "$source_entry" ] || [ -L "$source_entry" ]; then
-        echo "error: expected a regular, non-symlink skill file: $relative" >&2
-        exit 1
-      fi
-      ;;
-    *)
-      echo "error: unexpected entry in skill source: $relative" >&2
+  if is_expected_dir "$relative"; then
+    if [ ! -d "$source_entry" ] || [ -L "$source_entry" ]; then
+      echo "error: expected a real directory in skill source: $relative" >&2
       exit 1
-      ;;
-  esac
+    fi
+  elif is_expected_file "$relative"; then
+    if [ ! -f "$source_entry" ] || [ -L "$source_entry" ]; then
+      echo "error: expected a regular, non-symlink skill file: $relative" >&2
+      exit 1
+    fi
+  else
+    echo "error: unexpected entry in skill source: $relative" >&2
+    exit 1
+  fi
 done < <(find "$skill_dir" -mindepth 1 -print0)
 
 # Resolve out_dir to an absolute path *before* the cd below, so a relative
@@ -67,8 +79,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$stage_root/$skill_name/agents" "$stage_root/$skill_name/references"
 for relative in "${expected_files[@]}"; do
+  [ -f "$skill_dir/$relative" ] || { echo "error: listed skill file is missing: $relative" >&2; exit 1; }
+  mkdir -p "$(dirname "$stage_root/$skill_name/$relative")"
   cp "$skill_dir/$relative" "$stage_root/$skill_name/$relative"
 done
 find "$stage_root/$skill_name" -type d -exec chmod 755 {} +

@@ -705,6 +705,36 @@ class EvalHarnessTest(unittest.TestCase):
         manifest_path.write_text(json.dumps(manifest))
         self.invoke("validate", "--run", str(manifest_path), expected=2)
 
+    def test_v5_artifacts_conform_to_published_schemas(self) -> None:
+        try:
+            import jsonschema
+        except ImportError:
+            self.skipTest("jsonschema is not installed (CI installs it)")
+        schema_dir = REPO_ROOT / "evals/schema/v5"
+        manifest_path = self.run_fixture("schema-conformance", "print('ok')")
+        prepared = self.invoke(
+            "run", "--eval-set", str(self.eval_set), "--condition", "baseline", "--provider", "fixture",
+            "--model", "fixture-model-v1", "--output-dir", str(self.work / "runs"), "--run-id", "prepared-only",
+            "--prepare-only",
+        )
+        manifest = json.loads(manifest_path.read_text())
+        _, digest = self.write_grading_prompt(manifest_path.parent)
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(self.base_v4_grades(manifest, "grading-prompt.md", digest, version=5)))
+        summary_path = manifest_path.parent / "summary.json"
+        self.invoke("score", "--run", str(manifest_path), "--grades", str(grades_path), "--output", str(summary_path))
+        artifacts = {
+            "completed run": (manifest_path, "run.schema.json"),
+            "prepared run": (Path(prepared.stdout.strip()), "run.schema.json"),
+            "grades": (grades_path, "grades.schema.json"),
+            "summary": (summary_path, "summary.schema.json"),
+        }
+        for label, (path, schema_name) in artifacts.items():
+            with self.subTest(artifact=label):
+                schema = json.loads((schema_dir / schema_name).read_text())
+                jsonschema.Draft202012Validator.check_schema(schema)
+                jsonschema.Draft202012Validator(schema).validate(json.loads(path.read_text()))
+
     def test_legacy_with_skill_bundle_validates_from_another_checkout_with_recorded_path(self) -> None:
         elsewhere = self.make_checkout("elsewhere")
         other_harness = elsewhere / "scripts/eval_harness.py"

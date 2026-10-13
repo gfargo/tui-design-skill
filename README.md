@@ -157,7 +157,7 @@ cd tui-design-skill
 ./scripts/package-skill.sh        # writes dist/tui-design.skill
 ```
 
-The output is `dist/tui-design.skill`—a deterministic zip containing the exact ten-file `tui-design/` allowlist (`SKILL.md`, `agents/openai.yaml`, and eight references), ready to install in a compatible agent. Packaging rejects symlinks, generated files, caches, and undeclared resources. It requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, sample markers, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer.
+The output is `dist/tui-design.skill`—a deterministic zip containing the exact `tui-design/` allowlist in `scripts/skill-files.txt` (`SKILL.md`, `agents/openai.yaml`, and eight references), which the packager, the validator, and the packaging tests all read, ready to install in a compatible agent. Packaging rejects symlinks, generated files, caches, and undeclared resources. It requires Bash, `zip`, `unzip`, and the common GNU/BSD forms of `find`, `cp`, `chmod`, `touch`, and `mktemp`. Run `./scripts/validate-release.sh` to validate manifests, Codex metadata, the core-size and duplication budgets, Markdown structure, sample markers, eval JSON and harness tests, archive integrity, and repeatable output; that validator also requires Python 3.9 or newer, and CI runs it on Python 3.9 and 3.14.
 
 ### Code-sample checks
 
@@ -254,6 +254,7 @@ tui-design-skill/
 │   ├── check-reference-freshness.py # audits pinned framework versions and source links
 │   ├── reference-inventory.json  # explicit list of version-sensitive references to audit
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
+│   ├── skill-files.txt           # the packaged file allowlist (one source of truth)
 │   ├── validate-release.sh       # checks metadata, content, eval JSON, and package output
 │   ├── check-samples.py          # extracts marked code samples into their harnesses
 │   ├── check-samples.sh          # builds and tests the rendered sample harnesses
@@ -263,7 +264,9 @@ tui-design-skill/
 │   ├── test_reference_freshness.py # freshness-audit unit/CLI tests (offline fixture server)
 │   ├── test_check_samples.py     # sample-extraction unit tests
 │   ├── samples/                  # Go, Rust, Python, and TypeScript sample harnesses
-│   └── test_packaging.py         # exact package-contract regression tests
+│   ├── test_packaging.py         # exact package-contract regression tests
+│   ├── test_validate_release.py  # release-validator negative tests
+│   └── test_validate_evidence.py # evidence-revalidation fixture tests
 ├── plugins/
 │   └── tui-design/
 │       ├── .claude-plugin/

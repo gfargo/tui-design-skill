@@ -7,7 +7,7 @@ This study measures how the v1.8.0 skill changes the Codex CLI's answers with `g
 - **Host and model:** OpenAI Codex CLI 0.160.0 (`codex exec`), model `gpt-6.1-sol` with `model_reasoning_effort=low`. The CLI exposes neither seed nor temperature, and the bundles record its system prompt as unavailable.
 - **Runner:** [`scripts/runners/codex_runner.py`](../../../scripts/runners/codex_runner.py). Every trial ran in an empty temporary directory in a read-only, ephemeral sandbox, with the user's `config.toml` ignored and web search disabled. Every user-installed skill, including the installed copy of tui-design, was disabled through `skills.config`; Codex's bundled system skills stayed available in both conditions. Baseline prompts were unchanged. With-skill prompts differed only by the harness's instruction to use the skill at its recorded path. Each trial's stderr keeps Codex's transcript, including every skill file a with-skill trial read.
 - **Skill snapshot:** `plugins/tui-design/skills/tui-design`, tree SHA-256 `6f706f2144bf137cf0ace17b44d459ee7431c6fdfef0869c2d35b1d195a758f7`. The skill and every eval set are byte-identical to the `v1.8.0` tag.
-- **Source commits:** the v1.7.3 baseline ran at `8988b14` and every other bundle at `d39172e`, except as noted for the localization set below. The commits differ only by the grader script and its grading prompt. Every manifest records a clean tree.
+- **Source commits:** the v1.7.3 baseline ran at `8988b14`, the localization with-skill condition at `c73b708` (see below), and every other bundle at `d39172e`. `8988b14` and `d39172e` differ only by the grader script and its grading prompt; `c73b708` adds this study's documentation and evidence on top, with the skill and the localization eval set unchanged, as the matching hashes in its manifest show. Every manifest records a clean tree.
 - **Design:** three repetitions per case and condition, with a 1,200-second trial timeout. No trial in a committed bundle failed or timed out.
 - **Grading:** blind, by `claude-opus-5-5` through [`scripts/runners/claude_grader.py`](../../../scripts/runners/claude_grader.py) with protocol `v180-direct-rubric-v1`, the same grader as the Claude study. The grader saw the question, the numbered assertions, and the answer, never the condition, host, or model, and it wrote a one-sentence note for every assertion. Every committed schema-v5 bundle validates with `--require-completed`.
 
@@ -19,7 +19,7 @@ The v1.7 lifecycle set was not rerun here. The earlier Codex lifecycle study in 
 | `evals/v171-correction-evals.json` | `eba9db07f549…` | `d39172e` / `d39172e` |
 | `evals/v180-terminal-modes-evals.json` | `153026b43088…` | `d39172e` / `d39172e` |
 | `evals/v180-accessibility-evals.json` | `c2cd8c5df456…` | `d39172e` / `d39172e` |
-| `evals/v180-l10n-environments-evals.json` | `e1a6ec31f5d9…` | `d39172e` / pending |
+| `evals/v180-l10n-environments-evals.json` | `e1a6ec31f5d9…` | `d39172e` / `c73b708` |
 
 ## Results
 
@@ -29,7 +29,7 @@ The v1.7 lifecycle set was not rerun here. The earlier Codex lifecycle study in 
 | `evals/v171-correction-evals.json` | 8 | 65/96 (67.7%) | 87/96 (90.6%) | +22.9 pp |
 | `evals/v180-terminal-modes-evals.json` | 5 | 37/57 (64.9%) | 55/57 (96.5%) | +31.6 pp |
 | `evals/v180-accessibility-evals.json` | 4 | 28/57 (49.1%) | 49/57 (86.0%) | +36.8 pp |
-| `evals/v180-l10n-environments-evals.json` | 4 | 27/45 (60.0%) | pending | pending |
+| `evals/v180-l10n-environments-evals.json` | 4 | 27/45 (60.0%) | 42/45 (93.3%) | +33.3 pp |
 
 Each set is reported on its own because the sets differ in size and difficulty.
 
@@ -93,7 +93,17 @@ This set had the lowest baseline. Every baseline answer to the `textual serve` q
 
 ### Localization and terminal environments (v1.8.0)
 
-The baseline scored 27/45 (60.0%): `translation-growth-60-columns` 9/15, `tmux-prefix-collision` 7/12, `ambiguous-width-borders` 6/9, and `locale-machine-output` 5/9. The first with-skill attempt stopped after 8 of 12 trials when the Codex account reached its usage limit. That partial attempt is not used. The condition is being rerun in full after the limit resets, and this section will report it.
+| Case | Baseline | With skill | Difference |
+|---|---:|---:|---:|
+| `translation-growth-60-columns` | 9/15 (60.0%) | 15/15 (100.0%) | +40.0 pp |
+| `tmux-prefix-collision` | 7/12 (58.3%) | 9/12 (75.0%) | +16.7 pp |
+| `ambiguous-width-borders` | 6/9 (66.7%) | 9/9 (100.0%) | +33.3 pp |
+| `locale-machine-output` | 5/9 (55.6%) | 9/9 (100.0%) | +44.4 pp |
+| **Aggregate** | **27/45 (60.0%)** | **42/45 (93.3%)** | **+33.3 pp** |
+
+No baseline answer warned that short strings such as column headers grow the most in translation, sized columns from the translated text, recommended testing with the terminal's ambiguous-width setting, or suggested detecting tmux to adjust hints. Two of three baseline answers didn't format human output with the user's locale. With the skill, three of four cases scored full marks. The remaining miss repeats in all three repetitions: no answer suggested detecting tmux through `$TMUX` to adjust hints or documentation.
+
+The first with-skill attempt stopped after 8 of 12 trials when the Codex account reached its usage limit. That partial attempt is not used: the whole condition was rerun after the limit reset, from a clean tree at `c73b708`.
 
 ## Repetition variance
 
@@ -103,12 +113,13 @@ The baseline scored 27/45 (60.0%): `translation-growth-60-columns` 9/15, `tmux-p
 | `v171-correction` | 71.9 / 65.6 / 65.6 | 2.95 | 93.8 / 90.6 / 87.5 | 2.55 | +21.9 to +25.0 |
 | `terminal-modes` | 57.9 / 68.4 / 68.4 | 4.96 | 100.0 / 94.7 / 94.7 | 2.48 | +26.3 to +42.1 |
 | `accessibility` | 42.1 / 52.6 / 52.6 | 4.96 | 78.9 / 84.2 / 94.7 | 6.56 | +31.6 to +42.1 |
+| `l10n-environments` | 53.3 / 66.7 / 60.0 | 5.44 | 93.3 / 93.3 / 93.3 | 0.00 | +26.7 to +40.0 |
 
 SD is the population standard deviation of the per-repetition pass rates. Every paired repetition in every set favored the with-skill condition.
 
 ## What the numbers support
 
-Under this host, model, reasoning effort, runner, prompt set, and three-repetition protocol, explicit use of the skill raised the assertion pass rate on every completed set, from 49.1–72.1% to 86.0–96.5%. The gain comes from corrected premises (btop's refresh interval, lazygit's redo key), facts the baseline didn't volunteer (raw mode and flow control, Bubble Tea's missing screen-reader support), and terminal cleanup rules that no framework enforces. At low reasoning effort, the with-skill answers still skip some details that the skill states and the transcript shows were read.
+Under this host, model, reasoning effort, runner, prompt set, and three-repetition protocol, explicit use of the skill raised the assertion pass rate on every set, from 49.1–72.1% to 86.0–96.5%. The gain comes from corrected premises (btop's refresh interval, lazygit's redo key), facts the baseline didn't volunteer (raw mode and flow control, Bubble Tea's missing screen-reader support), and terminal cleanup rules that no framework enforces. At low reasoning effort, the with-skill answers still skip some details that the skill states and the transcript shows were read.
 
 These results don't establish a population-level effect and don't transfer to other models, reasoning efforts, or hosts. They also say nothing about whether the skill activates on its own: every with-skill prompt named the skill explicitly. [#21](https://github.com/gfargo/tui-design-skill/issues/21) tracks implicit triggering.
 
@@ -126,4 +137,4 @@ Each directory holds the run manifest, prompts, responses, stderr with the Codex
 - [`v180-v171-correction-codex-baseline-r3/`](v180-v171-correction-codex-baseline-r3/) and [`v180-v171-correction-codex-with-skill-r3/`](v180-v171-correction-codex-with-skill-r3/)
 - [`v180-terminal-modes-codex-baseline-r3/`](v180-terminal-modes-codex-baseline-r3/) and [`v180-terminal-modes-codex-with-skill-r3/`](v180-terminal-modes-codex-with-skill-r3/)
 - [`v180-accessibility-codex-baseline-r3/`](v180-accessibility-codex-baseline-r3/) and [`v180-accessibility-codex-with-skill-r3/`](v180-accessibility-codex-with-skill-r3/)
-- [`v180-l10n-environments-codex-baseline-r3/`](v180-l10n-environments-codex-baseline-r3/); the with-skill bundle follows the rerun.
+- [`v180-l10n-environments-codex-baseline-r3/`](v180-l10n-environments-codex-baseline-r3/) and [`v180-l10n-environments-codex-with-skill-r3/`](v180-l10n-environments-codex-with-skill-r3/)

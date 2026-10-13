@@ -233,7 +233,7 @@ The v1.8.0 evidence round ran the v1.7.1 and v1.7.3 correction sets and the thre
 | v1.7 lifecycle | 74.7% → 100% | not rerun |
 | v1.8.0 terminal modes | 78.9% → 100% | 64.9% → 96.5% |
 | v1.8.0 accessibility | 73.7% → 96.5% | 49.1% → 86.0% |
-| v1.8.0 localization | 93.3% → 100% | 60.0% → pending rerun |
+| v1.8.0 localization | 93.3% → 100% | 60.0% → 93.3% |
 
 On both hosts, every paired repetition favored the with-skill condition. The reports in [`evals/results/v1.8.0-claude-comparison/`](evals/results/v1.8.0-claude-comparison/comparison.md) and [`evals/results/v1.8.0-codex-comparison/`](evals/results/v1.8.0-codex-comparison/comparison.md) give case-level results, variance, and limitations: Claude graded its own family's answers, most with-skill scores sit near the ceiling, and one rubric (`lazygit-config-format`) conflicted with its prompt and has since been corrected. Every with-skill prompt named the skill, so these numbers measure what the skill adds once loaded, not whether it triggers on its own. Eval sets without a recorded run are labelled rubric-only in their `notes`.
 

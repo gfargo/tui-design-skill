@@ -1,0 +1,315 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-l10n-environments-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "translation-growth-60-columns-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It warns that German and Finnish labels grow substantially, and it stress-tests short headers and hints at 2\u20133\u00d7 English length, implying they grow most."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It replaces English-based width constants with a width budget that measures rendered strings via lipgloss.Width()."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a marked pseudo-locale with about 50% expansion before real strings arrive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "At 60 columns it keeps the title and status, moves other fields to a detail view, truncates headers, and sends secondary footer hints to ? help."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It measures with lipgloss.Width() rather than byte or rune count, cites Japanese cell measurement, and notes ambiguous-width characters."
+        }
+      ]
+    },
+    {
+      "trial_id": "translation-growth-60-columns-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It warns that German and Finnish labels expand substantially, and it calls for stressing very short labels at 2\u20133\u00d7 English length versus about 50% for general strings, which implies short strings grow the most."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It replaces English width constants with cell budgets recomputed on WindowSizeMsg and measures text with lipgloss.Width(), with minimum useful widths per column."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Point 6 recommends a pseudo-locale now that expands strings by about 50% and wraps them in markers to expose hardcoded text and clipping."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "At 60 columns it keeps the title and status, moves the other two fields to a detail view, truncates cells and headers, and drops lower-priority footer hints while keeping `?` help."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It measures in terminal cells with lipgloss.Width() and says bytes and rune counts cannot measure Japanese, combining marks, or emoji correctly."
+        }
+      ]
+    },
+    {
+      "trial_id": "translation-growth-60-columns-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It notes that German and Finnish labels run long and calls for harsher pseudo-locale expansion on short headers and hints than the roughly 50% general rate, which implies short strings grow proportionally more."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It replaces fixed English column widths with a budget computed from rendered cell widths via lipgloss.Width(), after subtracting padding, separators and borders."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a marked pseudo-locale with about 50% expansion, plus more for short strings, before translations arrive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "At 60 columns it shows one primary list with title and status, moves secondary fields behind Enter, truncates labels with full versions in help, drops low-priority hints whole, and golden-tests 60-column frames."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to measure terminal cells rather than bytes or runes and notes that Japanese characters commonly take two cells."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Ctrl+B is tmux's default prefix, that tmux consumes it, and that the sidebar handler never sees it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that tmux waits to tell a lone Esc apart from escape sequences, gives the 500 ms default before 3.5, and suggests documenting `set -s escape-time 10`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends `b` in normal mode, a printable key that avoids both Ctrl+B and Ctrl+A, and keeps Ctrl+B only as an optional alias."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer only suggests manual diagnosis with `tmux -V`; it never proposes detecting tmux at runtime (e.g. via $TMUX) to adjust hints or documentation."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States Ctrl+B is tmux's default prefix and tmux consumes it so the TUI never receives the first press."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explains tmux escape-time waits on a lone Esc (500 ms before 3.5) and offers `set -s escape-time 10` for users' tmux.conf."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends `Space b` plus a command-palette entry and warns that Ctrl+A collides with GNU Screen."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Never mentions detecting tmux via $TMUX or adjusting hints/docs based on running inside tmux."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states that Ctrl+B is tmux's default prefix and that tmux consumes it, so the sidebar handler receives nothing."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that tmux waits on escape-time, which defaulted to 500 ms before 3.5, and suggests documenting `set -s escape-time 10`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends `b` in normal mode plus a command palette entry, and warns that Ctrl+A collides with screen and common tmux rebinds."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never suggests detecting tmux via $TMUX or any other runtime check to adjust hints or documentation."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says rounded corners, box-drawing characters, and bullets like \u2022 are East Asian Ambiguous and can occupy one or two cells depending on the terminal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that go-runewidth treats ambiguous characters as wide under ja/ko/zh locales, which may disagree with the terminal's ambiguous-width setting."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends reproducing with the terminal's ambiguous-width setting toggled, offering an --ascii border/bullet fallback, and using narrow-class markers like \u25b8."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names East Asian Ambiguous width, lists the rounded corners, box-drawing characters, and \u2022 as members of that class, and says terminals can draw them two cells wide."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says go-runewidth can pick wide behavior under ja/ko/zh locales while the terminal renders narrowly, and that the reverse mismatch also happens."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends testing with both ambiguous-width settings and offering an --ascii fallback with +-| borders and * or > markers."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says rounded corners, most box-drawing characters, and bullets like \u2022 and \u25cf are East Asian Ambiguous, and that some terminals render them two cells wide."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that go-runewidth can default to wide ambiguous characters under ja/ko/zh locales, while the terminal's own setting is independent of the locale, so the two can disagree."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends toggling the terminal's 'ambiguous characters are double-width' setting during reproduction, an ASCII fallback (+, -, |, *), and non-ambiguous markers such as \u25b8."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the human table should honor the numeric locale and shows `1,234.5 MB` in US English versus `1.234,5 MB` in German."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says JSON stays locale-independent, with no grouping separators, `.` as the decimal point, and raw byte counts."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer gives the LC_ALL \u2192 LC_NUMERIC \u2192 LANG precedence, shows the locale changing number output, and says JSON must not change with LANG, backed by tests under several locales."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says human tables honor numeric locale and contrasts English `1,234.5 MB` with German `1.234,5 MB`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer requires `--json` to emit raw values with no grouping or decimal commas, and to test that JSON is identical under C, en_US, and de_DE locales."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer gives the precedence LC_ALL \u2192 LC_NUMERIC \u2192 LANG, shows how it changes number formatting, and says machine output must not depend on it, including under conflicting overrides."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the human table should honor the numeric locale and gives the German example `1.234,5 MB`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says `--json` must use locale-independent values: exact bytes, no grouping separators, and always `.` for decimals."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer names the LC_ALL \u2192 LC_NUMERIC \u2192 LANG precedence, says locale must never affect the machine contract, and calls for testing JSON under several locales."
+        }
+      ]
+    }
+  ]
+}

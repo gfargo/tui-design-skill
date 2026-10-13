@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Design-review evals targeting two real-use weak spots: (1) sense of overall terminal clutter/density, (2) responsive behavior across terminal sizes. Eval 1 = explicit clutter review with a busy mockup. Eval 2 = explicit responsive question. Eval 3 = open-ended review that names NEITHER concern, to test whether the skill surfaces clutter + responsiveness proactively.",
+  "notes": "Design-review evals targeting two real-use weak spots: (1) sense of overall terminal clutter/density, (2) responsive behavior across terminal sizes. Eval 1 = explicit clutter review with a busy mockup. Eval 2 = explicit responsive question. Eval 3 = open-ended review that names NEITHER concern, to test whether the skill surfaces clutter + responsiveness proactively. Status (2026-10-13): rubric-only. No harness run of this set is recorded under evals/results/ and none is scheduled, so treat it as a rubric, not as evidence of model behavior.",
   "evals": [
     {
       "id": 0,

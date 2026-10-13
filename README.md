@@ -224,6 +224,19 @@ The v1.7 lifecycle evidence under `evals/results/v1.7.0-lifecycle-forward-test/`
 
 The repeated comparison under [`evals/results/v1.7.0-lifecycle-comparison/`](evals/results/v1.7.0-lifecycle-comparison/comparison.md) runs the same five cases three times per condition with the exact v1.7 runner, model, reasoning effort, eval set, and skill snapshot. The isolated baseline scored 63/75 (84%) and the explicit with-skill condition scored 69/75 (92%); all three paired repetitions measured the same +8 percentage-point difference. The report preserves case-level outcomes, variance, limitations, and complete schema-v4 evidence bundles.
 
+The v1.8.0 evidence round ran the v1.7.1 and v1.7.3 correction sets and the three v1.8.0 sets on both hosts, plus the v1.7 lifecycle set on Claude. Both hosts used the released v1.8.0 skill, three repetitions per case and condition, the isolated runners in [`scripts/runners/`](scripts/runners/), and the same blind Claude Opus 5.5 grader, which records a note for every assertion. The hosts ran different models at different settings, so read each column on its own and don't add or rank them:
+
+| Eval set | Claude Code, `claude-opus-5-5`: baseline → with skill | Codex CLI, `gpt-6.1-sol` at low effort: baseline → with skill |
+|---|---|---|
+| v1.7.3 corrections | 81.1% → 99.1% | 72.1% → 94.6% |
+| v1.7.1 corrections | 78.1% → 96.9% | 67.7% → 90.6% |
+| v1.7 lifecycle | 74.7% → 100% | not rerun |
+| v1.8.0 terminal modes | 78.9% → 100% | 64.9% → 96.5% |
+| v1.8.0 accessibility | 73.7% → 96.5% | 49.1% → 86.0% |
+| v1.8.0 localization | 93.3% → 100% | 60.0% → pending rerun |
+
+On both hosts, every paired repetition favored the with-skill condition. The reports in [`evals/results/v1.8.0-claude-comparison/`](evals/results/v1.8.0-claude-comparison/comparison.md) and [`evals/results/v1.8.0-codex-comparison/`](evals/results/v1.8.0-codex-comparison/comparison.md) give case-level results, variance, and limitations: Claude graded its own family's answers, most with-skill scores sit near the ceiling, and one rubric (`lazygit-config-format`) conflicts with its prompt. Every with-skill prompt named the skill, so these numbers measure what the skill adds once loaded, not whether it triggers on its own. Eval sets without a recorded run are labelled rubric-only in their `notes`.
+
 ## Reference freshness
 
 The framework references (`plugins/tui-design/skills/tui-design/references/ecosystem-*.md`) carry version-sensitive guidance for Bubble Tea, Ratatui, Textual, and Ink — pinned "current version" claims and tag-pinned source-code citations that can age even though the surrounding design guidance stays correct. `scripts/reference-inventory.json` is the explicit, hand-maintained list of those claims and links; `scripts/check-reference-freshness.py` audits it:
@@ -253,6 +266,7 @@ tui-design-skill/
 │       └── reference-freshness.yml   # weekly + on-demand framework-reference audit
 ├── scripts/
 │   ├── eval_harness.py           # records, scores, and validates model eval runs
+│   ├── runners/                  # isolated Claude Code and Codex runners and the blind grader
 │   ├── check-reference-freshness.py # audits pinned framework versions and source links
 │   ├── reference-inventory.json  # explicit list of version-sensitive references to audit
 │   ├── package-skill.sh          # deterministically builds dist/tui-design.skill
@@ -290,6 +304,7 @@ tui-design-skill/
 ├── evals/                        # versioned prompt/assertion sets and curated results
 │   ├── README.md                 # evidence, privacy, and schema contract
 │   ├── schema/v3/ … schema/v5/   # versioned run, grade, and summary JSON Schemas
+│   ├── grading/                  # versioned grading prompts for model graders
 │   ├── evals.json
 │   ├── build-evals.json
 │   ├── tier2-content-evals.json

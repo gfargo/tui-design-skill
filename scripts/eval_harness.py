@@ -22,7 +22,29 @@ from typing import Any, Optional, Sequence
 
 
 SCHEMA_VERSION = 5
-SUPPORTED_SCHEMA_VERSIONS = {2, 3, 4, 5}
+# Each schema version adds named evidence requirements to the previous one.
+# Published versions are frozen: a new version must add a requirement, never
+# change or remove one (evals/README.md → Schema versioning). Validation code
+# asks requires(version, name) instead of comparing version numbers.
+_V3_REQUIREMENTS = frozenset(
+    {
+        "schema_uri",  # every artifact declares its canonical schema URI
+        "runner_provenance",  # executed runs record runner_executable and runner_version
+        "generation_metadata",  # runs record exposed generation settings
+        "grader_kind",  # grader.kind is human or model
+        "grader_prompt_sha256",  # grader.prompt_sha256 anchors the grading instructions
+        "model_grader_provenance",  # model graders record provider, runner_version, and generation
+    }
+)
+_V4_REQUIREMENTS = _V3_REQUIREMENTS | {"grading_prompt_file"}  # grades link a preserved grading-prompt file
+_V5_REQUIREMENTS = _V4_REQUIREMENTS | {"skill_invocation_path"}  # runs record the embedded skill path
+SCHEMA_REQUIREMENTS = {
+    2: frozenset(),
+    3: _V3_REQUIREMENTS,
+    4: _V4_REQUIREMENTS,
+    5: _V5_REQUIREMENTS,
+}
+SUPPORTED_SCHEMA_VERSIONS = set(SCHEMA_REQUIREMENTS)
 SCHEMA_ROOTS = {
     3: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3",
     4: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4",
@@ -94,6 +116,13 @@ def read_json(path: Path) -> Any:
         raise HarnessError(f"cannot read JSON from {path}: {exc}") from exc
 
 
+def requires(version: int, requirement: str) -> bool:
+    """Return whether artifacts of this schema version must meet a named requirement."""
+    if requirement not in _V5_REQUIREMENTS:
+        raise HarnessError(f"unknown schema requirement: {requirement}")
+    return requirement in SCHEMA_REQUIREMENTS[version]
+
+
 def schema_uri(artifact_type: str, version: int) -> str:
     root = SCHEMA_ROOTS.get(version)
     if root is None:
@@ -107,7 +136,7 @@ def artifact_schema_version(artifact: dict[str, Any], artifact_type: str) -> int
         raise HarnessError(f"{artifact_type} has an unsupported schema version")
     if artifact.get("artifact_type") != artifact_type:
         raise HarnessError(f"artifact is not {artifact_type}")
-    if version >= 3 and artifact.get("schema") != schema_uri(artifact_type, version):
+    if requires(version, "schema_uri") and artifact.get("schema") != schema_uri(artifact_type, version):
         raise HarnessError(f"{artifact_type} does not declare the canonical schema-v{version} URI")
     return version
 
@@ -301,11 +330,11 @@ def skill_invocation_path(
     if condition == "baseline":
         if recorded_skill_path is not None:
             raise HarnessError("--recorded-skill-path does not apply to baseline runs; their prompts embed no skill path")
-        if version >= 5 and manifest.get("skill_invocation_path") is not None:
+        if requires(version, "skill_invocation_path") and manifest.get("skill_invocation_path") is not None:
             raise HarnessError("baseline runs must record skill_invocation_path as null")
         return None
 
-    if version >= 5:
+    if requires(version, "skill_invocation_path"):
         recorded = manifest.get("skill_invocation_path")
         if not isinstance(recorded, str) or not recorded:
             raise HarnessError("schema-v5 with-skill runs must record skill_invocation_path")
@@ -621,23 +650,23 @@ def validate_grades(
     grader = grades.get("grader")
     if not isinstance(grader, dict) or not grader.get("kind") or not grader.get("name"):
         raise HarnessError("grades must record grader.kind and grader.name")
-    if grades_version >= 3 and grader.get("kind") not in {"human", "model"}:
+    if requires(grades_version, "grader_kind") and grader.get("kind") not in {"human", "model"}:
         raise HarnessError("grader.kind must be human or model")
     if not grader.get("prompt_version"):
         raise HarnessError("grades must record grader.prompt_version")
-    if grades_version >= 3:
+    if requires(grades_version, "grader_prompt_sha256"):
         prompt_digest = grader.get("prompt_sha256")
         if not isinstance(prompt_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", prompt_digest):
             raise HarnessError("schema-v3 grades must record grader.prompt_sha256")
     if grader.get("kind") == "model":
         if not grader.get("model"):
             raise HarnessError("model grading must record grader.model")
-        if grades_version >= 3:
+        if requires(grades_version, "model_grader_provenance"):
             for key in ("provider", "runner_version"):
                 if not grader.get(key):
                     raise HarnessError(f"schema-v3 model grading must record grader.{key}")
             validate_generation_metadata(grader.get("generation"), "grader.generation")
-    if grades_version >= 4:
+    if requires(grades_version, "grading_prompt_file"):
         validate_grading_prompt(grades, grader, grades_path)
 
     expected = expected_trial_assertions(
@@ -723,7 +752,7 @@ def command_score(args: argparse.Namespace) -> int:
         "pass_rate": passed / total,
         "by_case": by_case,
     }
-    if version >= 3:
+    if requires(version, "schema_uri"):
         summary["schema"] = schema_uri("tui-design-eval-summary", version)
     output = Path(args.output).resolve() if args.output else manifest_path.parent / "summary.json"
     write_json(output, summary)
@@ -762,14 +791,14 @@ def validate_manifest(
         raise HarnessError("executed runs must record runner_argv_sha256")
     if manifest.get("runner_argv_sha256") and not re.fullmatch(r"[0-9a-f]{64}", manifest["runner_argv_sha256"]):
         raise HarnessError("runner_argv_sha256 must be a lowercase SHA-256 digest")
-    if version >= 3:
-        if manifest.get("status") != "prepared":
-            if not isinstance(manifest.get("runner_executable"), str) or not manifest["runner_executable"].strip():
-                raise HarnessError("executed schema-v3 runs must record runner_executable")
-            if not isinstance(manifest.get("runner_version"), str) or not manifest["runner_version"].strip():
-                raise HarnessError("executed schema-v3 runs must record runner_version")
+    if requires(version, "runner_provenance") and manifest.get("status") != "prepared":
+        if not isinstance(manifest.get("runner_executable"), str) or not manifest["runner_executable"].strip():
+            raise HarnessError("executed schema-v3 runs must record runner_executable")
+        if not isinstance(manifest.get("runner_version"), str) or not manifest["runner_version"].strip():
+            raise HarnessError("executed schema-v3 runs must record runner_version")
+    if requires(version, "generation_metadata"):
         validate_generation_metadata(manifest.get("generation"), "generation")
-    if version >= 5 and "skill_invocation_path" not in manifest:
+    if requires(version, "skill_invocation_path") and "skill_invocation_path" not in manifest:
         raise HarnessError("schema-v5 runs must record skill_invocation_path")
     skill_invocation_path(manifest, source_root=source_root, recorded_skill_path=recorded_skill_path)
 

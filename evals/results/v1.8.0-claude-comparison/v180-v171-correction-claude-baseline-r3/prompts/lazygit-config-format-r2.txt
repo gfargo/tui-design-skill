@@ -1,0 +1,1 @@
+I'm building a lazygit-style multi-pane tool and want to mirror lazygit's configuration conventions. What file format and location does lazygit use, and does k9s use the same format for its plugins?

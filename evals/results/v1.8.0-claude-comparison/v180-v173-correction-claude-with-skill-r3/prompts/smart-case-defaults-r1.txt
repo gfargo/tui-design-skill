@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm adding a filter box to my TUI and want case handling that matches fzf, fd, and ripgrep defaults. What do those tools do by default?

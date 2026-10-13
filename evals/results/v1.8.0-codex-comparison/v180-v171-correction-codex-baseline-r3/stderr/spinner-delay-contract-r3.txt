@@ -1,0 +1,33 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-mygxxlch
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1339d-6d33-7ee3-bcf7-19c5714e42c5
+--------
+user
+For a one-shot CLI that usually finishes in under 50ms but sometimes takes several seconds, should the spinner appear the instant work starts? Which Braille frames should I use?
+
+codex
+No—delay the spinner by about **150–200ms**. Since most runs finish under 50ms, showing it immediately creates a distracting flash. If work is still running after the delay, show it and animate every **80–100ms**.
+
+Use the standard 10-frame Braille sequence:
+
+```text
+⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏
+```
+
+For a one-shot CLI:
+
+- Write the spinner to **stderr**, only when stderr is a TTY.
+- Clear it when work finishes, then print the normal result.
+- Disable animation for redirected output or unsupported terminals.
+- For multi-second runs, pair it with a short label such as `Fetching…`.
+
+That keeps fast commands quiet and gives slower runs a clear sign of activity.
+tokens used
+2,249

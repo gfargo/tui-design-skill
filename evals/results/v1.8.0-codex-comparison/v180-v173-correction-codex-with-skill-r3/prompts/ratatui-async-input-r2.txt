@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Ratatui 0.30 with Tokio: `crossterm::event::EventStream` doesn't resolve, and when I open $EDITOR from the app my first few keystrokes vanish. What's wrong?

@@ -1,0 +1,32 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-sk8gib6m
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1338d-6c25-7dd1-b023-f19c64213641
+--------
+user
+My file list column is 30 cells wide and paths like /usr/local/share/applications/org.example.Viewer.desktop overflow. Should I cut the end and add an ellipsis?
+
+codex
+Prefer **middle truncation** so the filename stays recognizable. Cutting the end hides the part users usually need most.
+
+For a 30-cell column:
+
+```text
+/usr/…g.example.Viewer.desktop
+```
+
+If the directory is already shown elsewhere, display just the basename:
+
+```text
+org.example.Viewer.desktop
+```
+
+Measure terminal **display cells**, not string length, and include the ellipsis in that budget. Let users reveal the full path on selection or in a details pane.
+tokens used
+2,123

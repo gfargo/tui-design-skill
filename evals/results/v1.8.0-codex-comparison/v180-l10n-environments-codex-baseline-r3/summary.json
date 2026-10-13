@@ -1,0 +1,43 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v180-l10n-environments-codex-baseline-r3",
+  "created_at": "2026-10-13T05:55:34Z",
+  "run_manifest_sha256": "f8492af890ec2cda8ee894e5b8e8df2539f4d7e0bce71bbf3ea33018054bd43c",
+  "grades_file": "grades.json",
+  "grades_sha256": "e98b7b06034def81075d0ba979f64601281427c00ed7fa1b52d2792d10b5a648",
+  "passed": 27,
+  "total": 45,
+  "pass_rate": 0.6,
+  "by_case": [
+    {
+      "case_id": "translation-growth-60-columns",
+      "case_name": "translation-growth-60-columns",
+      "passed": 9,
+      "total": 15,
+      "pass_rate": 0.6
+    },
+    {
+      "case_id": "tmux-prefix-collision",
+      "case_name": "tmux-prefix-collision",
+      "passed": 7,
+      "total": 12,
+      "pass_rate": 0.5833333333333334
+    },
+    {
+      "case_id": "ambiguous-width-borders",
+      "case_name": "ambiguous-width-borders",
+      "passed": 6,
+      "total": 9,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "locale-machine-output",
+      "case_name": "locale-machine-output",
+      "passed": 5,
+      "total": 9,
+      "pass_rate": 0.5555555555555556
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

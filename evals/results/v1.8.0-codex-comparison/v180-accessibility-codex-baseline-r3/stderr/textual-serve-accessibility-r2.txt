@@ -1,0 +1,38 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-iyzm7uq1
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133bd-5519-7b40-971c-21143cdeb00c
+--------
+user
+Is running our Textual app with `textual serve` a good way to make it accessible to screen-reader users, since browsers have good screen-reader support?
+
+codex
+I’ll check how `textual serve` renders the app in the browser and what that means for screen readers.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+**No—`textual serve` alone isn’t a reliable accessibility solution.** Browsers have good screen-reader support when the page exposes meaningful structure: labeled buttons, inputs, headings, focus, and control states.
+
+Serving a Textual app doesn’t automatically turn its widgets into semantic HTML controls. It presents the app through a browser client, communicating with the running Python app over a WebSocket. Keyboard navigation and visible text alone don’t establish screen-reader accessibility. Textual also still lists accessibility and screen-reader integration as unfinished [roadmap items](https://textual.textualize.io/roadmap/). See the [serve architecture](https://github.com/Textualize/textual-serve#how-does-it-work).
+
+For your app, I’d recommend:
+
+- **A semantic HTML interface** sharing the same underlying application logic if screen-reader access is a requirement.
+- Testing essential workflows with NVDA or VoiceOver, checking control names, roles, states, focus changes, and announcements.
+- Keeping `textual serve` as a convenient browser delivery option, without treating it as evidence of accessibility.
+
+A screen reader being able to read some displayed text is different from a user being able to operate the app reliably.
+tokens used
+20,633

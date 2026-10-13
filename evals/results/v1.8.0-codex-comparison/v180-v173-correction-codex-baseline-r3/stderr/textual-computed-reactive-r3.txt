@@ -1,0 +1,40 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-osf3erhj
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1338a-7670-7301-9c66-c3e39156abc0
+--------
+user
+In Textual I wrote `count = reactive(0)` and `def compute_display(self): return f"Count: {self.count}"`, then `render()` returns `self.display`. The widget shows True instead of the text. Why?
+
+codex
+`display` is already a Textual widget property: a boolean controlling whether the widget is displayed. Your `compute_display()` collides with that built-in name, and `self.display` returns the visibility flag (`True`), not your text.
+
+For this simple case, render directly from the reactive count:
+
+```python
+count = reactive(0)
+
+def render(self):
+    return f"Count: {self.count}"
+```
+
+If you want a computed reactive value, give it a distinct name and declare it:
+
+```python
+count = reactive(0)
+count_text = reactive("")
+
+def compute_count_text(self):
+    return f"Count: {self.count}"
+
+def render(self):
+    return self.count_text
+```
+tokens used
+12,104

@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Blind users of our Go CLI say the onboarding form is unusable with NVDA. It's a Huh v2 form running full-screen inside our Bubble Tea v2 app. How do we make it work for them?

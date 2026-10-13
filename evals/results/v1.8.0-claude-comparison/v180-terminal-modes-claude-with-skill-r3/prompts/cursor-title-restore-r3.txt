@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our Ratatui editor switches to a bar cursor in insert mode and sets the window title to the open file's name. After quitting, users are left with a bar cursor and a stale title. What should we do on exit?

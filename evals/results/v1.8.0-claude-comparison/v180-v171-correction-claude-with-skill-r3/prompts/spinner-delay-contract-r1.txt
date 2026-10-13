@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+For a one-shot CLI that usually finishes in under 50ms but sometimes takes several seconds, should the spinner appear the instant work starts? Which Braille frames should I use?

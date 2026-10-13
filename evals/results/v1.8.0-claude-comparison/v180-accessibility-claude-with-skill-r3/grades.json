@@ -1,0 +1,375 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-accessibility-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "bubbletea-form-screen-reader-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends form.WithAccessible(true), describing it as replacing the full-screen UI with plain line-by-line prompts."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Advises against screen-reader detection and offers a flag, an environment variable, and a saved config setting."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explains that NVDA diffs the screen on each redraw, so arrow-key moves re-read the menu, and that appended text reads well."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that Bubble Tea and Bubbles have nothing built in for screen readers, so the rest of the app needs its own linear mode."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Recommends a flag for every onboarding question (--name, --region, --no-telemetry) so setup can run with no prompts."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-form-screen-reader-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `form.WithAccessible(true).Run()`, which asks one plain question per line with numbered selects and no redraws."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends a `--accessible` flag, an env var, and a saved config key, and says explicitly not to try detecting a screen reader."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explains that each keypress redraws the screen and that moving the Select highlight is read out again by NVDA, so linear prompts avoid this."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says Bubble Tea and Bubbles have no screen-reader support and lays out linear-mode rules for the rest of the app."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Step 3 says to give every onboarding answer a flag or config equivalent so the prompts can be skipped entirely."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-form-screen-reader-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends form.WithAccessible(true), describing it as dropping Bubble Tea and asking each field as a plain prompt one line at a time."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Offers an --accessible flag, a MYAPP_ACCESSIBLE env var and a saved config key, and states that screen readers can't be reliably detected, so users must opt in."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explains that NVDA diffs the screen and the full-screen redraw on each keypress re-reads the menu and announces focus changes and borders as new text."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that Bubble Tea and Bubbles have no screen-reader support and describes a linear runPlain mode for the rest of the app."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Recommends a flag for every onboarding question (myapp init --name \u2026 --region \u2026) so setup can run with no prompts at all."
+        }
+      ]
+    },
+    {
+      "trial_id": "no-tui-output-contract-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 3 says every TUI action must be reachable through subcommands, flags, or a numbered menu, and that nothing should be TUI-only."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It shows labelled records such as 'Service: api' and 'Status: degraded', and offers --format text|csv|json."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 5 sends results to stdout and prompts, progress, and diagnostics to stderr."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It forbids spinners and progress bars, uses occasional lines like 'Checked 3 of 10 services', and ends with a 'Done.' status line."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It uses words for status instead of colors, glyphs, or column position, and drops borders, separators, and ASCII art."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Section 6 offers a DASH_PLAIN environment variable and a 'plain = true' config key so the mode stays enabled."
+        }
+      ]
+    },
+    {
+      "trial_id": "no-tui-output-contract-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Includes a section and table mapping each TUI interaction (restart, confirm modal, picker, filter, detail pane) to a plain-mode command."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Outputs Header: value blocks and also offers --format json|csv as a separate option."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "States the stream contract explicitly: results on stdout, prompts and progress on stderr."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Watch mode prints a line only when state changes, ends with a status line, and forbids spinners, using a single 'Fetching metrics\u2026' line instead."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Every value is labelled so meaning doesn't depend on column position, color, or glyphs; box drawing is removed and no color is emitted."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Adds the DASH_PLAIN env var and a config key so the user sets it once."
+        }
+      ]
+    },
+    {
+      "trial_id": "no-tui-output-contract-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says every TUI action should exist as a subcommand or flag, gives restart/ack/show examples, and adds a coverage test over the action enum."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Uses labelled 'Field: value' lines and offers --format text|csv|json|ndjson."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says results go to stdout and progress goes to stderr as one static line."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Ends with a final 'Done.' status line, uses a static progress line on stderr, and forbids spinners and timed full reprints."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "States are words rather than colored dots, charts become sentences, and there is no block or box-drawing characters; it also explains why columns fail."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Accepts the MYAPP_PLAIN env var and a ui.mode config key so the mode doesn't need passing each time."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-serve-accessibility-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says no and explains that the browser client is xterm.js drawing the grid onto a canvas with screen-reader mode off, so a screen reader has nothing to navigate."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states Textual has no screen-reader support, no accessibility tree and no widget roles, and that the roadmap item is still open."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends a linear plain mode alongside the TUI, enabled by a --plain flag or environment variable, with concrete guidance."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-serve-accessibility-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says no and explains that the browser client draws the grid with xterm.js on a canvas with xterm's screen-reader mode off, so screen readers gain nothing."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states that Textual itself has no screen-reader support and that the roadmap item is still open."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends shipping a linear plain mode (--no-tui or an env var) and gives detailed guidance for it."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-serve-accessibility-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with 'No' and explains that the browser client uses xterm.js to draw onto a canvas with screen-reader mode off, so the screen reader only gets a picture of a terminal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Textual has no screen-reader support of its own and that the item is still open on its roadmap."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends a linear plain mode (e.g. --plain) as part of the product, with detailed rules for how it should behave."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-screen-reader-live-region-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the env var only changes formatting to plain linear text, and Ink still erases and rewrites everything outside <Static> on every state change."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It moves completed messages into <Static> so they print once, and limits the SR-mode live region to the input line plus one status line."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It replaces the spinner with a static 'Working\u2026' line and says to stop elapsed-time counters and other per-tick timers."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "aria-label appears only to describe what Ink does in SR mode; the answer never recommends aria-label or aria-hidden for visual-only elements and instead removes or conditionally renders them."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says nothing in Ink detects a screen reader, and recommends a --screen-reader flag and a saved config setting instead of trying to detect NVDA."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-screen-reader-live-region-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the screen-reader renderer prints flat text but still erases and rewrites the whole live (non-Static) region on every state change."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Step 1 moves finished messages into append-only <Static>, and step 2 limits the live region to the prompt plus at most one status line."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Step 3 replaces the spinner with a static 'Assistant is responding\u2026' line and removes ticking timers and counters."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Step 5 puts aria-hidden on decorative glyphs and aria-label on meaningful icons."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer states Ink never detects a screen reader and recommends documenting the env var or a --screen-reader flag, saved as a setting."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-screen-reader-live-region-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says screen-reader mode prints linear text but still erases and rewrites the whole live region on every change; the flag changes what is drawn, not how often."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It moves finished messages into <Static> so they print once, and keeps the live region to about one line (prompt plus at most one status line)."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It replaces the spinner with a single 'Assistant is thinking\u2026' line and drops per-second timers and token meters in screen-reader mode."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "aria-label is mentioned only as part of how Ink's mode behaves; the answer never recommends adding aria-label or aria-hidden to visual-only elements and instead says to remove them."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It states that nothing detects a screen reader, that useIsScreenReaderEnabled only reports the flag, and recommends a --screen-reader flag or saved setting."
+        }
+      ]
+    }
+  ]
+}

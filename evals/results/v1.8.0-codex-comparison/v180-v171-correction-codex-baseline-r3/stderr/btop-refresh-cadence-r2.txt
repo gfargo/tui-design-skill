@@ -1,0 +1,29 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0ne9s6s7
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1339b-5b42-77f3-ba29-04441527e624
+--------
+user
+I'm designing a btop-style dashboard. btop refreshes its CPU box every 100ms and the process table every 2s, so should every widget in my app run its own timer?
+
+codex
+No—different refresh rates don’t require a timer per widget. A good default is **one scheduler, separate data collection rates, and one render loop**.
+
+For a btop-style dashboard:
+
+- Sample CPU data every **100ms**.
+- Refresh process data every **2s**.
+- Let widgets read the latest cached snapshots.
+- Render when data or UI state changes, coalescing updates into one screen draw.
+
+Track each collector’s next deadline with a monotonic clock, and sleep until the nearest deadline or an input event. Keep expensive collection off the UI thread so a process scan won’t stall input or CPU updates.
+
+Widget-owned timers can be fine for a few independent components, but they complicate cancellation, testing, and coordinated rendering as the app grows. **Widgets should usually describe what they display; the scheduler should decide when their data updates.**
+tokens used
+2,183

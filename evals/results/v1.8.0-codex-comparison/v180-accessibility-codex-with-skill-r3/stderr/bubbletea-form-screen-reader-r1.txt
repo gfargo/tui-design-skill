@@ -1,0 +1,1320 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8ia77xuy
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133c0-4798-72e0-b1e7-aecbd3be0c6f
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Blind users of our Go CLI say the onboarding form is unusable with NVDA. It's a Huh v2 form running full-screen inside our Bubble Tea v2 app. How do we make it work for them?
+
+codex
+I’ll read the tui-design skill and check its guidance for Huh and Bubble Tea accessibility.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8ia77xuy
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/ecosystem-go.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8ia77xuy
+ succeeded in 0ms:
+# Go ecosystem — Bubble Tea, tview, gocui, Cobra
+
+The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for traditional widget-rich apps. **gocui** is a third, legacy lineage behind lazygit (now an in-tree fork) and lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker), `urfave/cli` or Kong.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Bubble Tea](#bubble-tea-charmbraceletbubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbraceletlipgloss) · [Bubbles](#bubbles-charmbraceletbubbles) · [Huh](#huh-charmbracelethuh)
+- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+- [tview](#tview-rivotview) · [gocui](#gocui-awesome-gocuigocui) · [tcell](#lower-level-tcell)
+- [CLI framing: Cobra and urfave/cli](#cli-framing-cobra-and-urfavecli)
+- [Output formatting](#output-formatting-non-tui)
+- [Testing](#testing) · [Debugging](#debugging)
+- [Notable Go TUI apps](#notable-go-tui-apps-to-study)
+- [Cross-platform notes](#cross-platform-notes)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI with clean architecture and Charm aesthetic | **Bubble Tea + Lipgloss + Bubbles** |
+| Multi-pane vim-keybinding "lazy*"-style app | **Bubble Tea + Lipgloss** (compose the panes yourself); **gocui** (`awesome-gocui/gocui`) only for its exact views-as-buffers model |
+| Heavy data exploration with tables, trees, forms | **tview** (callback-style, retained-mode) |
+| One-shot fancy CLI prompts only | **Huh** (Go form library) or **gum** (shell wrapper) |
+| Markdown rendering in terminal | **Glamour** |
+| Pretty CLI output, no full-screen | **pterm** |
+| Subcommand framing for any of the above | **Cobra** or **urfave/cli** |
+| TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
+
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** This is what `charm.land` apps and most new Go TUIs use. (`gh` is a Cobra CLI, not a full-screen TUI; it uses Lipgloss and Glamour for output and the Charm v2 stack — Bubble Tea, Bubbles, Huh — for interactive prompts.)
+
+---
+
+## Bubble Tea (charmbracelet/bubbletea)
+
+The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
+
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.1.x, and Go 1.26+ is required since v2.0.10). v2.1.0 (October 2026) is additive: `View.ProgramStatus` reports idle/working/blocked/done/error to terminals that support OSC 7501 program-status reporting. What changed and why it matters:
+- **New "Cursed Renderer"** — rewritten from scratch on the ncurses diffing algorithm; faster and more accurate redraws. Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
+- **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback.
+- **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish, glamour, log, fang — keep them on the same major. Lower-level pieces (`colorprofile`, `ultraviolet`, `x/*`) stay on `github.com/charmbracelet/...` paths.
+
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched: `View()` now returns `tea.View` instead of `string`, key handling moves to `tea.KeyPressMsg`, and the alt-screen/mouse program options moved onto the view. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
+
+**The mental model:**
+- **Model**: a single struct holding all state.
+- **Init**: returns the initial Cmd (or `nil`).
+- **Update(msg)**: pure function returning `(newModel, Cmd)`. The only place state changes.
+- **View()**: pure function returning the entire frame as a `tea.View` — content plus frame-level declarations (alt screen, mouse mode, cursor). Bubble Tea diffs against the previous frame and emits minimal ANSI.
+- **Cmds and Msgs**: side effects live in `tea.Cmd` (a `func() tea.Msg`); messages flow back through Update.
+
+**Canonical structure:**
+
+```go check=go/counter
+type model struct {
+    count int
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyPressMsg:  // KeyMsg is an interface in v2; msg.Code/msg.Text replace Type/Runes
+        switch msg.String() {
+        case "q", "ctrl+c":
+            return m, tea.Quit
+        case "+", "right", "l":
+            m.count++
+        case "-", "left", "h":
+            m.count--
+        }
+    }
+    return m, nil
+}
+
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
+}
+
+func main() {
+    p := tea.NewProgram(model{})
+    if _, err := p.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+### Lifecycle and terminal handoff
+
+Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+
+| Boundary | Bubble Tea v2 contract |
+|---|---|
+| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler converts external SIGINT/SIGTERM into managed loop termination. Do not call `os.Exit` from `Update`. |
+| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error or, after child success, a restoration error through the callback message. If both fail, the callback exposes the child error. In the callback-message branch, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+| Foreground suspend | Return `tea.Suspend`; after the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
+
+The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
+
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`. Inline is the default, and because these fields are read every frame, an app can switch between inline and the alternate screen at runtime.
+
+**Important options:**
+- `tea.WithInput(reader)` / `tea.WithOutput(writer)` — useful for testing or Wish.
+- `tea.WithColorProfile(p)` — force a specific color profile; the testing hook for golden-file output.
+
+**Async via Cmds:**
+```go check=go/fetch-cmd
+func fetchData() tea.Msg {
+    resp, err := http.Get(url)
+    if err != nil { return errMsg{err} }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body) // *http.Response is not the data
+    if err != nil { return errMsg{err} }
+    return dataMsg{body}
+}
+
+// In Update, when you want to fetch:
+return m, fetchData
+```
+
+`tea.Cmd` is `func() tea.Msg`. The runtime calls them in goroutines and routes the returned `Msg` back through `Update`. **Never block in `Update`** — anything I/O goes in a Cmd.
+
+**`tea.Batch(cmds...)`** for parallel commands; **`tea.Sequence(cmds...)`** for ordered.
+
+**Pitfalls:**
+- `len(string)` ≠ display width. Use `lipgloss.Width()`.
+- Goroutines never call `View()` directly — send via `program.Send(msg)`.
+- CJK/emoji width in the v2 stack is computed by `charmbracelet/x/ansi` with grapheme clustering — trust `lipgloss.Width()`, never `len()`.
+- Don't `fmt.Println` while the program runs — it corrupts the frame. For permanent lines above an inline UI, return `tea.Println(...)`/`tea.Printf(...)` (no-ops on the alt screen). For diagnostics, use `tea.LogToFile("debug.log", "DEBUG")` (see **Debugging** below).
+
+---
+
+## Lipgloss (charmbracelet/lipgloss)
+
+CSS-in-Go declarative styling — immutable `Style` values rendered to ANSI strings. The companion to Bubble Tea, but usable standalone.
+
+**Canonical use:**
+
+```go check=go/lipgloss-style
+var titleStyle = lipgloss.NewStyle().
+    Bold(true).
+    Foreground(lipgloss.Color("#FAFAFA")).
+    Background(lipgloss.Color("#7D56F4")).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder()).
+    BorderForeground(lipgloss.Color("63"))
+
+lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the terminal; fmt.Println would not
+```
+
+**Layout helpers:**
+- `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` — side-by-side.
+- `lipgloss.JoinVertical(lipgloss.Left, top, middle, bottom)` — stacked.
+- `lipgloss.Place(width, height, hPos, vPos, content)` — center/anchor in a box.
+- `lipgloss.Width(s)` / `lipgloss.Height(s)` — measure rendered output (skips ANSI escapes, counts wide graphemes correctly).
+
+**No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
+
+```go check=go/window-size
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.leftPaneWidth = msg.Width / 3
+    m.rightPaneWidth = msg.Width - m.leftPaneWidth
+```
+
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants. Standalone (no Bubble Tea running):
+```go check=go/light-dark
+hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+lightDark := lipgloss.LightDark(hasDark)
+fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
+```
+Inside a running Bubble Tea program, don't call `HasDarkBackground` — its terminal query competes with Bubble Tea for input. Ask the runtime instead: return `tea.RequestBackgroundColor` from `Init`, then handle `case tea.BackgroundColorMsg:` with `lipgloss.LightDark(msg.IsDark())` and rebuild your styles. Always render a default palette first and treat the reply as an upgrade: it may never arrive (since v2.0.10, `tea.WithInput(nil)` skips all terminal queries, and some terminals don't answer OSC 11).
+The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
+
+**Sub-packages:**
+- `lipgloss/table` — bordered, styled tables with column alignment.
+- `lipgloss/list` — bullet/numbered/tree lists with custom enumerators.
+- `lipgloss/tree` — hierarchical trees with custom indenters.
+
+**Testing tip:** `SetColorProfile` is gone in v2. Downsampling now happens at write time — `lipgloss.Print`/`Println`/`Sprint` detect the output's profile via the `colorprofile` package. In Bubble Tea programs, force ASCII for CI/golden-file tests with `tea.WithColorProfile(colorprofile.ASCII)`.
+
+---
+
+## Bubbles (charmbracelet/bubbles)
+
+The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you embed and forward messages to.
+
+**Components shipped:**
+- **`textinput`** — single-line input with placeholder, suggestions, validation.
+- **`textarea`** — multi-line input with optional line numbers; v2.2+ adds text selection, copy/cut and word motion.
+- **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering.
+- **`table`** — virtualized table with row selection (no built-in sorting; sort the rows yourself).
+- **`tree`** — navigable hierarchical tree, rendered with `lipgloss/tree`.
+- **`viewport`** — scrollable region for long content.
+- **`spinner`** — prebuilt `Line`, `Dot`/`MiniDot` (braille), `Jump`, `Pulse`, `Points`, `Globe`, `Moon`, `Monkey`, `Meter`, `Hamburger`, `Ellipsis`, or custom frames.
+- **`progress`** — gradient-filled progress bar with percent.
+- **`paginator`** — page indicators.
+- **`filepicker`** — file system browser.
+- **`help`** — auto-rendered footer hint bar from a `key.KeyMap`.
+- **`key`** — declarative key bindings.
+- **`cursor`**, **`stopwatch`**, **`timer`** — utilities.
+
+**Embedding pattern:**
+
+```go check=go/bubbles-embedding
+type model struct {
+    list list.Model
+    keys keyMap
+    help help.Model
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg)  // forward to child
+    return m, cmd
+}
+
+func (m model) View() tea.View {
+    // Bubbles still return strings; the parent wraps them in a tea.View.
+    return tea.NewView(m.list.View() + "\n" + m.help.View(m.keys))
+}
+```
+
+**Declarative keys with `key.Binding`:**
+
+```go check=go/key-bindings
+type keyMap struct {
+    Up   key.Binding
+    Down key.Binding
+    Quit key.Binding
+}
+
+var keys = keyMap{
+    Up:   key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
+    Down: key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
+    Quit: key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+}
+
+// In Update (tea.KeyMsg is an interface in v2 that also matches releases; switch on presses):
+case tea.KeyPressMsg:
+    switch {
+    case key.Matches(msg, keys.Quit):
+        return m, tea.Quit
+    case key.Matches(msg, keys.Up):
+        // ...
+    }
+```
+
+The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free. `help.View(m.keys)` needs `keyMap` to implement `help.KeyMap`:
+
+```go check=go/help-keymap
+func (k keyMap) ShortHelp() []key.Binding  { return []key.Binding{k.Up, k.Down, k.Quit} }
+func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Down}, {k.Quit}} }
+```
+
+---
+
+## Huh (charmbracelet/huh)
+
+Forms library on top of Bubble Tea. Best for one-shot interactive prompts (multi-step wizards) and embeddable form panes inside larger TUIs. Huh v2 (`charm.land/huh/v2`, released March 2026) is built on Bubble Tea v2 — built-in themes are now `func(isDark bool) *Styles`; wrap one as a `huh.Theme` with `form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))`. Huh supplies `isDark` itself from the `tea.BackgroundColorMsg` it receives, but v2.0.3 never requests one, so an embedding parent must return `tea.RequestBackgroundColor` from its own `Init` and forward the reply to the form. A standalone `form.Run()` has no parent to ask, so it always renders the light variant ([huh#834](https://github.com/charmbracelet/huh/issues/834)). Detect the background before running it (`lipgloss.HasDarkBackground(os.Stdin, os.Stdout)` is safe here because no Bubble Tea program is running yet) and pin the variant with `huh.ThemeFunc(func(bool) *huh.Styles { return huh.ThemeCharm(isDark) })`. Huh's own upgrade guide shows `.WithTheme(huh.ThemeCharm(isDark))`, which does not compile against v2.0.3, because `*Styles` is not a `Theme`.
+
+```go check=go/huh-form
+form := huh.NewForm(
+    huh.NewGroup(
+        huh.NewSelect[string]().
+            Title("Choose your country").
+            Options(huh.NewOptions("USA", "Germany", "Japan")...).
+            Value(&country),
+        huh.NewInput().
+            Title("What's your name?").
+            Value(&name).
+            Validate(func(s string) error {
+                if len(s) == 0 { return errors.New("required") }
+                return nil
+            }),
+        huh.NewConfirm().
+            Title("Submit?").
+            Value(&confirm),
+    ),
+)
+err := form.Run()
+```
+
+Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect[T]`, `NewConfirm`, `NewFilePicker`, `NewNote` (display-only).
+
+**Dynamic forms:** huh's real mechanism is **`Group.WithHideFunc(func() bool)`** — it hides/shows an entire group (a step's worth of fields) based on a predicate re-evaluated as form state changes. This operates at *group* granularity; per-field hiding is not shipped (open feature requests only) — don't present it as available. For recomputing one field from another's value, huh has `OptionsFunc`/`TitleFunc`/`DescriptionFunc`, which take a callback plus the fields they depend on and re-run automatically:
+
+```go check=go/huh-options-func
+huh.NewSelect[string]().
+    OptionsFunc(func() []huh.Option[string] {
+        return huh.NewOptions(statesForCountry(country)...)
+    }, &country) // recomputed whenever `country` changes
+```
+
+**Accessibility:** `form.WithAccessible(true)` bypasses Bubble Tea and asks each field as a plain line-by-line prompt: a numbered list for `Select` (the user types the number), numbers toggled one at a time and `0` to finish for `MultiSelect`, `y`/`n` for `Confirm`, and validation errors printed before the prompt repeats. Huh turns it on by itself only for `TERM=dumb`, so expose your own switch. The README reads an `ACCESSIBLE` environment variable, and gh's `GH_ACCESSIBLE_PROMPTER` drives exactly this mode. Bubble Tea and Bubbles have nothing comparable, so the rest of the app needs its own linear mode; see `visual-patterns.md` → *Accessibility*.
+
+**Full-screen:** `tea.WithAltScreen()` is gone in v2 — declare it on the view instead: `form.WithViewHook(func(v tea.View) tea.View { v.AltScreen = true; return v })`.
+
+**Embedding in Bubble Tea:** `(*huh.Form).Update` returns `(huh.Model, tea.Cmd)`, so assert back: `f, cmd := m.form.Update(msg); if ff, ok := f.(*huh.Form); ok { m.form = ff }`. `Form.View()` returns a string that the parent wraps in its own `tea.NewView`; check `m.form.State` (`huh.StateCompleted`/`huh.StateAborted`) to leave the form.
+
+---
+
+## Other Charm libraries worth knowing
+
+- **Glamour** (`charm.land/glamour/v2`) — render Markdown to ANSI. Themable via JSON stylesheets. v2 is pure: `WithAutoStyle` and `WithColorProfile` are gone, the default style is `"dark"` (pass `"light"` yourself after detecting the background), and output is downsampled only when printed via `lipgloss.Print`. Used by the `glow` markdown viewer and for `gh` PR/issue rendering (`gh` is still on Glamour v1).
+- **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH with HTTP-style middleware. Build each program with `bubbletea.MakeOptions(sess)` (or the `bubbletea.Middleware` handler, which applies it for you) so input, output, and color-profile detection follow the *client's* PTY, not the server's. The v1-era per-session `MakeRenderer` helper is gone in v2 because Lipgloss v2 no longer owns terminal I/O. `MakeOptions` also installs its own `tea.WithFilter` (ctrl+z suspend becomes resume), and the default `Middleware` appends it after your options, overwriting any filter you set; to keep yours, use `MiddlewareWithProgramHandler` and chain them.
+- **Soft Serve** — git server with a Bubble Tea TUI; built on Wish.
+- **gum** — shell-script wrapper around Bubble Tea components. `gum choose`, `gum input`, `gum confirm`, `gum spin`. Use when scripting Bash and you want huh-quality prompts without writing Go.
+- **VHS** — record terminal sessions to GIFs from a `.tape` script. Gold for documentation.
+
+---
+
+## tview (rivo/tview)
+
+Retained-mode, callback-based — the traditional ncurses style. Built on **tcell v2** (gdamore's terminal library, replacement for termbox). Mature and maintained slowly but steadily; tags are rare (last v0.42.0, August 2025) and the README installs with `go get github.com/rivo/tview@master`. Powers **k9s** (via derailed's `tview`/`tcell` forks).
+
+**Widgets:** `Box`, `TextView`, `TextArea`, `InputField`, `Table`, `TreeView`, `List`, `Form`, `Image`, `Modal`, `Pages`, `Flex`, `Grid`, `Frame`, `DropDown`, `Button`, `Checkbox`.
+
+**Layout:** `Flex` (one-dimensional), `Grid` (two-dimensional), `Pages` (modal/swap views).
+
+**Hello world:**
+
+```go check=go/tview-hello
+app := tview.NewApplication()
+list := tview.NewList().
+    AddItem("First", "First item", 'a', nil).
+    AddItem("Quit", "Quit app", 'q', func() { app.Stop() })
+if err := app.SetRoot(list, true).Run(); err != nil {
+    panic(err)
+}
+```
+
+**Threading rule:** any modification to a primitive from a goroutine must go through `app.QueueUpdate(func)` or `app.QueueUpdateDraw(func)`, which run `func` on the main loop. A bare `app.Draw()` from a goroutine is safe (it only schedules a repaint) but does not synchronize your data. The deadlock trap is the opposite direction: calling `Draw()`, `QueueUpdate()`, or `QueueUpdateDraw()` from *inside* an event handler that already runs on the main goroutine (a key handler, `SetSelectedFunc`, and so on) blocks forever, per the tview Concurrency wiki. This is the #1 tview pitfall.
+
+**When to choose tview over Bubble Tea:** you have many widgets that need to coexist (a real "form with 12 fields, table, sidebar"), the team prefers callbacks over message-passing, or you're already on tcell. Bubble Tea is more ergonomic for state-heavy apps but you assemble layout manually; tview gives you a richer widget set with less code.
+
+---
+
+## gocui (awesome-gocui/gocui)
+
+Minimalist views-as-buffers — each `View` implements `io.Writer`. The aesthetic of **lazygit** and **lazydocker**.
+
+**Mental model:**
+- Define a `Manager` function that's called on every redraw to lay out views.
+- Each view has a name, position, and a buffer you write to.
+- Per-view keybindings.
+- Manual layout (you compute coordinates from `g.Size()`).
+
+**Hello world:**
+
+```go check=go/gocui-hello
+g, _ := gocui.NewGui(gocui.OutputNormal, true)
+defer g.Close()
+
+g.SetManagerFunc(func(g *gocui.Gui) error {
+    maxX, maxY := g.Size()
+    if v, err := g.SetView("hello", maxX/2-7, maxY/2, maxX/2+7, maxY/2+2, 0); err != nil {
+        if !errors.Is(err, gocui.ErrUnknownView) { return err }
+        fmt.Fprintln(v, "Hello, World!")
+    }
+    return nil
+})
+
+g.SetKeybinding("", 'q', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+    return gocui.ErrQuit
+})
+
+g.MainLoop()
+```
+
+**When to choose gocui:** rarely, for maintaining an existing gocui app or when you want its views-as-buffers API specifically. Use `awesome-gocui/gocui` (last tag v1.1.0, 2022; still on tcell v2). `jesseduffield/gocui` is effectively retired: in April 2026 lazygit copied its fork into `lazygit/pkg/gocui` and moved to tcell v3. For a new lazy-style app (persistent panes, numeric keys to switch panes, single-letter context actions), use Bubble Tea and borrow lazygit's interaction design rather than its library.
+
+---
+
+## Lower-level: tcell
+
+`gdamore/tcell` is the long-standing low-level Go terminal library: pure Go, cross-platform, mouse and SGR support. v3 (December 2025) removed terminfo and the termbox compatibility layer and changed the key and cell APIs; tview still uses `tcell/v2`, while lazygit has moved to v3. Use directly only if you're building a framework or have very specific needs (custom rendering pipeline, embedded use). Most apps should use Bubble Tea or tview on top.
+
+**Ultraviolet** (`charmbracelet/ultraviolet`) is the standalone rendering engine underneath Bubble Tea v2's renderer — the same tier as tcell if you're building your own framework. It is untagged, and its README warns the API may change.
+
+---
+
+## CLI framing: Cobra and urfave/cli
+
+**Cobra** (`spf13/cobra`) — the dominant subcommand framework for Go. Powers kubectl, gh, hugo, helm, docker. Struct-literal command tree:
+
+```go check=go/cobra-commands
+var rootCmd = &cobra.Command{
+    Use:   "myapp",
+    Short: "A short description",
+}
+
+var listCmd = &cobra.Command{
+    Use:   "list",
+    Short: "List items",
+    Run:   func(cmd *cobra.Command, args []string) { /* ... */ },
+}
+
+func init() {
+    rootCmd.AddCommand(listCmd)
+}
+```
+
+**Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. Output from `PreRun` is hidden behind the alt screen while the TUI runs and reappears at exit; what corrupts the frame is writing to stdout while `Run` is active. Gate the TUI on **stdout** being a terminal (`isatty.IsTerminal(os.Stdout.Fd())`): under `$(myapp)` or `myapp | less` the frame would become data, so print plain output instead, or draw the UI on stderr with `tea.WithOutput(os.Stderr)` and print only the answer to stdout, as gum does. Piped stdin doesn't stop the TUI (Bubble Tea v2 opens `/dev/tty` for keys); decide separately whether piped input means non-interactive mode.
+
+Cobra supports generated shell completions and, since v1.2, adds a working `completion` subcommand to every root command automatically (hidden when there are no other subcommands). Do not scaffold your own `completion` command; it would shadow the built-in. Users generate a script with `myapp completion bash|zsh|fish|powershell`; disable or customize the default via `rootCmd.CompletionOptions`. Note that `cobra-cli completion ...` completes the generator tool itself, not your application.
+
+**Fang** (`charm.land/fang/v2`) — a small, self-described experimental starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation. The idiomatic Cobra companion in a Charm-stack app.
+
+**urfave/cli** (`github.com/urfave/cli/v3`; v3 has been the stable line since 2025, v2 is maintenance-only) — alternative subcommand framework, simpler API, less popular but used by Gitea and others. **Kong** (`alecthomas/kong`, struct-tag driven, used by Syncthing) is the third common choice.
+
+For one-shot `flag` parsing only, the stdlib `flag` package is fine.
+
+---
+
+## Output formatting (non-TUI)
+
+When the user wants pretty CLI output (no full-screen UI):
+
+- **lipgloss** — yes, you can use it standalone: `lipgloss.Println(style.Render(...))`, not `fmt.Println`. In v2, `Render` always emits truecolor; only `lipgloss.Print*`/`Sprint*`/`Fprint*` downsample for the real output and honor `NO_COLOR`. This is what most Charm CLI tools do.
+- **pterm** — color, tables, spinners, progress bars, charts, prompts. All-in-one. Less elegant API than Lipgloss but has more built-in.
+- **fatih/color** — simple ANSI color wrapper. Used by countless tools. `color.Red("hello")`, `color.New(color.FgYellow, color.Bold).Println(...)`.
+
+---
+
+## Testing
+
+**Test in layers, bottom-heavy.** Even Charm's flagship v2 app (crush, over 200 test files) uses zero teatest — it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base of the pyramid; the harness is the thin top.
+
+**Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
+
+```go check=go/update-test
+func TestQuitKey(t *testing.T) {
+    m := newModel()
+    updated, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"}) // v2 rune key
+    m = updated.(model)
+    if cmd == nil { t.Fatal("expected quit cmd") }
+}
+```
+
+v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials are `tea.KeyPressMsg{Code: tea.KeyEnter}`, modifiers use `Mod: tea.ModCtrl`. To test a returned Cmd, just call it — `tea.Cmd` is `func() Msg` — and assert on the message (`tea.QuitMsg` for quit; `tea.BatchMsg` is an exported `[]Cmd` you can unpack and run).
+
+**Layer 2 — teatest** runs the real program against in-memory buffers (no PTY, works in bare CI containers). For Bubble Tea v2 import `github.com/charmbracelet/x/exp/teatest/v2` — teatest did **not** move to charm.land; plain `x/exp/teatest` is the v1 line. Both are pseudo-versioned experiments, but teatest/v2 is what maintainers point to as the official harness.
+
+```go check=go/teatest
+tm := teatest.NewTestModel(t, newModel(),
+    teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
+    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.ASCII)), // v2 only
+)
+teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+    return bytes.Contains(b, []byte("ready"))
+}, teatest.WithDuration(5*time.Second)) // defaults (1s timeout, 50ms poll) are tight for CI
+tm.Type("hello")                        // v2: emits one KeyPressMsg per rune
+tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+out, _ := io.ReadAll(tm.FinalOutput(t))
+teatest.RequireEqualOutput(t, out) // golden file: testdata/<TestName>.golden
+```
+
+Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` block forever without it. Goldens hold the raw bytes, escape sequences included: `golden.RequireEqual` escapes both sides only when comparing, so failure diffs stay readable. Refresh with `go test ./... -update`, and add `*.golden -text` to `.gitattributes` so git never rewrites them.
+
+**Test at the contract sizes:** golden-test 80×24, 60 columns, and your declared minimum (one golden per size, e.g. `TestView/60x24`). Exercise resize too — send `tea.WindowSizeMsg{Width: 60, Height: 24}` to `Update` in unit tests, or via `tm.Send(...)` mid-run in teatest — and assert the layout reflows rather than keeping the startup width.
+
+**Determinism in CI:** the #1 golden-file flake is color-profile detection — v2 wraps output in a `colorprofile.Writer`, and the emitted escapes vary with `TERM`/`COLORTERM`/`NO_COLOR`. Pin the profile (`tea.WithColorProfile(colorprofile.ASCII)` — v2-only; on v1 use `lipgloss.SetColorProfile(termenv.Ascii)`) and the term size, or goldens will flap. Bubble Tea's own teatest example is currently skipped over exactly this.
+
+**E2E:** PTY/expect practice is thin in Go — teatest deliberately avoids PTYs. For real-terminal visual regression, VHS golden output (`Output golden.ascii` in a tape) is the blessed heavyweight option; needs `ttyd` + `ffmpeg`, with `charmbracelet/vhs-action` for CI.
+
+---
+
+## Debugging
+
+**stdout is off-limits while the program runs** — Bubble Tea holds the terminal in raw mode on the alternate screen, so `fmt.Println` output gets swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
+
+```go check=go/log-to-file
+if len(os.Getenv("DEBUG")) > 0 {
+    f, err := tea.LogToFile("debug.log", "debug")
+    if err != nil {
+        fmt.Fprintln(os.Stderr, "fatal:", err) // otherwise logs land in the TUI
+        os.Exit(1)
+    }
+    defer f.Close()
+}
+```
+
+Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another — the documented convention. `log.Println` from anywhere in Update or Cmds lands in the file; `tea.LogToFileWith` (present in both v1 and v2) takes a custom logger.
+
+**Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless — `dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`, then `dlv connect 127.0.0.1:43000` from a second terminal.
+
+**Profiling a sluggish TUI:** Bubble Tea's README documents no profiling recipe of its own, so this is standard Go tooling — but the shape that actually works for a TUI is `net/http/pprof` on a loopback port, not file-based `pprof.StartCPUProfile`. A background goroutine serving on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there's no SIGINT/flush ceremony to get right. This is what Charm's own `crush` does, gated behind an env var:
+
+```go check=go/pprof
+import (
+    "net/http"
+    _ "net/http/pprof"
+)
+if os.Getenv("MYAPP_PROFILE") != "" {
+    go func() { http.ListenAndServe("localhost:6060", nil) }()
+}
+```
+
+Then from a second terminal: `go tool pprof -http=:8080 http://localhost:6060/debug/pprof/profile`. Common cost sink to look for: work smuggled into `View()` that should be cached (recomputed `lipgloss.Width()` calls, string rebuilds) or an unbatched Bubbles `list`/`table` render — [bubbles#810](https://github.com/charmbracelet/bubbles/issues/810) is a real case of exactly this (per-frame string concatenation instead of `strings.Builder`), diagnosed with this same `net/http/pprof` technique.
+
+---
+
+## Notable Go TUI apps to study
+
+- **lazygit** (in-tree gocui fork on tcell v3) — multi-pane git TUI; the canonical "lazy*" aesthetic.
+- **lazydocker** (gocui) — same paradigm for Docker.
+- **k9s** (derailed's `tview`/`tcell` forks) — Kubernetes TUI; command-mode navigation, drill-down stack.
+- **gh** (Cobra + Lipgloss, Huh for prompts) — GitHub CLI; not a full TUI, but excellent CLI design.
+- **Crush** (Bubble Tea v2) — Charm's AI coding agent; the flagship production v2 app.
+- **glow** (Bubble Tea v2 stack since glow v3) — markdown reader.
+- **soft serve** (Wish + Bubble Tea) — SSH-served git UI.
+- **circumflex** — Hacker News reader (Bubble Tea).
+- **gh dash** (Bubble Tea) — GitHub dashboard.
+- **superfile** (Bubble Tea) — file manager.
+- **wishlist** (Wish v1 / Bubble Tea v1; study the patterns, not the imports) — SSH directory.
+
+When the user is building something similar to one of these, point them at it as a reference. The repos are open and idiomatic.
+
+---
+
+## Cross-platform notes
+
+Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows (Terminal, conhost, ConEmu). Windows quirks:
+- Older `cmd.exe` doesn't support all ANSI; target Windows Terminal (Windows 10+).
+- `Ctrl+Z` (SIGTSTP) doesn't exist on Windows; that's fine, just don't rely on suspend behavior universally.
+- Mouse events differ slightly; libraries abstract this but test on Windows if it's a target.
+- Environment differences (signals, `WT_SESSION`, Unicode output, multiplexer keys): `interaction-patterns.md` → *Terminal environments*.
+
+For SSH-served TUIs, **Wish** is the right answer — it handles per-session terminal capabilities (the client's truecolor support, not the server's) and gives you middleware for auth, logging, rate limiting.
+
+---
+
+exec
+/bin/zsh -lc "rg -n -A 65 -B 5 'Accessibility|clutter audit|Responsive design' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8ia77xuy
+ succeeded in 0ms:
+6-- [The seven canonical layouts in detail](#the-seven-canonical-layouts-in-detail)
+7-- [Inline, alt-screen, or overlay — where the UI lives](#inline-alt-screen-or-overlay--where-the-ui-lives)
+8-- [Borders — when, what, and why](#borders--when-what-and-why)
+9-- [Color in depth](#color-in-depth)
+10-- [Typography in monospace](#typography-in-monospace)
+11:- [Density: pack vs pad](#density-pack-vs-pad) (includes the clutter audit)
+12:- [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor)
+13-- [Visual hierarchy in monospace](#visual-hierarchy-in-monospace)
+14-- [Tables and lists](#tables-and-lists)
+15-- [Localization](#localization) (translation growth, right-to-left text, ambiguous-width characters, locale formatting)
+16-- [Status bars, headers, footers](#status-bars-headers-footers)
+17-- [Progress indicators](#progress-indicators) (includes disconnected/stale-data and timeout/cancel UX)
+18-- [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
+19:- [Accessibility](#accessibility) (screen readers, the plain-mode contract, framework support, motion)
+20-- [Common visual pitfalls](#common-visual-pitfalls)
+21-
+22----
+23-
+24-## The seven canonical layouts in detail
+25-
+26-### 1. Persistent multi-panel
+27-
+28-All panels visible simultaneously in fixed positions. Focus shifts via Tab or numeric keys. The user builds spatial memory: "files are top-left, branches are below, diff is on the right."
+29-
+30-**Examples:** lazygit (5 left panels + 1 right), btop (full-width CPU on top; memory above network on the left, processes on the right), htop (header / process list / F-key footer).
+31-
+32-**When to use:**
+33-- Users want to see multiple related views at once without switching.
+34-- The data is observed at a glance (monitors, dashboards).
+35-- Numeric panel jumps make sense (`1`–`5`).
+36-
+37-**When to avoid:**
+38-- Each pane needs full attention (use IDE three-panel or drill-down stack instead).
+39-- Total information would overwhelm at smaller terminal sizes.
+40-
+41-**Implementation notes:**
+42-- Use border *color* to indicate the focused panel — strongest possible signal.
+43-- Footer hint bar should be **panel-aware**: `c` does different things in lazygit's Files vs Commits panel; show what's relevant.
+44-- Numeric jumps (`1`–`5`) should work from any panel — don't make users return to a "menu" first.
+45-
+46-### 2. Miller columns
+47-
+48-Three (sometimes more) columns: parent → current → preview. `h`/`l` (or `←`/`→`) ascend/descend.
+49-
+50-**Examples:** yazi (default ratio `[1, 4, 3]` for parent/current/preview), ranger (the original), broot (tree-mode variant), nnn, lf.
+51-
+52-**When to use:**
+53-- Hierarchical data: filesystems, JSON, K8s resource trees.
+54-- Users need to see context (parent) and outcome (preview) without losing position.
+55-
+56-**When to avoid:**
+57-- Narrow terminals (<80 cols) — degrades poorly. Provide a single-pane fallback.
+58-- Non-hierarchical data — the parent column is wasted.
+59-
+60-**Implementation notes:**
+61-- The middle column should be widest — that's where the user works.
+62-- Preview column shows file content / nested object / pod logs depending on what's selected.
+63-- Selection in the middle column updates the preview live (debounce if expensive).
+64-
+65-### 3. Drill-down stack
+66-
+67-Browser-style: navigate into deeper views with a back-stack, `Esc` returns to the previous view.
+68-
+69-**Examples:** k9s (`:pods` → Enter on pod → `Esc` back), lazydocker (sidebar → drill into container → `Esc`), gh dash (PR list → PR detail).
+70-
+71-**When to use:**
+72-- Many resource types where the user needs to pivot between them.
+73-- Each detail view is full-screen and demands attention.
+74-- Command-mode navigation is natural (`:resource`).
+75-
+76-**When to avoid:**
+77-- Users need to compare two things side-by-side (use multi-panel).
+78-- The back-stack would get deep (>3 levels confuses users).
+79-
+80-**Implementation notes:**
+81-- Status bar should show the current "address" (breadcrumb): `cluster/namespace/pods/my-pod-7d9f`.
+82-- `Esc` always backs up one level. The user should never feel trapped.
+83-- Implement a stack of view-state objects. On push, save the current view; on pop, restore.
+84-
+--
+218-
+219-- Content is static (htop has no internal borders — it's all dense layout).
+220-- Density matters more than structure.
+221-- The pane is implicitly bounded (only thing on screen, or at the edge).
+222-
+223:Don't decorate — whitespace is usually separator enough (see *The clutter audit* below).
+224-
+225-### The background-leak problem
+226-
+227-Each terminal cell has only fg/bg colors. A border cell renders the line in the foreground but the cell's background "leaks" through behind the border characters. If your panel has a contrasting background to its parent, this looks wrong:
+228-
+229-```
+230-parent_bg has black background
+231-panel has dark blue background
+232-border characters: render in panel's blue background
+233-        ^^^ creates a visible "step" between border and content
+234-```
+235-
+236-**Solutions:**
+237-- Use the same background for panel and borders.
+238-- Or use one-eighth block characters (`▏▕▔▁`) as borders — Textual does this for themed apps.
+239-
+240-### ASCII fallback
+241-
+242-For legacy SSH, Windows conhost, `TERM=dumb`, or any system where Unicode might be unreliable:
+243-- Single-line `─│┌┐└┘├┤┬┴┼` → `-|+++++++++`
+244-- Heavy → `=|+++` (or just bold the ASCII)
+245-- Rounded `╭╮╰╯` → `+`
+246-
+247-Detect it from the first non-empty variable among `$LC_ALL`, `$LC_CTYPE`, and `$LANG` (does it name UTF-8?), and via terminal capability queries. The ASCII set also sidesteps ambiguous-width box drawing; see *Localization*. Provide a config option (`--ascii`, `MYAPP_ASCII=1`) for explicit override.
+248-
+249----
+250-
+251-## Color in depth
+252-
+253-### The three tiers
+254-
+255-Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier (detection details: `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*). SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+256-
+257-### Semantic tokens
+258-
+259-Define a vocabulary by *function*, not appearance:
+260-
+261-```
+262-status.success    → green
+263-status.warning    → yellow
+264-status.error      → red
+265-status.info       → blue or cyan
+266-
+267-text.primary      → default fg
+268-text.muted        → dim or gray
+269-text.emphasis     → bold + accent
+270-
+271-bg.base           → default bg
+272-bg.surface        → slightly elevated
+273-bg.overlay        → modal/popup bg
+274-
+275-accent.primary    → brand color
+276-accent.secondary  → complementary
+277-
+278-border.default    → muted
+279-border.focus      → accent.primary
+280-
+281-git.staged        → green
+282-git.modified      → yellow
+283-git.untracked     → red or cyan
+284-git.added         → green (foreground)
+285-git.deleted       → red (foreground)
+286-```
+287-
+288-Then map tokens to palette colors. **Lipgloss v2's `LightDark`** (`AdaptiveColor` in v1/compat), **Textual's CSS variables**, and **Ratatui's palette indirection** all implement this.
+--
+381-- Generous vertical spacing between fields.
+382-- One field per line; labels above for narrow.
+383-- Single column for forms.
+384-- Lots of margin around modals.
+385-
+386:For separation in moderate-density layouts, reach for whitespace before borders (see *The clutter audit* below).
+387-
+388-### Hybrid: hierarchy through density
+389-
+390-Use density to communicate hierarchy: dense data tables in the main panel, padded settings/forms in modals, dense status bars at the bottom.
+391-
+392:### The clutter audit — making "feels busy" countable
+393-
+394-"It feels noisy" is a real signal but useless until you convert it into specific offenders. When a layout feels cluttered, **count — don't squint** — and report the count, not a vibe:
+395-
+396-- **Border-nesting depth.** Trace any corner from the terminal edge inward. More than *one* border between the edge and the content is too many. A border wrapping content that's already inside a bordered panel separates nothing and shows no focus — delete it. Boxes-inside-boxes is the single most common cause of "busy," and an outer full-screen frame is almost always redundant (the terminal edge already frames the app).
+397-- **Signals per piece of state.** Count how many things encode the same fact. `[PASS]` + green + `✅` + a `▶` row prefix is *four* signals for one status. Keep one (color paired with a letter/word for monochrome safety); cut the rest.
+398-- **Always-on markers.** A glyph that appears on 100% of rows (a `▶` on every line) marks nothing — it's texture, not information. Reserve markers for the exception: the selected row, the failed item.
+399-- **Chrome-to-data ratio.** Add up the cells spent on borders, titles, padding, labels, and repeated boilerplate (a full ISO date on every log line when only the time changes) versus cells showing actual data. A high chrome ratio *is* the cluttered feeling.
+400-- **The removal test.** For each decorative element ask: "if I delete this, do I lose information?" If no, delete it. Whitespace is not empty space — it's the cheapest separator you have, and a single blank row routinely out-reads a heavy border.
+401-
+402-Run this pass on any layout — yours or someone else's. "Three concentric borders before the content, status encoded four ways, a marker on every row, full datestamps repeated every log line" tells the user exactly what to cut. "Simplify it" tells them nothing.
+403-
+404----
+405-
+406:## Responsive design — breakpoints and the floor
+407-
+408-A terminal layout is not designed for one size. The same app runs on a 220-column ultrawide, an 80×24 SSH session, a 60-column tmux split, and a 13-inch laptop. **A layout that only works at the author's window size is unfinished** — and the author rarely notices, because they only ever see their own terminal. Pressure-test every layout at the floor, and raise it in any review even when the user only asked about something else: it's the most-missed issue in TUI design.
+409-
+410-### The breakpoint ladder
+411-
+412-Decide behavior per width band, widest to narrowest. Exact thresholds depend on content, but the shape is universal:
+413-
+414-- **Wide (>120 cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
+415-- **Standard (80–120)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
+416-- **Narrow (60–80)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here. (lazygit's `--screen-mode full` is a related single-panel mode — but it's a user-selectable escape hatch, not automatic responsive behavior.)
+417-- **Below the application-specific minimum** — don't render garbage or panic. Show a clean message naming the dimensions the app actually requires, such as `terminal too small — need 48×12`, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
+418-
+419-This is why a **drill-down model degrades better than a fixed grid**: when only one primary thing is ever on screen, narrowing just shrinks it; a fixed 2×2 grid has nowhere to go and turns to mush. If you find yourself unable to make a grid responsive, that's often a sign the layout should have been drill-down in the first place.
+420-
+421-### Mechanics
+422-
+423-- **Lay out in relative units, never absolute positions:** percentages (Textual `width: 30%`), ratios (Ratatui `Ratio(num, den)`), `Min`/`Max`/`Fill` constraints (Ratatui), `fr` units (Textual `1fr`/`3fr`), flex (Ink/Yoga). Derive geometry from the current frame or latest known window dimensions, and invalidate cached rectangles whenever those dimensions change.
+424-- **Decide what's load-bearing.** When width runs out, what hides *first*? Usually: preview pane → secondary columns → low-priority table columns. Keep the primary view and the controls needed to operate it; a dedicated footer can collapse if those controls remain discoverable elsewhere. **Detail-on-Enter** is the escape hatch — it lets you hide columns/fields at narrow widths without losing access to the data.
+425-- **Truncate, don't wrap, in cells**; reserve a cell for the ellipsis. Truncate paths at the start or middle so the filename survives; tail-truncate prose and IDs.
+426-- **Handle the framework's resize event** and re-layout from the current frame/window size. On POSIX this usually begins with `SIGWINCH`; Windows and higher-level frameworks expose different events. Coalesce rapid events only when layout work is expensive so resizing still feels immediate.
+427-- **Use 80×24 as a compatibility test baseline, not a universal hard minimum.** Define a smaller application-specific minimum from the content that must remain usable and test both sizes. `tmux split-window -h` is a free narrow-terminal test rig.
+428-
+429-When reviewing a layout, state the degradation plan concretely: "at 80×24 the preview drops and you get parent│current; at 60 columns it's a single pane; below the tested minimum, show a message naming that minimum." **A review that doesn't name what happens at the floor hasn't finished.**
+430-
+431----
+432-
+433-## Visual hierarchy in monospace
+434-
+435-Since you can't change font size, hierarchy comes from:
+436-
+437-1. **Position** — top/left reads first; status bar at bottom.
+438-2. **Color and weight** — bold + accent for headlines; dim for secondary.
+439-3. **Reverse video** — current selection.
+440-4. **Indentation and connectors** — `├─ └─` for trees; consistent indent units (2 cells is standard).
+441-5. **Whitespace** — blank rows for separation; pads around important content.
+442-6. **Bullets / symbols** — `▶` expandable, `▼` expanded, `●` active, `○` inactive, `•` static bullet.
+443-7. **Borders** — focused panel highlighted via border color.
+444-
+445-Combining 2–3 signals creates clear hierarchy. The current selection: reverse video + bold. The focused panel: accent border + bold title. A warning: yellow + `[!]` prefix + slightly lifted from surrounding text via blank line above.
+446-
+447----
+448-
+449-## Tables and lists
+450-
+451-### Alignment rules
+452-
+453-- **Numerics: right-aligned.** Easy to scan magnitudes.
+454-- **Text: left-aligned.** Standard.
+455-- **Dates: fixed-width ISO-8601** (`2026-04-28 14:30`). Sortable; doesn't shift on locale.
+456-- **Status / categorical: centered or left** — be consistent.
+457-
+458-### Truncation
+459-
+460-When content exceeds column width:
+461-
+462-- **Start truncation** (`…/share/file.txt`) — for paths, so the filename you're looking at survives.
+463-- **Middle truncation** (`/usr/…/file.txt`) — for paths when the root is also useful context.
+464-- **Tail truncation** (`Connection refused whi…`) — for prose, names, and IDs, where the beginning carries the meaning.
+465-- **Wrap** — only for prose. Never wrap in cells of dense tables.
+466-
+467-Reserve a cell (or three for `...`) for the ellipsis. Don't truncate so aggressively that nothing remains: `... ` is useless.
+468-
+469-### Sort indicators
+470-
+471-Show which column is currently sorted: `▲` ascending, `▼` descending. Place after the column header: `Size ▼`. Click (or key) to toggle and cycle.
+--
+502-## Localization
+503-
+504-Terminal layouts assume a fixed number of cells per string, so translated text breaks them in ways a GUI would absorb.
+505-
+506-- **Budget for growth.** Translations run longer than English, and short strings grow most. IBM's globalization guidelines allow 100–200% extra space for strings up to 10 characters and 30% past 70 ([IBM](https://public.dhe.ibm.com/systems/power/docs/systemi/v5r2/en_US/rbagsmstp3.pdf), p. 16), and Microsoft's pseudo-localization lengthens text by 40% ([Microsoft](https://learn.microsoft.com/en-us/globalization/methodology/pseudolocalization)). Footer hints, column headers, and button labels are exactly those short strings. Size columns from the rendered text rather than the English labels, and let labels truncate before data does, with the full text in help.
+507:- **Test with a pseudo-locale.** Before any translation exists, run the UI with every string lengthened by about half and wrapped in markers, as Windows' `qps-ploc`, Android's `en-XA`, and ICU's `en_XA` do, then pressure-test the floor from *Responsive design*. A 60-column split with long labels is where layouts fail. General catalog tools such as gettext's `en@boldquot` and Translate Toolkit's `podebug` produce the strings.
+508-- **Right-to-left text.** Most terminals don't implement bidi. kitty, Alacritty, Ghostty, and Windows Terminal show Arabic and Hebrew in logical order, left to right; VTE (GNOME Terminal) and Konsole reorder lines by default, and WezTerm and iTerm2 only experimentally. The [terminal-wg recommendation](https://terminal-wg.pages.freedesktop.org/bidi/recommendation/basic-modes.html) has full-screen apps turn off the terminal's reordering (`CSI 8 l` on entry, `CSI 8 h` on exit), which leaves visual order to the app. Either way, keep right-to-left strings in their own field or line, never mix directions inside one cell, and don't promise correct shaping.
+509-- **Ambiguous-width characters.** Unicode's East Asian Ambiguous class ([UAX #11](https://www.unicode.org/reports/tr11/tr11-46.html)) is narrow by default and wide only in East Asian legacy contexts, and terminals expose the choice as a setting: iTerm2, VTE, and Windows Terminal 1.25+. Nearly all box drawing, including the rounded corners, is ambiguous, and so are `…`, `·`, `•`, `●`, `★`, and the arrows `←↑→↓`. When the app and the terminal disagree, borders and markers misalign. go-runewidth switches to wide under any `ja`, `ko`, or `zh` locale, while most other width libraries default to narrow. Test with the terminal's ambiguous-wide setting on, prefer narrow-class markers where they fit (`▸ ▾ ✓ ✗ ⋯` and the Braille spinner frames), and keep the ASCII border set from *ASCII fallback* one switch away.
+510-- **Numbers, dates, and units.** Format human output with the user's locale, because separators, grouping, and even digits differ: 1234567.891 is `1 234 567,891` in French and `12,34,567.891` in Indian English. Use the platform's locale library (`Intl`, Babel, `golang.org/x/text/message`, ICU4X) rather than hand-built strings. Keep machine output (`--json`, `--plain`) locale-independent: under a comma-decimal locale, POSIX `printf` both prints and parses numbers with commas, so pin `LC_NUMERIC=C` for anything a script will read. Fixed-width ISO-8601 dates remain the right choice inside tables.
+511-- **Locale detection.** Read `LC_ALL`, then the category variable (`LC_CTYPE` for encoding, `LC_NUMERIC` and `LC_TIME` for formats), then `LANG`, skipping empty values ([POSIX](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap08.html)). `C.UTF-8` is a glibc name rather than a POSIX one, and CI may run in either the C locale or a full one (GitHub's macOS runners set `LC_ALL=en_US.UTF-8`), so tests should pin the locale they expect.
+512-
+513----
+514-
+515-## Status bars, headers, footers
+516-
+517-### A common full-screen four-section layout
+518-
+519-```
+520-┌─────────────────────────────────────────┐
+521-│ Header (top)                            │ ← persistent context: app, dataset, mode
+522-├─────────────────────────────────────────┤
+523-│                                         │
+524-│   Main area (middle)                    │ ← the panels
+525-│                                         │
+526-├─────────────────────────────────────────┤
+527-│ Status / mode line                      │ ← ephemeral feedback
+528-│ Footer hint bar                         │ ← contextual shortcuts
+529-└─────────────────────────────────────────┘
+530-```
+531-
+532-Some apps merge status and footer into one line. Some skip the header. Complex full-screen apps benefit from persistent context around the work area; bounded inline tools often need neither a header nor a dedicated footer.
+533-
+534-### Header content
+535-
+536-- App name (often with logo char or color block).
+537-- Current dataset / context: branch name (lazygit), cluster + namespace (k9s), file path (bat/glow).
+538-- Mode indicator (NORMAL / INSERT in editors).
+539-- Right-aligned: time, host, version (sparingly — only if meaningful).
+540-
+541-### Status / mode line
+542-
+543-- Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
+544-- Auto-fade after a few seconds (or replace with idle state).
+545-- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Modal (vim-style)*).
+546-- Color-coded: green = OK / saved, yellow = pending, red = error.
+547-
+548-### Footer hint bar
+549-
+550-Lay hints out as `key action · key action · key action`, with `·` (middle dot) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Which shortcuts to show, how many, and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+551-
+552----
+553-
+554-## Progress indicators
+555-
+556-### Spinners
+557-
+558-The de facto modern default for indeterminate work: **Braille spinners**.
+559-
+560-```
+561-⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏
+562-```
+563-
+564-Ten frames at ~80ms per frame (cli-spinners' `dots`) = smooth rotation. `cli-spinners` (the npm package, vendored everywhere) ships ~70+ named styles.
+565-
+566-**Rules:**
+567-- Show only after ~100–200ms — instant work shouldn't flash a spinner.
+568-- Stop with a final state symbol: `✓` (success), `✗` (failure), or just disappear.
+569-- Suppress entirely on non-TTY. CI logs shouldn't have spinners.
+570:- In plain, screen-reader, or reduced-motion mode, print one static line instead (see *Accessibility*).
+571-
+572-### Determinate progress bars
+573-
+574-Block characters for sub-cell precision:
+575-```
+576-▏▎▍▌▋▊▉█
+577-```
+578-
+579-These give 8 sub-positions per cell. A 40-cell-wide bar can represent 40 × 8 = 320 distinct progress states.
+580-
+581-```
+582-[████████▎             ] 41%
+583-```
+584-
+585-Show: percent, current/total counts where meaningful, ETA for long operations.
+586-
+587-### Multi-progress
+588-
+589-Multiple parallel tasks each with their own bar:
+590-
+591-```
+592-package-a [████████████████████] 100% ✓
+593-package-b [████████▎           ]  41%
+594-package-c [██▎                 ]  10%
+595-```
+596-
+597-indicatif `MultiProgress`, rich `Progress` (multiple tasks), and listr2 `concurrent` mode support this out of the box; Bubbles ships only a single `progress` component — compose multiple bars by hand. Used by Docker pulls, npm/cargo builds, parallel installers.
+598-
+599-### Pulse / fade
+600-
+601-Ambient indication of background work without commanding attention. lazygit's auto-fetch, for example, shows only a small spinner and status message instead of a blocking dialog. Useful when work is happening but doesn't need to be in the user's face.
+602-
+603-### Empty states and loading states
+604-
+605-**Empty states:** never just "No data." Say what to do next: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
+606-
+607-**Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
+608-
+609-**Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
+610-
+611-**Disconnected, stale, or hung states:**
+612-- Keep the last-known-good view visible, dimmed, with a "stale" or "reconnecting" marker instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case.
+613-- Never let a transient failure rewrite persistent config. btop has an open bug where a temporarily unavailable GPU permanently rewrites the user's saved widget layout instead of hiding the metric until it returns.
+614-- Show elapsed time once a wait passes a second or two, and let `Esc` cancel the in-flight request. There is no TUI convention for an automatic give-up time, so prefer elapsed time and cancel over picking one.
+615-
+616----
+617-
+618-## Theming systems
+619-
+620-Most production TUIs support themes. The canonical approach:
+621-
+622-1. **Define semantic tokens** (`status.error`, `text.muted`, etc.).
+623-2. **Define palette mappings** as TOML/YAML/CSS — one file per theme.
+624-3. **Allow theme selection** via config, env var, or runtime command.
+625-
+626-### Configuration formats
+627-
+628-- **TOML** — bottom, helix, starship, alacritty (since 0.13); btop's `btop.conf` is a TOML-like `key = value` file.
+629-- **YAML** — lazygit (`config.yml`), lazydocker, k9s (including `plugins.yaml`).
+630-- **Flag files / git config** — bat's config file is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives in `.gitconfig` under `[delta]`.
+631-- **TCSS (Textual CSS)** — Textual apps; live-reloads.
+632-- **JSON** — VS Code-style; less common in TUIs.
+633-
+634-### Community palettes for themeable, broadly distributed apps
+635-
+--
+666-
+667-If you support both light and dark, default to "auto" and let users override with `--theme dark`.
+668-
+669----
+670-
+671:## Accessibility
+672-
+673-Be honest about the medium. Screen readers announce what changed on screen. NVDA finds new text in a terminal by diffing its contents, and Windows Terminal reports text as it is written ([NVDA user guide](https://download.nvaccess.org/releases/2026.2/documentation/userGuide.html#DiffAlgo), [Windows Terminal accessibility notes](https://github.com/microsoft/terminal/blob/e90f9a534cae047fccddacc1ee813a82929662d5/doc/terminal-a11y-2023.md)). A full-screen UI repaints constantly, so a spinner frame, a re-highlighted menu row, or a redrawn panel is heard as new text, and the layout itself carries no structure a listener can navigate. No TUI framework fixes that. The dependable answer is a linear mode offered alongside the full-screen UI.
+674-
+675-### What works for screen-reader users
+676-
+677-These rules come from Sampath, Merrick, and Macvean's study of blind developers using CLIs ([CHI '21](https://doi.org/10.1145/3411764.3445544)) and from the screen-reader modes that current agent CLIs ship:
+678-
+679-- **Append; don't repaint.** Report a state change as a new line (`Saved notes.txt`) instead of redrawing a status bar, and keep output in scrollback rather than on the alternate screen.
+680-- **Say it in words.** End every command with a status line, because silent success leaves users guessing. Make progress an occasional line (`Uploaded 3 of 10`), not spinner frames or a bar, which are read out character by character.
+681-- **Flatten structure.** Turn table rows into labelled `Header: value` lines or offer `--format csv|json`; aligned columns force users to memorize column order. Drop borders, box drawing, and ASCII art, which are heard as symbol noise.
+682-- **Number the choices.** An arrow-key menu is re-read whenever the highlight moves; print a numbered list and read a typed answer.
+683-- **Label lines.** Prefix output kinds (`error:`, `warning:`, speaker names in a chat) so a listener knows what a line is before hearing it.
+684-- **Write errors to be spoken.** Say what failed and what to do next, without regexes or symbol-dense jargon.
+685-- **Keep the cursor on the focus.** Screen readers and magnifiers follow the terminal cursor, which full-screen apps usually hide. Leave it on the focused field or row, or return it to the prompt after printing.
+686-
+687-[Claude Code's screen-reader mode](https://code.claude.com/docs/en/accessibility) is the most complete published example: flat text without box drawing, `Header: value` tables, numbered menus, labelled lines, no fullscreen, and the terminal bell when it needs input.
+688-
+689-### The plain-mode contract
+690-
+691-`SKILL.md` requires a `--no-tui`-style mode when automation or accessibility needs linear output. Treat it as part of the product, not a degraded fallback. It must meet these terms:
+692-
+693-- It reaches every action the TUI offers; nothing is TUI-only.
+694-- It follows the rules above and the stream contract in `cli-basics.md` → *Stdin / stdout / stderr discipline*. Results go to stdout; prompts and progress go to stderr.
+695-- Meaning never depends on color, column position, or layout.
+696-- Every prompt has a flag or config equivalent, so the mode can run unattended.
+697-- Users turn it on once, through a flag, an environment variable, or a persistent setting, and it starts automatically when stdout is not a terminal. Don't count on detecting a screen reader. Ink, Gemini CLI, and Claude Code all require an explicit opt-in. gh's `GH_ACCESSIBLE_PROMPTER` and `GH_SPINNER_DISABLED`, with matching config keys, are the model.
+698-
+699-### Framework support
+700-
+701-None of these makes a full-screen app accessible by itself. Check the ecosystem reference before relying on a feature:
+702-
+703-| Stack | What exists | Details |
+704-|---|---|---|
+705-| Huh (Go) | Accessible mode: plain line-by-line prompts with numbered choices and no full-screen redraw. The app switches it on, and Huh does so itself only for `TERM=dumb` | `ecosystem-go.md` → *Huh* |
+706-| Bubble Tea, Bubbles | Nothing screen-reader-specific. Build the linear mode yourself and use Huh's accessible mode for prompts, as gh does | `ecosystem-go.md` → *Huh* |
+707-| Ink | `aria-*` props and an opt-in screen-reader renderer that prints linear text without borders or color; the live region is still rewritten on every change | `ecosystem-typescript.md` → *Strengths and weaknesses* |
+708-| Textual | No screen-reader support, and `textual serve` adds none. Built-in animations honor a reduced-motion level | `ecosystem-python.md` → *Dev tools* |
+709-| Ratatui | Nothing in the library; accessibility is an open tracking issue | `ecosystem-rust.md` → *Pitfalls* |
+710-
+711-### Motion
+712-
+713-- Treat animation as decoration with an off switch, and default it off in plain and screen-reader modes. No cross-tool reduced-motion variable exists, so name yours and document it, as gh (`GH_SPINNER_DISABLED`) and Textual (`TEXTUAL_ANIMATIONS=none`) do.
+714-- With motion off, print one static line (`Working…`) and then the final status, rather than a frozen spinner frame.
+715-- Never blink text (see *Typography in monospace*), and don't animate content the user is reading.
+716-
+717-### Keyboard, focus, and color
+718-
+719-- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least one cue besides color (border weight, reverse video, or a marker), combined as `interaction-patterns.md` → *Focus indicators* describes.
+720-- Color rules live in *Color and accessibility* and *Honor `NO_COLOR`* above. Keep a 16-color theme: those colors follow the user's terminal palette, including high-contrast palettes, while truecolor values override it.
+721-
+722----
+723-
+724-## Common visual pitfalls
+725-
+726-1. **Hardcoded colors** that clash with user themes. Use semantic tokens.
+727-2. **Decorative borders** that don't earn their keep.
+728-3. **Color-only signaling.** Pair with letters or symbols.
+729-4. **Misaligned tables** when text contains CJK or emoji. Use `unicode_width` / `string-width`.
+730-5. **Over-bolding.** Bold loses meaning when half the screen is bold.
+731-6. **Inconsistent capitalization** in headers (mix of "Branch", "branch", "BRANCH").
+732-7. **Emoji as the only signal.** Some terminals render them as boxes.
+733-8. **Light-mode-only colors** (low contrast on dark, or vice versa).
+734-9. **Tiny status bar** that hides important state under the fold.
+735-10. **No visual focus indication** — users tab around guessing where they are.
+736-
+
+exec
+/bin/zsh -lc "rg -n -A 35 '"'^## .*orm|''^### .*alid|''^## .*ocus'"' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8ia77xuy
+exec
+/bin/zsh -lc "rg -n -A 35 'Stdin / stdout / stderr|Non-interactive|non-TTY' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/cli-basics.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8ia77xuy
+ succeeded in 0ms:
+64:### Stdin / stdout / stderr discipline
+65-
+66-- **stdout** = primary output (the result; machine-readable when piped).
+67-- **stderr** = secondary channel (logs, progress, prompts, errors).
+68-- Support `-` for stdin/stdout where it makes sense.
+69-- If stdin is a TTY but your program expects piped input, **show help instead of hanging** (avoid `cat` UX).
+70-
+71-### Interactivity
+72-
+73-Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+74-
+75-Never accept a secret as a flag value; see *Secrets — what NOT to do*.
+76-
+77----
+78-
+79-## Output design
+80-
+81-### Tables for humans
+82-
+83-- One record per line.
+84-- **No ASCII borders** — they break `wc -l` and `grep` pipelines.
+85-- Headers by default, with `--no-headers` toggle.
+86-- Truncate to terminal width with `--no-truncate` toggle.
+87-- Allow `--columns col1,col2`, `--sort col`, `--filter`.
+88-- Recommend `--csv` or `--json` for machines.
+89-
+90-### JSON / NDJSON
+91-
+92-`--json` for structured output. **NDJSON** (one JSON object per line) is more pipe-friendly than a single array — downstream tools can `jq` line-by-line.
+93-
+94-`kubectl`'s `-o {wide,json,yaml,name,jsonpath=…,go-template=…,custom-columns=…}` is the gold standard projection system. Adopt it for tools with structured data.
+95-
+96-### Verbosity
+97-
+98-- `-q` / `--quiet` — suppress non-essential output (errors still print).
+99-- `-v` / `--verbose` — chatty mode.
+
+ succeeded in 0ms:
+254:## Focus management
+255-
+256-In a multi-panel TUI, **which panel has focus** determines:
+257-- Which keystrokes the panel responds to.
+258-- Which footer hints show.
+259-- The visual highlight (border color, reverse video on selection).
+260-
+261-### Focus indicators (in order of strength)
+262-
+263-1. **Border color change** — strongest. The focused panel's border becomes the accent color.
+264-2. **Border weight** — thin → thick. Subtle but works.
+265-3. **Title color/weight** — bold + accent on focused panel title.
+266-4. **Background tint** — subtle but be careful (background-leak issues with borders).
+267-5. **Selection visible** — only the focused panel shows reverse-video selection; unfocused panels show muted selection.
+268-
+269-Combine 2–3 of these for unambiguous indication.
+270-
+271-### Focus navigation
+272-
+273-| Method | Best for |
+274-|---|---|
+275-| **Tab / Shift+Tab** cycle | Linear panel order; small number of panels |
+276-| **Numeric keys** (`1`–`9`) | Direct jumps; many panels or tabs (lazygit `1`–`5` panels, yazi `1`–`9` tabs) |
+277-| **Directional** (`Ctrl+w h/j/k/l` like vim) | Spatial navigation; arbitrary panel arrangement |
+278-| **Mouse click** | Augmentation; not the primary path |
+279-
+280-**Numeric jumps are fastest** when you have 5+ panels. Tab is fine for 2–3.
+281-
+282-### Focus traps
+283-
+284-Some panels should "trap" focus — Tab inside them cycles through internal widgets, not back to the global panel cycle. Modal dialogs and forms always trap focus. Use Esc to escape.
+285-
+286----
+287-
+288-## Search and filter
+289-
+--
+412:## Forms and settings screens
+413-
+414:### Validation timing — avoid premature errors
+415-
+416-Default to validation on **blur** or **submit** so an incomplete value is not treated as an error while the user is still typing. huh's `Input` validates when a field loses focus and again on Next/Submit — there's no per-keystroke validation path in its implementation. Clack and Inquirer validate only on Enter (there's no blur concept in a single-prompt-at-a-time flow). After an error has been shown, live revalidation can help it disappear as soon as the value becomes valid; expensive or remote checks should be debounced or reserved for submit.
+417-
+418-Textual's `Input.validate_on` accepts `"blur"`, `"changed"`, and `"submitted"`, and **defaults to all three**. Narrow it to `validate_on=["blur"]` or `["submitted"]` when errors should wait; keep `"changed"` only when immediate feedback is useful and non-disruptive.
+419-
+420-### Required-field marking — there is no framework convention
+421-
+422-None of huh, Textual, or Clack/Inquirer ship a built-in "required field" visual marker (no asterisk-for-required the way GUI toolkits do). **Don't assume one exists — this is an easy claim to get wrong by GUI pattern-matching.** In particular, huh's `" *"` suffix is its **error indicator**, shown after a validation failure, not a required-field marker; there's no `Required()` API. If a design needs required fields marked, do it manually with label text such as `(required)` or an explained `*`; color may reinforce the marker but must not carry the meaning alone.
+423-
+424-### Dynamic/conditional fields
+425-
+426-Show or hide dependent fields as earlier answers change, and recompute choices from those answers. Check what your framework ships before designing around it: Huh hides whole groups, not single fields (`ecosystem-go.md` → *Huh*), and Textual hides a dependent widget from a reactive watcher (`ecosystem-python.md` → *Reactive state*).
+427-
+428-### Settings-screen behavior — be honest about what's settled
+429-
+430-There's no single widely adopted TUI convention for settings persistence. Choose from the behavior of the underlying operation rather than presenting one pattern as universal:
+431-
+432-- **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
+433-- **Explicit Apply / Save / Cancel**: appropriate when changes must be validated together, committed atomically, trigger an expensive reload, or update a remote system. Show dirty state, make `Esc` behavior explicit, and confirm before discarding meaningful edits.
+434-- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` in the Status panel to open the raw config file in the user's editor. Since v0.44, lazygit reloads the changed file when its terminal regains focus; only a few settings (refresh and fetch intervals, update checks) still need a restart, and lazygit says which. If you take this route, reload on focus or file change rather than demanding a restart.
+435-
+436-There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
+437-
+438----
+439-
+440-## Terminal modes and protocols
+441-
+442-Full-screen apps switch terminal modes on with DECSET (`CSI ? n h`) and must switch each one off (`CSI ? n l`) on every exit path, including errors, panics, and suspend. That is the lifecycle contract in `SKILL.md`. Frameworks restore what they enable, but nothing you enable yourself: Ratatui's `restore()` undoes only raw mode and the alternate screen. Treat every capability query as optional. A terminal or multiplexer may answer late or never, so render a working default first and wait for replies with a timeout. xterm's [control sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html) define the classic modes; newer ones have their own specs, linked below.
+443-
+444-### What each framework turns on
+445-
+446-| Mode | Bubble Tea v2 | crossterm / Ratatui | Textual | Ink 8 |
+447-|---|---|---|---|---|
+448-| Bracketed paste (2004) | On | Off | On | While a paste hook is mounted |
+449-| Kitty keyboard | On (disambiguate), plus `modifyOtherKeys` | Off | On (disambiguate, all keys, associated text) | Opt-in |
+
+codex
+**Give onboarding a linear screen-reader mode, and run it outside the enclosing Bubble Tea program.** Huh v2 already supplies the prompt runner you need:
+
+```go
+form.WithAccessible(true)
+err := form.Run()
+```
+
+The crucial detail is **where you run it**. Accessible mode takes effect through Huh’s standalone `Run()` path. Adding `WithAccessible(true)` to a form that your parent still drives through `Update()` and `View()` does not turn that full-screen app into accessible prompts.
+
+Choose the mode before starting the parent program. Conceptually:
+
+```go
+// Imports: charm.land/huh/v2 and charm.land/bubbletea/v2
+form := buildOnboardingForm(&answers)
+
+if accessible {
+    // No enclosing Bubble Tea program owns the terminal here.
+    if err := form.WithAccessible(true).Run(); err != nil {
+        return err
+    }
+    return finishOnboardingPlain(answers)
+}
+
+_, err := tea.NewProgram(newAppModel(form)).Run()
+return err
+```
+
+Both paths should use the same answers, validation, and save logic.
+
+Full-screen redraws, moving highlights, and spinner frames can produce noisy or incomplete NVDA announcements. Terminal text also lacks the navigable form structure users expect from a GUI. Huh’s accessible mode instead presents sequential prompts: numbered choices for selects, individual number toggles with `0` to finish multi-selects, `y`/`n` confirmations, and printed validation errors before retrying.
+
+Make that a complete product path:
+
+- Expose `--accessible` or `--no-tui`, plus an environment variable and persistent setting. Document it in ordinary CLI help, before onboarding. Huh automatically enables accessible mode only for `TERM=dumb`; don’t rely on detecting NVDA.
+- Keep the entire workflow linear, including authentication, progress, confirmation, errors, and completion. Bubble Tea and Bubbles have no equivalent accessibility mode for the surrounding app.
+- Preserve scrollback; remove borders, decorative markers, aligned columns, and animations. Print explicit status lines such as `Setup complete` and actionable errors such as `error: Enter a project name.`
+- Keep prompts and progress on stderr and results on stdout. Verify Huh’s stream configuration for your pinned version. When input is noninteractive, require documented configuration inputs instead of waiting for answers.
+
+**Validate with NVDA in the Windows terminal your users actually use.** Exercise invalid input and retry, each choice type, cancellation, successful saving, and any conditional steps. Check that labels and instructions are announced, choices remain reviewable in scrollback, and completion is unmistakable. Unit tests can verify shared validation and persistence; they cannot establish whether NVDA speech is usable.
+
+At 80×24 and 60 columns, the accessible path should remain one prompt at a time with wrapping text and no clipping. For the visual path, remove nested form borders and repeated decorative markers where present; actual clutter counts require seeing its rendered output.
+tokens used
+19,226

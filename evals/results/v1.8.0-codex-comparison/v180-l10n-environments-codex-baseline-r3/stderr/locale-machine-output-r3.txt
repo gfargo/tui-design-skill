@@ -1,0 +1,27 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-9fspzdd5
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133cd-76e5-74f0-92e8-f320f847482d
+--------
+user
+Our CLI prints file sizes like 1,234.5 MB in its human table and also has a --json mode. A user in Germany says a script that parses our output broke after they set LANG=de_DE.UTF-8. What should our rules be?
+
+codex
+Treat human display and machine output as separate contracts.
+
+- **`--json` must be locale independent.** Emit file sizes as numeric byte counts, such as `"size_bytes": 1234500000`. JSON numbers use `.` for decimals and never grouping separators. Keep keys and units stable; don’t emit localized strings as the only representation.
+- **Human tables may follow the locale.** English might show `1,234.5 MB`; German might show `1.234,5 MB`. Document that this output is for people and isn’t a stable parsing interface.
+- **Provide deterministic display when needed.** Support a locale override, such as `--locale=C`, or document `LC_ALL=C` if your formatter honors it. This stabilizes formatting but doesn’t make rounded human sizes suitable for exact calculations.
+- **Define units explicitly.** `MB` means 1,000,000 bytes; `MiB` means 1,048,576 bytes. Convert and round only for display.
+
+Recommend that the affected script use `--json` and read `size_bytes`. Test machine output under both `C` and `de_DE.UTF-8` to ensure it stays identical.
+
+If you previously promised that the human table was parseable or locale invariant, preserve that contract or introduce the change through a documented migration.
+tokens used
+2,289

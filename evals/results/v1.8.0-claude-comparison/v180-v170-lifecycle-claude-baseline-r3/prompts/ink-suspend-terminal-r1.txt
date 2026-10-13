@@ -1,0 +1,1 @@
+My Ink 7 component needs to run an interactive editor and then continue rendering. Is unmount plus render again the right approach? Cover callback failure, manual ownership, non-TTY behavior, and what waitUntilExit is for.

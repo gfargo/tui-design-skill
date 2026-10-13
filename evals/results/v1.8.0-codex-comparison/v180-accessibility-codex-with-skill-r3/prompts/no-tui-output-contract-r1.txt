@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our Ratatui dashboard has a --no-tui flag that currently prints the same table without borders and exits. A screen-reader user says it doesn't help. What should --no-tui actually do and output?

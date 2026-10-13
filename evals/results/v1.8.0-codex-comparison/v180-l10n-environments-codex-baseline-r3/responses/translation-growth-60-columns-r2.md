@@ -1,0 +1,10 @@
+Make the layout responsive before translation starts. English text fitting at 80 columns is already too tight for a 60-column split; translations will expose that constraint.
+
+- **Define layouts by available width.** Handle Bubble Tea’s `tea.WindowSizeMsg` and recompute the space available after borders and padding. At 60 columns, hide secondary columns or switch to a compact list with details for the selected task. Keep all four columns only when their minimum widths fit.
+- **Measure terminal cells, not bytes or rune counts.** Japanese characters commonly occupy two cells; combining marks can occupy none. Use ANSI-aware width and truncation helpers such as `charmbracelet/x/ansi`’s `StringWidth` and `Truncate`. Apply the same approach to headers, rows, and footer hints.
+- **Choose overflow behavior explicitly.** Let task titles take the remaining width and truncate them with an ellipsis. Offer the full title in a detail view. Avoid silently clipping status or other information needed to act.
+- **Give the footer its own compact mode.** Prioritize essential hints, move the rest behind a help key, and allow localized short labels. Don’t concatenate a fixed English-sized line.
+- **Separate commands from their labels.** Stable key bindings should work independently of translated text. Have hints reflect the active bindings, and tell translators which key tokens stay literal.
+- **Prepare translator context.** Explain where each string appears, provide screenshots of wide and compact layouts, and distinguish full labels from compact labels. Use complete messages with named placeholders and locale-aware plural handling; Finnish and Japanese won’t follow English grammar.
+
+Test now with expanded pseudo-localized strings and Japanese sample text at **60 and 80 columns**, including resizing while the app runs. Check that selection, essential task information, and the help key remain visible. Give translators a layout that tolerates longer strings, rather than asking them to fit English character limits.

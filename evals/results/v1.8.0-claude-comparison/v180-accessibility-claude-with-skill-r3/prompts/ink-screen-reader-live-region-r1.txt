@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+We added INK_SCREEN_READER=true support to our Ink 8 chat app, but NVDA users say it keeps re-reading the conversation and the spinner. Why, and what should we change?

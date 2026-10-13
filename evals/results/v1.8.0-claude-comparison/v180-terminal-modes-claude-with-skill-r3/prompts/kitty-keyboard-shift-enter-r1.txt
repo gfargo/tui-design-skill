@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+In our Bubble Tea v2 chat app, Shift+Enter should insert a newline and Enter should send. It works in kitty, but in some terminals and inside tmux Shift+Enter just sends. Why, and what should the design be?

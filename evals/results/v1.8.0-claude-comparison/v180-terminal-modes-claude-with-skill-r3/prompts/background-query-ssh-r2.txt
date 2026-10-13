@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our TUI picks light or dark colors by asking the terminal for its background color. Over SSH it sometimes stalls at startup, some terminals never seem to answer, and it never notices when the user switches their OS theme. How should this work?

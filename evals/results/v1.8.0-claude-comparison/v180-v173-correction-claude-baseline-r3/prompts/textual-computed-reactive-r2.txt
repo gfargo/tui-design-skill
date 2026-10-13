@@ -1,0 +1,1 @@
+In Textual I wrote `count = reactive(0)` and `def compute_display(self): return f"Count: {self.count}"`, then `render()` returns `self.display`. The widget shows True instead of the text. Why?

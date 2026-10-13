@@ -1,0 +1,375 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-accessibility-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "bubbletea-form-screen-reader-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends `form.WithAccessible(true).Run()` and describes the sequential prompts it presents (numbered choices, y/n, retry on validation errors)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls for `--accessible`/`--no-tui`, an environment variable, and a persistent setting, and explicitly says not to rely on detecting NVDA."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says full-screen redraws, moving highlights, and spinner frames produce noisy or incomplete NVDA announcements, which is why sequential prompts work better."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that Bubble Tea and Bubbles have no equivalent accessibility mode, so authentication, progress, errors, and completion must also be linear."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "Mentions documented configuration inputs only for noninteractive input; it never says every answer should be settable by flags or config so a user can skip the form."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-form-screen-reader-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `form.WithAccessible(true).Run()` and describes it as linear prompts with numbered choices instead of the full-screen form."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends a documented `--accessible` flag plus an env var or persistent preference, and says explicitly not to rely on NVDA detection."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explains that full-screen redraws, moving highlights and spinner frames become repeated announcements, which motivates the linear prompts."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer says later full-screen Bubble Tea workflows need linear equivalents, but never states that Bubble Tea itself lacks screen-reader support."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer says to provide flag/config equivalents for unattended onboarding and to avoid prompting when stdin is redirected."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubbletea-form-screen-reader-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `form.WithAccessible(true).Run()` and describes the linear prompt behaviour: numbered selects, y/n confirms, and errors followed by a new prompt."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It exposes `--accessible`/`--no-tui`, an app-specific environment variable and a persistent setting, and notes that Huh auto-enables only for TERM=dumb, so detection is not relied on."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explains that full-screen redraws, moving highlights and spinner frames cause repeated or confusing NVDA speech, which motivates the linear path."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It states that Bubble Tea and Bubbles have no screen-reader mode of their own and calls for a linear app workflow after onboarding."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to give each prompt an unattended equivalent through flags or config, and to require supplied values rather than hang when there is no interactive input."
+        }
+      ]
+    },
+    {
+      "trial_id": "no-tui-output-contract-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Under 'Preserve functionality' it exposes filtering, inspection, refresh and all dashboard actions through commands and flags, and it asks for action-parity verification."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It replaces table rows with `Label: value` record blocks and adds `--format json|csv`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says results go to stdout, and prompts, progress, warnings and errors go to stderr."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It forbids spinners, redraws and animation, calls for occasional progress on stderr, and ends the example with an explicit 'Status:' line."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It removes the dependency on column position, alignment padding, decorative markers and status symbols, and spells out status in words; color is not named explicitly, but meaning is carried by labels and words."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "It supports a flag, an environment variable and a saved setting under 'Make it persistent'."
+        }
+      ]
+    },
+    {
+      "trial_id": "no-tui-output-contract-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The 'Action parity' bullet requires every TUI action to be exposed through subcommands or flags, with numbered choices for interaction."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Uses labelled 'Field: value' records, as in the example output, and offers `--format json|csv`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The 'Clean streams' bullet puts results and final status on stdout, and prompts, progress, warnings and errors on stderr."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says to express status in words, ends with 'Status: snapshot complete.', and bans spinners and repainting; progress goes to stderr as text."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Says meaning must not depend on column positions, replaces borders and charts with labelled words, and expresses status in words; color is not named, but status-as-words covers it."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The 'Persistent opt-in' bullet supports an environment variable or configuration setting alongside the flag."
+        }
+      ]
+    },
+    {
+      "trial_id": "no-tui-output-contract-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Under 'Action parity' it says to expose every dashboard action through subcommands or flags, with numbered prompts and unattended equivalents."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It replaces tables with `Field: value` labelled records, gives an example, and mentions CSV/JSON output."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explicitly sends results to stdout and prompts, progress, and diagnostics to stderr."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It forbids spinners, redraws, and animation, requires an explicit completion status line (shown as 'Status: Snapshot complete.'), and puts progress on stderr."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It removes borders, alignment padding, and row markers, uses textual statuses, and relies on field labels rather than column relationships, so meaning no longer depends on color or position."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "It supports an environment variable or saved setting in addition to the flag."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-serve-accessibility-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says no and explains the browser client renders the terminal grid with xterm.js on a canvas with screen-reader mode disabled, providing no semantic structure."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Never explicitly states that Textual itself lacks native screen-reader support; it only addresses the browser rendering path."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a complete --no-tui append-only plain-text mode with labelled values and numbered choices."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-serve-accessibility-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says no and explains that the browser client renders the terminal grid with xterm.js on a canvas with screen-reader mode off, so screen readers get no labelled controls."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says Textual itself lacks screen-reader support; it only describes the limits of the browser rendering."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends a `--no-tui` mode with append-only text, labelled values and line-input prompts for every workflow."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-serve-accessibility-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Answers no and says the browser client renders a terminal grid with xterm.js on a canvas with screen-reader mode off, so no accessible controls are exposed."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Says textual serve doesn't produce semantic HTML controls, but never states that Textual itself lacks screen-reader support."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a complete `--no-tui` mode with linear, append-only output, labelled values, and numbered choices."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-screen-reader-live-region-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says screen-reader mode strips borders and color but still erases and rewrites the entire live region whenever its output changes."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends moving completed messages into `<Static>` with stable keys and keeping the live area to the prompt and essential controls."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to use `useIsScreenReaderEnabled()` to swap the spinner for a static `Working\u2026` component and to disable elapsed-time ticks."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It mentions `aria-hidden` and `aria-label` only to say they don't fix the problem, and never recommends them for visual-only elements."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It offers a `--no-tui` mode but never says Ink cannot detect a screen reader or that the app must expose the mode through its own setting."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-screen-reader-live-region-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says the accessibility renderer strips borders and color, yet still erases and rewrites the entire live region on every change, which NVDA reads as new text."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends moving completed messages into <Static> with stable IDs and keeping the live area to the input and essential controls."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends unmounting spinners and stopping their timers in screen-reader mode, replacing them with a one-time 'Working\u2026' line plus a completion message."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Mentions only that the renderer supports aria-label/aria-hidden; it never recommends applying them to visual-only elements and argues hiding or labelling a spinner is insufficient."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Says useIsScreenReaderEnabled() only reports the opt-in flag and doesn't detect NVDA, and proposes a persistent --no-tui preference in the app."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-screen-reader-live-region-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says screen-reader mode strips borders and color and honors labels, but still erases and rewrites the whole live region whenever it changes."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends appending finalized messages once to `<Static>` and limiting the live region to the current input and essential state."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says not to mount the spinner or run its timer in screen-reader mode, and to show `Working\u2026` once followed by a completion message."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends `aria-label` for useful descriptions and `aria-hidden` for decoration."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "States the env var doesn't detect NVDA and recommends an app-level `--no-tui` flag, with `useIsScreenReaderEnabled()` for component behavior."
+        }
+      ]
+    }
+  ]
+}

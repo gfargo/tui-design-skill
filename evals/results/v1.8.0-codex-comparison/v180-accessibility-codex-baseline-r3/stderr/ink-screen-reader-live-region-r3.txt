@@ -1,0 +1,71 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8axg8dc1
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133bf-9751-7601-9d72-36a1717e1ef2
+--------
+user
+We added INK_SCREEN_READER=true support to our Ink 8 chat app, but NVDA users say it keeps re-reading the conversation and the spinner. Why, and what should we change?
+
+codex
+I’ll check the chat rendering and Ink’s screen reader behavior to see what’s triggering the repeated announcements.
+
+exec
+/bin/zsh -lc "pwd; rg --files -g '"'!node_modules'"' -g '"'!package-lock.json'"' -g '"'!pnpm-lock.yaml'"' -g '"'!yarn.lock'"'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8axg8dc1
+ exited 1 in 0ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8axg8dc1
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/vadimdemedes/ink/master/readme.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8axg8dc1
+ exited 6 in 0ms:
+codex
+`INK_SCREEN_READER=true` changes how Ink writes terminal output; it doesn’t make your chat an accessible live region or announce only new messages.
+
+If the conversation is in Ink’s dynamic render area, every spinner tick or streamed token can trigger another rendering of that area. In screen reader mode, that becomes readable terminal output, so NVDA can encounter the conversation repeatedly. The spinner also produces a constant stream of changes. Stable React keys and memoization don’t solve this: the problem is what gets written to the terminal.
+
+Change the **screen reader presentation**, not just the environment variable:
+
+- **Keep completed messages out of the repeatedly rendered area.** Use an append-only transcript, ordinarily through Ink’s `<Static>`, with each completed message added once. Keep the composer and current status separate. Verify `<Static>` with your exact Ink version and terminal; don’t assume it guarantees one announcement.
+- **Disable spinner animation in screen reader mode.** Use `useIsScreenReaderEnabled()` to show a stable status such as “Assistant is responding.” Announce actual state transitions, not animation frames.
+- **Avoid announcing streamed tokens.** Buffer the reply and output it once when complete, or in deliberate, coherent chunks. Reprinting a growing response repeats its earlier text.
+- **Hide decorative output from Ink’s accessible rendering.** Ink supports `aria-hidden` and `aria-label` on its components. Labels can simplify a visual status, but they don’t deduplicate repeated output.
+
+For example:
+
+```tsx
+const screenReaderEnabled = useIsScreenReaderEnabled();
+
+return (
+  <>
+    <Static items={completedMessages}>
+      {message => (
+        <Text key={message.id}>
+          {message.role}: {message.text}
+        </Text>
+      )}
+    </Static>
+
+    {isResponding && (
+      screenReaderEnabled
+        ? <Text>Assistant is responding.</Text>
+        : <Spinner />
+    )}
+
+    {!screenReaderEnabled && <StreamingPreview />}
+    <Composer />
+  </>
+);
+```
+
+That structure still needs testing: a stable status can be re-emitted when other dynamic content changes. If typing or background updates continue to cause repetition, provide a dedicated **append-only screen reader mode** with minimal dynamic output.
+
+Test NVDA in the terminal your users actually use: leave a response running, type in the composer, then finish the response. The intended result is one useful start status, one completed reply, and no recurring transcript or spinner announcements.
+tokens used
+16,874

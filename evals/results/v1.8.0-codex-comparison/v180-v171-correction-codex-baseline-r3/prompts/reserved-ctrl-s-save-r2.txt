@@ -1,0 +1,1 @@
+My editor-like TUI should bind Ctrl+S to save, the way vim and helix do. Is that safe by default?

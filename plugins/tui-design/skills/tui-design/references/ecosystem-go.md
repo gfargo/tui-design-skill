@@ -131,7 +131,6 @@ return m, fetchData
 - Goroutines never call `View()` directly — send via `program.Send(msg)`.
 - CJK/emoji width in the v2 stack is computed by `charmbracelet/x/ansi` with grapheme clustering — trust `lipgloss.Width()`, never `len()`.
 - Don't `fmt.Println` while the program runs — it corrupts the frame. For permanent lines above an inline UI, return `tea.Println(...)`/`tea.Printf(...)` (no-ops on the alt screen). For diagnostics, use `tea.LogToFile("debug.log", "DEBUG")` (see **Debugging** below).
-- Cobra + Bubble Tea: `PreRun` output isn't lost — the alt screen preserves the main buffer, so it reappears at exit. The rule is no stdout writes while `Run` is active.
 
 ---
 

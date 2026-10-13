@@ -594,9 +594,10 @@ Ambient indication of background work without commanding attention. lazygit's au
 
 **Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
 
-**Disconnected/stale-data states, for anything backed by a live connection:** k9s ships real retry/backoff config for this (`apiServerTimeout`, `maxConnRetry`) — connection loss is a designed-for case, not an afterthought. Keeping the last-known-good view visible (dimmed, with a "stale" or "reconnecting" indicator) rather than blanking the screen is the reasonable approach and what the retry mechanics imply, though it's worth being honest that this exact visual treatment isn't independently documented anywhere — treat it as the sensible inference, not a cited standard. What *is* independently confirmed as a failure mode to avoid: btop has an open bug where a temporarily-unavailable GPU permanently rewrites the user's saved widget configuration instead of just hiding the metric until it reappears — a concrete example of *not* degrading gracefully. Don't let transient unavailability mutate persistent config.
-
-**Timeout and cancellation for a hung operation:** worth doing — show elapsed time once a wait crosses a second or two, and let `Esc` cancel an in-flight request — but be aware this isn't an established convention you can point to; even lazygit and gh only have partial, inconsistently-applied versions of it (spinners without a documented cancel contract, progress meters added feature-by-feature rather than systemically). There's also no TUI-specific sourced number for "give up and show an error after N seconds" — if you need one, the general web-UI guidance (indicator at 1s, determinate indicator past 3s) is a reasonable default to borrow, but say so rather than presenting it as TUI precedent. Prioritize showing elapsed time and allowing cancellation over picking a specific auto-timeout.
+**Disconnected, stale, or hung states:**
+- Keep the last-known-good view visible, dimmed, with a "stale" or "reconnecting" marker instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case.
+- Never let a transient failure rewrite persistent config. btop has an open bug where a temporarily unavailable GPU permanently rewrites the user's saved widget layout instead of hiding the metric until it returns.
+- Show elapsed time once a wait passes a second or two, and let `Esc` cancel the in-flight request. There is no TUI convention for an automatic give-up time, so prefer elapsed time and cancel over picking one.
 
 ---
 

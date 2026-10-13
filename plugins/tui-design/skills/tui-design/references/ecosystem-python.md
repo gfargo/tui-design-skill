@@ -8,7 +8,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 - [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
 - [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
 - [Rich](#rich-textualizerich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
-- [CLI argparse: argparse vs Click vs Typer](#cli-argparse-argparse-vs-click-vs-typer)
+- [Argument parsing: argparse vs Click vs Typer](#argument-parsing-argparse-vs-click-vs-typer)
 
 ## Quick recommendation
 
@@ -18,8 +18,8 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 | CLI tool with pretty output (tables, panels, syntax) | **Rich** |
 | Interactive REPL or shell-like tool | **prompt_toolkit** |
 | One or two prompts inside a CLI | **questionary** (built on prompt_toolkit); InquirerPy is unmaintained |
-| Argparse with type hints | **Typer** (decorator API; bundles its own copy of Click since 0.26) |
-| Argparse decorator-style (no type hints) | **Click** |
+| Argument parsing with type hints | **Typer** (decorator API; bundles its own copy of Click since 0.26) |
+| Argument parsing, decorator-style (no type hints) | **Click** |
 | Simple progress bar | **tqdm** (max performance) or **alive-progress** (polished, redirect-safe) |
 
 **Default for full TUI: Textual.** It's the most complete actively developed Python TUI framework and is genuinely well-designed. **Default for fancy CLI output: Rich.**
@@ -86,11 +86,11 @@ These are two different APIs: [`App.suspend()`](https://textual.textualize.io/gu
 
 Textual ships dozens. Categories:
 
-**Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`.
+**Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`, `LoadingIndicator`, `ProgressBar`.
 
 **Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
 
-**Container/structure:** `Header`, `Footer`, `LoadingIndicator`, `ProgressBar`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
+**Container/structure:** `Header`, `Footer`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
 
 **Data:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`.
 
@@ -134,8 +134,6 @@ Concepts:
 - **Overflow**: `overflow-x: auto` adds scrollbars.
 
 **Selectors**: type (`Button { ... }` matches subclasses too — different from web CSS), id (`#dialog`), class (`.error`), pseudo (`:focus`, `:hover`, `:disabled`, `:dark`, `:light`). Nesting works. **Theme variables** (`$primary`, `$panel`, `$text`, `$accent`, `$error`, etc.) — semantic tokens that change with the active theme.
-
-**Live edit reloads instantly** with `textual run --dev`. Edit your `.tcss` in another window and see changes immediately.
 
 ## Events and messages
 
@@ -260,7 +258,7 @@ async def action_delete(self) -> None:
 
 ## Testing — Pilot + pytest-textual-snapshot
 
-Textual has the best testing story of any TUI framework:
+Pilot drives the app headlessly from pytest:
 
 ```python check=python/pilot-test
 import pytest
@@ -301,7 +299,7 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 - **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
 - **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
 
-**Profiling:** neither `textual run --dev`/`console` nor `textual diagnose` (from the `textual-dev` package) measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes, though attaching to a PID usually needs `sudo`; on Python 3.15+ the stdlib `python -m profiling.sampling attach <pid>` needs no install. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. **A correction worth internalizing:** `DataTable.add_rows()` is not a bulk-insert optimization — it's a plain loop over `add_row()`, paying the same per-row bookkeeping cost `len(rows)` times. If bulk-inserting thousands of rows is slow, switching from a manual loop to `add_rows()` won't fix it. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
+**Profiling:** neither `textual run --dev`/`console` nor `textual diagnose` (from the `textual-dev` package) measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes, though attaching to a PID usually needs `sudo`; on Python 3.15+ the stdlib `python -m profiling.sampling attach <pid>` needs no install. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
 
 ## Dev tools
 
@@ -330,6 +328,7 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 5. **Inside Textual, use `ProgressBar` widget**, not Rich's `Live`/`Progress` — they fight each other for the screen.
 6. **For periodic updates from sync code**, use `self.call_from_thread`, not direct attribute assignment.
 7. **`can_focus = True`** on custom widgets that should receive key events. Without this, key events bypass them.
+8. **`DataTable.add_rows()` is not a bulk-insert optimization.** It is a plain loop over `add_row()`, paying the same per-row cost, so switching to it won't speed up a slow bulk insert.
 
 ---
 
@@ -423,7 +422,7 @@ choice = questionary.select(
 
 ---
 
-## CLI argparse: argparse vs Click vs Typer
+## Argument parsing: argparse vs Click vs Typer
 
 **argparse** — stdlib, no dependency. Verbose but capable. Since Python 3.14 it colorizes help and can suggest fixes for mistyped choices and subcommands (`suggest_on_error`, on by default in 3.15).
 

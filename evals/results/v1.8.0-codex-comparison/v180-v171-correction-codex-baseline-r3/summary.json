@@ -1,0 +1,71 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v180-v171-correction-codex-baseline-r3",
+  "created_at": "2026-10-13T05:00:35Z",
+  "run_manifest_sha256": "13d757c9408e330f0ac44b008093602455114c275b5f539d714b4fd5f7ea7415",
+  "grades_file": "grades.json",
+  "grades_sha256": "53f139c83721e2d0d8a23da250e59dbb63c4f5868b596b25e55f4bea5b3d07f6",
+  "passed": 65,
+  "total": 96,
+  "pass_rate": 0.6770833333333334,
+  "by_case": [
+    {
+      "case_id": "rich-traceback-install",
+      "case_name": "rich-traceback-install",
+      "passed": 10,
+      "total": 12,
+      "pass_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "lazygit-config-format",
+      "case_name": "lazygit-config-format",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "reserved-ctrl-s-save",
+      "case_name": "reserved-ctrl-s-save",
+      "passed": 4,
+      "total": 12,
+      "pass_rate": 0.3333333333333333
+    },
+    {
+      "case_id": "btop-refresh-cadence",
+      "case_name": "btop-refresh-cadence",
+      "passed": 6,
+      "total": 12,
+      "pass_rate": 0.5
+    },
+    {
+      "case_id": "wish-v2-session-options",
+      "case_name": "wish-v2-session-options",
+      "passed": 10,
+      "total": 12,
+      "pass_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "spinner-delay-contract",
+      "case_name": "spinner-delay-contract",
+      "passed": 11,
+      "total": 12,
+      "pass_rate": 0.9166666666666666
+    },
+    {
+      "case_id": "tview-goroutine-draw",
+      "case_name": "tview-goroutine-draw",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "do-not-track-adoption",
+      "case_name": "do-not-track-adoption",
+      "passed": 3,
+      "total": 12,
+      "pass_rate": 0.25
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

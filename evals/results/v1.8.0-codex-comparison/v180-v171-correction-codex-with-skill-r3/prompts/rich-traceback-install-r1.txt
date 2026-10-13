@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I want Rich's pretty tracebacks in my Click CLI. Is `import rich; rich.install()` the right call, and which Python CLIs actually ship Rich so I can point my team at precedent?

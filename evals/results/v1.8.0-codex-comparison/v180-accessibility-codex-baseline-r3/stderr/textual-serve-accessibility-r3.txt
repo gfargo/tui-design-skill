@@ -1,0 +1,22 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6dmriycp
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133bd-f3c7-7591-b94e-8cdfa73d8e66
+--------
+user
+Is running our Textual app with `textual serve` a good way to make it accessible to screen-reader users, since browsers have good screen-reader support?
+
+codex
+**No—`textual serve` isn’t a reliable way to make a Textual app accessible to screen-reader users.** Browser screen-reader support depends on the page exposing meaningful HTML and accessibility information, such as labels, roles, focus, and state.
+
+`textual serve` presents your app through a browser-based terminal. It doesn’t turn Textual widgets into semantic HTML buttons, inputs, or tables. Even if the terminal supports reading some text, that doesn’t provide equivalent access to the app’s controls, layout, or updates.
+
+For dependable accessibility, provide a semantic web interface for the same underlying functionality. If you also offer the served terminal, test it with actual screen readers and users before describing it as accessible. Keyboard operability alone isn’t enough.
+tokens used
+2,176

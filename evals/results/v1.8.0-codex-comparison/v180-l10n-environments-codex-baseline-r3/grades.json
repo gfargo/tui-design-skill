@@ -1,0 +1,315 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-l10n-environments-codex-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "translation-growth-60-columns-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says German and Finnish compounds can be long, but it never says that translations expand or that short strings such as headers and hints grow proportionally the most."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It sets minimum widths and priorities and has titles take the remaining space, but it never says to derive column widths from the measured translated header text instead of English-sized constants."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends exercising the UI at 60 and 80 columns with expanded pseudo-translations before handoff."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "At 60 columns it hides or combines low-priority columns, allows two-line rows, truncates titles with an ellipsis and a detail view, and shrinks the footer to essentials with a full-help key."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to measure terminal cells rather than bytes or characters, notes that Japanese characters take two cells, and recommends lipgloss.Width and ansi.Truncate."
+        }
+      ]
+    },
+    {
+      "trial_id": "translation-growth-60-columns-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says translations will expose the width constraint, but never says strings grow or that short labels like headers and hints grow proportionally the most."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It measures headers in cells and keeps columns only when minimum widths fit, but never says to derive column widths from the translated header text instead of English-sized constants."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends testing now with expanded pseudo-localized strings, before translators deliver."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "At 60 columns it hides secondary columns or switches to a compact list, truncates titles with an ellipsis, and moves non-essential footer hints behind a help key."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to measure terminal cells, not bytes or runes, notes Japanese characters take two cells, and recommends ansi.StringWidth and Truncate."
+        }
+      ]
+    },
+    {
+      "trial_id": "translation-growth-60-columns-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "It only says German and Finnish need room for longer words; it never says short strings like headers and footer hints grow proportionally the most."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It warns against treating English at 80 columns as the sizing rule, but never says to compute column widths from the translated header text."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends testing with expanded pseudo-translations before the real strings arrive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It defines a 60-column layout that hides secondary fields in a detail view, moves the full key map to a help view, truncates fields, and tests long strings at 60 columns."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to budget terminal cells, notes Japanese characters take two cells, and warns against len() and rune counts."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Ctrl+B is tmux's default prefix and that tmux consumes it, so the app never sees the first Ctrl+B."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says tmux 'waits briefly' under escape-time and documents `escape-time 10`, but it never gives the 500 ms default, which is what makes Esc feel laggy."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends not using Ctrl+B as the only sidebar shortcut, offers F2 as an alternative default, and says to check defaults against tmux bindings."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never suggests detecting tmux via $TMUX, or any other way, to adjust hints or documentation."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Ctrl+B is tmux's default prefix, so tmux consumes it and the app never receives the shortcut."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that tmux waits on a lone Esc via `escape-time` and recommends documenting `set -sg escape-time 10`; it does not give the 500 ms default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer advises against Ctrl+B as the only default, offers a `:sidebar` command or palette entry plus a remappable shortcut, and says to check defaults against multiplexer bindings; it names no specific key and does not mention screen's Ctrl+A."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never suggests detecting tmux (for example via $TMUX) to adjust hints or warnings."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-prefix-collision-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Ctrl+B is tmux's default prefix and that tmux consumes it, so the TUI never receives the key."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says tmux waits to disambiguate a lone ESC and recommends documenting `set -sg escape-time 10`, though it never gives the 500 ms default."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer suggests configurable shortcuts, a command palette and mouse controls, but no specific alternative key binding, and it never addresses screen's Ctrl+A."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never suggests detecting tmux via $TMUX or similar to adjust hints or documentation."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Names East Asian Ambiguous width and states that rounded border characters and the bullet \u2022 are ambiguous and may render as two cells in Japanese users' terminals."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explains that the TUI's width library may count these characters as one cell while the terminal draws them as two, and that this mismatch shifts borders and markers."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Offers an ASCII fallback, but only asks affected users to check their own setting; it never tells the team to enable the ambiguous-width setting in their own terminal to reproduce and test the bug."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names East Asian Ambiguous width for the rounded border characters and the bullet \u2022, and notes that East-Asian-configured terminals draw them two columns wide."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that the app counting one column while the terminal draws two breaks padding, and says go-runewidth's ambiguous-width setting must match the terminal."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer offers an ASCII border and bullet fallback but never suggests reproducing the problem by enabling the terminal's ambiguous-width setting."
+        }
+      ]
+    },
+    {
+      "trial_id": "ambiguous-width-borders-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names the East Asian Ambiguous width class, says the rounded corners and `\u2022` belong to it, and says terminals configured for Japanese may draw them two columns wide."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says `go-runewidth` picks ambiguous widths from locale or config, and that the terminal setting may disagree with it in either direction."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer offers ASCII borders and `*`/`-` markers, but it never says to reproduce the bug by turning on the ambiguous-double-width setting in your own terminal; it only says to check users' settings."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says the default table should stay stable across locales and only localize via an explicit `--locale` flag, which contradicts following the user's locale by default."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It requires `--json` to always be locale-independent, using integer bytes with no grouping separators or decimal commas."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It mentions `LANG` and an `LC_ALL=C` workaround but never explains `LC_NUMERIC`/`LC_ALL`/`LANG` precedence or how locale affects number parsing."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends keeping the existing fixed human format by default and offering localized formatting only as an option, so it does not commit to formatting human output with the user's locale."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It requires --json to be locale-independent, using integer bytes with no grouping separators or decimal commas."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It gives the precedence LC_ALL over LC_NUMERIC over LANG for numeric formatting and ties that to keeping JSON locale-independent."
+        }
+      ]
+    },
+    {
+      "trial_id": "locale-machine-output-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says human tables may follow the locale and contrasts English `1,234.5 MB` with German `1.234,5 MB`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer requires `--json` to be locale-independent, using numeric byte counts with `.` decimals and no grouping separators, and to be tested identical under C and de_DE."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer mentions `LC_ALL=C` as an override but never explains LC_NUMERIC, LC_ALL, or LANG precedence, or how these variables change number printing and parsing."
+        }
+      ]
+    }
+  ]
+}

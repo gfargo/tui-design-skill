@@ -1,0 +1,36 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-iiy1lqsz
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133cc-691e-7591-9b54-46a9235cfa7a
+--------
+user
+Japanese users of our Go TUI report that the rounded box borders and the bullet markers are misaligned, but everything looks fine for us. What's going on?
+
+codex
+I’ll check how the TUI measures and renders those characters, especially under Japanese locale settings.
+
+exec
+/bin/zsh -lc 'rg --files' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-iiy1lqsz
+ exited 1 in 0ms:
+codex
+This is likely an **East Asian Ambiguous character-width mismatch**.
+
+Rounded box corners such as `╭ ╮ ╰ ╯` and the bullet `•` have Unicode width class “Ambiguous.” Many terminals display them as **one column**, while terminals configured for Japanese text may display them as **two columns**. If your Go TUI calculates one column but the terminal draws two—or vice versa—borders and markers stop lining up.
+
+Check both sides:
+
+- **Go width calculation:** libraries such as `go-runewidth` can choose ambiguous widths based on locale or configuration. Look at `LANG`, `LC_CTYPE`, and any `EastAsianWidth` setting.
+- **Users’ terminal settings:** look for “ambiguous characters are double-width” or a similar option. Locale and terminal behavior don’t always agree.
+- **Layout code:** `len(s)` counts bytes, and counting runes still doesn’t give display columns. Use a terminal display-width library consistently.
+
+For a broadly compatible fallback, offer ASCII borders (`+`, `-`, `|`) and markers (`*` or `-`). If you retain the Unicode styling, make ambiguous-width handling configurable and ensure it matches the terminal.
+
+A Japanese locale alone doesn’t prove the cause, but these particular characters are a strong clue.
+tokens used
+2,668

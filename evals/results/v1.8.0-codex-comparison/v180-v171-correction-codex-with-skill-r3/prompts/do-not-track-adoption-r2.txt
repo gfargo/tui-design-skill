@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm adding opt-in telemetry to my CLI. Is DO_NOT_TRACK the standard opt-out that Homebrew, Gatsby, and the .NET SDK follow, or should I define my own?

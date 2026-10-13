@@ -1,0 +1,479 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-chxgwlbk
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133a2-ca16-79d2-ba7d-5ff51735c298
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building a lazygit-style multi-pane tool and want to mirror lazygit's configuration conventions. What file format and location does lazygit use, and does k9s use the same format for its plugins?
+
+codex
+I’ll read the tui-design skill and check its references for lazygit’s configuration and k9s plugins.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-chxgwlbk
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "rg -n -A 45 -B 5 'lazygit|k9s|config.yml|plugins' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/exemplar-apps.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-chxgwlbk
+ succeeded in 0ms:
+1-# Exemplar apps — what makes specific TUIs great
+2-
+3:Concrete case studies. When the user asks "how should I lay out my dashboard" or "how do I handle drilling into resources" or "what makes lazygit feel so good," point at one of these. Each entry covers: layout pattern, what it does well, specific features worth copying, lessons for builders.
+4-
+5-For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`. This file is the case-study companion.
+6-
+7-## How to use this file
+8-
+9-When the user asks about a design choice and you're unsure of the answer, find the analogous case here:
+10-
+11-- "How should I lay out a dashboard?" → btop, bottom, htop.
+12:- "How should drilling-down work?" → k9s, lazydocker.
+13-- "How should I make searching fast?" → fzf, atuin.
+14-- "How do I handle a million-row table?" → Harlequin, Toolong.
+15:- "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
+16-- "How do I keep my AI chat smooth at high token rates?" → Claude Code and Copilot CLI (alternate screen, virtualized transcript) versus Gemini CLI (inline, Ink `<Static>` history).
+17:- "What's the spec for my undo system?" → lazygit's git-action stack.
+18:- "How should mouse work in my TUI?" → btop (clickable keys and boxes), helix (keyboard-first; mouse on by default but never required), lazygit (augmentation).
+19-- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (per-module time budgets).
+20-- "What does a polished setup wizard look like?" → @clack/prompts (create-vite, create-astro) — see `ecosystem-typescript.md`.
+21-- "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
+22-
+23-Concrete examples beat abstract principles for design questions. When in doubt, point at the app and the user can study its source.
+24-
+25-**Entries, grouped:**
+26:- Git: [lazygit](#lazygit-go-gocui) · [gitui](#gitui-rust-ratatui)
+27:- Kubernetes / Docker: [k9s](#k9s-go-tview) · [lazydocker](#lazydocker-go-gocui)
+28-- Monitors: [btop / btop++](#btop--btop-c) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
+29-- Pickers and search: [fzf](#fzf-go) · [atuin](#atuin-rust-ratatui)
+30-- Editors: [helix](#helix-rust-custom-renderer) · [neovim](#neovim-c--lua)
+31-- File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-mostly-python-and-go)
+32-- IDE-style apps: [Posting](#posting-python-textual) · [Harlequin](#harlequin-python-textual)
+33-- Viewers: [Toolong](#toolong-python-textual) · [Glow](#glow-go-bubble-tea)
+34-- Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript)
+35-- CLI output discipline: [starship](#starship-rust-no-ui-framework) · [yt-dlp / aria2](#yt-dlp--aria2-cli-but-excellent-terminal-output)
+36-
+37----
+38-
+39:## lazygit (Go, gocui)
+40-
+41-> Multi-pane git client. The aesthetic that defined "lazy*."
+42-
+43-**Layout:** persistent multi-panel — 5 panels on the left (Status, Files, Branches, Commits, Stash), 1 large panel on the right (Diff/details), command log strip at the bottom.
+44-
+45-**What it does well:**
+46-- **Per-pane sub-tabs.** The Branches panel has Local / Remotes / Tags as `[`/`]` tabs.
+47-- **Undo/redo for git operations** (`z` / `Z`), driven by the reflog — so it can walk back a rebase, but not working-tree or stash changes, pushes, or branch creation, and not while a rebase is in progress. This is unusually thoughtful for a TUI.
+48-- **Unobtrusive background-fetch status** (a small spinner) — present without commanding attention.
+49:- **Custom commands and aliases** in YAML config (`config.yml`).
+50-- A "command log" pane showing what git commands actually ran (transparency).
+51-- Confirmation popups for destructive actions (Enter confirms, Esc cancels).
+52-
+53:**Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
+54-
+55:**Stack:** Go, gocui (jesseduffield's fork, copied into the lazygit repo as `pkg/gocui` in April 2026) on tcell v3, YAML config.
+56-
+57----
+58-
+59:## k9s (Go, tview)
+60-
+61-> Kubernetes TUI. Drill-down stack + command mode.
+62-
+63-**Layout:** drill-down stack with command-mode navigation. Top status header (cluster, context, namespace), main resource list, footer hints. Drill into a resource → full-screen detail view → `Esc` back.
+64-
+65-**What it does well:**
+66-- **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes. Different resources get different actions.
+67-- **Sortable columns** via Shift+letter (`shift-n` name, `shift-a` age, `shift-o` the selected column).
+68-- **Instant filter** (`/`) to narrow huge lists in real time — regex by default; `/-f` switches to fuzzy matching.
+69:- **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
+70:- **Plugin system** for custom actions (`plugins.yaml`).
+71-- **Status-header** showing the current "address" of where you are.
+72-
+73:**Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
+74-
+75-**Stack:** Go, derailed's forks of tview and tcell (`derailed/tview`, `derailed/tcell`), YAML config, K8s client-go.
+76-
+77----
+78-
+79-## btop / btop++ (C++)
+80-
+81-> System monitor. The pinnacle of widget dashboard layouts.
+82-
+83-**Layout:** widget dashboard. CPU graph full-width on top; memory above network on the left; processes table on the right. Boxes can be toggled, swapped to alternate positions, and saved as presets — not drag-resized — all configurable in `btop.conf` (a TOML-like `key = value` file).
+84-
+85-**What it does well:**
+86-- **Truecolor gradient meters** that look genuinely beautiful.
+87-- **One tunable refresh rate** (`update_ms`, default 2000) that every box shares; each box keeps its own scroll, focus, and graph history.
+88-- **Mouse support** that doesn't get in your way: highlighted keys and boxes are clickable, lists scroll with the wheel, and there is no drag-resize to fight.
+89-- **Theme system** with dozens of community themes.
+90-- **Help modal (`h`, `?`, or F1)** that's actually informative, organized by widget.
+91-
+92-**Specific features worth copying:**
+93-- Widget independence for focus, scroll, and layout (boxes can be shown, hidden, and rearranged individually).
+94-- Theme system as one `.theme` file per theme (a simple `theme[key]="#hex"` format).
+95-- The decision to default to truecolor and degrade — most users have it now.
+96-
+97-**Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
+98-
+99-**Stack:** C++ (btop). Related monitors: Rust's bottom (`btm`), inspired by gtop, gotop, and htop rather than by btop. cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat the original as a current peer.
+100-
+101----
+102-
+103-## fzf (Go)
+104-
+105-> The fuzzy finder. Pattern-defining.
+106-
+107-**Layout:** full-screen by default; `--height` opts into a bounded picker below the cursor. Either form does one thing and exits.
+108-
+109-**What it does well:**
+110-- **Preview pane** with `--preview` — shows file contents, command output, anything, without leaving the picker.
+111-- **Composable** — pipes to anywhere. `git branch | fzf | xargs git checkout` is the canonical pattern; even a full TUI can have a "summon fzf for picking" sub-flow.
+112-- Opens `/dev/tty` for its interactive UI while keeping the selected value on stdout. Use `--height` when shell context must remain visible; see `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
+113-
+114-**Pattern recipe:** the instant-fuzzy-filter interaction (sub-100ms updates, match count, smart-case, ranking) is dissected in `references/interaction-patterns.md` → *The fzf pattern in detail*.
+115-
+116-**Lessons:** speed is a feature. Users summon fzf hundreds of times a day; making it 50ms instead of 200ms transforms the experience.
+117-
+118-**Stack:** Go, no UI framework — its own renderer on Unix, tcell on Windows.
+--
+127-
+128-**What it does well:**
+129-- **Tree-sitter** for syntax-aware text objects.
+130-- **Space-based which-key.** Press `Space`, see a menu of `f` (file picker), `b` (buffer picker), `s` (symbols), etc.
+131-- **`:` command mode** with completion.
+132:- **Built-in LSP** (no plugins needed for most languages).
+133-- Single-binary distribution with sensible defaults — works out of the box.
+134-
+135-**Pattern recipe:** selection-first editing and multi-cursor-as-primary are dissected in `references/interaction-patterns.md` → *The helix pattern — selection-first modal editing*.
+136-
+137-**Lessons:** modes don't have to be confusing. helix shows the mode in the statusline (`NOR`/`INS`/`SEL`) plus which-key for leaders; by default the cursor is a block in every mode and `color-modes` is off, so per-mode cursor shapes and colors are opt-in config (`[editor.cursor-shape]`, `color-modes = true`) — worth enabling, and worth shipping on by default in your own modal app.
+138-
+139-**Stack:** Rust, custom rendering (Ratatui-adjacent).
+140-
+141----
+142-
+143-## yazi (Rust, Ratatui)
+144-
+145-> File manager with image preview. Miller columns.
+146-
+147-**Layout:** miller columns — parent / current / preview, configurable widths (default `[1, 4, 3]`).
+148-
+149-**What it does well:**
+150-- **Async I/O everywhere.** Even directory listing is non-blocking. The UI never stalls.
+151-- **Built-in image preview** via Sixel / kitty / iTerm2 (auto-detected).
+152-- **Vim-style keybindings**, with `;` / `:` to run a shell command (`:` blocks until it finishes).
+153-- **Plugins in Lua** — extends without recompile.
+154-- **Tasks pane** for ongoing work (copies, transcodes).
+155-
+156-**Specific features worth copying:**
+157-- Async-everything — no operation should block the UI.
+158-- The decision to support all three image protocols.
+159:- Lua plugins for extension — extension without forking.
+160-
+161-**Lessons:** in a file manager, *every* I/O can be slow on the wrong filesystem (network mounts, encrypted drives, dead USB). Async-first isn't optional; it's the foundation.
+162-
+163-**Stack:** Rust, Ratatui, Crossterm, async via Tokio.
+164-
+165----
+166-
+167-## atuin (Rust, Ratatui)
+168-
+169-> Shell history with sync. Replaces Ctrl+R.
+170-
+171-**Layout:** overlay/popup — replaces the default shell reverse-search with a richer fzf-style picker.
+172-
+173-**What it does well:**
+174-- **Replaces a built-in** (Ctrl+R) seamlessly. Users don't have to change muscle memory; they get a better version of what they already use.
+175-- **Fuzzy filter with metadata** — when you ran the command, exit code, working directory, hostname.
+176-- **Optional encrypted sync** to share history across machines.
+177-- **Both CLI and TUI** from the same core. CLI for scripts (`atuin search`), TUI for interactive use.
+178-
+179-**Specific features worth copying:**
+180-- The "replace a familiar built-in" strategy. Far easier adoption than a new tool to learn.
+181-- Showing metadata on every result (when, where, exit code) without cluttering.
+182-- Dual CLI + TUI — the CLI handles scripts, the TUI handles exploration.
+183-
+184-**Lessons:** the highest-leverage tools replace existing workflows rather than adding new ones. Users will switch to a slightly better Ctrl+R; they won't switch to a wholly new mental model.
+185-
+186-Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintained alongside it.
+187-
+188-**Stack:** Rust, Ratatui, optional self-hosted sync server.
+189-
+190----
+191-
+192-## htop (C, ncurses)
+193-
+194-> Process viewer. Old-school, still excellent.
+195-
+196-**Layout:** persistent dense — header (CPU/mem/swap meters), process list (sortable), F-key strip at the bottom.
+197-
+198-**What it does well:**
+199-- **F-key strip** — `F1`–`F10` always visible at the bottom, telling you exactly what's available. The single most useful discoverability pattern.
+200-- **Tree mode** (`F5`) — collapsible process tree.
+201-- **Filter** (`F4`) and **search** (`F3`).
+202-- **Color meters** in the header.
+203-- **Mouse support** for clicking column headers to sort.
+204-
+--
+306-
+307-## gitui (Rust, Ratatui)
+308-
+309-> Git TUI in Rust.
+310-
+311:**Layout:** persistent multi-panel, similar to lazygit but Rust-based.
+312-
+313-**What it does well:**
+314-- **Fast, even on huge repos.** Async git operations.
+315-- **Diff viewer** with syntax highlighting.
+316-- **Async fetch with no UI block.**
+317-- **Push/pull progress** rendered in-app.
+318-
+319-**Specific features worth copying:**
+320-- The pattern of running git operations on a worker thread and posting progress events back.
+321-- Showing diff with proper syntax highlighting (Tree-sitter or syntect).
+322-
+323-**Lessons:** git operations on huge repos can be slow. If your tool wraps git, the user experience hinges on whether you keep the UI responsive. Threading-pool with progress events is the pattern.
+324-
+325-**Stack:** Rust, Ratatui, `git2` plus `gix` (gitoxide).
+326-
+327----
+328-
+329-## lazydocker (Go, gocui)
+330-
+331:> Docker TUI. Same paradigm as lazygit.
+332-
+333-**Layout:** persistent multi-panel — sidebar with Project / Containers / Services / Images / Volumes / Networks, main panel showing details (Logs / Stats / Env / Config / Top tabs).
+334-
+335-**What it does well:**
+336-- **Tabbed-within-panel** in the main panel — `[`/`]` cycle Logs/Stats/Env/Config/Top.
+337-- **Live log streaming** with auto-scroll toggle.
+338-- **Resource graphs** (CPU / memory / network) in the Stats tab.
+339-- **Custom commands** in YAML config.
+340-
+341-**Lessons:** if you're building a "lazy*" tool for some other domain (kubernetes, AWS, your CI system), this template works. Persistent sidebar + main panel with tabs + per-context single letters + footer hint bar.
+342-
+343-**Stack:** Go, gocui (jesseduffield's fork).
+344-
+345----
+346-
+347-## neovim (C + Lua)
+348-
+349-> Editor. The most-customized TUI in existence.
+350-
+351-**Why study:** the *plugin* and *config* ecosystem teaches lessons about extensibility. Every successful neovim plugin (telescope.nvim, which-key.nvim, lualine.nvim, nvim-tree.lua, lazy.nvim) demonstrates a UI pattern worth knowing:
+352-
+353-- **telescope.nvim** — fuzzy picker for everything (files, buffers, LSP symbols, git refs). The "picker for X" pattern generalizes.
+354-- **which-key.nvim** — popup showing available leader-key follow-ups. Discoverability by default.
+355-- **lualine.nvim** — status line as a configurable component pipeline. Mode + git branch + diagnostics + filename + position.
+356-- **nvim-tree.lua** — file tree sidebar with vim navigation.
+357-- **lazy.nvim** — plugin manager with lazy-loading. Cold-start matters.
+358-
+359-**Lessons:** the design choices in vim — modal editing, leader keys, command mode, registers, marks, buffers, splits — have proven robust over decades. Even non-editor TUIs benefit from borrowing these mental models when they fit.
+360-
+361:**Stack:** C (core), Lua (config and plugins).
+362-
+363----
+364-
+365-## Toolong (Python, Textual)
+366-
+367-> Log viewer for multi-GB files.
+368-
+369-**Layout:** single panel (the log) with optional filter sidebar.
+370-
+371-**What it does well:**
+372-- **Virtualization for multi-GB files.** Doesn't load the whole file.
+373-- **Real-time tailing** with `-f`-style follow.
+374-- **Regex filter** that doesn't slow down on huge files.
+375-- **Merge multiple log files** by timestamp.
+376-- **Pretty syntax highlighting** for common log formats (JSON, syslog, NGINX).
+377-
+378-**Lessons:** when working with potentially-huge data, virtualization is the difference between "it works on my 10MB sample" and "it works in production on 50GB rotated logs." Plan for it from day one.
+379-
+380-**Stack:** Python, Textual. Toolong has had no release since April 2024; study it for the design, not as a maintained dependency.
+381-
+382----
+383-
+384-## Glow (Go, Bubble Tea)
+385-
+386-> Markdown reader for the terminal.
+387-
+388-**Layout:** single panel (the rendered Markdown) with optional file picker.
+389-
+390-**What it does well:**
+391-- **Beautiful Markdown rendering** via Glamour.
+392-- **Multiple themes** (light, dark, custom JSON).
+393-- **Local + remote files** (GitHub URLs work directly).
+394-- Scope discipline: Glow 2.0 removed the cloud stash feature rather than carry a dead backend.
+395-
+396-**Specific features worth copying:**
+397-- The decision to ship as both a CLI (`glow README.md` pipes to terminal) and a TUI (`glow` opens the picker).
+398-- Glamour's themes as JSON — define style once, apply everywhere.
+399-
+400-**Stack:** Go, Bubble Tea v2 (since Glow 3), Glamour.
+401-
+402----
+403-
+404-## Claude Code, GitHub Copilot CLI, Gemini CLI (TypeScript)
+405-
+406-> AI coding assistants in the terminal.
+
+codex
+Lazygit uses **YAML**, in a file named `config.yml`. Its default location depends on the OS:
+
+| OS | Default path |
+|---|---|
+| Linux | `~/.config/lazygit/config.yml` (or `$XDG_CONFIG_HOME/lazygit/config.yml`) |
+| macOS | `~/Library/Application Support/lazygit/config.yml` |
+| Windows | `%LOCALAPPDATA%\lazygit\config.yml` |
+
+Run `lazygit --print-config-dir` to find the actual directory. Lazygit also supports a `--use-config-file` override.
+
+**Yes, k9s plugins also use YAML**, conventionally named `plugins.yaml` in the k9s configuration directory. The `.yml` and `.yaml` extensions represent the same format, but the two apps use different schemas.
+tokens used
+10,395

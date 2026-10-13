@@ -1,0 +1,366 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6sl1sn83
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133b7-b65b-7683-8287-547ecf0b8952
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Our TUI picks light or dark colors by asking the terminal for its background color. Over SSH it sometimes stalls at startup, some terminals never seem to answer, and it never notices when the user switches their OS theme. How should this work?
+
+codex
+I’ll read the tui-design skill and use it to work through startup detection, SSH behavior, and theme changes.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6sl1sn83
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Raw mode delivers both as keypresses and disables XON/XOFF, so a full-screen app may bind `Ctrl+S`; flow control only affects line-mode programs.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "rg -n 'theme|OSC|background|2031|996|timeout|SSH' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/{visual-patterns,interaction-patterns}.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6sl1sn83
+ succeeded in 0ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:17:- [Progress indicators](#progress-indicators) (includes disconnected/stale-data and timeout/cancel UX)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:225:### The background-leak problem
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:227:Each terminal cell has only fg/bg colors. A border cell renders the line in the foreground but the cell's background "leaks" through behind the border characters. If your panel has a contrasting background to its parent, this looks wrong:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:230:parent_bg has black background
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:231:panel has dark blue background
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:232:border characters: render in panel's blue background
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:237:- Use the same background for panel and borders.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:238:- Or use one-eighth block characters (`▏▕▔▁`) as borders — Textual does this for themed apps.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:242:For legacy SSH, Windows conhost, `TERM=dumb`, or any system where Unicode might be unreliable:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:255:Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier (detection details: `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*). SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:290:This indirection earns its keep when adding themes (Catppuccin Latte + Frappé + Macchiato + Mocha is one config file, not four code changes) or when supporting light/dark modes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:340:| **Underline** | OSC 8 hyperlinks, shortcut hints | Wide support; meaningful |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:408:A terminal layout is not designed for one size. The same app runs on a 220-column ultrawide, an 80×24 SSH session, a 60-column tmux split, and a 13-inch laptop. **A layout that only works at the author's window size is unfinished** — and the author rarely notices, because they only ever see their own terminal. Pressure-test every layout at the floor, and raise it in any review even when the user only asked about something else: it's the most-missed issue in TUI design.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:601:Ambient indication of background work without commanding attention. lazygit's auto-fetch, for example, shows only a small spinner and status message instead of a blocking dialog. Useful when work is happening but doesn't need to be in the user's face.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:620:Most production TUIs support themes. The canonical approach:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:623:2. **Define palette mappings** as TOML/YAML/CSS — one file per theme.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:624:3. **Allow theme selection** via config, env var, or runtime command.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:634:### Community palettes for themeable, broadly distributed apps
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:645:- **base16** umbrella spec — many themes follow this.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:647:The community has built theme repos for most popular tools; users of highly themeable apps expect plug-and-play. Small single-purpose tools still need semantic colors and light/dark safety, but do not need to bundle every palette.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:655:- **yazi** — icons are default-on in the shipped theme rather than gated by a flag; the FAQ's answer for users without a Nerd Font is to override the icon tables in `theme.toml`, not a switch.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:663:- OSC `]11;?` query — many terminals respond with their background color; others never answer, so bound the wait. Mode 2031 reports later theme switches where supported. The query, timeout, and sentinel details are in `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:665:- Lipgloss v2's `LightDark` (`AdaptiveColor` in v1/compat) and Textual's runtime theme switching abstract this.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:667:If you support both light and dark, default to "auto" and let users override with `--theme dark`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:720:- Color rules live in *Color and accessibility* and *Honor `NO_COLOR`* above. Keep a 16-color theme: those colors follow the user's terminal palette, including high-contrast palettes, while truecolor values override it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md:726:1. **Hardcoded colors** that clash with user themes. Use semantic tokens.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:18:- [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:91:- Familiar to users from many backgrounds.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:266:4. **Background tint** — subtle but be careful (background-leak issues with borders).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:315:Universal pattern: **Space toggles** the row's marked state. Marked rows show a `*` prefix or accent background.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:357:- Anything that should work over a serial console or restricted SSH.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:442:Full-screen apps switch terminal modes on with DECSET (`CSI ? n h`) and must switch each one off (`CSI ? n l`) on every exit path, including errors, panics, and suspend. That is the lifecycle contract in `SKILL.md`. Frameworks restore what they enable, but nothing you enable yourself: Ratatui's `restore()` undoes only raw mode and the alternate screen. Treat every capability query as optional. A terminal or multiplexer may answer late or never, so render a working default first and wait for replies with a timeout. xterm's [control sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html) define the classic modes; newer ones have their own specs, linked below.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:452:| Synchronized output (2026) | When the terminal reports it; not queried over SSH unless `TERM` names a known terminal | The app's job | When reported; never inline | Always, on a TTY |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:453:| Grapheme clusters (2027) | Same query and SSH rule as 2026 | None | None | None |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:462:- **Focus reports (1004).** The terminal sends `CSI I` and `CSI O` when its window gains or loses focus. Use them to pause animation and polling in the background and to refresh stale data on return; lazygit dims its panels on focus loss and refreshes on focus. tmux forwards them only with `focus-events on`, which is off by default.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:466:- **Synchronized output (2026).** Wrap each frame in `CSI ? 2026 h` … `CSI ? 2026 l` so the terminal paints it at once instead of tearing mid-redraw ([spec](https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md)), and detect support with DECRQM (`CSI ? 2026 $ p`). Always send the end sequence, error paths included; a terminal releases a stuck frame only after its own timeout (150 ms in Alacritty, 1 s in Ghostty, 2 s in kitty). kitty, WezTerm, foot, Alacritty, Ghostty, iTerm2, Windows Terminal 1.23.20211+, and tmux 3.7+ support it. Without it, write each frame in one `write`, send only changed cells, and hide the cursor while drawing.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:468:- **Window title (OSC 2).** Set a title only when it helps users find the window, for example the open file or the remote host. Push the old title with `CSI 22 ; 0 t` before setting yours and pop it with `CSI 23 ; 0 t` on exit. xterm, kitty, foot, iTerm2, Alacritty, and tmux keep that stack; WezTerm, Ghostty, and Windows Terminal ignore it, so the user's title is lost there. Bubble Tea clears the title on exit rather than restoring it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:469:- **Progress (OSC 9;4).** `OSC 9 ; 4 ; state ; percent ST` shows progress on the tab or taskbar; state 0 removes it, 1 is normal, 2 error, 3 indeterminate, and 4 paused ([ConEmu](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC), [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences)). Windows Terminal, Ghostty 1.2+, kitty, iTerm2, and tmux 3.7+ understand it. A terminal that knows only OSC 9 notifications may pop it up as a notification, so send it where you know it is supported, and clear it with state 0 on every exit. Bubble Tea's view-level progress bar sends it without checking.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:470:- **Shell-integration marks (OSC 133).** Prompt marks (`A` prompt, `B` input, `C` output, `D;exit-code` end) let a terminal jump between prompts, select one command's output, and show its exit status ([proposal](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/6b555699e41ab47ce210610d1a17cfc1662ec8d7/proposals/semantic-prompts.md)). A REPL should mark its own prompts, adding `aid=` when it runs inside a shell that marks them too; a full-screen TUI should not.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:475:- **Color depth.** `COLORTERM=truecolor` (or `24bit`) is the [convention](https://github.com/termstandard/colors/blob/caf0bb949ad64307d938a055f7fbec76ce65d91e/README.md#truecolor-detection) for 24-bit color; `TERM` alone proves little, since most terminals call themselves `xterm-256color`. Libraries read it differently: chalk 6 accepts only `truecolor` (with `24bit` it falls back to whatever `TERM` suggests), and crossterm consults `TERM` only when `COLORTERM` is unset. The variable is also the first thing lost over SSH. OpenSSH forwards no environment variables by default, and only recent Debian and Ubuntu releases send and accept `COLORTERM` at both ends. tmux 3.6+ sets `COLORTERM=truecolor` in its panes and downsamples for the outer terminal. To recover truecolor remotely, ask the terminal (XTGETTCAP `RGB`, which Bubble Tea's capability request sends) or let users set it; otherwise fall back to 256 colors over the 16-color theme from `visual-patterns.md` → *Color in depth*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:476:- **Background color (OSC 11).** `OSC 11 ; ? ST` returns the background as `rgb:rrrr/gggg/bbbb`. The Linux console, PuTTY, mosh, GNU Screen, and ConEmu never answer, so follow it with a query every terminal answers (DA1, `CSI c`, or the status report `CSI 5 n`). If that reply arrives first, no background reply is coming. Cap the wait anyway (Neovim uses 100 ms, lazygit 500 ms for slow SSH, Lip Gloss 2 s), render with a default palette meanwhile, and switch when the answer arrives. tmux 3.4+ answers OSC 11 itself with the attached client's colors.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:477:- **Dark/light changes (2031).** After `CSI ? 2031 h`, the terminal reports a theme switch as `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n` (light), and `CSI ? 996 n` asks for the current theme ([spec](https://github.com/contour-terminal/contour/blob/ab57ab3288c3dca5ff727311cb3f1401bac30549/docs/vt-extensions/color-palette-update-notifications.md)). kitty 0.38.1+, Ghostty, foot 1.23+, and iTerm2 3.7+ support it; WezTerm does not; tmux 3.8 forwards the outer terminal's theme. Probe with DECRQM before enabling it, re-query OSC 11 when a report arrives instead of trusting the report alone, as lazygit and Neovim do, and turn the mode off before handing the terminal to a child process. Bubble Tea passes the parsed reports through without enabling the mode; Textual, Ink, and Ratatui don't handle it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:481:The same app runs inside multiplexers, over SSH, and on Windows consoles. Each changes which keys arrive and which modes work:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:486:| GNU screen | The prefix `Ctrl+A` never reaches the app. Truecolor is dropped unless `truecolor on` (5.0+); OSC sequences other than titles and colors are discarded; the alternate screen is off by default. The default flow control (`auto`) still passes Ctrl+S and Ctrl+Q to raw-mode apps on Linux, but `flow on` swallows them | `$STY`, `TERM=screen*` | 256-color theme; no OSC-dependent feature without a fallback; clear the screen on exit |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:488:| SSH | Every capability query costs a network round trip; `COLORTERM` usually doesn't arrive; the remote may lack terminfo for the local terminal (kitty's `xterm-kitty`, Ghostty's entry); OSC 52 is the only clipboard path | `$SSH_TTY`, `$SSH_CONNECTION` | Bounded query timeouts, truecolor from a query or a user setting, `TERM=xterm-256color` when terminfo is missing (kitty's `kitten ssh` and Ghostty's SSH integration copy it over) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:494:**tmux options.** tmux answers or forwards most of these itself: synchronized output and progress (3.7+), hyperlinks (3.4+), the clipboard (`set-clipboard`), focus reports (`focus-events on`), extended keys (`extended-keys`), and the dark/light theme (3.8). Notifications and image protocols need DCS passthrough (`ESC P tmux; … ESC \` with every inner ESC doubled) and `allow-passthrough on`, which is off by default ([tmux.1](https://github.com/tmux/tmux/blob/3.8/tmux.1)). Several of these depend on options that are off by default, so document the `tmux.conf` lines your app needs.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:498:## Talking to the terminal emulator — OSC 8, 52, 9
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:500:Some interactions aren't between the user and your app — they're between your app and the *terminal emulator*: open a link, set the clipboard, pop a desktop notification. OSC escape sequences carry these requests in-band, down the same byte stream as your output. That's their superpower: they traverse SSH, containers, and nested shells, because the emulator on the user's *local* machine interprets them — no X11 forwarding, no remote clipboard daemon.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:502:### OSC 8 — hyperlinks
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:506:**Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:510:**Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:512:### OSC 52 — write the system clipboard
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:514:`ESC ] 52 ; c ; <base64 payload> ESC \` asks the emulator to set the system clipboard — from anywhere, including over SSH. Practical limits: the common ceiling comes from xterm/hterm's 100,000-byte maximum sequence length, ≈74,994 bytes of decoded text; older kitty builds capped far lower. Keep payloads to tens of KB or chunk them.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:516:**tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs tmux to know the outer terminal handles OSC 52: an `Ms` terminfo entry, or (tmux 3.6+) the terminal's device-attributes reply. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:518:**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and other terminals may apply similar focus gates, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:520:**Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:522:### OSC 9 / 777 — desktop notifications
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:524:`ESC ] 9 ; message ESC \` (OSC 9, iTerm2-originated) has the widest support: kitty, WezTerm, Ghostty, iTerm2, foot. Never start the message with digits and a semicolon: `OSC 9;n` is also ConEmu's command namespace (`9;4` is a progress bar), parsed by Windows Terminal, Ghostty, and tmux 3.7+, so `3; tests failed` becomes a command or gets dropped. Prefix the text (`build: 3 tests failed`) or use OSC 777. OSC 777 (`ESC ] 777 ; notify ; title ; body ESC \`) adds a title where supported (WezTerm, Ghostty, foot); a reasonable strategy is 777 where you know it works, else 9. tmux swallows both unless wrapped in DCS passthrough with `allow-passthrough on` (tmux 3.3+).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:530:- **OSC 11** (background color) and **mode 2031** (dark/light changes) — see *Terminal modes and protocols* → *Color and appearance*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:531:- **OSC 9;4** (progress) and **OSC 133** (prompt marks) — see *Terminal modes and protocols* → *Output*.
+
+exec
+/bin/zsh -lc "sed -n '438,479p' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/interaction-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6sl1sn83
+ succeeded in 0ms:
+---
+
+## Terminal modes and protocols
+
+Full-screen apps switch terminal modes on with DECSET (`CSI ? n h`) and must switch each one off (`CSI ? n l`) on every exit path, including errors, panics, and suspend. That is the lifecycle contract in `SKILL.md`. Frameworks restore what they enable, but nothing you enable yourself: Ratatui's `restore()` undoes only raw mode and the alternate screen. Treat every capability query as optional. A terminal or multiplexer may answer late or never, so render a working default first and wait for replies with a timeout. xterm's [control sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html) define the classic modes; newer ones have their own specs, linked below.
+
+### What each framework turns on
+
+| Mode | Bubble Tea v2 | crossterm / Ratatui | Textual | Ink 8 |
+|---|---|---|---|---|
+| Bracketed paste (2004) | On | Off | On | While a paste hook is mounted |
+| Kitty keyboard | On (disambiguate), plus `modifyOtherKeys` | Off | On (disambiguate, all keys, associated text) | Opt-in |
+| Mouse reporting | Off | Off | On, all motion | None |
+| Focus reports (1004) | Off | Off | On | None |
+| Synchronized output (2026) | When the terminal reports it; not queried over SSH unless `TERM` names a known terminal | The app's job | When reported; never inline | Always, on a TTY |
+| Grapheme clusters (2027) | Same query and SSH rule as 2026 | None | None | None |
+
+The ecosystem references own the API names.
+
+### Input
+
+- **Bracketed paste (2004).** The terminal wraps a paste in `CSI 200~` … `CSI 201~`, so the app can tell pasted text from typing. Without it, kitty and Ghostty turn a pasted newline into Enter, and the app may run half a paste as commands. Enable it for any free-text input, and decide per field what a multi-line paste means: a single-line field should keep the first line or refuse, never submit. xterm, kitty, Ghostty, and foot neutralize escape characters inside a paste so it cannot end itself early; don't assume every terminal does.
+- **Kitty keyboard protocol.** Push enhancement flags with `CSI > flags u` and pop them with `CSI < u` on exit; `CSI ? u` asks whether the terminal supports it ([spec](https://sw.kovidgoyal.net/kitty/keyboard-protocol/)). The first flag, "disambiguate", makes Shift+Enter, Ctrl+Enter, Ctrl+Tab, and Ctrl+I distinct from their legacy twins and sends plain Esc as its own code, so the app no longer guesses whether Esc starts an Alt sequence. Flag 2 adds key-release events. kitty, foot, Alacritty 0.13+, Ghostty, Windows Terminal 1.25+, and WezTerm (with `enable_kitty_keyboard`) support it; xterm's `modifyOtherKeys` (`CSI > 4 ; 2 m`) covers some of the same keys. Treat the extra keys as accelerators. Every action still needs a binding that works in the legacy encoding, which is what reaches you inside tmux, whose `extended-keys` option is off by default.
+- **Mouse reporting.** Mode 1000 reports clicks, 1002 adds drags, and 1003 adds every pointer move. Pair any of them with 1006 (SGR encoding), which reports releases and columns past 223. Enable the smallest mode the UI needs, since 1003 sends an event on every pointer move. crossterm's `EnableMouseCapture` turns on all of them at once. Any mouse mode takes over the terminal's own text selection; see *Mouse support* for the bypass and the off switch.
+- **Focus reports (1004).** The terminal sends `CSI I` and `CSI O` when its window gains or loses focus. Use them to pause animation and polling in the background and to refresh stale data on return; lazygit dims its panels on focus loss and refreshes on focus. tmux forwards them only with `focus-events on`, which is off by default.
+
+### Output
+
+- **Synchronized output (2026).** Wrap each frame in `CSI ? 2026 h` … `CSI ? 2026 l` so the terminal paints it at once instead of tearing mid-redraw ([spec](https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md)), and detect support with DECRQM (`CSI ? 2026 $ p`). Always send the end sequence, error paths included; a terminal releases a stuck frame only after its own timeout (150 ms in Alacritty, 1 s in Ghostty, 2 s in kitty). kitty, WezTerm, foot, Alacritty, Ghostty, iTerm2, Windows Terminal 1.23.20211+, and tmux 3.7+ support it. Without it, write each frame in one `write`, send only changed cells, and hide the cursor while drawing.
+- **Cursor shape (DECSCUSR, `CSI n SP q`).** Pair shapes with modes (block in normal mode, bar in insert; see *Modal vs modeless*), and reset with `CSI 0 SP q` on exit. Windows Terminal, foot, and Ghostty read 0 as the user's configured cursor, but xterm reads it as a blinking block; only xterm patch 411 and later restore the user's choice, with `CSI 7 SP q`. The current shape can't be reliably queried, so it can't be saved. Ratatui's `restore()` doesn't touch the shape, so an app that sets one resets it.
+- **Window title (OSC 2).** Set a title only when it helps users find the window, for example the open file or the remote host. Push the old title with `CSI 22 ; 0 t` before setting yours and pop it with `CSI 23 ; 0 t` on exit. xterm, kitty, foot, iTerm2, Alacritty, and tmux keep that stack; WezTerm, Ghostty, and Windows Terminal ignore it, so the user's title is lost there. Bubble Tea clears the title on exit rather than restoring it.
+- **Progress (OSC 9;4).** `OSC 9 ; 4 ; state ; percent ST` shows progress on the tab or taskbar; state 0 removes it, 1 is normal, 2 error, 3 indeterminate, and 4 paused ([ConEmu](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC), [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences)). Windows Terminal, Ghostty 1.2+, kitty, iTerm2, and tmux 3.7+ understand it. A terminal that knows only OSC 9 notifications may pop it up as a notification, so send it where you know it is supported, and clear it with state 0 on every exit. Bubble Tea's view-level progress bar sends it without checking.
+- **Shell-integration marks (OSC 133).** Prompt marks (`A` prompt, `B` input, `C` output, `D;exit-code` end) let a terminal jump between prompts, select one command's output, and show its exit status ([proposal](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/6b555699e41ab47ce210610d1a17cfc1662ec8d7/proposals/semantic-prompts.md)). A REPL should mark its own prompts, adding `aid=` when it runs inside a shell that marks them too; a full-screen TUI should not.
+- **Grapheme clusters (2027).** With mode 2027 on, the terminal sizes cells by grapheme cluster, so emoji sequences and combining marks take the width the app computed ([spec](https://github.com/contour-terminal/contour/blob/b719d05aed54f29ee7d629f5dd7d760b2f4b4320/docs/vt-extensions/unicode-core.md)). Bubble Tea turns it on when the terminal reports support; the other frameworks don't. Where it is off, app and terminal can still disagree; kitty, for one, segments graphemes without implementing 2027. Test emoji-heavy rows on the terminals you support.
+
+### Color and appearance
+
+- **Color depth.** `COLORTERM=truecolor` (or `24bit`) is the [convention](https://github.com/termstandard/colors/blob/caf0bb949ad64307d938a055f7fbec76ce65d91e/README.md#truecolor-detection) for 24-bit color; `TERM` alone proves little, since most terminals call themselves `xterm-256color`. Libraries read it differently: chalk 6 accepts only `truecolor` (with `24bit` it falls back to whatever `TERM` suggests), and crossterm consults `TERM` only when `COLORTERM` is unset. The variable is also the first thing lost over SSH. OpenSSH forwards no environment variables by default, and only recent Debian and Ubuntu releases send and accept `COLORTERM` at both ends. tmux 3.6+ sets `COLORTERM=truecolor` in its panes and downsamples for the outer terminal. To recover truecolor remotely, ask the terminal (XTGETTCAP `RGB`, which Bubble Tea's capability request sends) or let users set it; otherwise fall back to 256 colors over the 16-color theme from `visual-patterns.md` → *Color in depth*.
+- **Background color (OSC 11).** `OSC 11 ; ? ST` returns the background as `rgb:rrrr/gggg/bbbb`. The Linux console, PuTTY, mosh, GNU Screen, and ConEmu never answer, so follow it with a query every terminal answers (DA1, `CSI c`, or the status report `CSI 5 n`). If that reply arrives first, no background reply is coming. Cap the wait anyway (Neovim uses 100 ms, lazygit 500 ms for slow SSH, Lip Gloss 2 s), render with a default palette meanwhile, and switch when the answer arrives. tmux 3.4+ answers OSC 11 itself with the attached client's colors.
+- **Dark/light changes (2031).** After `CSI ? 2031 h`, the terminal reports a theme switch as `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n` (light), and `CSI ? 996 n` asks for the current theme ([spec](https://github.com/contour-terminal/contour/blob/ab57ab3288c3dca5ff727311cb3f1401bac30549/docs/vt-extensions/color-palette-update-notifications.md)). kitty 0.38.1+, Ghostty, foot 1.23+, and iTerm2 3.7+ support it; WezTerm does not; tmux 3.8 forwards the outer terminal's theme. Probe with DECRQM before enabling it, re-query OSC 11 when a report arrives instead of trusting the report alone, as lazygit and Neovim do, and turn the mode off before handing the terminal to a child process. Bubble Tea passes the parsed reports through without enabling the mode; Textual, Ink, and Ratatui don't handle it.
+
+### Terminal environments
+
+exec
+/bin/zsh -lc "sed -n '618,675p' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design/references/visual-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6sl1sn83
+ succeeded in 0ms:
+## Theming systems
+
+Most production TUIs support themes. The canonical approach:
+
+1. **Define semantic tokens** (`status.error`, `text.muted`, etc.).
+2. **Define palette mappings** as TOML/YAML/CSS — one file per theme.
+3. **Allow theme selection** via config, env var, or runtime command.
+
+### Configuration formats
+
+- **TOML** — bottom, helix, starship, alacritty (since 0.13); btop's `btop.conf` is a TOML-like `key = value` file.
+- **YAML** — lazygit (`config.yml`), lazydocker, k9s (including `plugins.yaml`).
+- **Flag files / git config** — bat's config file is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives in `.gitconfig` under `[delta]`.
+- **TCSS (Textual CSS)** — Textual apps; live-reloads.
+- **JSON** — VS Code-style; less common in TUIs.
+
+### Community palettes for themeable, broadly distributed apps
+
+If theming is part of the product, either ship popular palettes or document how to import them:
+
+- **Catppuccin** (Latte, Frappé, Macchiato, Mocha).
+- **Dracula**.
+- **Nord**.
+- **Gruvbox** (light, dark; soft, medium, hard).
+- **Tokyo Night**.
+- **Rose Pine** (Main, Moon, Dawn).
+- **Solarized** (light, dark).
+- **base16** umbrella spec — many themes follow this.
+
+The community has built theme repos for most popular tools; users of highly themeable apps expect plug-and-play. Small single-purpose tools still need semantic colors and light/dark safety, but do not need to bundle every palette.
+
+### Icons and Nerd Fonts — there is no detection, only opt-in
+
+No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, checks a list of terminals that bundle Nerd Font glyphs, then parses the terminal's config for the font name, and still needs a `NERD_FONT=1` override) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
+
+- **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence — it fully trusts the user.
+- **lazygit** — `gui.nerdFontsVersion: '2' | '3' | ""`; empty (the default) means no icons at all.
+- **yazi** — icons are default-on in the shipped theme rather than gated by a flag; the FAQ's answer for users without a Nerd Font is to override the icon tables in `theme.toml`, not a switch.
+
+**Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 reorganized Material Design Icons' codepoints (`F500–FD46` → `F0001+`) because the old range collided with CJK Unicode — a real, documented breaking change, which is exactly why lazygit's config asks for `'2'` or `'3'` explicitly rather than shipping one hardcoded set.
+
+The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII — is real, but starship is the cleanest evidence of a tool actually shipping all three rungs as named presets (`nerd-font-symbols` / `no-nerd-font` / `plain-text-symbols`). Most tools are binary (icons on with a Nerd Font, or off), not a full three-tier ladder — don't imply every icon-capable tool implements all three.
+
+### Light/dark detection
+
+- OSC `]11;?` query — many terminals respond with their background color; others never answer, so bound the wait. Mode 2031 reports later theme switches where supported. The query, timeout, and sentinel details are in `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*.
+- `$COLORFGBG` env var — set by some terminals (rxvt-derivatives).
+- Lipgloss v2's `LightDark` (`AdaptiveColor` in v1/compat) and Textual's runtime theme switching abstract this.
+
+If you support both light and dark, default to "auto" and let users override with `--theme dark`.
+
+---
+
+## Accessibility
+
+Be honest about the medium. Screen readers announce what changed on screen. NVDA finds new text in a terminal by diffing its contents, and Windows Terminal reports text as it is written ([NVDA user guide](https://download.nvaccess.org/releases/2026.2/documentation/userGuide.html#DiffAlgo), [Windows Terminal accessibility notes](https://github.com/microsoft/terminal/blob/e90f9a534cae047fccddacc1ee813a82929662d5/doc/terminal-a11y-2023.md)). A full-screen UI repaints constantly, so a spinner frame, a re-highlighted menu row, or a redrawn panel is heard as new text, and the layout itself carries no structure a listener can navigate. No TUI framework fixes that. The dependable answer is a linear mode offered alongside the full-screen UI.
+
+### What works for screen-reader users
+
+codex
+**Make theme detection optional, asynchronous, and bounded.** The TUI should be usable immediately, even if the terminal never replies. Follow the terminal’s appearance: an OS theme switch matters only when the terminal follows it.
+
+Using the tui-design skill, I’d implement this contract:
+
+1. **Offer `--theme auto|light|dark`, defaulting to `auto`.** Explicit choices override detection and subsequent notifications. In auto mode, render immediately with a readable fallback using terminal-default foreground/background and semantic ANSI colors. Honor `NO_COLOR`.
+
+2. **Query the background without blocking startup.** Send `OSC 11 ; ? ST` through the interactive terminal and handle its reply through the existing input/event loop. Follow it with DA1 (`CSI c`) or a status query (`CSI 5 n`) as a sentinel: if that response arrives first, stop expecting an OSC 11 answer. Still enforce a deadline—**500 ms is a reasonable starting point for SSH**, while the UI remains responsive throughout.
+
+   Some terminals and intermediaries never answer, including the Linux console, PuTTY, mosh, and GNU Screen. A timeout means “unknown,” not an error. Keep the fallback; accept a valid late reply while still in auto mode. Parse replies as protocol events so they cannot appear as keystrokes or enter text fields.
+
+3. **Subscribe to changes where supported.** Probe mode 2031 with DECRQM:
+   
+   | Purpose | Sequence |
+   |---|---|
+   | Probe support | `CSI ? 2031 $ p` |
+   | Enable notifications | `CSI ? 2031 h` |
+   | Request current appearance | `CSI ? 996 n` |
+   | Receive dark / light | `CSI ? 997 ; 1 n` / `CSI ? 997 ; 2 n` |
+   | Disable notifications | `CSI ? 2031 l` |
+
+   Bound the probe too. On a notification, re-query OSC 11 to confirm the actual background, then update semantic theme tokens and redraw. Coalesce repeated notifications.
+
+4. **Provide a fallback for missing notifications.** Re-query on focus return or resume, with throttling and the same deadline, and offer a runtime theme selector. Focus reporting is itself optional. Without notification support, automatic changes cannot be guaranteed; `$COLORFGBG` is only a potentially stale initial hint.
+
+5. **Own cleanup.** Disable any notification mode you enabled on exit, errors, suspend, and before handing the terminal to a child process. Re-establish detection on resume. Send no queries into redirected output or noninteractive input, and never introduce a second reader competing with the framework’s input parser.
+
+Keep detection invisible: no startup spinner, timeout dialog, or permanent status marker. Theme updates should preserve focus and layout at both 80×24 and 60 columns.
+
+Verify no reply, sentinel-only replies, delayed SSH replies, malformed or fragmented replies, theme changes, explicit overrides, and suspend/resume. The central invariant is: **terminal silence must never delay startup or swallow user input.**
+tokens used
+33,376

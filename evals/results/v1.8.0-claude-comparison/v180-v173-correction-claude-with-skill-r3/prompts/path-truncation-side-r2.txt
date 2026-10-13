@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+My file list column is 30 cells wide and paths like /usr/local/share/applications/org.example.Viewer.desktop overflow. Should I cut the end and add an ellipsis?

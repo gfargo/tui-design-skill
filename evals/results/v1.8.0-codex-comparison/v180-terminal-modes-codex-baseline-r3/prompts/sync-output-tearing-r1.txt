@@ -1,0 +1,1 @@
+Our Ratatui dashboard tears visibly when it redraws a large table on every tick in kitty and WezTerm. Is there a terminal feature for this, and how do we use it safely?

@@ -1,0 +1,1 @@
+I want undo in my git TUI to work like lazygit's. Which keys does lazygit use for undo and redo, and can it undo a push or a discarded working-tree change?

@@ -1,0 +1,480 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-v170-lifecycle-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "bubble-tea-editor-handoff-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Returns tea.ExecProcess from Update; the lifecycle diagram says Bubble Tea pauses input, leaves raw mode and the alt screen, waits for the editor, turns its modes back on and repaints."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The callback wraps err in editorFinishedMsg, which Update handles; the answer notes it carries either the editor's error or a restore error."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explicitly rejects running exec.Command inside Update and advises against deferring RestoreTerminal as a safety net, noting that final cleanup happens in Run()."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "q returns tea.Quit, so Run returns nil; Ctrl+C returns tea.Interrupt, so Run returns tea.ErrInterrupted, which main maps to exit code 130."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubble-tea-editor-handoff-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses tea.ExecProcess and lists pause input, release, connect, wait, restore modes, and full repaint."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Callback wraps err in editorFinishedMsg, the table covers editor/restore errors, and Update handles nil, ExitError, and other cases."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explicitly rejects running exec.Command in Update and deferred RestoreTerminal, noting Run() does the final restore."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Maps q to tea.Quit (nil, exit 0) and raw-mode Ctrl+C KeyPressMsg to tea.Interrupt, which yields ErrInterrupted and exit 130."
+        }
+      ]
+    },
+    {
+      "trial_id": "bubble-tea-editor-handoff-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses tea.ExecProcess in openEditor and lists the steps: pause/release, connect, wait, restore raw mode/alt screen, repaint, then send a message."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Errors arrive via the editorFinishedMsg callback and Update branches on nil, ExitError, not-found, and restore failures."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Rejects the deferred RestoreTerminal and the direct exec.Command in Update, using ExecProcess instead."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Maps q to tea.Quit (nil, exit 0) and Ctrl+C to tea.Interrupt, which makes Run return tea.ErrInterrupted (exit 130), with a table explaining both."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer cancels the reader token and awaits its JoinHandle so the EventStream is dropped before `ratatui::restore()`, explicitly to stop it stealing keystrokes and terminal query replies."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The sequence is restore, spawn and wait for Vim, then enable raw mode, enter the alternate screen, call `terminal.clear()` and draw, noting that clear forces a full repaint."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Re-entry runs regardless of Vim's result, which is kept without `?`, and `ReentryFailed` carries both the child result and the re-entry error so neither is lost."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "SIGTERM is registered through tokio's signal API and selected in the main loop to set `should_quit`, so the async block returns and `restore()` runs afterwards rather than inside a signal handler."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer says default SIGTERM before the handler is registered kills the process without Rust cleanup, and that SIGKILL cannot be caught, so no Drop or `restore()` runs."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Step 1 cancels the input task's token and awaits its JoinHandle before `ratatui::restore()`, explaining the reader otherwise steals Vim's keystrokes and terminal replies."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The sequence calls restore, awaits Vim's status, re-enables raw mode and the alternate screen, calls `terminal.clear()`, then redraws."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The child result is stored without `?`, re-entry always runs, and the code matches on the (child, reentry) pair so a combined error reports both failures."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "SIGTERM is a `select!` branch that only sets `should_quit`, and the answer says not to call restore or exit inside the signal branch so normal cleanup runs."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It states that SIGKILL runs no Rust code, no destructors and no restore, and that SIGTERM with no handler kills the process without unwinding."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-editor-reader-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Step 1 cancels the reader token and awaits its JoinHandle before ratatui::restore(), explaining that a running reader steals Vim's keystrokes and capability replies."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The sequence calls restore(), awaits Vim's status, then enables raw mode, enters the alternate screen, calls terminal.clear() so every cell repaints, and draws."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The child result is stored without `?`, re-entry always runs, and the code matches on the (child, reentry) pair, building a combined error that reports both outcomes."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "SIGTERM is a tokio signal stream inside the select! loop that sets should_quit, and the answer says not to call restore() or exit() from a handler or a separate task."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It states that SIGKILL runs no destructors or restore(), and that SIGTERM with no registered handler kills the process without unwinding Rust code."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer runs `subprocess.run(editor_argv(path))` inside `with self.suspend()` with an argv list, and explicitly rejects exit-and-relaunch."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It catches `SuspendNotSupported` and opens an inline TextArea-based editor, explaining that Textual Web has no local terminal to hand over."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It binds Ctrl+Z to `suspend_process` for SIGTSTP job control and states this does nothing on Windows and on Textual Web."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It calls `reload_from_disk` after the editor returns and again on `app_resume_signal`, noting that a refresh alone won't reread the data."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It uses `self.exit(result, return_code=N)` for shutdown and calls `sys.exit(app.return_code or 0)` after `run()` returns."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer runs `subprocess.run(editor_argv(...))` inside `with self.suspend():` and explicitly rejects exiting and relaunching."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It catches SuspendNotSupported and pushes an in-app TextArea editor screen, explaining that Textual Web has no local terminal to lend out."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It binds ctrl+z to suspend_process for SIGTSTP/fg on Unix and states this does nothing on Windows and Textual Web."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It subscribes to app_resume_signal to reload the document, and also reloads after a successful edit and after the fallback editor closes."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It uses self.exit(..., return_code=N) and has main() return app.return_code passed to sys.exit, noting the process otherwise exits 0."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-portable-suspension-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer uses `with self.suspend(): subprocess.run(argv)` with an argv list, keeps the app running, and explicitly rejects exiting and relaunching."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It catches SuspendNotSupported, pushes an in-app EditScreen fallback, and explains that on Textual Web the editor would run on the server."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It binds ctrl+z to suspend_process, describes SIGTSTP with resume on `fg` for Unix, and its table marks it as a no-op on Windows and Textual Web."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It subscribes to app_resume_signal to call reload(), reloads after the editor returns, and notes that Textual repaints but does not re-read files."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It calls self.exit(return_code=EXIT_OK) and in main() returns app.return_code to sys.exit, explicitly stating the process won't return it otherwise."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says unmount plus render is the wrong approach and recommends useApp().suspendTerminal for the editor handoff."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says the terminal is restored in finally whether the callback resolves, rejects, or throws, and the rejection is passed on to the await."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It shows await suspension.resume() in a finally block, mentions await using as an alternative, and says an overlapping second suspension throws."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says that without a TTY suspendTerminal still runs the callback but has no terminal modes to restore."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It treats unmount() and exit() as final shutdown and uses waitUntilExit at the top level to detect app completion and flush writes, keeping it out of the editor flow."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by rejecting unmount-and-rerender because unmount is a permanent shutdown that discards state, and recommends useApp().suspendTerminal() for lending the terminal to the editor."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says re-entry happens in a finally path, so a callback that throws or rejects still gets the terminal back, and the error surfaces from the awaited call."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The manual-ownership example uses try/finally with await suspension.resume() or await using, and states that starting a second suspension while one is active is an error."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer states Ink still runs the callback without an interactive TTY, so suspendTerminal won't fail in CI or with piped stdio."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer says waitUntilExit is for final top-level shutdown so output flushes after terminal restoration, with unmount() then waitUntilExit() for SIGTERM, and plays no part in the editor round-trip."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-suspend-terminal-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with a direct 'No' to unmount + render and recommends useApp().suspendTerminal() for the editor handoff."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says Ink switches the terminal back and redraws in a finally block, so the terminal is restored even when the callback throws or rejects."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its manual example awaits suspension.resume() in finally or uses await using, and it says only one suspension can be active at a time and starting a second one throws."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says that without an interactive TTY Ink still runs the callback but doesn't switch any terminal modes."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It restricts waitUntilExit to final top-level shutdown, resolving after exit()/unmount and once pending writes flush, and separates it from the editor handoff."
+        }
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with 'No' and rejects a shared signal handler. It separates final shutdown from editor and suspend handoffs, which it calls temporary."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "For Bubble Tea it says not to add a handler because the default one manages SIGINT/SIGTERM. It recommends tea.ExecProcess and tea.Suspend, and warns against using RestoreTerminal as cleanup."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "For Ratatui, signals send a quit event into the loop and ratatui::run does the restore. For Textual, the event loop schedules self.exit, and the answer says never to restore in a low-level handler."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says exitOnCtrlC only handles the keypress, not OS signals. For signals it registers handlers once, calls unmount(), awaits waitUntilExit(), and sets process.exitCode, all around the render instance."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It lists the handoff steps: pause input, restore the shell, run and wait, re-enter, reload data, full redraw. It also states that a redraw only repaints the old model."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "It states that suspend is Unix-only and gives a Windows alternative such as hiding the binding or opening a shell. It says SIGKILL can't be caught and no cleanup runs."
+        }
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens with 'don't share one handler like that' and gives a policy table that separates final shutdown, temporary handoff, and job-control suspend."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Tells the reader to register no Bubble Tea handler and rely on its default signal handling, use tea.ExecProcess and tea.Suspend, and warns against RestoreTerminal as cleanup."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Ratatui routes SIGINT/SIGTERM via tokio::signal or signal-hook as a quit event into the loop; Textual uses the event loop's signal integration to schedule self.exit; the answer explicitly says not to restore the terminal in a low-level handler."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that exitOnCtrlC handles only the raw-mode keystroke, not OS signals, and registers SIGINT/SIGTERM listeners once at render() with unmount, waitUntilExit, and exitCode."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Lists stopping input, restore, run and wait, re-entry, data reload, and full redraw, and states that a redraw only repaints the old model."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Scopes Ctrl+Z suspend to Unix, offers a Windows alternative such as an 'open shell' action, and states SIGKILL cannot be caught so no cleanup runs."
+        }
+      ]
+    },
+    {
+      "trial_id": "cross-framework-signal-boundaries-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens with 'don't share one handler' and separates final exit from Ctrl+Z/editor temporary handoff that must resume."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says Bubble Tea's default signal handling covers SIGINT/SIGTERM, use tea.Suspend and tea.ExecProcess, and warns against RestoreTerminal as cleanup."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Ratatui uses signal-hook/tokio::signal to send a quit event into the loop; Textual schedules app.exit via loop.add_signal_handler, with no terminal I/O in handlers."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States exitOnCtrlC only handles the keypress, not SIGTERM, and registers signal listeners where render() is called, using unmount/waitUntilExit."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Lists stopping input, restoring, running/waiting for the editor, re-entering, reloading data, and full redraw, and explicitly says redraw alone only repaints the old model."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Ctrl+Z is marked Unix-only with a hide-or-alternative path on Windows, and SIGKILL is described as uncatchable with no cleanup possible."
+        }
+      ]
+    }
+  ]
+}

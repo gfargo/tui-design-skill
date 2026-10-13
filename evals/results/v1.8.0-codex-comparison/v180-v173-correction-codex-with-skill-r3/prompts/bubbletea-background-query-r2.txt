@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+In my Bubble Tea v2 app I call lipgloss.HasDarkBackground(os.Stdin, os.Stdout) inside Update to pick a theme, and input sometimes stutters. What should I do instead?

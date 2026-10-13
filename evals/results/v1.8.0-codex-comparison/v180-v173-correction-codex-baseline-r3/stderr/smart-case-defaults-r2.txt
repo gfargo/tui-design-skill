@@ -1,0 +1,26 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-da7z9pm4
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1338d-da08-7a70-9037-574d3a6a131e
+--------
+user
+I'm adding a filter box to my TUI and want case handling that matches fzf, fd, and ripgrep defaults. What do those tools do by default?
+
+codex
+Their defaults differ:
+
+| Tool | Default | Behavior |
+|---|---|---|
+| **fzf** | Smart case | Lowercase queries match either case; any uppercase letter makes the query case-sensitive. |
+| **fd** | Smart case | Same: case-insensitive unless the pattern contains an uppercase letter. |
+| **ripgrep (`rg`)** | Case-sensitive | Matches case exactly, even when the pattern is all lowercase. Use `--smart-case` (`-S`) to enable smart case. |
+
+For your filter box, **smart case** follows fzf and fd: `foo` matches `foo`, `Foo`, and `FOO`; `Foo` matches only `Foo`.
+tokens used
+12,052

@@ -1,0 +1,1 @@
+I want Rich's pretty tracebacks in my Click CLI. Is `import rich; rich.install()` the right call, and which Python CLIs actually ship Rich so I can point my team at precedent?

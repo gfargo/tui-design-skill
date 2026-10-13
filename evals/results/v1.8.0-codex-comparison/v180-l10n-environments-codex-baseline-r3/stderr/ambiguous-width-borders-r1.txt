@@ -1,0 +1,37 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-d6klwykx
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133cb-a997-70b1-937a-1a08ddd08f81
+--------
+user
+Japanese users of our Go TUI report that the rounded box borders and the bullet markers are misaligned, but everything looks fine for us. What's going on?
+
+codex
+I’ll check how the TUI renders borders and bullets, and how it calculates their display width.
+exec
+/bin/zsh -lc "pwd; rg --files -g 'AGENTS.md' -g 'go.mod' -g '*.go' -g '*README*' -g '*config*'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-d6klwykx
+ exited 1 in 0ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-d6klwykx
+
+codex
+This is likely **Unicode East Asian Ambiguous width** handling.
+
+Rounded border characters such as `╭ ╮ ╰ ╯` and the bullet `•` have ambiguous display width. Your TUI’s width library may count them as **one terminal cell**, while Japanese users’ terminals may render them as **two cells**, depending on terminal settings. That disagreement shifts borders and markers even though the text is identical.
+
+To confirm, have an affected user check their terminal’s “ambiguous characters are double-width” setting. Locale can influence the behavior, but terminal configuration is the key.
+
+For your Go TUI:
+
+- Check which width rules your rendering library uses and whether they match the terminal.
+- Offer an ASCII fallback (`+`, `-`, `|`, `*`) for predictable alignment.
+- Don’t assume switching from rounded to square Unicode borders fixes it; many box-drawing characters are also ambiguous.
+
+I didn’t find source files in the workspace, so I couldn’t verify your particular rendering library.
+tokens used
+2,679

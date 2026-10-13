@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused regression prompts for correctness fixes in v1.5.1. These are versioned prompts and grading assertions, not claims of a completed comparative benchmark.",
+  "notes": "Focused regression prompts for correctness fixes in v1.5.1. These are versioned prompts and grading assertions, not claims of a completed comparative benchmark. Status (2026-10-13): rubric-only. No harness run of this set is recorded under evals/results/ and none is scheduled, so treat it as a rubric, not as evidence of model behavior.",
   "evals": [
     {
       "id": 0,

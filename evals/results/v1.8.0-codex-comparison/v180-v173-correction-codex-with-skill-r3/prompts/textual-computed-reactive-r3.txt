@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+In Textual I wrote `count = reactive(0)` and `def compute_display(self): return f"Count: {self.count}"`, then `render()` returns `self.display`. The widget shows True instead of the text. Why?

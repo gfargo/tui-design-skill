@@ -1,0 +1,46 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-lqw25tmi
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133be-2b3e-7702-9e81-57e8b9575230
+--------
+user
+We added INK_SCREEN_READER=true support to our Ink 8 chat app, but NVDA users say it keeps re-reading the conversation and the spinner. Why, and what should we change?
+
+codex
+I’ll check how the app renders updates and how Ink 8’s screen reader mode handles them, then identify what’s causing the repeated announcements.
+exec
+/bin/zsh -lc "pwd; rg --files -g 'AGENTS.md' -g 'package.json' -g '*.{tsx,ts,jsx,js}' -g '*lock*' -g 'README*'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-lqw25tmi
+ exited 1 in 105ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-lqw25tmi
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/vadimdemedes/ink/main/readme.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-lqw25tmi
+ exited 6 in 0ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+`INK_SCREEN_READER=true` changes how Ink writes terminal output; it doesn’t turn the app into a semantic live region or decide which updates deserve announcements.
+
+In screen reader mode, Ink avoids its usual cursor-based redraws and emits updated output as readable text. If your conversation lives in the dynamic render tree, each spinner tick or streamed token can cause the conversation to be emitted again. NVDA then encounters that text as new output. Giving the spinner a fixed label doesn’t stop those updates.
+
+Change the screen reader experience in three ways:
+
+- **Append completed messages once.** Put finalized conversation messages in Ink’s `<Static items={messages}>`, with stable IDs and immutable entries. Keep historical messages out of the dynamic area.
+- **Stop animation and token-by-token output.** In screen reader mode, unmount the spinner so its timer stops. Buffer the response and emit it when complete, or emit deliberate sentence-sized chunks once.
+- **Announce meaningful state changes once.** Output “Assistant is responding” when a request starts, then the answer or error when it finishes. Avoid repeatedly rendering the same status beside changing content.
+
+Keep the animated, streaming UI for visual mode, and select the accessible rendering path using Ink’s screen reader detection. `<Static>` is for append-only content; don’t put a partially streamed message there and keep editing it.
+
+Verify with NVDA in the users’ actual terminal: one submitted message, one start announcement, one completed answer, and no output while merely waiting. Include retries, errors, and a second conversation turn.
+
+I couldn’t inspect your app or retrieve Ink’s source in this environment, so the exact trigger still needs confirmation. The key thing to check is whether spinner ticks and token updates are re-emitting the entire dynamic transcript.
+tokens used
+19,013

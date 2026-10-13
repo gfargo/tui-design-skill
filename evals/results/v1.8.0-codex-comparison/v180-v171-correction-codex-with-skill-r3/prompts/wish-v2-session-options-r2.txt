@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm serving a Bubble Tea v2 app over Wish v2. How do I make styling follow each SSH client's color profile instead of the server's? Should I call bubbletea.MakeRenderer(sess)?

@@ -1,0 +1,1 @@
+I'm designing a btop-style dashboard. btop refreshes its CPU box every 100ms and the process table every 2s, so should every widget in my app run its own timer?

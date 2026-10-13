@@ -1,0 +1,78 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v180-v173-correction-codex-with-skill-r3",
+  "created_at": "2026-10-13T04:50:59Z",
+  "run_manifest_sha256": "9af05de8133d13fb821675d0a4e1c335995762d92ce1cd04c90dcd3448bf8317",
+  "grades_file": "grades.json",
+  "grades_sha256": "6a329e34800d787164562dd88994a8bed837dd46e2aa372cb383f72196eb76b7",
+  "passed": 105,
+  "total": 111,
+  "pass_rate": 0.9459459459459459,
+  "by_case": [
+    {
+      "case_id": "lazygit-undo-scope",
+      "case_name": "lazygit-undo-scope",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "raw-mode-reserved-keys",
+      "case_name": "raw-mode-reserved-keys",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "huh-v2-theme",
+      "case_name": "huh-v2-theme",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "bubbletea-background-query",
+      "case_name": "bubbletea-background-query",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-async-input",
+      "case_name": "ratatui-async-input",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "textual-computed-reactive",
+      "case_name": "textual-computed-reactive",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink-suspend-node20",
+      "case_name": "ink-suspend-node20",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "path-truncation-side",
+      "case_name": "path-truncation-side",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "smart-case-defaults",
+      "case_name": "smart-case-defaults",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

@@ -1,0 +1,356 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a13385-8aa4-7d83-b197-b86d74581a9b
+--------
+user
+Upgrading to Huh v2, `form.WithTheme(huh.ThemeCharm(true))` no longer compiles. What's the right call, and how does the form know whether the background is dark?
+
+codex
+I’ll check Huh v2’s theme API and how it detects the terminal background.
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ succeeded in 0ms:
+.
+..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L -s https://raw.githubusercontent.com/charmbracelet/huh/main/theme.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ exited 6 in 0ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls /Users/gfargo/go/pkg/mod/github.com/charmbracelet' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ succeeded in 0ms:
+colorprofile@v0.4.3
+ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4
+x
+
+exec
+/bin/zsh -lc "rg --files /Users/gfargo/go/pkg/mod/cache/download | rg '/(huh|bubbletea|lipgloss)/|huh'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ succeeded in 0ms:
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/lipgloss/v2/@v/list
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/lipgloss/v2/@v/v2.0.6.lock
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/lipgloss/v2/@v/v2.0.6.info
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/lipgloss/v2/@v/v2.0.6.ziphash
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/lipgloss/v2/@v/v2.0.6.mod
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/lipgloss/v2/@v/v2.0.6.zip
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/huh/v2/@v/v2.0.3.info
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/huh/v2/@v/list
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/huh/v2/@v/v2.0.3.ziphash
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/huh/v2/@v/v2.0.3.mod
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/huh/v2/@v/v2.0.3.lock
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/huh/v2/@v/v2.0.3.zip
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.ziphash
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.info
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/list
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.lock
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.zip
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.mod
+/Users/gfargo/go/pkg/mod/cache/download/sumdb/sum.golang.org/lookup/charm.land/lipgloss/v2@v2.0.6
+/Users/gfargo/go/pkg/mod/cache/download/sumdb/sum.golang.org/lookup/charm.land/huh/v2@v2.0.3
+/Users/gfargo/go/pkg/mod/cache/download/sumdb/sum.golang.org/lookup/charm.land/bubbletea/v2@v2.1.0
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc "rg -n 'ThemeCharm|WithTheme|BackgroundColor|RequestBackground|isDark' /Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/{theme.go,form.go}" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ succeeded in 0ms:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:11:	Theme(isDark bool) *Styles
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:15:type ThemeFunc func(isDark bool) *Styles
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:18:func (f ThemeFunc) Theme(isDark bool) *Styles {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:19:	return f(isDark)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:23:// Themes can be applied to a form using the WithTheme option.
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:138:// ThemeCharm returns a new theme based on the Charm color scheme.
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:139:func ThemeCharm(isDark bool) *Styles {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:140:	t := ThemeBase(isDark)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:141:	lightDark := lipgloss.LightDark(isDark)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:189:func ThemeDracula(isDark bool) *Styles {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:190:	t := ThemeBase(isDark)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:240:func ThemeBase16(isDark bool) *Styles {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:241:	t := ThemeBase(isDark)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:285:func ThemeCatppuccin(isDark bool) *Styles {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:286:	t := ThemeBase(isDark)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go:289:	if isDark {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:170:	// WithTheme sets the theme on a field.
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:171:	WithTheme(Theme) Field
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:264:// WithTheme sets the theme on a form.
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:269:func (f *Form) WithTheme(theme Theme) *Form {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:275:		group.WithTheme(theme)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:537:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:646:	return ThemeCharm(f.hasDarkBg)
+
+exec
+/bin/zsh -lc "sed -n '1,42p;85,103p' /Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go; sed -n '260,280p;480,500p;528,550p;630,650p' /Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go; rg -n 'hasDarkBg|RequestBackground|BackgroundColor|func .*Init' /Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ succeeded in 0ms:
+package huh
+
+import (
+	"charm.land/bubbles/v2/help"
+	"charm.land/lipgloss/v2"
+	catppuccin "github.com/catppuccin/go"
+)
+
+// Theme represents a theme for a huh.
+type Theme interface {
+	Theme(isDark bool) *Styles
+}
+
+// ThemeFunc is a function that returns a new theme.
+type ThemeFunc func(isDark bool) *Styles
+
+// Theme implements the Theme interface.
+func (f ThemeFunc) Theme(isDark bool) *Styles {
+	return f(isDark)
+}
+
+// Styles is a collection of styles for components of the form.
+// Themes can be applied to a form using the WithTheme option.
+type Styles struct {
+	Form           FormStyles
+	Group          GroupStyles
+	FieldSeparator lipgloss.Style
+	Blurred        FieldStyles
+	Focused        FieldStyles
+	Help           help.Styles
+}
+
+// FormStyles are the styles for a form.
+type FormStyles struct {
+	Base lipgloss.Style
+}
+
+// GroupStyles are the styles for a group.
+type GroupStyles struct {
+	Base        lipgloss.Style
+	Title       lipgloss.Style
+	Description lipgloss.Style
+	Cursor      lipgloss.Style
+	CursorText  lipgloss.Style
+	Placeholder lipgloss.Style
+	Prompt      lipgloss.Style
+	Text        lipgloss.Style
+}
+
+const (
+	buttonPaddingHorizontal = 2
+	buttonPaddingVertical   = 0
+)
+
+// ThemeBase returns a new base theme with general styles to be inherited by
+// other themes.
+func ThemeBase(bool) *Styles {
+	var t Styles
+
+	t.Form.Base = lipgloss.NewStyle()
+	t.Group.Base = lipgloss.NewStyle()
+	})
+	return f
+}
+
+// WithTheme sets the theme on a form.
+//
+// This allows all groups and fields to be themed consistently, however themes
+// can be applied to each group and field individually for more granular
+// control.
+func (f *Form) WithTheme(theme Theme) *Form {
+	if theme == nil {
+		return f
+	}
+	f.theme = theme
+	f.selector.Range(func(_ int, group *Group) bool {
+		group.WithTheme(theme)
+		return true
+	})
+	return f
+}
+
+func (f *Form) NextGroup() tea.Cmd {
+	_, cmd := f.Update(nextGroup())
+	return cmd
+}
+
+// PrevGroup moves the form to the next group.
+func (f *Form) PrevGroup() tea.Cmd {
+	_, cmd := f.Update(prevGroup())
+	return cmd
+}
+
+// NextField moves the form to the next field.
+func (f *Form) NextField() tea.Cmd {
+	_, cmd := f.Update(NextField())
+	return cmd
+}
+
+// PrevField moves the form to the next field.
+func (f *Form) PrevField() tea.Cmd {
+	_, cmd := f.Update(PrevField())
+	return cmd
+func (f *Form) Update(msg tea.Msg) (Model, tea.Cmd) {
+	// If the form is aborted or completed there's no need to update it.
+	if f.State != StateNormal {
+		return f, nil
+	}
+
+	group := f.selector.Selected()
+
+	switch msg := msg.(type) {
+	case tea.BackgroundColorMsg:
+		f.hasDarkBg = msg.IsDark()
+	case tea.WindowSizeMsg:
+		if f.width == 0 {
+			f.selector.Range(func(_ int, group *Group) bool {
+				width := f.layout.GroupWidth(f, group, msg.Width)
+				group.WithWidth(width)
+				return true
+			})
+		}
+		if f.height == 0 {
+			// calculate the needed height, which is the height of the
+			// heightest group, accounting for the width, wraps, etc.
+			neededHeight := 0
+
+	return f, cmd
+}
+
+func (f *Form) isGroupHidden(group *Group) bool {
+	hide := group.hide
+	if hide == nil {
+		return false
+	}
+	return hide()
+}
+
+func (f *Form) getTheme() *Styles {
+	if f.theme != nil {
+		return f.theme.Theme(f.hasDarkBg)
+	}
+	return ThemeCharm(f.hasDarkBg)
+}
+
+func (f *Form) styles() FormStyles {
+	return f.getTheme().Form
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:91:	hasDarkBg  bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:509:func (f *Form) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:537:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:538:		f.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:644:		return f.theme.Theme(f.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go:646:	return ThemeCharm(f.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:41:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:97:	g.help.Styles = t.Theme(g.hasDarkBg).Help
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:199:func (g *Group) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:281:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:282:		g.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:296:		return theme.Theme(g.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go:298:	return ThemeFunc(ThemeCharm).Theme(g.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go:38:	hasDarkBg       bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go:160:func (c *Confirm) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go:169:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go:170:		c.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go:231:		return &theme.Theme(c.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go:233:	return &theme.Theme(c.hasDarkBg).Blurred
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go:44:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go:269:func (i *Input) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go:280:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go:281:		i.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go:374:		return &theme.Theme(i.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go:376:	return &theme.Theme(i.hasDarkBg).Blurred
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:41:	hasDarkBg  bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:180:func (s *Spinner) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:182:		tea.RequestBackgroundColor,
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:197:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:198:		s.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:216:	styles := s.theme.Theme(s.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:266:	s.hasDarkBg = true
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:268:		s.hasDarkBg = lipgloss.HasDarkBackground(tin, tout)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go:271:	styles := s.theme.Theme(s.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go:47:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go:260:func (t *Text) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go:271:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go:272:		t.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go:371:		return &theme.Theme(t.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go:373:	return &theme.Theme(t.hasDarkBg).Blurred
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:56:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:323:func (s *Select[T]) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:337:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:338:		s.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:553:		return &theme.Theme(s.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:555:	return &theme.Theme(s.hasDarkBg).Blurred
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go:787:	styles := s.theme.Theme(s.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:51:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:288:func (m *MultiSelect[T]) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:308:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:309:		m.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:557:		return &theme.Theme(m.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:559:	return &theme.Theme(m.hasDarkBg).Blurred
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go:785:	styles := m.theme.Theme(m.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/README.md:440:func (m Model) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:41:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:197:func (f *FilePicker) Init() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:206:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:207:		f.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:251:		return &theme.Theme(f.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:253:	return &theme.Theme(f.hasDarkBg).Blurred
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go:368:	styles := f.theme.Theme(f.hasDarkBg)
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner_test.go:87:func TestSpinnerInit(t *testing.T) {
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go:32:	hasDarkBg bool
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go:161:func (n *Note) Init() tea.Cmd { return nil }
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go:166:	case tea.BackgroundColorMsg:
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go:167:		n.hasDarkBg = msg.IsDark()
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go:215:		return &theme.Theme(n.hasDarkBg).Focused
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go:217:	return &theme.Theme(n.hasDarkBg).Blurred
+
+exec
+/bin/zsh -lc "sed -n '509,527p' /Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go; rg -n 'RequestBackgroundColor|background color' /Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cbf3pjsq
+ succeeded in 0ms:
+func (f *Form) Init() tea.Cmd {
+	var cmds []tea.Cmd
+	f.selector.Range(func(i int, group *Group) bool {
+		if i == 0 {
+			group.active = true
+		}
+		cmds = append(cmds, group.Init())
+		return true
+	})
+
+	if f.isGroupHidden(f.selector.Selected()) {
+		cmds = append(cmds, nextGroup)
+	}
+
+	cmds = append(cmds, tea.RequestWindowSize)
+	return tea.Sequence(cmds...)
+}
+
+// Update updates the form.
+133:	// BackgroundColor when not nil, sets the terminal background color. Use
+134:	// nil to reset to the terminal's default background color.
+847:				p.executeQuery(ansi.RequestBackgroundColor)
+
+codex
+Use the theme function adapter:
+
+```go
+form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))
+```
+
+In v2, `WithTheme` accepts a `huh.Theme`, while `ThemeCharm(true)` returns `*huh.Styles`. `ThemeFunc` wraps `ThemeCharm` so Huh can supply the boolean itself.
+
+Bubble Tea detects the terminal background and sends a `tea.BackgroundColorMsg`. Huh stores `msg.IsDark()` and passes it to your theme function when resolving styles. If you embed the form in your own Bubble Tea model, forward that message to `form.Update`.
+
+To force the dark variant regardless of detection:
+
+```go
+form.WithTheme(huh.ThemeFunc(func(bool) *huh.Styles {
+    return huh.ThemeCharm(true)
+}))
+```
+tokens used
+35,787

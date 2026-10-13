@@ -1,0 +1,1 @@
+We're translating our Bubble Tea task manager into German, Finnish, and Japanese. The layout has a 4-column table and a footer of key hints, sized for English at 80 columns. Many users run it in a 60-column tmux split. What should we change before translators deliver strings?

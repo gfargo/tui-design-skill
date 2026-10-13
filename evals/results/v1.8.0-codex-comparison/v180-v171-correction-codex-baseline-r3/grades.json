@@ -1,0 +1,630 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v180-v171-correction-codex-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "rich-traceback-install-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer imports `install` from `rich.traceback` and calls `install(suppress=[click], show_locals=False)`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It opens by saying the installer lives in `rich.traceback`, not the top-level `rich` module, so it never treats `rich.install()` as valid."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its precedent table says pip vendors Rich, and it makes no claims about Poetry or Sphinx."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It uses only the traceback installer and never mixes in or confuses it with `rich.pretty.install()`."
+        }
+      ]
+    },
+    {
+      "trial_id": "rich-traceback-install-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer imports `install` from `rich.traceback` and calls `install(suppress=[click], show_locals=False)`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It opens with 'Use `rich.traceback.install()`, not `rich.install()`' and never presents `rich.install()` as valid."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It cites pip as vendoring Rich via `_vendor/vendor.txt` and names only HTTPie and Hatch as other precedents, with no mention of Poetry or Sphinx."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It never mentions `rich.pretty.install()` or explains that it only affects REPL output, so the distinction is missing."
+        }
+      ]
+    },
+    {
+      "trial_id": "rich-traceback-install-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The code imports `install` from `rich.traceback` and calls it with `suppress=[click]`, instead of using `rich.install()`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explicitly says to use `rich.traceback.install()`, not `rich.install()`, and never presents the latter as valid."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It cites pip's vendored dependency list and names Hatch and rich-cli as the other examples, never Poetry or Sphinx."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It never mentions `rich.pretty.install()` or its REPL-only scope, so it does not draw the distinction."
+        }
+      ]
+    },
+    {
+      "trial_id": "lazygit-config-format-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states lazygit uses YAML `config.yml` at `~/.config/lazygit/config.yml` on Linux, which is the XDG config location, and adds platform-specific paths."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer describes lazygit's config only as YAML and never mentions TOML."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says k9s plugins live in `plugins.yaml` inside the k9s config directory."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer recommends mirroring lazygit's `config.yml` and never advises choosing a format based on the app's own needs."
+        }
+      ]
+    },
+    {
+      "trial_id": "lazygit-config-format-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States lazygit uses config.yml at ~/.config/lazygit/config.yml or $XDG_CONFIG_HOME/lazygit/config.yml on Linux."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Describes lazygit's config only as YAML and never mentions TOML."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "States k9s plugins are conventionally in plugins.yaml inside the k9s config directory."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Gives no advice on picking a format from the app's own needs; it only reports that both tools use YAML."
+        }
+      ]
+    },
+    {
+      "trial_id": "lazygit-config-format-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says lazygit uses YAML `config.yml` at `~/.config/lazygit/config.yml` or `$XDG_CONFIG_HOME/lazygit/config.yml` on Linux."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls lazygit's config YAML and never mentions TOML."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "States that k9s plugins live in `plugins.yaml` in the k9s config directory."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Only suggests copying lazygit's `config.yml` convention and never says to pick a format based on the app's own needs."
+        }
+      ]
+    },
+    {
+      "trial_id": "reserved-ctrl-s-save-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says raw mode often disables IXON, but it hedges ('verify your library', 'implementations vary') and opens with 'Not universally', framing a freeze as a real risk; it never says the freeze only affects cooked or line-mode programs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It states that Vim and Helix normally save with :w and that Ctrl+S isn't their standard save binding."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It corrects the premise by saying Ctrl+S isn't the standard save binding in Vim or Helix, though it doesn't name save_selection."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It calls Ctrl+S 'reasonable' but doesn't cite nano or micro as precedent and doesn't recommend showing the binding in help or a footer."
+        }
+      ]
+    },
+    {
+      "trial_id": "reserved-ctrl-s-save-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer warns not to assume raw mode disables IXON. It never explains that full-screen raw mode turns off XON/XOFF, or that the freeze only affects cooked-mode programs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Ctrl+S is not Vim's standard save binding. It makes no claim that vim or helix bind it to save."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer corrects the premise for Vim only. It never mentions helix's save_selection binding or corrects the helix part of the premise."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer does not name nano or micro as precedent. It also does not suggest showing the binding in the help screen or footer, and it frames Ctrl+S as risky."
+        }
+      ]
+    },
+    {
+      "trial_id": "reserved-ctrl-s-save-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer mentions raw mode clearing IXON, but frames it as something to check rather than saying full-screen frameworks do this. It never says the freeze only affects cooked or line-mode programs; it opens with 'Not universally'."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Ctrl+S isn't a universal Vim default and doesn't claim helix binds it to save."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer partly corrects the vim premise but never mentions helix or its save_selection binding."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer doesn't cite nano or micro as precedent for Ctrl+S as save and doesn't suggest showing the binding in help or a footer."
+        }
+      ]
+    },
+    {
+      "trial_id": "btop-refresh-cadence-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer accepts the 100ms/2s premise and never mentions btop's single shared update_ms setting."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It argues against per-widget timers, but it never frames widget independence in terms of focus, scroll, or layout."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It keeps separate cadences per collector and says to skip a slow process scan that is still running rather than overlapping polls."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It separates collection from rendering, caches results, and says to keep slow collection off the UI loop."
+        }
+      ]
+    },
+    {
+      "trial_id": "btop-refresh-cadence-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer accepts the premise, recommending CPU sampling every 100ms and process refresh every 2s, and never mentions btop's single update_ms setting."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer argues against per-widget timers but never says widgets should stay independent for focus, scroll, or layout."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It gives the process collector its own 2s rate, separate from the faster CPU sampling, and calls process scans expensive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says to keep expensive collection off the UI thread and have widgets read cached snapshots, so collection stays out of rendering."
+        }
+      ]
+    },
+    {
+      "trial_id": "btop-refresh-cadence-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer accepts the 100ms/2s premise and even uses those rates; it never mentions btop's single shared update_ms setting."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Widgets are described only as displaying shared state; independence for focus, scroll, and layout is never discussed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Per-source deadlines let the process scan run at 2s versus CPU at 100ms, and the answer skips overlapping slow scans."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sampling is kept separate from rendering, and the answer says to keep slow collection off the UI thread."
+        }
+      ]
+    },
+    {
+      "trial_id": "wish-v2-session-options-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by saying `bubbletea.MakeRenderer(sess)` was removed in Wish v2."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends serving through `bubbletea.Middleware(handler)`, or `bubbletea.MakeOptions(sess)` for self-constructed programs, so the program uses the session's I/O and client environment."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says to use Lip Gloss v2 styles directly but never explains that Lip Gloss v2 is pure and no longer owns terminal I/O, which is why per-session renderers are unnecessary."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The code imports `charm.land/bubbletea/v2` and `charm.land/lipgloss/v2`, so both Charm modules stay on v2."
+        }
+      ]
+    },
+    {
+      "trial_id": "wish-v2-session-options-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with 'No' and calls MakeRenderer the Lip Gloss v1 pattern, which tells the reader it does not belong in the v2 middleware flow."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends Wish v2's Bubble Tea middleware, which supplies the session's input, output and environment, and shows the manual equivalent using WithInput, WithOutput and WithEnvironment."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says Lip Gloss v2 emits colors without depending on the server's terminal profile and that Bubble Tea's renderer converts them per client, so per-session renderers are not needed. It does not literally use the word 'pure'."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Its imports use charm.land/bubbletea/v2 and charm.land/lipgloss/v2 together, so the Charm modules stay on the same v2 major version."
+        }
+      ]
+    },
+    {
+      "trial_id": "wish-v2-session-options-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says MakeRenderer belongs to the Wish v1 / Lip Gloss v1 approach, which implies it is not part of the Wish v2 middleware."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends the Wish v2 Bubble Tea middleware, which creates a program per session and configures that session's terminal environment and color profile; it does not name MakeOptions."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer says Lip Gloss v2 has no per-session renderers and that Bubble Tea converts colors, but it never explains that Lip Gloss v2 is pure and no longer owns terminal I/O."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly tells the user to use the v2 packages consistently and lists wish/v2, bubbletea/v2 and lipgloss/v2."
+        }
+      ]
+    },
+    {
+      "trial_id": "spinner-delay-contract-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends delaying the spinner by 150\u2013200ms so typical sub-50ms runs never flash an indicator."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer writes the spinner to stderr, animates only when stderr is a TTY, and omits animation in redirected output or CI."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer lists the ten frames \u280b\u2819\u2839\u2838\u283c\u2834\u2826\u2827\u2807\u280f, which is the cli-spinners dots sequence."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to clear the spinner when the work is done."
+        }
+      ]
+    },
+    {
+      "trial_id": "spinner-delay-contract-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends delaying the spinner by 150\u2013200 ms and cancelling the timer if work finishes first."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer limits the spinner to interactive terminals but never says to send progress to stderr."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer lists exactly the ten cli-spinners dots frames \u280b \u2819 \u2839 \u2838 \u283c \u2834 \u2826 \u2827 \u2807 \u280f."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to clear the spinner's line when work finishes."
+        }
+      ]
+    },
+    {
+      "trial_id": "spinner-delay-contract-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends delaying the spinner about 150\u2013200ms so sub-50ms runs never show a flash."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Writes the spinner to stderr only when stderr is a TTY and disables animation for redirected output."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Lists the ten frames \u280b \u2819 \u2839 \u2838 \u283c \u2834 \u2826 \u2827 \u2807 \u280f and correctly calls it a 10-frame sequence."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says to clear the spinner when work finishes before printing the normal result."
+        }
+      ]
+    },
+    {
+      "trial_id": "tview-goroutine-draw-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer applies table mutations inside app.QueueUpdateDraw from the polling goroutine."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says app.Draw() from a goroutine is supported, but that it doesn't protect table mutations from concurrent rendering or input handling."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its first deadlock cause is calling Draw, QueueUpdate, or QueueUpdateDraw from an event-loop callback or queued update, since the loop is blocked."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly says calling Draw from a background goroutine is supported and attributes deadlocks only to event-loop re-entry."
+        }
+      ]
+    },
+    {
+      "trial_id": "tview-goroutine-draw-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer moves the Table mutations into an app.QueueUpdateDraw closure inside the polling goroutine."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says Draw() is safe from a background goroutine, but that calling SetCell directly before Draw creates a data race."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names calling Draw, QueueUpdate, or QueueUpdateDraw inside input handlers or callbacks on the event loop as a circular-wait deadlock."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says Draw from a goroutine is safe and that direct mutation causes a race 'even if it never deadlocks'."
+        }
+      ]
+    },
+    {
+      "trial_id": "tview-goroutine-draw-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer wraps the table mutations in app.QueueUpdateDraw from the polling goroutine."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says Draw() from the background goroutine is safe but does not synchronize the preceding table mutations."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names calling Draw(), QueueUpdate(), or QueueUpdateDraw() inside an input handler or queued update as the primary deadlock cause."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly says calling Draw() from the background goroutine is safe while the event loop runs."
+        }
+      ]
+    },
+    {
+      "trial_id": "do-not-track-adoption-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It contrasts DO_NOT_TRACK as a mere convention with a table showing Homebrew, Gatsby, and .NET each using their own variables (HOMEBREW_NO_ANALYTICS, GATSBY_TELEMETRY_DISABLED, DOTNET_CLI_TELEMETRY_OPTOUT)."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It names no tool that actually adopted DO_NOT_TRACK, such as the GitHub CLI, netdata, or tilt."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It recommends honoring DO_NOT_TRACK alongside a vague 'tool-specific setting', with no env var plus subcommand and no framing of DO_NOT_TRACK as an extra courtesy."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says either opt-out overrides consent but never says the opt-out itself must not be reported as a telemetry event."
+        }
+      ]
+    },
+    {
+      "trial_id": "do-not-track-adoption-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer calls DO_NOT_TRACK a community proposal not followed by those three tools, and lists their own variables: HOMEBREW_NO_ANALYTICS, GATSBY_TELEMETRY_DISABLED and DOTNET_CLI_TELEMETRY_OPTOUT."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It names no real adopter of DO_NOT_TRACK, such as the GitHub CLI, netdata or tilt."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It recommends a tool-specific opt-in plus honoring DO_NOT_TRACK, but never recommends the tool's own opt-out env var plus subcommand."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says DO_NOT_TRACK overrides and the global opt-out wins, but never says the opt-out itself must not be sent as a telemetry event."
+        }
+      ]
+    },
+    {
+      "trial_id": "do-not-track-adoption-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It states the three tools document their own opt-outs and lists HOMEBREW_NO_ANALYTICS, GATSBY_TELEMETRY_DISABLED and DOTNET_CLI_TELEMETRY_OPTOUT instead of DO_NOT_TRACK."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It names no tool that actually honors DO_NOT_TRACK, such as the GitHub CLI, netdata or tilt."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It recommends DO_NOT_TRACK and a tool-specific env var as equal options, not DO_NOT_TRACK as an extra courtesy, and it never suggests an opt-out subcommand for the user's CLI."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says either opt-out overrides consent but never says the opt-out itself must not be reported as a telemetry event."
+        }
+      ]
+    }
+  ]
+}

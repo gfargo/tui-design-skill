@@ -1,0 +1,48 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8is6586q
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a13389-297f-7970-abf0-4a0d21b9aa7b
+--------
+user
+Ratatui 0.30 with Tokio: `crossterm::event::EventStream` doesn't resolve, and when I open $EDITOR from the app my first few keystrokes vanish. What's wrong?
+
+codex
+Those are usually two separate issues: a missing Cargo feature and an event reader that keeps consuming input while your editor is running.
+
+**`EventStream` requires Crossterm’s `event-stream` feature.** Tokio alone doesn’t enable it:
+
+```toml
+[dependencies]
+ratatui = "0.30"
+crossterm = { version = "0.29", features = ["event-stream"] }
+tokio = { version = "1", features = ["full"] }
+futures-util = "0.3"
+```
+
+```rust
+use crossterm::event::EventStream;
+use futures_util::StreamExt;
+```
+
+Make sure you enable the feature on the **same Crossterm version** your Ratatui backend uses. Cargo features unify within a version; enabling it on another version doesn’t help. `cargo tree -i crossterm` can reveal duplicates.
+
+**Your disappearing keystrokes likely come from the app’s event reader competing with `$EDITOR` for terminal input.** Leaving the alternate screen and disabling raw mode changes terminal settings; it doesn’t stop an `EventStream` task from reading stdin.
+
+Use this handoff sequence:
+
+1. Stop the input task, **await its completion, and drop its `EventStream`** before starting the editor. Sending a cancellation signal alone leaves a race.
+2. Restore the terminal: disable raw mode, leave the alternate screen, and undo mouse capture or other terminal modes you enabled.
+3. Launch the editor with inherited stdin/stdout/stderr, and wait for it to exit.
+4. Reinitialize the TUI, clear/redraw the screen, then create a fresh event stream and restart input handling.
+
+Also avoid mixing `EventStream` with Crossterm’s synchronous `read()`/`poll()` APIs. Give one reader ownership of terminal input.
+
+If you use `ratatui::init()` and `ratatui::restore()`, those help with terminal setup and cleanup, but **you still need to stop your input task yourself**.
+tokens used
+2,539

@@ -1,0 +1,62 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6h5kjsm3
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1339d-a271-7441-99d8-d61f7dd16190
+--------
+user
+In my tview app a background goroutine polls an API and updates a Table. Is it safe to call app.Draw() from that goroutine, and where do tview deadlocks actually come from?
+
+codex
+I’ll check tview’s drawing and update code so I can distinguish unsafe table access from the cases that cause deadlocks.
+exec
+/bin/zsh -lc "rg --files -g '*tview*' -g 'go.mod' -g 'AGENTS.md'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6h5kjsm3
+ exited 1 in 14ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+**Yes—calling `app.Draw()` from a background goroutine is supported while the event loop is running. But directly updating a `Table` there is unsafe.** `Draw()` doesn’t protect earlier table mutations from concurrent rendering or input handling.
+
+Poll the API in your goroutine, then apply the result through `QueueUpdateDraw`:
+
+```go
+// In your polling goroutine:
+rows, err := fetchRows()
+if err != nil {
+    // Handle the error.
+    return
+}
+
+app.QueueUpdateDraw(func() {
+    table.Clear()
+    for r, row := range rows {
+        for c, value := range row {
+            table.SetCell(r, c, tview.NewTableCell(value))
+        }
+    }
+})
+```
+
+Keep API calls outside the closure, and don’t concurrently modify the data it reads. No additional `app.Draw()` is needed.
+
+Deadlocks come from **waiting on work that cannot proceed**:
+
+- **Calling `Draw`, `QueueUpdate`, or `QueueUpdateDraw` from an event-loop callback or a queued update.** These methods enqueue work and wait for completion. The event loop is stuck inside your callback, so it cannot execute that work.
+- **Re-entering application locks during drawing.** Drawing holds the application mutex, including during before/after draw hooks. Calling a method that acquires that mutex—such as `SetRoot`, `SetFocus`, or `Stop`—from such a hook can deadlock.
+- **Holding your own mutex while waiting for a queued update**, when the update or drawing needs the same mutex. Similar cycles occur if a UI callback waits for a worker that is waiting for the UI.
+- **Queuing work without a running event loop.** Calls before `Run()` block until the loop starts; calls after it exits can wait indefinitely.
+
+In ordinary input callbacks, update widgets directly; tview redraws after handling input. If an immediate redraw is necessary there, `ForceDraw()` is available, but don’t call it from a background goroutine or recursively from draw hooks.
+
+One documentation trap: the current `QueueUpdate` comment suggests calling `Draw()` inside its closure. **The implementation makes that deadlock**: `Draw()` calls the blocking `QueueUpdate()` again. Use `QueueUpdateDraw()` instead. These details follow the [current source](https://github.com/rivo/tview/blob/master/application.go) and [concurrency guidance](https://github.com/rivo/tview/wiki/Concurrency).
+tokens used
+35,876

@@ -1,0 +1,1 @@
+Japanese users of our Go TUI report that the rounded box borders and the bullet markers are misaligned, but everything looks fine for us. What's going on?

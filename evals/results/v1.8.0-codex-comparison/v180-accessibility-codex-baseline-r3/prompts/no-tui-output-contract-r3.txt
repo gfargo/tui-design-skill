@@ -1,0 +1,1 @@
+Our Ratatui dashboard has a --no-tui flag that currently prints the same table without borders and exits. A screen-reader user says it doesn't help. What should --no-tui actually do and output?

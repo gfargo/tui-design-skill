@@ -1,0 +1,1 @@
+Our Ink CLI runs on Node 20 LTS. I want the newest Ink, chalk, and commander plus Ink's API for suspending the UI while $EDITOR runs. Which versions should I pin?

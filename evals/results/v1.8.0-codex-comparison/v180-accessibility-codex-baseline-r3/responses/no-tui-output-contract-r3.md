@@ -1,0 +1,32 @@
+`--no-tui` should bypass Ratatui entirely and provide a plain-text interface designed for sequential reading. Removing borders preserves the visual layout—and the need to understand columns by position.
+
+It should:
+
+- Print a snapshot and exit by default, without cursor movement, screen clearing, animation, ANSI styling, or terminal mode changes.
+- Present each item as a labeled record, with units and explicit status words. Avoid aligned columns, icons, and color-dependent meaning.
+- Put a short summary first, then use a predictable reading order. Include active filters and any missing or stale data.
+- Work when piped or redirected. Send data to stdout, errors to stderr, and return meaningful exit codes.
+- Offer explicit commands or flags for actions that normally require keyboard navigation.
+
+For example:
+
+```text
+Dashboard snapshot
+Updated: October 13, 2026, 10:42 AM EDT
+Services: 3 total; 2 healthy; 1 failing
+Filter: All services
+
+Service: API
+Status: Healthy
+Requests per second: 142
+Error rate: 0.2 percent
+
+Service: Worker
+Status: Failing
+Queued jobs: 87
+Last error: Connection to Redis timed out
+```
+
+If continuous monitoring matters, expose it explicitly, such as `--no-tui --watch 30`. Append timestamped updates without overwriting earlier output, preferably reporting only changes after the initial snapshot. Provide `--format json` separately for automation.
+
+The acceptance test is whether someone can understand the output when it is read aloud from beginning to end, without relying on spacing, color, or screen position. Test that with the screen-reader user.

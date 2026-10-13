@@ -1,0 +1,1 @@
+In our Bubble Tea v2 chat app, Shift+Enter should insert a newline and Enter should send. It works in kitty, but in some terminals and inside tmux Shift+Enter just sends. Why, and what should the design be?

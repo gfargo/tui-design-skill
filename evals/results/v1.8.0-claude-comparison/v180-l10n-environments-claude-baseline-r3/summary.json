@@ -1,0 +1,43 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v180-l10n-environments-claude-baseline-r3",
+  "created_at": "2026-10-13T06:23:10Z",
+  "run_manifest_sha256": "d93838f34b0a097a1eb019fb483f6ddc6b3a566be72669eed99355449602fc29",
+  "grades_file": "grades.json",
+  "grades_sha256": "b01dd5e0254a3a4ecf5318428154f87f45dd3270d2d345a92f5d9e21b45c2a0a",
+  "passed": 42,
+  "total": 45,
+  "pass_rate": 0.9333333333333333,
+  "by_case": [
+    {
+      "case_id": "translation-growth-60-columns",
+      "case_name": "translation-growth-60-columns",
+      "passed": 12,
+      "total": 15,
+      "pass_rate": 0.8
+    },
+    {
+      "case_id": "tmux-prefix-collision",
+      "case_name": "tmux-prefix-collision",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ambiguous-width-borders",
+      "case_name": "ambiguous-width-borders",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "locale-machine-output",
+      "case_name": "locale-machine-output",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

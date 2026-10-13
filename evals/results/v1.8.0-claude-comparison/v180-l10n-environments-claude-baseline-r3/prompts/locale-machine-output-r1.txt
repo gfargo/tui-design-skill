@@ -1,0 +1,1 @@
+Our CLI prints file sizes like 1,234.5 MB in its human table and also has a --json mode. A user in Germany says a script that parses our output broke after they set LANG=de_DE.UTF-8. What should our rules be?

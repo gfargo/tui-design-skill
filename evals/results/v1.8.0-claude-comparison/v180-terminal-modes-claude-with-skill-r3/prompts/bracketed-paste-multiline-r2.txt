@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/amazing-meitner-d3ddd1/plugins/tui-design/skills/tui-design to solve this request:
+
+Users paste multi-line shell snippets into the single-line command input of our Ratatui TUI, and the app runs each pasted line as a separate command. What's going on, and how do we fix it?

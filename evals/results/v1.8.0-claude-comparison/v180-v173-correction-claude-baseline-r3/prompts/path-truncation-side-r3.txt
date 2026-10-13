@@ -1,0 +1,1 @@
+My file list column is 30 cells wide and paths like /usr/local/share/applications/org.example.Viewer.desktop overflow. Should I cut the end and add an ellipsis?

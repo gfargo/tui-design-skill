@@ -1,0 +1,1 @@
+Our TUI uses Ctrl+B to toggle the sidebar and Esc to leave insert mode. Users inside tmux say the sidebar shortcut does nothing and Esc feels laggy. What's happening and how should we design around it?

@@ -1,0 +1,37 @@
+OpenAI Codex v0.160.0
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i2rt87bv
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a133ca-df42-7553-b535-f59c598f0775
+--------
+user
+Our TUI uses Ctrl+B to toggle the sidebar and Esc to leave insert mode. Users inside tmux say the sidebar shortcut does nothing and Esc feels laggy. What's happening and how should we design around it?
+
+codex
+Both symptoms come from tmux handling input before your TUI receives it.
+
+**Ctrl+B is tmux’s default prefix key.** tmux consumes it and waits for a command, so your app never sees the shortcut. With the default bindings, pressing Ctrl+B twice sends one literal Ctrl+B to the app—but that’s an awkward primary interaction.
+
+**Esc is ambiguous in terminal input.** A standalone Escape press uses the same byte that begins many special-key sequences and, commonly, Alt-modified keys. tmux may wait for more bytes before deciding it’s a standalone Esc. Your TUI’s input library may wait too, so the delays can add up. tmux’s relevant setting is `escape-time`.
+
+Design around this by:
+
+- **Making sidebar access discoverable and configurable.** Provide a command such as `:sidebar` or a command-palette entry, plus a shortcut users can remap. Avoid Ctrl+B as the sole default path; check other defaults against terminal and multiplexer bindings too.
+- **Keeping Esc, with an alternate way to leave insert mode.** Ctrl+G is a possible configurable alternative. Ctrl+[ typically sends the same Escape byte, so it usually won’t fix the delay.
+- **Checking your input library’s Escape handling.** Use a short, configurable disambiguation timeout where supported. Don’t blindly treat every Escape byte as a complete keypress: that can break arrows, function keys, and Alt combinations.
+- **Documenting a tmux tuning option**, rather than changing users’ configuration automatically:
+
+  ```tmux
+  set -sg escape-time 10
+  ```
+
+  A small value often makes Esc feel immediate. Zero also works in many local setups, but can misinterpret sequences when bytes arrive slowly, especially over remote connections.
+
+Test inside tmux, including over SSH, with Esc, arrows, function keys, and Alt combinations. The goal is responsive mode switching without sacrificing reliable key decoding.
+tokens used
+2,422

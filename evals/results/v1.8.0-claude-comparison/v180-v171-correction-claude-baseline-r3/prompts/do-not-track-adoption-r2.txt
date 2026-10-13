@@ -1,0 +1,1 @@
+I'm adding opt-in telemetry to my CLI. Is DO_NOT_TRACK the standard opt-out that Homebrew, Gatsby, and the .NET SDK follow, or should I define my own?

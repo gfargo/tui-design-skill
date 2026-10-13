@@ -111,6 +111,22 @@ class ValidateReleaseTest(unittest.TestCase):
             path.write_text(path.read_text().replace("Design, build, refactor, or review", "Design or review"))
         self.assert_fails_with("must start with SKILL.md's first description sentence")
 
+    def set_trigger_expectation(self, query_id: str, expected: bool | None) -> None:
+        path = self.root / "evals/v180-trigger-evals.json"
+        data = json.loads(path.read_text())
+        for query in data["queries"]:
+            if query["id"] == query_id:
+                query["should_trigger"] = expected
+        path.write_text(json.dumps(data, indent=2) + "\n")
+
+    def test_trigger_query_needs_an_expectation_unless_ambiguous(self) -> None:
+        self.set_trigger_expectation("P01", None)
+        self.assert_fails_with("invalid trigger eval: evals/v180-trigger-evals.json id='P01'")
+
+    def test_ambiguous_trigger_query_has_no_expectation(self) -> None:
+        self.set_trigger_expectation("A01", True)
+        self.assert_fails_with("invalid trigger eval: evals/v180-trigger-evals.json id='A01'")
+
     def test_folded_frontmatter_description_is_accepted(self) -> None:
         skill_md = self.root / SKILL / "SKILL.md"
         text = skill_md.read_text()

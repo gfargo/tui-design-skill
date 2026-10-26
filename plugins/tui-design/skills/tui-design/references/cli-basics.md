@@ -1,6 +1,6 @@
 # Simple CLI design — non-TUI command-line tools
 
-For programs that don't have a full-screen UI: read args, do work, print output, exit. This document synthesizes [clig.dev](https://clig.dev), the [12-Factor CLI](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) principles, POSIX.1-2017 utility conventions, GNU coding standards, the XDG Base Directory Specification, BSD `sysexits.h`, and the design of widely admired CLIs (`gh`, `rg`, `fd`, `bat`, `jq`, `httpie`, `kubectl`, `docker`, `starship`).
+For programs that don't have a full-screen UI: read args, do work, print output, exit. This document synthesizes [clig.dev](https://clig.dev), the [12-Factor CLI](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) principles, POSIX.1-2024 utility conventions, GNU coding standards, the XDG Base Directory Specification, BSD `sysexits.h`, and the design of widely admired CLIs (`gh`, `rg`, `fd`, `bat`, `jq`, `httpie`, `kubectl`, `docker`, `starship`).
 
 The bar for a CLI to feel professional is lower than a TUI, but the principles are settled. Most "this CLI is bad" reactions trace to violating items on this checklist.
 
@@ -71,6 +71,8 @@ Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FR
 ### Interactivity
 
 Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+
+**Cancelling a prompt (Ctrl-C, or Esc where the prompt library maps it) is an abort, not success: restore the terminal and exit 130**, the same code as an uncaught SIGINT (128 + 2). Exit 0 would let `mytool init && mytool deploy` carry on with no answer.
 
 Never accept a secret as a flag value; see *Secrets — what NOT to do*.
 
@@ -174,7 +176,7 @@ Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. A common choice
 
 Tool-specific overloads are common: `grep`/`rg` use `0` = match found, `1` = no match, `2` = error. Document your scheme in `--help`.
 
-Treat `sysexits.h` as a legacy compatibility vocabulary, not a cross-platform recommendation. Many modern tools use a smaller documented scheme instead.
+Treat `sysexits.h` as a legacy compatibility vocabulary, not a cross-platform recommendation. Many modern tools use a smaller documented scheme instead. Adopt it whole or not at all: if you do, `EX_TEMPFAIL` (75) is your retryable-failure code; if you don't, document which of your own codes callers may retry.
 
 ---
 
@@ -184,22 +186,23 @@ The 12-Factor anatomy:
 
 1. **State what was attempted.**
 2. **State what failed and why.**
-3. **Suggest how to fix it** — give a command if possible.
-4. **Link to docs.**
+3. **Link to docs.**
+4. **Suggest how to fix it** — give a command if possible, as the last line.
 
 Example:
 
 ```
 $ myapp dump -o myfile.out
-Error: EPERM — invalid permissions on myfile.out
-Cannot write to myfile.out; the file is read-only.
-Fix with: chmod +w myfile.out
+error: cannot write myfile.out (EPERM): the file is read-only
 See: https://github.com/jdxcode/myapp#permissions
+Fix with: chmod +w myfile.out
 ```
+
+**One format rule.** Start the message that is itself the failure with a plain-word `error:` (and a warning with `warning:`), so a reader, a screen reader, or `grep` can tell what the line is. Do not print log-style `ERR`/`WARN`/`[ERROR]` labels, timestamps, or any prefix on ordinary output unless `--verbose` or `--debug` is on ([clig.dev](https://clig.dev/#output) rules out log-level labels, not a plain-word failure marker). Other references defer to this rule.
 
 **Catch expected errors and rewrite** — never expose raw stack traces by default. Stack traces only on `--debug` or `DEBUG=1`.
 
-**Put the most important info last.** The eye lands at the bottom of the output. The fix command should be the last line.
+**Put the most important info last** ([clig.dev](https://clig.dev/#errors)). The eye lands at the bottom of the output. The fix command is the last line; when there is no fix command, the docs link is.
 
 **Group repeated errors.** If 100 files fail to parse, summarize: "100 files failed to parse — first three: …; pass `--show-all-errors` to list all."
 
@@ -234,8 +237,8 @@ When run with no args (and no sensible default action), show:
 
 - **Synopsis** with POSIX notation: `mycli [-v] [--output FILE] FILE...`.
 - **Description** — 1–3 paragraphs.
-- **Flags grouped by purpose.** `gh` and Heroku group: General, Output, Filtering, Auth. This scales much better than one alphabetical list.
-- **Examples at the end**, building from simple to complex. Examples are the most-read part of help text.
+- **Commands and flags grouped by purpose.** `gh --help` groups commands (Core, GitHub Actions, Additional) while its per-command flags stay one flat list; for a long flag list, add headings such as Output, Filtering, Auth. Grouping scales much better than one alphabetical list.
+- **Examples first, right after the description**, building from simple to complex. [clig.dev](https://clig.dev/#help) says users read examples before any other documentation, so show them first and move a long set to `help <topic>` or the docs. `gh` puts its examples last, which only works while the flag list is short enough to keep them on screen.
 - Link to docs, man page, or `mycli help <topic>`.
 
 ### Man pages
@@ -254,7 +257,7 @@ These end up in bug reports — make them easy to copy. If your tool talks to a 
 
 ### Shell completions
 
-Generate for bash, zsh, fish, pwsh. Cobra, Click/Typer, yargs, and picocli generate them from the command definition; clap needs the `clap_complete` crate and oclif needs `@oclif/plugin-autocomplete`; commander has no built-in support ([commander.js#2008](https://github.com/tj/commander.js/issues/2008)), so add a completion package or write the scripts. Wire them up.
+Generate for bash, zsh, fish, pwsh where the parser allows. Cobra, Click, and Typer generate all four from the command definition; yargs documents bash, zsh, and fish but not PowerShell, and picocli's `AutoComplete` targets only bash and zsh. clap needs the `clap_complete` crate and oclif needs `@oclif/plugin-autocomplete`; commander has no built-in support ([commander.js#2008](https://github.com/tj/commander.js/issues/2008)), so add a completion package or write the scripts. Wire them up.
 
 Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
 
@@ -314,7 +317,7 @@ ranger's `--choosedir` does the same thing under a different flag name. This is 
 
 ### The `eval "$(tool init shell)"` pattern
 
-For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits only a `precmd` prompt-regeneration hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits keybindings (Ctrl-R and the Up arrow by default; `--disable-up-arrow` opts out) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
+For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need: starship emits a `precmd` prompt-regeneration hook plus a `preexec` hook; zoxide emits `z`/`zi` functions plus a `chpwd` hook that tracks visited directories; atuin emits keybindings (Ctrl-R and the Up arrow by default; `--disable-up-arrow` opts out) plus history-capture hooks; mise emits a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd` — since it can't set the parent shell's env directly, it has the *shell itself* recompute it on each relevant event. fzf's `--zsh`/`--bash` flags (since v0.48, replacing an older `install.sh` + separately-sourced-files approach) emit both keybindings and completions from one embedded call.
 
 ### Never silently edit rc files
 
@@ -333,7 +336,7 @@ Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc
 5. System config (`/etc/mytool/`).
 6. Built-in defaults.
 
-This is what `git`, `docker`, `kubectl` all use. Predictable.
+This is the [clig.dev](https://clig.dev/#configuration) order (flags, env, project, user, system), with built-in defaults as the floor. Predictable.
 
 ### XDG Base Directory Specification
 
@@ -390,10 +393,10 @@ Never accept secrets via `--password=`, `--token=`, etc. on the command line. Th
 
 Two patterns dominate, and both are legitimate:
 
-1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or print a URL + code with `--no-browser`), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
+1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or show a URL and one-time code to enter on another device), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
 2. **Direct prompt for long-lived credentials**, written to a plaintext config file. Older but still standard for cloud-infra CLIs with long-lived access-key-style credentials (`aws configure`) — though even AWS is moving federated auth toward device-flow (`aws configure sso`).
 
-**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`, and `GH_PROMPT_DISABLED` (any value turns gh's prompts off)—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
 
 **Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
 
@@ -432,7 +435,7 @@ Stream line-by-line where possible (`grep`, `jq`, `rg`). Don't read whole input 
 **SIGPIPE handling per language:**
 - **Python**: `signal.signal(signal.SIGPIPE, signal.SIG_DFL)` at startup.
 - **Rust**: handle `ErrorKind::BrokenPipe` explicitly.
-- **Go**: ignore `EPIPE` on stdout.
+- **Go**: nothing by default. A broken-pipe write to fd 1 or 2 already kills the program with SIGPIPE unless it calls `signal.Notify` for SIGPIPE, in which case the write returns `EPIPE` and you exit quietly on it ([os/signal](https://pkg.go.dev/os/signal#hdr-SIGPIPE)).
 - **Node**: handle `EPIPE` on `process.stdout`.
 
 ### Atomicity and idempotency
@@ -440,7 +443,7 @@ Stream line-by-line where possible (`grep`, `jq`, `rg`). Don't read whole input 
 - Write tmpfile then `rename(2)` — atomic on most filesystems.
 - `--dry-run` for destructive operations (`rsync`, `terraform plan`, `git add -n`).
 - Re-running should converge ("crash-only" design). The user shouldn't fear running the command twice.
-- Configurable timeouts, exponential backoff, retry on `EX_TEMPFAIL` (75) errors.
+- Configurable timeouts, exponential backoff, and retries limited to transient failures (`EX_TEMPFAIL` (75) if you use sysexits).
 
 ---
 
@@ -467,11 +470,11 @@ Once shipped, your CLI is an API. Users script around it.
 
 If you check for updates: check async, cache the result (once a day is the norm — both gh and the widely-used `update-notifier` npm package default to a 24-hour interval), and print the notice to stderr *after* your normal output, not interleaved with it. Auto-skip in CI and gate on stdout being a TTY. Provide an opt-out env var (gh's is `GH_NO_UPDATE_NOTIFIER`; the npm package's is `NO_UPDATE_NOTIFIER`).
 
-**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh disables its own update checker specifically in precompiled/package-manager-distributed binaries. Getting this wrong is a live bug class, not a hypothetical: gemini-cli's self-update logic has misattributed an npm install as Homebrew-managed and told users to run `brew upgrade`, which silently no-ops.
+**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh compiles its update checker in only under the `updateable` build tag, which the Homebrew formula sets ([update_enabled.go](https://github.com/cli/cli/blob/v2.103.2/internal/ghcmd/update_enabled.go)), and the notice it prints for Homebrew installs says `brew upgrade gh`. Getting this wrong is a live bug class, not a hypothetical: gemini-cli's self-update logic has misattributed an npm install as Homebrew-managed and told users to run `brew upgrade`, which silently no-ops.
 
 ### Telemetry, if you collect it
 
-`DO_NOT_TRACK=1` is a named convention with thin adoption: netdata, tilt, and the GitHub CLI honor it, while Homebrew, Gatsby, and the .NET SDK rejected it for their own variables (`HOMEBREW_NO_ANALYTICS`, `GATSBY_TELEMETRY_DISABLED`, `DOTNET_CLI_TELEMETRY_OPTOUT`). So:
+`DO_NOT_TRACK=1` is a named convention with thin adoption: netdata, tilt, and the GitHub CLI honor it, while Homebrew and Gatsby kept their own variables (`HOMEBREW_NO_ANALYTICS`, `GATSBY_TELEMETRY_DISABLED`) and the .NET SDK has not adopted it (`DOTNET_CLI_TELEMETRY_OPTOUT`; [dotnet/sdk#3917](https://github.com/dotnet/sdk/issues/3917) is still open). So:
 - Ship your own opt-out: an env var plus a `tool telemetry disable` subcommand. gh uses `GH_TELEMETRY` and a `telemetry` config key, and `GH_TELEMETRY` overrides `DO_NOT_TRACK`.
 - Skip telemetry in CI, and honor `DO_NOT_TRACK=1` as a courtesy; it costs one env lookup.
 - Disclose before sending anything. Homebrew shows its analytics notice before the first event, so users can opt out first.
@@ -515,27 +518,28 @@ A good CLI:
 - Reads `-` as stdin; honors `--`.
 - Exits cleanly on SIGPIPE (no stack trace).
 - First Ctrl-C graceful, second force.
+- Distinct exit codes for distinct failure classes.
 
 **Help & versioning**
 - Shows help on no-arg / `-h` / `--help` / `help` (subcommand or global).
-- Help has synopsis, grouped flags, and examples at the end.
+- Help has synopsis, examples up front, and grouped commands or flags.
 - Ships shell completions and `--version` with semver + commit.
 
 **Flags**
 - Every short flag has a long form.
 - Uses standard names (`--quiet`, `--verbose`, `--output`, `--force`, `--dry-run`, `--json`, `--no-color`).
 - Prefers flags to args when ambiguous.
-- Distinct exit codes for distinct failure classes.
 
 **Output**
 - Human-friendly by default; `--json` / `--plain` for scripts.
 - Tables have no borders and toggleable headers.
 - Color auto-detects TTY and honors `NO_COLOR` / `FORCE_COLOR` / `TERM=dumb`.
 - No animations when not a TTY.
-- No log-level prefixes in default mode.
+- No log-level labels or per-line prefixes on routine output.
 
 **Errors**
-- State what / why / how-to-fix.
+- State what / why / how-to-fix, fix last.
+- Failures and warnings start with plain `error:` / `warning:` (see *Error messages*).
 - Suggests "did you mean…?" without auto-running.
 - No stack traces unless `--debug`.
 
@@ -567,4 +571,4 @@ A good CLI:
 
 ---
 
-If the tool grows to need a full-screen UI later, that's a TUI — return to the main `SKILL.md` and pick an ecosystem reference. Many great tools (`gh`, `helix`, `atuin`, `posting`) ship both a CLI and a TUI from the same core, with the CLI handling scripts and the TUI handling exploration.
+If the tool grows to need a full-screen UI later, that's a TUI — return to the main `SKILL.md` and pick an ecosystem reference. Many great tools (`atuin`, `glow`) ship both a CLI and a TUI from the same core, with the CLI handling scripts and the TUI handling exploration.

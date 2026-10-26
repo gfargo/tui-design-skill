@@ -17,7 +17,7 @@ When the user asks about a design choice and you're unsure of the answer, find t
 - "What's the spec for my undo system?" → lazygit's git-action stack.
 - "How should mouse work in my TUI?" → btop (clickable keys and boxes), helix (keyboard-first; mouse on by default but never required), lazygit (augmentation).
 - "How fast does my prompt picker need to be?" → fzf (<100ms), starship (per-module time budgets).
-- "What does a polished setup wizard look like?" → @clack/prompts (create-vite, create-astro) — see `ecosystem-typescript.md`.
+- "What does a polished setup wizard look like?" → @clack/prompts (create-vite; create-astro has the same look via its own `@astrojs/cli-kit`) — see `ecosystem-typescript.md`.
 - "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
 
 Concrete examples beat abstract principles for design questions. When in doubt, point at the app and the user can study its source.
@@ -28,7 +28,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 - Monitors: [btop / btop++](#btop--btop-c) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
 - Pickers and search: [fzf](#fzf-go) · [atuin](#atuin-rust-ratatui)
 - Editors: [helix](#helix-rust-custom-renderer) · [neovim](#neovim-c--lua)
-- File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-mostly-python-and-go)
+- File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-python-go-c-rust)
 - IDE-style apps: [Posting](#posting-python-textual) · [Harlequin](#harlequin-python-textual)
 - Viewers: [Toolong](#toolong-python-textual) · [Glow](#glow-go-bubble-tea)
 - Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript)
@@ -168,7 +168,7 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > Shell history with sync. Replaces Ctrl+R.
 
-**Layout:** overlay/popup — replaces the default shell reverse-search with a richer fzf-style picker.
+**Layout:** inline, capped at `inline_height` (default 40 lines; `0` = full screen) — the same bounded model as fzf `--height`, not an overlay. It replaces the default shell reverse-search with a richer fzf-style picker.
 
 **What it does well:**
 - **Replaces a built-in** (Ctrl+R) seamlessly. Users don't have to change muscle memory; they get a better version of what they already use.
@@ -283,7 +283,7 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 ---
 
-## ranger / lf / nnn / broot (mostly Python and Go)
+## ranger / lf / nnn / broot (Python, Go, C, Rust)
 
 > File managers. The miller-columns lineage.
 

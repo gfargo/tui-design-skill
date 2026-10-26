@@ -44,9 +44,9 @@ The Node.js ecosystem splits along two axes:
 
 ## Ink (vadimdemedes/ink)
 
-**Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, diffs against the previous frame, and emits ANSI patches in a single buffered terminal write.
+**Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, and rewrites the live output in a single buffered terminal write. By default each frame replaces the whole live region; `incrementalRendering: true` updates only the changed lines ([readme](https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#incrementalrendering)).
 
-Current major: **Ink 8** (8.0.x, October 2026). Ink 7 and 8 require **Node ≥ 22**; Ink 8 also requires **React ≥ 19.3** (Ink 7: ≥ 19.2). Node 20 reached end-of-life on 2026-04-30, so target Node 22 (maintenance LTS until 2027-04-30) or Node 24 (LTS); Node 26 becomes LTS on 2026-10-28. Ink 6 (Node ≥ 20, React ≥ 19), commander 14, and chalk 5 are the last majors that run on Node 20 — use them only as a bridge for a deployment that can't move yet.
+Current major: **Ink 8** (8.0.x, October 2026). Ink 7 and 8 require **Node ≥ 22**; Ink 8 also requires **React ≥ 19.3** (Ink 7: ≥ 19.2). Node 20 is end-of-life, so target Node 22 or Node 24 (check the Node release schedule for LTS status). Ink 6 (Node ≥ 20, React ≥ 19), commander 14, and chalk 5 are the last majors that run on Node 20 — use them only as a bridge for a deployment that can't move yet.
 
 **Hello world:**
 
@@ -93,14 +93,14 @@ Ink ships only a handful of components — everything else composes from these:
 
 - **`<Text>`** — only place strings can live. Props: `color`, `backgroundColor`, `bold`, `italic`, `underline`, `inverse`, `dimColor`, `wrap`, `strikethrough`. Strings as direct children of `<Box>` will throw — they must be wrapped.
 - **`<Box>`** — flexbox container. Props: `padding`, `paddingX/Y/Top/Right/Bottom/Left`, `margin*`, `borderStyle`, `borderColor`, `borderTop`/`Bottom`/`Left`/`Right` (selective borders), `width`, `height`, `minWidth`/`maxWidth` (numbers only in Ink 8), `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `justifyContent`, `alignItems`, `gap`, `display: 'flex' | 'none'`, `overflow`/`overflowX`/`overflowY`. Ink 8 adds `contentOffsetX`/`contentOffsetY` for scrolling: give a fixed-height viewport `overflow="hidden"`, wrap the content in a `flexShrink={0}` box that carries any padding, and clamp the offset to `content.height - clientHeight` from `useBoxMetrics()`.
-- **`<Newline>`** — vertical spacing.
+- **`<Newline>`** — newline characters; only valid inside `<Text>`. Use `gap` or margin for vertical spacing between boxes.
 - **`<Spacer>`** — flex-grow filler in a flex layout.
 - **`<Static>`** — renders items permanently above the live UI; once rendered, never re-renders. Suited to log streaming — completed tests (tap) or generated pages (Gatsby) — so the live UI doesn't have to repaint thousands of historical log lines.
 - **`<Transform>`** — wraps children and transforms their rendered string. Used for gradients, OSC 8 hyperlinks, custom effects.
 
 ## Layout
 
-Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, plus custom char strings.
+Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, or a custom `BoxStyle` object (`topLeft`, `top`, `topRight`, `left`, `right`, `bottomLeft`, `bottom`, `bottomRight`).
 
 ```tsx check=typescript/ink-layout
 <Box flexDirection="column" height="100%">
@@ -130,7 +130,7 @@ Ink-specific (items marked 7+ are not in Ink 6):
 - **`useWindowSize()`** (7+) — `{columns, rows}`, updates on resize.
 - **`usePaste(callback)`** (7+) — bracketed-paste events, so pasted text arrives as one chunk instead of spraying through `useInput` character by character.
 - **`useCursor()`** — position the real terminal cursor (IME-friendly input).
-- **`useAnimation()`** (7+) — frame ticker with pause/resume.
+- **`useAnimation()`** (7+) — frame ticker; `isActive: false` stops it, and turning it back on resets the counters to 0 (it does not resume).
 - **`useBoxMetrics()`** (7+) — measured dimensions of a box at runtime; Ink 8 adds `clientWidth`/`clientHeight`, the size inside its borders.
 
 Plus all standard React hooks (`useState`, `useEffect`, `useReducer`, `useContext`, `useMemo`).
@@ -240,7 +240,7 @@ const name = await text({
 });
 if (isCancel(name)) {
   cancel('Cancelled');
-  process.exit(0);
+  process.exit(130);
 }
 
 const framework = await select({
@@ -253,7 +253,7 @@ const framework = await select({
 });
 if (isCancel(framework)) {
   cancel('Cancelled');
-  process.exit(0);
+  process.exit(130);
 }
 
 const s = spinner();
@@ -266,7 +266,7 @@ outro(`You're all set!`);
 
 **Components:** `intro`/`outro`, `text`, `multiline`, `password`, `confirm`, `select`, `multiselect`, `groupMultiselect`, `selectKey`, `autocomplete`, `autocompleteMultiselect`, `path`, `date`, `spinner`, `progress`, `tasks`, `taskLog`, `note`, `box`, `log.info/.warn/.error/.success`, `stream`, `group`. `validate` also accepts a Standard Schema validator (Zod, Valibot, ArkType) or an async function.
 
-**`isCancel(value)`** is critical — it detects Ctrl+C per prompt and lets you clean up gracefully.
+**`isCancel(value)`** is critical — it detects Ctrl+C per prompt and lets you clean up gracefully. Exit 130 on cancel, not 0, so `cli && next` stops; Clack's own `cancel()` example exits 1.
 
 The visual style — blue-bordered connectors between prompts, single Unicode glyph progress markers — has become a recognizable aesthetic. If the user's building a `create-*`-style scaffolder, this is the right choice.
 
@@ -279,15 +279,22 @@ The modern modular rewrite of Inquirer — TypeScript-first packages that replac
 ```ts check=typescript/inquirer
 import {input, select, confirm, password} from '@inquirer/prompts';
 
-const name = await input({message: 'What is your name?'});
-const role = await select({
-  message: 'Choose a role',
-  choices: [
-    {name: 'Admin', value: 'admin'},
-    {name: 'User', value: 'user'},
-  ],
-});
+try {
+  const name = await input({message: 'What is your name?'});
+  const role = await select({
+    message: 'Choose a role',
+    choices: [
+      {name: 'Admin', value: 'admin'},
+      {name: 'User', value: 'user'},
+    ],
+  });
+} catch (error) {
+  if (error instanceof Error && error.name === 'ExitPromptError') process.exit(130);  // Ctrl+C
+  throw error;
+}
 ```
+
+Ctrl+C rejects the prompt with `ExitPromptError`; uncaught, it prints a stack trace in the user's terminal. Catch it as above ([recipe](https://github.com/SBoudrias/Inquirer.js/blob/ea3130ebc609a6a3910b5397244044de7eda3d05/packages/prompts/README.md#handling-ctrlc-gracefully)).
 
 **Modular packages:** `@inquirer/input`, `@inquirer/select`, `@inquirer/checkbox`, `@inquirer/confirm`, `@inquirer/password`, `@inquirer/editor`, `@inquirer/expand`, `@inquirer/rawlist`, `@inquirer/search`, `@inquirer/number`. Pull only what you use.
 
@@ -332,7 +339,7 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 | **commander** | The most downloaded by a wide margin | Fluent API | The default for most projects (webpack-cli, Babel CLI, Svelte's `sv`); v15 is ESM-only and needs Node ≥ 22.12 (CommonJS callers load it through `require(esm)`); v14, the last line for Node 20, gets security fixes until May 2027 |
 | **yargs** | Very high | Fluent + middleware | Best validation; used by Jest and nyc |
 | **citty** | Growing | TS-first, declarative | UnJS ecosystem (Nuxt, Nitro, unbuild) |
-| **cac** | Niche | One ~20 KB file, no deps | Vite uses it; ESM-only since v7 |
+| **cac** | Niche | One ~20 KB file, no deps | Vite uses it; ESM-only since v7; use ≥ 7.0.1, which fixes a prototype-pollution bug with dotted option names |
 | **oclif** | Plugin marketplace | Class-per-command | Heroku, Salesforce, Shopify CLI; heaviest startup of the group |
 | **node:util.parseArgs** | stdlib | Argument parsing only | Experimental in Node 18, stable since Node 20; zero-dep; Mocha 12 moved to it from yargs |
 
@@ -361,11 +368,11 @@ program.parse();
 
 ## OpenTUI (anomalyco/opentui)
 
-The credible new entrant, built by Anomaly: TypeScript bindings over a Zig native core via C ABI. Double-buffered rendering with alpha blending, scissor clipping, hit grid for mouse. Packages: `@opentui/core` (low-level), `@opentui/react` and `@opentui/solid` (React and SolidJS renderers), and `@opentui/three` — a Three.js WebGPU renderer that rasterizes 3D scenes into terminal cells, its most differentiating capability.
+The credible new entrant, built by Anomaly: TypeScript bindings over a Zig native core via C ABI. Double-buffered rendering with alpha blending, scissor clipping, per-node hit testing for mouse. Packages: `@opentui/core` (low-level), `@opentui/react` and `@opentui/solid` (React and SolidJS renderers), and `@opentui/three` — a Three.js WebGPU renderer that rasterizes 3D scenes into terminal cells, its most differentiating capability.
 
 Powers **opencode** (Anomaly's terminal coding agent) in production.
 
-**Choose if** pushing past Ink's performance ceiling — animations, real-time streaming with low latency, or complex layouts where Yoga's CPU cost matters. **Trade-off:** v0.x churn (0.6.0 moved layout and painting into the native core and broke custom renderables), smaller community than Ink, native binary in the install. `@opentui/core` 0.6+ declares `engines` of Bun ≥ 1.3.14 or Node ≥ 26.4 (Node 26 becomes LTS on 2026-10-28).
+**Choose if** pushing past Ink's performance ceiling — animations, real-time streaming with low latency, or complex layouts where Yoga's CPU cost matters. **Trade-off:** v0.x churn (0.6 moved layout and painting into the native core, and 0.6 and 0.7 each broke custom renderables; 0.7 also dropped the screen-sized hit grid and reads renderable hooks from the class at construction), smaller community than Ink, native binary in the install. `@opentui/core` 0.6+ declares `engines` of Bun ≥ 1.3.14 or Node ≥ 26.4. Read the [0.7.0 release notes](https://github.com/anomalyco/opentui/releases/tag/v0.7.0) before upgrading.
 
 ---
 
@@ -405,6 +412,7 @@ Retained-mode classics, pre-Ink era.
 6. **Frequently-invoked CLI startup**. Lazy-load subcommand modules. Have a fast path for `--version`/`--help`.
 7. **Don't mix raw-mode libraries.** Ink + ora, Ink + blessed → broken.
 8. **Windows older `cmd.exe`** doesn't support all ANSI. Target Windows Terminal.
+9. **Prompts and Ink draw on stdout by default.** For a summon–choose–exit tool whose result goes to stdout, redirect the chrome: Clack takes `output: process.stderr` on each call (`intro`, `cancel` and `spinner` too), Inquirer takes `{output: process.stderr}` as its second argument, and Ink takes `render(<App />, {stdout: process.stderr})`.
 
 ---
 

@@ -322,6 +322,7 @@ tui-design-skill/
 │   ├── v180-l10n-environments-evals.json
 │   ├── v180-terminal-modes-evals.json
 │   ├── v180-trigger-evals.json
+│   ├── v182-correction-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

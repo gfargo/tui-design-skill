@@ -1,0 +1,34 @@
+import pytest
+from textual.app import App, ComposeResult
+from textual.widgets import Input
+
+<<sample python/ctrl-c-quit>>
+
+
+class DefaultApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield Input()
+
+
+class RebindApp(QuitOnCtrlC):
+    def compose(self) -> ComposeResult:
+        yield Input()
+
+
+@pytest.mark.asyncio
+async def test_default_ctrl_c_does_not_quit():
+    app = DefaultApp()
+    async with app.run_test() as pilot:
+        await pilot.press("ctrl+c")
+        await pilot.pause()
+        assert app.is_running
+
+
+@pytest.mark.asyncio
+async def test_priority_binding_quits_even_with_input_focused():
+    app = RebindApp()
+    async with app.run_test() as pilot:
+        assert isinstance(app.focused, Input)
+        await pilot.press("ctrl+c")
+        await pilot.pause()
+        assert not app.is_running

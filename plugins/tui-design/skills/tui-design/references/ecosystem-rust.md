@@ -31,7 +31,7 @@ Ratatui dominates Rust TUI development — thousands of crates build on it. Fork
 | Rich panic/error reports | **color-eyre** |
 | Fancy modern wizards (Clack-style) | **cliclack** |
 
-**Default: Ratatui + Crossterm + clap + color-eyre.** Start from `cargo generate ratatui/templates` and pick one of its six templates by app size: `simple` or `event-driven` for sync apps, `simple-async` or `event-driven-async` when you need Tokio, and `component` (Tokio, action channel, config, logging) only for large multi-pane apps.
+**Default: Ratatui + Crossterm + clap + color-eyre.** Start from `cargo generate ratatui/templates` and pick one of its six templates by app size: `hello-world` for a first run, `simple` or `event-driven` for sync apps, `simple-async` or `event-driven-async` when you need Tokio, and `component` (Tokio, action channel, config, logging) only for large multi-pane apps.
 
 ---
 
@@ -50,10 +50,7 @@ use color_eyre::Result;
 
 fn main() -> Result<()> {
     color_eyre::install()?;            // install reporting before Ratatui wraps the hook
-    let mut terminal = ratatui::init();
-    let result = App::default().run(&mut terminal);
-    ratatui::restore();
-    result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 #[derive(Default)]
@@ -90,7 +87,7 @@ impl App {
                     }
                     KeyCode::Char('+') | KeyCode::Right => self.counter += 1,
                     KeyCode::Char('-') | KeyCode::Left => self.counter -= 1,
-                    _ => {}
+                    _ => {} // Ctrl+Z lands here and is silently ignored; see Foreground suspend
                 }
             }
         }
@@ -99,7 +96,7 @@ impl App {
 }
 ```
 
-`ratatui::init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. `ratatui::restore()` handles normal shutdown. Install reporting hooks such as `color_eyre` **before** `ratatui::init()` so Ratatui can wrap them with terminal restoration.
+`ratatui::run()` calls `init()`, runs your closure, then `restore()`. `init()` enables raw mode, enters the alt screen, constructs a `Terminal<CrosstermBackend>`, and installs a panic hook that restores the terminal before delegating to the hook already installed. Use `init()` / `restore()` yourself only when you need code between setup and teardown. Install reporting hooks such as `color_eyre` **before** either so Ratatui can wrap them with terminal restoration. `restore()` undoes only raw mode and the alternate screen; mouse capture, bracketed paste, and keyboard-enhancement flags you enabled stay on (see [Panic and error safety](#panic-and-error-safety--the-critical-pattern)).
 
 ### Lifecycle and terminal handoff
 
@@ -107,10 +104,10 @@ Ratatui owns rendering and terminal setup, but not the application event loop, s
 
 | Boundary | Ratatui 0.30 contract |
 |---|---|
-| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. |
+| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. `restore()` covers only raw mode and the alternate screen; tear down any extra modes first (see Panic and error safety). |
 | SIGTERM | Ratatui does not turn process signals into application events. Use the owning runtime or signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
 | Interactive child | Stop the input reader first (a still-running reader steals the child's keystrokes and terminal capability responses), restore, run and wait for the child, reinitialize, clear, and redraw. Keep the child's result; if child and reentry both fail, report both instead of letting `?` discard one. See the snippet below. |
-| Foreground suspend | On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT. Offer another path on Windows rather than assuming job-control signals exist. |
+| Foreground suspend | Ratatui and Crossterm have no suspend support, and in raw mode Ctrl+Z is just a key event, so you must bind it yourself. On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT (snippet below). Windows has no job control: offer a drop-to-shell handoff (the editor sequence, running the user's shell) instead. |
 
 Following Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/):
 
@@ -135,7 +132,23 @@ fn run_editor(terminal: &mut DefaultTerminal, app: &mut App) -> Result<ExitStatu
 }
 ```
 
-Reentry steps are not transactional (see the fallible-setup warning below), and a successful redraw proves only that the renderer recovered.
+Reentry steps are not transactional (see the fallible-setup warning below), and a successful redraw proves only that the renderer recovered. If the app enabled extra modes, call `disable_extra_modes()` before `ratatui::restore()` (otherwise they stay on while the child runs) and `enable_extra_modes()` after reentry; both are defined under Panic and error safety.
+
+The suspend path is the same sequence with SIGTSTP in place of the child. Bind `KeyCode::Char('z')` with `KeyModifiers::CONTROL` to set a flag, then call this from the loop. Add `signal-hook` for `raise`; Ratatui's `component` template [does the same](https://github.com/ratatui/templates/blob/5903368da4cfce85144f8efc7070f9c175a8f203/component/template/src/tui.rs) for Ctrl+Z:
+
+```rust check=rust/suspend
+#[cfg(unix)]
+fn suspend(terminal: &mut DefaultTerminal) -> Result<()> {
+    disable_extra_modes();
+    ratatui::restore();
+    signal_hook::low_level::raise(signal_hook::consts::SIGTSTP)?; // returns after `fg` (SIGCONT)
+    enable_raw_mode()?;
+    execute!(stdout(), EnterAlternateScreen)?;
+    enable_extra_modes()?;
+    terminal.clear()?;                                            // next draw repaints every cell
+    Ok(())
+}
+```
 
 **Inline viewport:** `Terminal::with_options` with `Viewport::Inline(height)` renders below the prompt instead of on the alternate screen. To emit permanent log or output lines above the live UI, use `Terminal::insert_before`: inserted lines push the viewport down, then scroll into scrollback above it.
 
@@ -212,7 +225,7 @@ let style = Style::default()
 let span = "Hello".bold().yellow().on_black();
 ```
 
-**Colors:** 16 ANSI named colors (`Color::Red`, `Color::LightRed`, …), `Color::Indexed(u8)` for 256-color, `Color::Rgb(r, g, b)` for truecolor. Detect terminal capability via `ratatui::crossterm::style::available_color_count()` if you want to gate features.
+**Colors:** 16 ANSI named colors (`Color::Red`, `Color::LightRed`, …), `Color::Indexed(u8)` for 256-color, `Color::Rgb(r, g, b)` for truecolor. `ratatui::crossterm::style::available_color_count()` reads only `COLORTERM`/`TERM`, so use it to gate truecolor or 256-color features, not to honor `NO_COLOR`: Crossterm already drops foreground, background, and underline color codes when `NO_COLOR` is non-empty ([`colored.rs`](https://docs.rs/crossterm/0.29.0/src/crossterm/style/types/colored.rs.html)); `style::force_color_output(true)` overrides it. Bold, reverse, and other attributes are still emitted, so keep state distinguishable without color.
 
 **Modifiers:** `BOLD`, `DIM`, `ITALIC`, `UNDERLINED`, `SLOW_BLINK`, `RAPID_BLINK`, `REVERSED`, `HIDDEN`, `CROSSED_OUT`. Avoid blink and crossed-out — poorly supported.
 
@@ -255,7 +268,7 @@ Useful when state is complex and you want testable update logic.
 
 ## Async with Tokio
 
-The standard pattern: a cancellable task reads Crossterm's `EventStream` into an `mpsc` channel; the main loop `select!`s over that channel and a tick interval, and calls `terminal.draw` each pass. `EventStream` needs Crossterm's `event-stream` feature, which Ratatui does not enable: add `crossterm = { version = "0.29", features = ["event-stream"] }` matching Ratatui's Crossterm version so Cargo unifies them, and keep importing through `ratatui::crossterm`.
+The standard pattern: a cancellable task reads Crossterm's `EventStream` into an `mpsc` channel; the main loop `select!`s over that channel and a tick interval, and draws only after an event or a tick that changed visible state (buffer diffing keeps terminal output minimal, but an unconditional draw still rebuilds the whole widget tree every tick). `EventStream` needs Crossterm's `event-stream` feature, which Ratatui does not enable: add `crossterm = { version = "0.29", features = ["event-stream"] }` matching Ratatui's Crossterm version so Cargo unifies them, and keep importing through `ratatui::crossterm`.
 
 ```rust check=rust/async-input
 use std::time::Duration;
@@ -284,14 +297,17 @@ let (tx, mut rx) = mpsc::unbounded_channel();
 let stop = CancellationToken::new();
 let input = spawn_input(tx, stop.clone());
 let mut tick = tokio::time::interval(Duration::from_millis(250));
+let mut dirty = true;
 while !app.should_quit {
-    terminal.draw(|f| app.draw(f))?;
+    if std::mem::take(&mut dirty) {
+        terminal.draw(|f| app.draw(f))?;
+    }
     tokio::select! {
         event = rx.recv() => match event {
-            Some(event) => app.handle(event),
+            Some(event) => { app.handle(event); dirty = true; }
             None => break, // reader ended (EOF or error); stop instead of ticking with no input
         },
-        _ = tick.tick() => app.on_tick(),
+        _ = tick.tick() => dirty = app.on_tick(), // true only if the tick changed something visible
     }
 }
 stop.cancel();
@@ -379,12 +395,56 @@ Real-world anchors: **gitui**'s first insta + TestBackend snapshots (PR #2411) w
 
 ## Panic and error safety — the critical pattern
 
-A Ratatui app that exits badly can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer `ratatui::run()` for the complete managed lifecycle or `ratatui::init()` when the application needs to own the loop. Install any reporting hook first, then let Ratatui wrap it:
+A Ratatui app that exits badly can leave the user in raw mode + alt screen + no cursor. On current Ratatui, prefer `ratatui::run()` (the canonical example above) for the complete managed lifecycle or `ratatui::init()` when the application needs to own the loop. Install any reporting hook first, then let Ratatui wrap it.
 
-```rust check=rust/run
+**Extra modes are yours to undo.** [`try_restore`](https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui/src/init.rs) disables raw mode and leaves the alternate screen, nothing else, and the panic hook only calls `restore()`. Mouse capture, bracketed paste, and Kitty keyboard-enhancement flags stay on after a normal exit or a panic unless you disable them. Pop the keyboard flags while still on the alternate screen, because terminals keep separate [keyboard-mode stacks](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) for the main and alternate screens. So disable extras first, then let `restore()` run, including from a hook that wraps Ratatui's:
+
+```rust check=rust/extra-modes
+use std::io::stdout;
+use std::sync::atomic::{AtomicBool, Ordering};
+use ratatui::crossterm::{
+    event::{
+        DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+        KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+    },
+    execute,
+    terminal::supports_keyboard_enhancement,
+};
+
+static KITTY_PUSHED: AtomicBool = AtomicBool::new(false);
+
+fn enable_extra_modes() -> std::io::Result<()> {
+    execute!(stdout(), EnableMouseCapture, EnableBracketedPaste)?;
+    if supports_keyboard_enhancement()? {
+        execute!(stdout(), PushKeyboardEnhancementFlags(
+            KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?;
+        KITTY_PUSHED.store(true, Ordering::Relaxed);
+    }
+    Ok(())
+}
+
+/// Best effort and idempotent: safe from the panic hook and the normal path.
+fn disable_extra_modes() {
+    if KITTY_PUSHED.swap(false, Ordering::Relaxed) {
+        let _ = execute!(stdout(), PopKeyboardEnhancementFlags);
+    }
+    let _ = execute!(stdout(), DisableBracketedPaste, DisableMouseCapture);
+}
+
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
-    ratatui::run(|terminal| App::default().run(terminal))
+    ratatui::run(|terminal| {
+        let ratatui_hook = std::panic::take_hook(); // the hook run() installed
+        std::panic::set_hook(Box::new(move |info| {
+            disable_extra_modes();                  // still on the alt screen
+            ratatui_hook(info);                     // restore(), then the reporting hook
+        }));
+        let result = enable_extra_modes()
+            .map_err(Into::into)
+            .and_then(|()| App::default().run(terminal));
+        disable_extra_modes();                      // before run() calls restore()
+        result
+    })
 }
 ```
 
@@ -399,7 +459,7 @@ std::panic::set_hook(Box::new(move |info| {
 }));
 ```
 
-Do not add that custom wrapper on top of `ratatui::run()` or `ratatui::init()`; those managed APIs already install it. The fallible helpers are not transactional: `try_init()` can return after an earlier setup step changed terminal state, and `try_restore()` stops at its first teardown error. If the caller requires fallible setup or teardown, handle an error with independent best-effort cleanup attempts (disable raw mode, leave the alternate screen, disable mouse/paste modes, show the cursor) rather than assuming one returned `Err` rolled everything back. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, inject setup/teardown failures and verify normal exit, returned errors, and panics in a PTY.
+Do not add that `restore()` wrapper on top of `ratatui::run()` or `ratatui::init()`; those managed APIs already install it. A hook that only undoes extra modes and then delegates to the existing hook, as above, is the exception. The fallible helpers are not transactional: `try_init()` can return after an earlier setup step changed terminal state, and `try_restore()` stops at its first teardown error. If the caller requires fallible setup or teardown, handle an error with independent best-effort cleanup attempts (disable raw mode, leave the alternate screen, disable mouse/paste modes, show the cursor) rather than assuming one returned `Err` rolled everything back. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, inject setup/teardown failures and verify normal exit, returned errors, and panics in a PTY.
 
 ## Alternatives to Ratatui
 

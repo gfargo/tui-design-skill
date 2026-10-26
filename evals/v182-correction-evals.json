@@ -1,0 +1,463 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.8.2 correctness regressions for facts corrected after the October 2026 reference audit (issues #68-#71), checked against tagged upstream sources (Lipgloss v2.0.6, Bubbles v2.2.1, Bubble Tea v2.1.0, Ratatui 0.30.2, crossterm 0.29, Textual 8.2.8, Ink 8.0.0, OpenTUI 0.7.0, Go os/signal, gh trunk, EastAsianWidth.txt 18.0.0, tmux 3.8 CHANGES, xterm ctlseqs, and the kitty keyboard protocol). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-26): rubric-only. No run is recorded under evals/results/ or scheduled.",
+  "evals": [
+    {
+      "id": "lipgloss-v2-block-size",
+      "name": "lipgloss-v2-block-size",
+      "prompt": "I'm porting a Bubble Tea app to Lipgloss v2. My bordered pane used `style.Width(paneWidth - 2)` so the border would fit, and after the port the pane renders 2 columns too narrow. What changed and how should I size panes now?",
+      "files": [],
+      "assertions": [
+        "Says that in Lipgloss v2 Style.Width and Style.Height include the border (and padding) in the block size, whereas v1 drew the border outside the set width",
+        "Explains that subtracting the border from the width, as v1-era layout math did, is now double-counting and leaves the pane 2 cells too narrow",
+        "Tells the user to pass the full pane width to Width and compute the text area as Width minus border and padding (for example via GetHorizontalBorderSize and GetHorizontalPadding)",
+        "Does not claim that v2 still draws the border outside Width, and does not tell the user to add the border size on top of Width"
+      ]
+    },
+    {
+      "id": "bubbles-v2-setters",
+      "name": "bubbles-v2-setters",
+      "prompt": "After upgrading to Bubbles v2, `m.viewport.Width = msg.Width`, `viewport.New(80, 24)`, `textinput.DefaultKeyMap`, and `help.NewModel()` no longer compile. What are the v2 equivalents?",
+      "files": [],
+      "assertions": [
+        "Replaces exported Width/Height field assignment with SetWidth and SetHeight, and reads them back with Width() and Height() methods",
+        "Constructs the viewport as viewport.New(viewport.WithWidth(80), viewport.WithHeight(24)), or New() followed by SetWidth/SetHeight",
+        "Calls DefaultKeyMap as a function (textinput.DefaultKeyMap()) rather than reading a package variable",
+        "Says NewModel was removed in favor of New (help.New())",
+        "Does not claim the exported Width or Height fields still exist on these Bubbles"
+      ]
+    },
+    {
+      "id": "bubbles-v2-isdark-styles",
+      "name": "bubbles-v2-isdark-styles",
+      "prompt": "My Bubbles v2 list and help footer look washed out on a light terminal, and `list.DefaultStyles()` and `list.NewDefaultItemStyles()` with no arguments don't compile. How do I style them correctly?",
+      "files": [],
+      "assertions": [
+        "Says the v2 style constructors take an isDark bool, for example list.DefaultStyles(isDark), list.NewDefaultItemStyles(isDark), and help.DefaultStyles(isDark)",
+        "Gets isDark from the running program by returning tea.RequestBackgroundColor from Init and handling tea.BackgroundColorMsg with msg.IsDark(), then reapplies the styles",
+        "Notes that help.New() and list.NewDefaultDelegate() assume a dark background until the styles are replaced",
+        "Does not recommend lipgloss.AdaptiveColor or lipgloss.HasDarkBackground inside the running Bubble Tea program"
+      ]
+    },
+    {
+      "id": "bubbles-list-filter-q",
+      "name": "bubbles-list-filter-q",
+      "prompt": "My Bubble Tea v2 model has a Bubbles list with filtering enabled and a global `case \"q\": return m, tea.Quit`. When the user presses / and types a word containing q, the whole app quits. How do I fix the key handling?",
+      "files": [],
+      "assertions": [
+        "Identifies the cause: the parent handles q before forwarding the key to the list, so the filter never receives it",
+        "Checks m.list.FilterState() == list.Filtering (or SettingFilter()) and skips global single-character keys while the list is taking filter text, forwarding the message to list.Update instead",
+        "Keeps modified keys such as ctrl+c global so the app can still be quit or interrupted while filtering",
+        "Forwards all remaining messages to the focused child's Update and returns its Cmd"
+      ]
+    },
+    {
+      "id": "bubbletea-ctrl-z-binding",
+      "name": "bubbletea-ctrl-z-binding",
+      "prompt": "My Bubble Tea v2 app should suspend to the shell on Ctrl+Z like other terminal tools, but pressing it does nothing. What is missing?",
+      "files": [],
+      "assertions": [
+        "Says Bubble Tea does not bind Ctrl+Z automatically, so the app must handle the \"ctrl+z\" key press itself",
+        "Returns tea.Suspend as the command from that tea.KeyPressMsg case",
+        "Handles tea.ResumeMsg after the job resumes to reload state that may have changed while the app was away",
+        "Notes that suspend is Unix-only and must not be a required path on Windows"
+      ]
+    },
+    {
+      "id": "bubbletea-program-status-exit",
+      "name": "bubbletea-program-status-exit",
+      "prompt": "I set `v.ProgramStatus` to a Working status in my Bubble Tea v2.1 View while a long task runs. After the program quits, my terminal tab still shows it as working. Why?",
+      "files": [],
+      "assertions": [
+        "Says the program status is not cleared when the program exits",
+        "Recommends reporting Done, Error, or Idle before quitting rather than leaving a working or blocked status behind",
+        "Says the status is declared on the View (View.ProgramStatus) and that terminals without OSC 7501 support ignore it"
+      ]
+    },
+    {
+      "id": "ratatui-extra-modes-teardown",
+      "name": "ratatui-extra-modes-teardown",
+      "prompt": "My Ratatui 0.30 app enables mouse capture, bracketed paste and Kitty keyboard enhancement flags after ratatui::init() and calls ratatui::restore() on exit. After quitting or panicking, clicking or pasting in the shell prints escape sequences. Why, and what should the teardown look like?",
+      "files": [],
+      "assertions": [
+        "Explains that ratatui::restore()/try_restore only disables raw mode and leaves the alternate screen, so mouse capture, bracketed paste, and keyboard-enhancement flags stay on",
+        "Disables those modes (DisableMouseCapture, DisableBracketedPaste, PopKeyboardEnhancementFlags) on the normal exit path before ratatui::restore() runs",
+        "Installs a panic hook that disables the extra modes and then delegates to the existing hook that restores the terminal, rather than relying on Ratatui's hook alone",
+        "Pops the keyboard-enhancement flags while still on the alternate screen, because terminals keep separate keyboard-mode stacks for the main and alternate screens",
+        "Makes the teardown best-effort and idempotent, and re-enables the extra modes after any editor or shell handoff"
+      ]
+    },
+    {
+      "id": "ratatui-ctrl-z-suspend",
+      "name": "ratatui-ctrl-z-suspend",
+      "prompt": "How do I make Ctrl+Z suspend my Ratatui 0.30 app to the shell and resume on fg?",
+      "files": [],
+      "assertions": [
+        "Says Ratatui and Crossterm provide no suspend support and that in raw mode Ctrl+Z is delivered as an ordinary key event that the app must bind (Char('z') with the CONTROL modifier)",
+        "Restores the terminal (including disabling any extra modes) before raising SIGTSTP, and does not raise the signal while the terminal is still in raw mode on the alternate screen",
+        "After the process resumes, re-enables raw mode and the alternate screen, clears the terminal, and redraws",
+        "Treats this as Unix-only because Windows has no job-control signals, and offers a drop-to-shell handoff or no suspend there"
+      ]
+    },
+    {
+      "id": "ratatui-no-color-gate",
+      "name": "ratatui-no-color-gate",
+      "prompt": "In my Ratatui app I gate colors on `available_color_count()`. Does that make the app respect NO_COLOR?",
+      "files": [],
+      "assertions": [
+        "Says available_color_count() does not consult NO_COLOR; it reads COLORTERM and TERM",
+        "Says Crossterm itself omits foreground, background, and underline color codes when NO_COLOR is set to a non-empty value, and that force_color_output(true) overrides this",
+        "Notes that attributes such as bold and reverse are still emitted, so state must remain distinguishable without color"
+      ]
+    },
+    {
+      "id": "ratatui-tick-redraw",
+      "name": "ratatui-tick-redraw",
+      "prompt": "My Tokio-based Ratatui loop calls terminal.draw on every 250 ms tick even when nothing changed. Is that okay, and what should I do instead?",
+      "files": [],
+      "assertions": [
+        "Recommends drawing only after an event, resize, or a tick that actually changed visible state, for example with a dirty flag or an on_tick that returns whether anything changed",
+        "Explains that buffer diffing keeps terminal output minimal but does not avoid rebuilding the widgets and buffer on every unconditional draw",
+        "Keeps the tick for genuine time-based updates such as clocks or spinners instead of removing it"
+      ]
+    },
+    {
+      "id": "ratatui-templates-and-run",
+      "name": "ratatui-templates-and-run",
+      "prompt": "I'm starting a new Ratatui 0.30 app. Which official templates are there, and should I use ratatui::init() or ratatui::run()?",
+      "files": [],
+      "assertions": [
+        "Lists the six templates: hello-world, simple, simple-async, event-driven, event-driven-async, and component",
+        "Recommends ratatui::run() for the normal case and init()/restore() only when explicit control is needed",
+        "Says to install color_eyre (or another reporting hook) before ratatui::run() or init() so Ratatui wraps it with terminal restoration"
+      ]
+    },
+    {
+      "id": "gh-glamour-v2",
+      "name": "gh-glamour-v2",
+      "prompt": "Does the gh CLI still render Markdown with Glamour v1?",
+      "files": [],
+      "assertions": [
+        "Says gh moved to charm.land/glamour/v2 (cli/cli#14148), shipped in gh v2.103.2",
+        "Does not claim gh is still on Glamour v1"
+      ]
+    },
+    {
+      "id": "textual-ctrl-c-quit",
+      "name": "textual-ctrl-c-quit",
+      "prompt": "My Textual 8 app has an Input and a Quit binding on q. Users hit Ctrl+C to leave, but it just pops up a toast and the app keeps running. Why, and how do I make Ctrl+C quit like a normal CLI?",
+      "files": [],
+      "assertions": [
+        "Explains that Textual binds ctrl+c to help_quit, which only shows a notification telling the user which key quits, and that ctrl+q is the key bound to quit",
+        "Notes that Input and TextArea use ctrl+c for copy, so Ctrl+C does not quit by default",
+        "Shows a priority binding such as Binding(\"ctrl+c\", \"quit\", priority=True) on the App BINDINGS so it fires even while a text field has focus",
+        "Does not say that Textual quits on Ctrl+C by default or that the toast is a bug in the app"
+      ]
+    },
+    {
+      "id": "textual-call-from-thread-widget",
+      "name": "textual-call-from-thread-widget",
+      "prompt": "In my Textual Widget subclass I run a @work(thread=True) method that finishes with self.call_from_thread(self.show_result, data), and it raises AttributeError. What's wrong?",
+      "files": [],
+      "assertions": [
+        "Says call_from_thread is defined only on App, not on Widget or Screen, which explains the AttributeError",
+        "Recommends self.app.call_from_thread(self.show_result, data) from the widget's thread worker",
+        "Optionally mentions that post_message is also thread-safe, and does not suggest updating widgets directly from the thread"
+      ]
+    },
+    {
+      "id": "textual-print-stdout-capture",
+      "name": "textual-print-stdout-capture",
+      "prompt": "Is it safe to call print() for debugging inside a running Textual app, or will it corrupt the display? What actually does corrupt the screen?",
+      "files": [],
+      "assertions": [
+        "Says Textual redirects sys.stdout and sys.stderr while the app runs, so print() is captured and shown in textual console (devtools) rather than written to the screen",
+        "Identifies writes that bypass the redirect as the real risk: sys.__stdout__, file descriptor 1 (C extensions, os.write), and child processes that inherit the terminal",
+        "Does not claim that any print() call corrupts the screen"
+      ]
+    },
+    {
+      "id": "textual-set-reactive-method",
+      "name": "textual-set-reactive-method",
+      "prompt": "In a Textual widget's __init__ I want to set a reactive attribute without triggering its watcher before the widget is mounted. How do I do that?",
+      "files": [],
+      "assertions": [
+        "Uses the set_reactive method on the instance, as in self.set_reactive(MyWidget.attr, value), passing the reactive from the class",
+        "Says set_reactive sets the value without invoking validators or watchers",
+        "Does not present set_reactive as a standalone function or as a decorator"
+      ]
+    },
+    {
+      "id": "pytest-asyncio-snapshot-pin",
+      "name": "pytest-asyncio-snapshot-pin",
+      "prompt": "I'm adding pytest-asyncio 1.4 and pytest-textual-snapshot to a Textual project's test suite. What pytest version constraint should I use, and why?",
+      "files": [],
+      "assertions": [
+        "Gives a single combined constraint of pytest>=8.4,<9",
+        "Explains the upper bound: pytest-textual-snapshot 1.1.0 pins syrupy 4.8.0, which requires pytest below 9 (on pytest 9 pip falls back to 1.0.0, which writes .raw snapshots)",
+        "Explains the lower bound: pytest-asyncio 1.4 requires pytest 8.4 or newer",
+        "Does not recommend pinning pytest<9 alone, which would allow versions pytest-asyncio 1.4 rejects"
+      ]
+    },
+    {
+      "id": "prompt-cancel-exit-codes",
+      "name": "prompt-cancel-exit-codes",
+      "prompt": "My Node scaffolder uses @clack/prompts and, on cancel, calls cancel('Cancelled'); process.exit(0). People run it as `create-thing && npm install`. What's wrong, and what should Clack and @inquirer/prompts do when the user presses Ctrl+C?",
+      "files": [],
+      "assertions": [
+        "Says exiting 0 on cancel makes the shell treat the run as success, so `create-thing && npm install` continues after the user cancelled",
+        "Recommends exiting non-zero on cancel, with 130 for Ctrl+C (SIGINT), after isCancel(value) and cancel(...)",
+        "Says @inquirer/prompts rejects with ExitPromptError on Ctrl+C and prints a stack trace if it is not caught",
+        "Shows a try/catch around the Inquirer prompts that checks error.name === 'ExitPromptError' (or instanceof) and exits 130, rethrowing other errors"
+      ]
+    },
+    {
+      "id": "prompts-stdout-redirect",
+      "name": "prompts-stdout-redirect",
+      "prompt": "I'm building a Node picker used as `dir=$(pick-dir)`. I tried @clack/prompts, @inquirer/prompts and an Ink UI, and the prompt text ends up in $dir. How do I keep the interface visible but only the selected path on stdout?",
+      "files": [],
+      "assertions": [
+        "Says Clack, Inquirer and Ink all render to stdout by default, which is why the chrome ends up in the captured value",
+        "Redirects Clack with output: process.stderr passed to each call, including intro, outro and cancel",
+        "Redirects Inquirer through the context (second) argument, for example select({...}, {output: process.stderr})",
+        "Redirects Ink with render(<App />, {stdout: process.stderr})",
+        "Writes only the chosen result to stdout"
+      ]
+    },
+    {
+      "id": "ink-default-rendering",
+      "name": "ink-default-rendering",
+      "prompt": "Does Ink diff each frame against the previous one and emit only ANSI patches for the changed cells? We're seeing flicker when a log tails quickly.",
+      "files": [],
+      "assertions": [
+        "Says Ink by default rewrites the whole live output on each frame rather than emitting cell-level patches",
+        "Says incrementalRendering: true makes Ink update only the changed lines",
+        "Suggests mitigations such as moving finished output into <Static>, lowering maxFps, or opting into incrementalRendering",
+        "Does not claim Ink diffs and patches individual cells by default"
+      ]
+    },
+    {
+      "id": "ink-newline-border-animation",
+      "name": "ink-newline-border-animation",
+      "prompt": "Three Ink 8 questions: where can <Newline> go, how do I draw a custom border (say with arrows) on a <Box>, and does useAnimation({isActive}) pause and then resume where it stopped?",
+      "files": [],
+      "assertions": [
+        "Says <Newline> must be used inside <Text>, not directly in <Box>",
+        "Says a custom border is passed as a BoxStyle object to borderStyle with keys such as topLeft, top, topRight, left, right, bottomLeft, bottom, bottomRight, instead of a string of characters",
+        "Says setting useAnimation isActive to false stops the animation and setting it back to true resets frame, time and delta to 0 rather than resuming"
+      ]
+    },
+    {
+      "id": "opentui-0-7-upgrade",
+      "name": "opentui-0-7-upgrade",
+      "prompt": "We have custom OpenTUI renderables written against 0.6. Is 0.7 a safe drop-in, and does the mouse hit grid still exist?",
+      "files": [],
+      "assertions": [
+        "Says 0.7.0 has breaking changes for custom renderables, such as hooks being read from the class at construction, so a hook added by reflection needs node.refreshHooks()",
+        "Says 0.7 no longer writes a screen-sized hit grid and records per-node hit rectangles for hit testing instead",
+        "Says OpenTUI is v0.x with churn between minors, so read the release notes before upgrading rather than treating it as a drop-in",
+        "Does not claim @opentui/core 0.7 dropped its Bun or Node engines requirement"
+      ]
+    },
+    {
+      "id": "cac-security-floor",
+      "name": "cac-security-floor",
+      "prompt": "We're picking cac as a tiny argument parser for a Node 22 CLI. Anything about versions I should know?",
+      "files": [],
+      "assertions": [
+        "Says cac is ESM-only since v7",
+        "Recommends cac 7.0.1 or newer because 7.0.1 fixes a prototype-pollution bug involving dotted option names"
+      ]
+    },
+    {
+      "id": "go-sigpipe-default",
+      "name": "go-sigpipe-default",
+      "prompt": "My Go CLI prints a long report to stdout, and `mytool | head -1` sometimes shows a write error. I read that Go programs should ignore EPIPE on stdout to handle SIGPIPE. What should I do?",
+      "files": [],
+      "assertions": [
+        "Says Go already terminates the program with SIGPIPE when a write to file descriptor 1 or 2 hits a broken pipe, unless the program has called signal.Notify for SIGPIPE",
+        "Does not tell the user to ignore EPIPE on stdout as the default fix",
+        "Explains that a write on any other file descriptor, or after signal.Notify for SIGPIPE, returns EPIPE instead of killing the process, and that code should then exit quietly (no stack trace or error message)",
+        "Suggests checking whether the program or a library (or a signal.Notify / signal.Ignore call) changed SIGPIPE handling if the process does not exit on a closed pipe"
+      ]
+    },
+    {
+      "id": "error-prefix-rule",
+      "name": "error-prefix-rule",
+      "prompt": "We are writing error output for a new CLI. One reviewer says never prefix messages with level labels (clig.dev says so), another wants every error to start with 'Error:' and every warning with 'WARNING'. What format should we use, and which line should come last?",
+      "files": [],
+      "assertions": [
+        "Recommends a plain-word lowercase marker such as `error:` for the failure message and `warning:` for warnings",
+        "Explains that clig.dev rules out log-style level labels such as ERR/WARN/[ERROR] and timestamps in default output, not a plain-word marker on the failure itself",
+        "Says ordinary output lines get no level prefix outside --verbose or --debug",
+        "Puts the most important line last, with the fix command as the final line (or the docs link when there is no fix command)",
+        "Does not give two different prefix conventions for the same CLI (for example Error: in one place and error: in another)"
+      ]
+    },
+    {
+      "id": "prompt-cancel-exit-code",
+      "name": "prompt-cancel-exit-code",
+      "prompt": "In my init wizard (Node with @clack/prompts, or Python with questionary) the user presses Ctrl-C at a prompt. My code calls cancel('Cancelled') and then process.exit(0). Is exit 0 right, and what should the exit code be?",
+      "files": [],
+      "assertions": [
+        "Says cancelling a prompt is an abort, not success, and recommends exit code 130",
+        "Explains 130 is 128 + 2 (SIGINT), matching what an uncaught Ctrl-C produces",
+        "Explains that exit 0 lets `mytool init && mytool deploy` continue with no answer",
+        "Says to restore the terminal and print the cancellation message to stderr or via the prompt library before exiting"
+      ]
+    },
+    {
+      "id": "gh-update-checker-build-tag",
+      "name": "gh-update-checker-build-tag",
+      "prompt": "I'm designing my CLI's update notifier. Does gh disable its own update checker in package-manager builds, and is that a pattern I should copy?",
+      "files": [],
+      "assertions": [
+        "Says gh's update checker is compiled in only with the `updateable` build tag, which the Homebrew formula sets, rather than disabled in package-manager builds",
+        "Does not claim gh disables the checker specifically for Homebrew or package-manager-distributed binaries",
+        "Recommends that notices for package-manager installs point at the package manager's upgrade command (gh prints `brew upgrade gh` for Homebrew installs)",
+        "Mentions an opt-out such as GH_NO_UPDATE_NOTIFIER and skipping checks in CI or non-TTY output"
+      ]
+    },
+    {
+      "id": "gh-auth-noninteractive",
+      "name": "gh-auth-noninteractive",
+      "prompt": "My CLI's login command should work headlessly. gh auth login has a --no-browser flag, right? Should I add one and a --no-input flag too?",
+      "files": [],
+      "assertions": [
+        "Says gh auth login has no --no-browser flag",
+        "Names environment variables as the cross-ecosystem non-interactive convention, such as GH_TOKEN and GH_PROMPT_DISABLED, rather than a flag",
+        "Says there is no settled --no-input flag name across tools and recommends choosing one that fits the tool's existing flag vocabulary and honoring CI=true",
+        "Mentions a stdin token path such as gh's --with-token for headless use"
+      ]
+    },
+    {
+      "id": "help-examples-placement",
+      "name": "help-examples-placement",
+      "prompt": "Where should the Examples section go in my CLI's --help output, and should I group the flags like gh does?",
+      "files": [],
+      "assertions": [
+        "Recommends one position for examples, up front right after the description, citing clig.dev's advice that users read examples first",
+        "Notes that gh itself puts examples last, which only works if the flag list is short",
+        "Says gh groups commands (Core, GitHub Actions, Additional) while its per-command flags are a single flat list, rather than saying gh groups flags"
+      ]
+    },
+    {
+      "id": "ambiguous-width-glyph-choice",
+      "name": "ambiguous-width-glyph-choice",
+      "prompt": "I'm building a sortable table and a collapsible tree in a Go TUI. I was going to use ▲/▼ for the sort direction, ▶/▼ for collapsed/expanded tree nodes, and a middle dot (·) between the hints in the footer. A user in Tokyo says the columns shift by one cell. What should I change?",
+      "files": [],
+      "assertions": [
+        "Diagnoses the shift as East Asian Ambiguous width: ▲, ▶, ▼ and · are class A, so a terminal or locale that renders ambiguous characters wide draws them two cells wide while the app counts one",
+        "Recommends narrow-class replacements such as ▴/▾ for sort direction, ▸/▾ for tree expand/collapse, and ⋅ (U+22C5) or | for the footer separator",
+        "Does not recommend ▲, ▶, ▼, ●, ○ or · as the replacement glyphs, and does not claim the small triangles ▴ ▸ ▾ are ambiguous",
+        "Suggests checking glyphs against EastAsianWidth.txt (class A is ambiguous) or testing with the terminal's ambiguous-wide setting turned on",
+        "Keeps meaning independent of the glyph, for example by keeping the sorted column header text or offering an ASCII fallback"
+      ]
+    },
+    {
+      "id": "progress-bar-ambiguous-width-fallback",
+      "name": "progress-bar-ambiguous-width-fallback",
+      "prompt": "I want a determinate progress bar using the eighth-block characters (▏▎▍▌▋▊▉█) so it has sub-cell precision. Is that safe to ship in a CLI used on terminals configured for Japanese or Chinese locales?",
+      "files": [],
+      "assertions": [
+        "States that the block elements (U+2580-258F, including █ and ▏-▉) are East Asian Ambiguous width and can render two cells wide, so the bar can overflow or misalign its row",
+        "Allows keeping the block bar as the Unicode default instead of forbidding it, but names the risk",
+        "Offers an ASCII fallback bar such as [#####     ] behind the same switch used for ASCII borders (for example --ascii or an environment variable)",
+        "Prints the percentage next to the bar so the bar is never the only signal",
+        "Does not claim the block elements are always single-width"
+      ]
+    },
+    {
+      "id": "focus-indication-no-color",
+      "name": "focus-indication-no-color",
+      "prompt": "My four-panel TUI shows which panel is focused only by turning its border cyan. It looks great, and I've read border color is the strongest focus signal. A user runs it with NO_COLOR=1 and says they can't tell which panel is active. How should I fix focus indication?",
+      "files": [],
+      "assertions": [
+        "Agrees the user is right: with NO_COLOR or a monochrome palette the border-color cue disappears, so focus is lost",
+        "Applies the rule that color must not be the only signal, and ranks a non-color cue first rather than border color as the strongest signal",
+        "Recommends at least one non-color focus cue such as a heavier border weight, reverse video on the selected row, or a marker or bold on the panel title",
+        "Keeps the accent border color as a reinforcement on top of the non-color cue rather than removing it",
+        "Does not stack more than one color cue plus one non-color cue on the same state as a general policy (avoids a bold, underline, tint and color pile-up)"
+      ]
+    },
+    {
+      "id": "status-line-symbol-and-persistence",
+      "name": "status-line-symbol-and-persistence",
+      "prompt": "Design the status line for my TUI. I plan to show 'Saved', 'Connecting...', and failures color-coded green, yellow and red, and let every message fade out after 3 seconds so the line stays clean. Review that.",
+      "files": [],
+      "assertions": [
+        "Flags the color-only coding as failing under NO_COLOR and for color-blind users, and prefixes each message with a symbol or label word (for example ✓ Saved, ! warning, ✗ failed) with color as reinforcement",
+        "Says errors and warnings must not auto-fade and stay until dismissed or replaced by the next result, because the user may not have read them",
+        "Allows success or info messages to fade or return to the idle state",
+        "Does not use ambiguous-width glyphs such as ● or ▲ as the status symbols without naming the risk and a fallback"
+      ]
+    },
+    {
+      "id": "multi-select-key-in-filter-picker",
+      "name": "multi-select-key-in-filter-picker",
+      "prompt": "I'm building an fzf-style picker with a type-to-filter query line and multi-select. Which key should toggle selection? Our list view elsewhere in the app uses Space, and Tab cycles focus between panels.",
+      "files": [],
+      "assertions": [
+        "Recommends Space for toggling only where no text field owns input, such as an ordinary list view",
+        "Recommends Tab (with Shift+Tab for the opposite direction) to mark rows inside the type-to-filter picker, because Space must stay available as a query character",
+        "Notes that Tab stops cycling focus inside that picker, and does not give Space and Tab the same job on one screen"
+      ]
+    },
+    {
+      "id": "responsive-breakpoint-bands",
+      "name": "responsive-breakpoint-bands",
+      "prompt": "Give me explicit width breakpoints for my TUI's layout so that a terminal exactly 80 columns wide and one exactly 120 columns wide each land in exactly one layout. I also need the behavior below the minimum.",
+      "files": [],
+      "assertions": [
+        "Defines non-overlapping bands such that 120 belongs only to the wide band (120 and up), 80 belongs only to the standard band (80-119), and the narrow band ends at 79 (60-79)",
+        "Collapses to a single pane in the narrow band, and shows a clear 'terminal too small' message naming the required dimensions below the application-specific minimum",
+        "Does not use overlapping ranges such as 80-120 and 60-80 together"
+      ]
+    },
+    {
+      "id": "command-palette-key-alternative",
+      "name": "command-palette-key-alternative",
+      "prompt": "I'm adding a command palette to my full-screen TUI and plan to bind it only to Ctrl+P. Any problem with that?",
+      "files": [],
+      "assertions": [
+        "Warns that Ctrl+P collides in common environments: Zellij's default mode captures it and readline uses it for previous history",
+        "Recommends keeping an alternative way to open the palette, for example a key that needs no Ctrl chord such as : or a leader key, in the same way Ctrl+B and Ctrl+A need alternatives",
+        "Does not say Ctrl+P is universally safe to bind as the only path"
+      ]
+    },
+    {
+      "id": "cursor-visibility-and-screen-readers",
+      "name": "cursor-visibility-and-screen-readers",
+      "prompt": "My Ratatui app hides the terminal cursor for the whole session to avoid flicker. A screen-reader and magnifier user says they can't follow where the selection is. What should the cursor do?",
+      "files": [],
+      "assertions": [
+        "Explains that screen readers and magnifiers follow the terminal cursor, so a cursor hidden for the whole session removes their only focus signal",
+        "Says to hide the cursor only while a frame is being painted and then show it again on the focused row or field after each frame",
+        "Does not recommend either leaving the cursor hidden permanently or leaving it visible during the redraw"
+      ]
+    },
+    {
+      "id": "terminal-protocol-facts-2026",
+      "name": "terminal-protocol-facts-2026",
+      "prompt": "Quick protocol check for my TUI: (1) can I query the current cursor shape so I can restore it on exit, (2) what does mouse mode 1000 report versus 1006, and (3) which terminals besides kitty support the kitty keyboard protocol?",
+      "files": [],
+      "assertions": [
+        "Says the cursor shape can be queried with DECRQSS (DCS $ q SP q ST) in xterm and tmux 3.6+, with the reply in DCS 1 $ r Ps SP q ST form, while advising a bounded wait and a fallback because other terminals may not answer",
+        "States that mode 1000 already reports button releases as well as presses, and that 1006 (SGR) adds coordinates past column 223 and identifies which button was released",
+        "Lists support beyond foot, Alacritty, Ghostty, Windows Terminal and WezTerm that includes iTerm2, xterm.js, Rio and Warp",
+        "Does not state that the cursor shape cannot be queried, and does not say 1006 is what adds release reporting"
+      ]
+    },
+    {
+      "id": "tmux-theme-reporting-versions",
+      "name": "tmux-theme-reporting-versions",
+      "prompt": "My TUI follows the terminal's dark/light theme using mode 2031. Which tmux version first answers mode 2031, and what changed in 3.8?",
+      "files": [],
+      "assertions": [
+        "Says tmux 3.6 added mode 2031 theme reports, guessing the theme from the background color",
+        "Says tmux 3.8 changed this so the outer terminal's own theme is forwarded to panes",
+        "Does not attribute the introduction of mode 2031 support to tmux 3.8"
+      ]
+    }
+  ]
+}

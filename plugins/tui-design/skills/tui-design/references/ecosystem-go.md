@@ -34,12 +34,24 @@ The Go TUI landscape consolidated around two camps: the **Charm stack** (Bubble 
 
 The Elm Architecture in Go, and the most widely used Go TUI framework. Pure functional reactive — `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
 
-**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.1.x, and Go 1.26+ is required since v2.0.10). v2.1.0 (October 2026) is additive: `View.ProgramStatus` reports idle/working/blocked/done/error to terminals that support OSC 7501 program-status reporting. What changed and why it matters:
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.1.x, and Go 1.26+ is required since v2.0.10). v2.1.0 (October 2026) is additive: `View.ProgramStatus` reports idle/working/blocked/done/error to terminals that support OSC 7501 program-status reporting. The status is not cleared on exit, so report Done, Error, or Idle before quitting rather than leaving working or blocked behind ([`tea.go`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go)). What changed and why it matters:
 - **New "Cursed Renderer"** — rewritten from scratch on the ncurses diffing algorithm; faster and more accurate redraws. Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
 - **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback.
 - **Import path moved** to `charm.land/bubbletea/v2` (vanity domain over `github.com/charmbracelet/bubbletea/v2`). All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish, glamour, log, fang — keep them on the same major. Lower-level pieces (`colorprofile`, `ultraviolet`, `x/*`) stay on `github.com/charmbracelet/...` paths.
 
-**Migrating v1 → v2:** the MVU shape survives, but every model gets touched: `View()` now returns `tea.View` instead of `string`, key handling moves to `tea.KeyPressMsg`, and the alt-screen/mouse program options moved onto the view. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2.
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched: `View()` now returns `tea.View` instead of `string`, key handling moves to `tea.KeyPressMsg`, and the alt-screen/mouse program options moved onto the view. If you're on v1 and it works, there's no urgency; if you're starting fresh, start on v2. The facts that break layouts and compiles, gathered ([Bubbles upgrade guide](https://github.com/charmbracelet/bubbles/blob/v2.2.1/UPGRADE_GUIDE_V2.md)):
+
+| Area | v1 | v2 |
+|---|---|---|
+| Bubble Tea | `View() string`, `tea.KeyMsg`, `tea.WithAltScreen()` | `View() tea.View`, `tea.KeyPressMsg`, `v.AltScreen = true` |
+| Lipgloss sizing | `Width`/`Height` exclude the border | they include border and padding (see Lipgloss) |
+| Lipgloss color | `AdaptiveColor`, `SetColorProfile` | `LightDark`; print with `lipgloss.Println` |
+| Bubbles sizing | `m.Width = n`; `viewport.New(w, h)` | `m.SetWidth(n)` / `m.Width()`; `viewport.New(viewport.WithWidth(w), viewport.WithHeight(h))` |
+| Bubbles keymaps | `textinput.DefaultKeyMap` (var) | `DefaultKeyMap()` (func; also `paginator`, `textarea`) |
+| Bubbles styles | `list.DefaultStyles()`, auto-adapting colors | `help.DefaultStyles(isDark)`, `list.DefaultStyles(isDark)`, `list.NewDefaultItemStyles(isDark)` |
+| Bubbles constructors | `NewModel()` | `New()` |
+
+The setter change covers `filepicker`, `help`, `progress`, `table`, `textinput`, and `viewport`; `list` already used `SetSize`.
 
 **The mental model:**
 - **Model**: a single struct holding all state.
@@ -97,7 +109,7 @@ Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumab
 | Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
 | Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler converts external SIGINT/SIGTERM into managed loop termination. Do not call `os.Exit` from `Update`. |
 | Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error or, after child success, a restoration error through the callback message. If both fail, the callback exposes the child error. In the callback-message branch, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
-| Foreground suspend | Return `tea.Suspend`; after the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
+| Foreground suspend | Bubble Tea never binds Ctrl+Z for you: return `tea.Suspend` from your own `"ctrl+z"` key-press case (see the key-routing sample under Bubbles). After the Unix job resumes, handle `tea.ResumeMsg` to reload state that may have changed while away. Suspend is unsupported on Windows and should not be a required path there. |
 
 The low-level `Program.ReleaseTerminal()` / `RestoreTerminal()` pair is a temporary handoff escape hatch, not final cleanup. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
 
@@ -157,6 +169,18 @@ lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the termi
 - `lipgloss.JoinVertical(lipgloss.Left, top, middle, bottom)` — stacked.
 - `lipgloss.Place(width, height, hPos, vPos, content)` — center/anchor in a box.
 - `lipgloss.Width(s)` / `lipgloss.Height(s)` — measure rendered output (skips ANSI escapes, counts wide graphemes correctly).
+
+**Sizing:** in v2, `Width`/`Height` are the total block size, border and padding included (`// Include borders in block size` in [`style.go`](https://github.com/charmbracelet/lipgloss/blob/v2.0.6/style.go)). In v1 the border sat outside ([v1.1.0](https://github.com/charmbracelet/lipgloss/blob/v1.1.0/style.go)), so layout math carried over from v1, such as `Width(w - 2)` for a bordered pane, now comes out 2 cells too narrow. Margins stay outside. Text wraps at `Width` minus border and padding.
+
+```go check=go/lipgloss-block-size
+box := lipgloss.NewStyle().
+    Width(20).Height(5).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder())
+
+out := box.Render("hello") // lipgloss.Width(out) == 20, lipgloss.Height(out) == 5; v1 gave 22x7
+inner := 20 - box.GetHorizontalBorderSize() - box.GetHorizontalPadding() // 16 text columns
+```
 
 **No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
 
@@ -250,6 +274,53 @@ case tea.KeyPressMsg:
     }
 ```
 
+**v2 sizing and styles.** Exported `Width`/`Height` fields became getter/setter pairs, and style constructors take the background. `help.New()` and `list.NewDefaultDelegate()` assume a dark background, so apply the real one when `tea.BackgroundColorMsg` arrives (see **Light/dark theming**):
+
+```go check=go/bubbles-v2-api
+m.viewport = viewport.New(viewport.WithWidth(80), viewport.WithHeight(24)) // v1: viewport.New(80, 24)
+m.input = textinput.New()
+m.input.SetWidth(40)                                                       // v1: m.input.Width = 40
+m.input.KeyMap = textinput.DefaultKeyMap()                                 // v1: a package var
+
+// In Update
+switch msg := msg.(type) {
+case tea.WindowSizeMsg:
+    m.help.SetWidth(msg.Width)                   // v1: m.help.Width = msg.Width
+    m.viewport.SetWidth(msg.Width)               // Width() and Height() are getters now
+    m.viewport.SetHeight(msg.Height - 2)
+    m.list.SetSize(msg.Width, msg.Height-2)
+case tea.BackgroundColorMsg: // Init returned tea.RequestBackgroundColor
+    isDark := msg.IsDark()
+    m.help.Styles = help.DefaultStyles(isDark)
+    m.list.Styles = list.DefaultStyles(isDark)
+    d := list.NewDefaultDelegate()
+    d.Styles = list.NewDefaultItemStyles(isDark)
+    m.list.SetDelegate(d)
+}
+```
+
+**Route keys to the focused child.** A global `q` handler quits while the user is typing "q" into a list's filter. Check `FilterState() == list.Filtering` before single-character global keys; modified keys (Ctrl+C, Ctrl+Z) stay global. The list also quits on `q` itself while browsing (it disables that while filtering); call `DisableQuitKeybindings()` if the parent owns quitting.
+
+```go check=go/list-filter-keys
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if k, ok := msg.(tea.KeyPressMsg); ok {
+        switch k.String() {
+        case "ctrl+c":
+            return m, tea.Quit
+        case "ctrl+z":
+            return m, tea.Suspend // Bubble Tea does not bind this for you
+        case "q":
+            if m.list.FilterState() != list.Filtering { // otherwise "q" is filter text
+                return m, tea.Quit
+            }
+        }
+    }
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg) // everything else goes to the focused child
+    return m, cmd
+}
+```
+
 The `help` Bubble auto-renders the footer from these bindings — define once, get the hint bar for free. `help.View(m.keys)` needs `keyMap` to implement `help.KeyMap`:
 
 ```go check=go/help-keymap
@@ -306,7 +377,7 @@ huh.NewSelect[string]().
 
 ## Other Charm libraries worth knowing
 
-- **Glamour** (`charm.land/glamour/v2`) — render Markdown to ANSI. Themable via JSON stylesheets. v2 is pure: `WithAutoStyle` and `WithColorProfile` are gone, the default style is `"dark"` (pass `"light"` yourself after detecting the background), and output is downsampled only when printed via `lipgloss.Print`. Used by the `glow` markdown viewer and for `gh` PR/issue rendering (`gh` is still on Glamour v1).
+- **Glamour** (`charm.land/glamour/v2`) — render Markdown to ANSI. Themable via JSON stylesheets. v2 is pure: `WithAutoStyle` and `WithColorProfile` are gone, the default style is `"dark"` (pass `"light"` yourself after detecting the background), and output is downsampled only when printed via `lipgloss.Print`. Used by the `glow` markdown viewer and for `gh` PR/issue rendering (`gh` moved to Glamour v2 in [cli/cli#14148](https://github.com/cli/cli/pull/14148), shipped in v2.103.2).
 - **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH with HTTP-style middleware. Build each program with `bubbletea.MakeOptions(sess)` (or the `bubbletea.Middleware` handler, which applies it for you) so input, output, and color-profile detection follow the *client's* PTY, not the server's. The v1-era per-session `MakeRenderer` helper is gone in v2 because Lipgloss v2 no longer owns terminal I/O. `MakeOptions` also installs its own `tea.WithFilter` (ctrl+z suspend becomes resume), and the default `Middleware` appends it after your options, overwriting any filter you set; to keep yours, use `MiddlewareWithProgramHandler` and chain them.
 - **Soft Serve** — git server with a Bubble Tea TUI; built on Wish.
 - **gum** — shell-script wrapper around Bubble Tea components. `gum choose`, `gum input`, `gum confirm`, `gum spin`. Use when scripting Bash and you want huh-quality prompts without writing Go.

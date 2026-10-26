@@ -1,0 +1,27 @@
+package bubblesv2
+
+import (
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+)
+
+type model struct {
+	help     help.Model
+	list     list.Model
+	viewport viewport.Model
+	input    textinput.Model
+}
+
+func newModel() model {
+	m := model{help: help.New(), list: list.New(nil, list.NewDefaultDelegate(), 0, 0)}
+	<<sample go/bubbles-v2-api until="// In Update">>
+	return m
+}
+
+func (m model) update(msg tea.Msg) model {
+	<<sample go/bubbles-v2-api from="switch msg := msg.(type)">>
+	return m
+}

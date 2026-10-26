@@ -35,6 +35,19 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
 
+class Panel(Static):
+    # A widget has no call_from_thread of its own; the sample reaches it via self.app.
+    compute_heavy = compute_heavy
+
+    def update_result(self, result: str) -> None:
+        self.update(result)
+
+
+class PanelApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield Panel()
+
+
 @pytest.mark.asyncio
 async def test_async_worker_fetches(monkeypatch):
     monkeypatch.setenv("NO_PROXY", "127.0.0.1")
@@ -57,3 +70,14 @@ async def test_thread_worker_updates_through_call_from_thread():
         await app.compute_heavy().wait()
         await pilot.pause()
         assert str(app.query_one("#result", Static).content) == "computed"
+
+
+@pytest.mark.asyncio
+async def test_widget_thread_worker_reaches_call_from_thread_through_app():
+    app = PanelApp()
+    async with app.run_test() as pilot:
+        panel = app.query_one(Panel)
+        assert not hasattr(panel, "call_from_thread")
+        await panel.compute_heavy().wait()
+        await pilot.pause()
+        assert str(panel.content) == "computed"

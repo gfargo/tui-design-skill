@@ -347,6 +347,192 @@
         "type": "npm",
         "package": "chalk"
       }
+    },
+    {
+      "id": "lipgloss-v2-block-size",
+      "framework": "Lipgloss",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"in v2, Width/Height are the total block size, border and padding included\" (Include borders in block size, as of v2.0.6)",
+      "pinned_version": "2.0.6",
+      "granularity": "minor",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/lipgloss/v2"
+      }
+    },
+    {
+      "id": "lipgloss-v2-style-source",
+      "framework": "Lipgloss",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/charmbracelet/lipgloss/blob/v2.0.6/style.go"
+    },
+    {
+      "id": "lipgloss-v1-style-source",
+      "framework": "Lipgloss",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/charmbracelet/lipgloss/blob/v1.1.0/style.go"
+    },
+    {
+      "id": "bubbles-v2-upgrade-guide",
+      "framework": "Bubbles",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/charmbracelet/bubbles/blob/v2.2.1/UPGRADE_GUIDE_V2.md"
+    },
+    {
+      "id": "gh-glamour-v2-pr",
+      "framework": "Bubble Tea",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "url": "https://github.com/cli/cli/pull/14148"
+    },
+    {
+      "id": "ratatui-init-source",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui/src/init.rs"
+    },
+    {
+      "id": "kitty-keyboard-protocol-stacks",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://sw.kovidgoyal.net/kitty/keyboard-protocol/"
+    },
+    {
+      "id": "ratatui-component-template-suspend",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/templates/blob/5903368da4cfce85144f8efc7070f9c175a8f203/component/template/src/tui.rs"
+    },
+    {
+      "id": "ratatui-templates-readme",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/templates/blob/5903368da4cfce85144f8efc7070f9c175a8f203/README.md"
+    },
+    {
+      "id": "crossterm-no-color-source",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://docs.rs/crossterm/0.29.0/src/crossterm/style/types/colored.rs.html"
+    },
+    {
+      "id": "opentui-current-line",
+      "framework": "OpenTUI",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"v0.x churn (0.6 moved layout and painting into the native core, and 0.6 and 0.7 each broke custom renderables; 0.7 also dropped the screen-sized hit grid ...)\"",
+      "pinned_version": "0.7.0",
+      "granularity": "minor",
+      "registry": {
+        "type": "npm",
+        "package": "@opentui/core"
+      }
+    },
+    {
+      "id": "opentui-0-7-release",
+      "framework": "OpenTUI",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/anomalyco/opentui/releases/tag/v0.7.0"
+    },
+    {
+      "id": "cac-major",
+      "framework": "cac",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"cac ... ESM-only since v7; use ≥ 7.0.1, which fixes a prototype-pollution bug with dotted option names\"",
+      "pinned_version": "7.0.1",
+      "granularity": "major",
+      "registry": {
+        "type": "npm",
+        "package": "cac"
+      }
+    },
+    {
+      "id": "cac-prototype-pollution-fix",
+      "framework": "cac",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/cacjs/cac/releases/tag/v7.0.1"
+    },
+    {
+      "id": "ink-incremental-rendering-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#incrementalrendering"
+    },
+    {
+      "id": "inquirer-exit-prompt-error-recipe",
+      "framework": "Inquirer",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/SBoudrias/Inquirer.js/blob/ea3130ebc609a6a3910b5397244044de7eda3d05/packages/prompts/README.md#handling-ctrlc-gracefully"
+    },
+    {
+      "id": "textual-ctrl-c-binding-source",
+      "framework": "Textual",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "url": "https://github.com/Textualize/textual/blob/v8.2.8/src/textual/app.py"
+    },
+    {
+      "id": "go-os-signal-sigpipe",
+      "framework": "Go",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/cli-basics.md",
+      "url": "https://pkg.go.dev/os/signal#hdr-SIGPIPE"
+    },
+    {
+      "id": "gh-update-enabled-source",
+      "framework": "GitHub CLI",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/cli-basics.md",
+      "url": "https://github.com/cli/cli/blob/v2.103.2/internal/ghcmd/update_enabled.go"
+    },
+    {
+      "id": "dotnet-sdk-do-not-track-issue",
+      "framework": ".NET SDK",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/cli-basics.md",
+      "url": "https://github.com/dotnet/sdk/issues/3917"
+    },
+    {
+      "id": "east-asian-width-data",
+      "framework": "Unicode",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/visual-patterns.md",
+      "url": "https://www.unicode.org/Public/18.0.0/ucd/EastAsianWidth.txt"
+    },
+    {
+      "id": "no-color-standard",
+      "framework": "Terminal conventions",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/visual-patterns.md",
+      "url": "https://no-color.org"
+    },
+    {
+      "id": "xterm-ctlseqs",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://invisible-island.net/xterm/ctlseqs/ctlseqs.html"
+    },
+    {
+      "id": "tmux-3-8-changes",
+      "framework": "Terminal protocols",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/interaction-patterns.md",
+      "url": "https://github.com/tmux/tmux/blob/3.8/CHANGES"
     }
   ]
 }

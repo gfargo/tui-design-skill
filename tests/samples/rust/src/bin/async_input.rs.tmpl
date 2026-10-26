@@ -10,7 +10,7 @@ struct App {
 impl App {
     fn draw(&self, _frame: &mut Frame) {}
     fn handle(&mut self, _event: Event) {}
-    fn on_tick(&mut self) {}
+    fn on_tick(&mut self) -> bool { false }
 }
 
 async fn run(terminal: &mut DefaultTerminal, app: &mut App) -> color_eyre::Result<()> {

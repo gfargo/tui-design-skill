@@ -39,7 +39,7 @@ All panels visible simultaneously in fixed positions. Focus shifts via Tab or nu
 - Total information would overwhelm at smaller terminal sizes.
 
 **Implementation notes:**
-- Use border *color* to indicate the focused panel — strongest possible signal.
+- Mark the focused panel with a cue that survives `NO_COLOR` (heavier border or a marked title) and let border color reinforce it; the ranking is in `interaction-patterns.md` → *Focus indicators*.
 - Footer hint bar should be **panel-aware**: `c` does different things in lazygit's Files vs Commits panel; show what's relevant.
 - Numeric jumps (`1`–`5`) should work from any panel — don't make users return to a "menu" first.
 
@@ -154,7 +154,7 @@ Tab bars inside a larger layout, cycled with `[`/`]` (`Ctrl+Tab` only where the 
 - More than 5–6 tabs — split into nested tabs or use a different pattern.
 
 **Implementation notes:**
-- Active tab visually distinct (bold + underline + accent color).
+- Active tab visually distinct: underline or reverse video, with the accent color as reinforcement.
 - Tab key labels (`Logs [1]`, `Stats [2]`, `Env [3]`) so users can jump directly.
 - Cycle order matches reading order (left to right).
 
@@ -200,6 +200,8 @@ The Unicode box-drawing block is U+2500–U+257F:
 - **Double**: `═ ║ ╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬`
 - **Rounded**: `╭ ╮ ╰ ╯` (combined with single-line straights)
 
+Nearly all of it is East Asian Ambiguous width, so every border cell doubles where the terminal or locale renders ambiguous characters wide. *ASCII fallback* below is the fallback, and *Localization* has the test.
+
 ### The aesthetic landscape
 
 - **Single-line** — default for most modern TUIs (lazygit, k9s, btop, htop). Reads cleanly without dominating.
@@ -210,7 +212,7 @@ The Unicode box-drawing block is U+2500–U+257F:
 ### When to use borders
 
 - The pane has dynamic content needing a visible boundary.
-- Focus state must be communicated visually (border color change is the strongest signal).
+- Focus state must be communicated visually, with a cue that survives `NO_COLOR` (ranking: `interaction-patterns.md` → *Focus indicators*).
 - Adjacent panels need clear separation.
 - The border is doing real work — not just decoration.
 
@@ -235,7 +237,7 @@ border characters: render in panel's blue background
 
 **Solutions:**
 - Use the same background for panel and borders.
-- Or use one-eighth block characters (`▏▕▔▁`) as borders — Textual does this for themed apps.
+- Or use one-eighth block characters (`▏▕▔▁`) as borders — Textual does this for themed apps. They are ambiguous-width too, with the same ASCII fallback.
 
 ### ASCII fallback
 
@@ -276,7 +278,7 @@ accent.primary    → brand color
 accent.secondary  → complementary
 
 border.default    → muted
-border.focus      → accent.primary
+border.focus      → accent.primary (plus a non-color cue)
 
 git.staged        → green
 git.modified      → yellow
@@ -320,7 +322,7 @@ Avoid red + green as the only distinction. If you must use them, add letters or 
 
 ### Honor `NO_COLOR`
 
-[no-color.org](https://no-color.org) is a 2018 informal standard. Respect it: when `NO_COLOR` is present with a non-empty value, suppress automatic color output. An explicit user choice such as `--color=always` may override that default if the tool documents the precedence.
+[no-color.org](https://no-color.org) is an informal standard proposed in 2017. Respect it: when `NO_COLOR` is present with a non-empty value, suppress automatic color output. An explicit user choice such as `--color=always` may override that default if the tool documents the precedence.
 
 `ripgrep`, `bat`, `eza`, `fd`, `gh`, `cargo`, and `htop` (3.5+) honor it. Library behavior varies: some detect it automatically, while others require an optional capability feature or an application-level gate. For example, `owo-colors` only consults terminal and environment support when its `supports-colors` feature and `if_supports_color` path are used. Make `NO_COLOR` part of the app's semantic color policy instead of assuming a styling dependency will enforce it.
 
@@ -344,7 +346,7 @@ You can't change font size. Typography signals are limited but useful:
 
 **Reverse video is the canonical "current selection" signal.** It's the most reliable and most readable. Use it for the highlighted row in lists, the current cell in tables, the cursor position.
 
-**Bold + accent color** for the focused panel's title. Combined with border color change, that's unmistakable focus indication.
+**Bold** the focused panel's title. Which cues carry focus, and in what order, is in `interaction-patterns.md` → *Focus indicators*.
 
 ---
 
@@ -394,8 +396,8 @@ Use density to communicate hierarchy: dense data tables in the main panel, padde
 "It feels noisy" is a real signal but useless until you convert it into specific offenders. When a layout feels cluttered, **count — don't squint** — and report the count, not a vibe:
 
 - **Border-nesting depth.** Trace any corner from the terminal edge inward. More than *one* border between the edge and the content is too many. A border wrapping content that's already inside a bordered panel separates nothing and shows no focus — delete it. Boxes-inside-boxes is the single most common cause of "busy," and an outer full-screen frame is almost always redundant (the terminal edge already frames the app).
-- **Signals per piece of state.** Count how many things encode the same fact. `[PASS]` + green + `✅` + a `▶` row prefix is *four* signals for one status. Keep one (color paired with a letter/word for monochrome safety); cut the rest.
-- **Always-on markers.** A glyph that appears on 100% of rows (a `▶` on every line) marks nothing — it's texture, not information. Reserve markers for the exception: the selected row, the failed item.
+- **Signals per piece of state.** Count how many things encode the same fact. `[PASS]` + green + `✅` + a `▸` row prefix is *four* signals for one status. **The budget is at most one color cue plus one non-color cue** (green plus a word, letter, or symbol); cut the rest. This is the one rule other sections point to.
+- **Always-on markers.** A glyph that appears on 100% of rows (a `▸` on every line) marks nothing — it's texture, not information. Reserve markers for the exception: the selected row, the failed item.
 - **Chrome-to-data ratio.** Add up the cells spent on borders, titles, padding, labels, and repeated boilerplate (a full ISO date on every log line when only the time changes) versus cells showing actual data. A high chrome ratio *is* the cluttered feeling.
 - **The removal test.** For each decorative element ask: "if I delete this, do I lose information?" If no, delete it. Whitespace is not empty space — it's the cheapest separator you have, and a single blank row routinely out-reads a heavy border.
 
@@ -411,10 +413,10 @@ A terminal layout is not designed for one size. The same app runs on a 220-colum
 
 Decide behavior per width band, widest to narrowest. Exact thresholds depend on content, but the shape is universal:
 
-- **Wide (>120 cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
-- **Standard (80–120)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
-- **Narrow (60–80)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here. (lazygit's `--screen-mode full` is a related single-panel mode — but it's a user-selectable escape hatch, not automatic responsive behavior.)
-- **Below the application-specific minimum** — don't render garbage or panic. Show a clean message naming the dimensions the app actually requires, such as `terminal too small — need 48×12`, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
+- **Wide (120+ cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
+- **Standard (80–119)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
+- **Narrow (60–79)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here. (lazygit's `--screen-mode full` is a related single-panel mode — but it's a user-selectable escape hatch, not automatic responsive behavior.)
+- **Below the application-specific minimum** — don't render garbage or panic. Show a clean message naming the dimensions the app actually requires, such as `terminal too small: need 48x12`, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
 
 This is why a **drill-down model degrades better than a fixed grid**: when only one primary thing is ever on screen, narrowing just shrinks it; a fixed 2×2 grid has nowhere to go and turns to mush. If you find yourself unable to make a grid responsive, that's often a sign the layout should have been drill-down in the first place.
 
@@ -437,12 +439,12 @@ Since you can't change font size, hierarchy comes from:
 1. **Position** — top/left reads first; status bar at bottom.
 2. **Color and weight** — bold + accent for headlines; dim for secondary.
 3. **Reverse video** — current selection.
-4. **Indentation and connectors** — `├─ └─` for trees; consistent indent units (2 cells is standard).
+4. **Indentation and connectors** — `├─ └─` for trees (ASCII fallback `|-` and `` `- ``); consistent indent units (2 cells is standard).
 5. **Whitespace** — blank rows for separation; pads around important content.
-6. **Bullets / symbols** — `▶` expandable, `▼` expanded, `●` active, `○` inactive, `•` static bullet.
-7. **Borders** — focused panel highlighted via border color.
+6. **Bullets / symbols** — `▸` expandable, `▾` expanded, `◉` active, `◦` inactive, `∙` static bullet. These are narrow-class; their ambiguous-width lookalikes (`▶ ▼ ● ○ •`) are the ones to avoid (see *Localization*).
+7. **Borders** — a heavier border weight marks the focused panel, with border color as reinforcement.
 
-Combining 2–3 signals creates clear hierarchy. The current selection: reverse video + bold. The focused panel: accent border + bold title. A warning: yellow + `[!]` prefix + slightly lifted from surrounding text via blank line above.
+Spend signals by the budget in *The clutter audit*: at most one color cue plus one non-color cue per state. The current selection: reverse video alone. The focused panel: a heavier border or marked title, plus the accent color. A warning: yellow plus a `!` prefix.
 
 ---
 
@@ -464,11 +466,11 @@ When content exceeds column width:
 - **Tail truncation** (`Connection refused whi…`) — for prose, names, and IDs, where the beginning carries the meaning.
 - **Wrap** — only for prose. Never wrap in cells of dense tables.
 
-Reserve a cell (or three for `...`) for the ellipsis. Don't truncate so aggressively that nothing remains: `... ` is useless.
+Reserve a cell for the ellipsis `…`, which is ambiguous-width (see *Localization*), or three for the ASCII `...`. Don't truncate so aggressively that nothing remains: `... ` is useless.
 
 ### Sort indicators
 
-Show which column is currently sorted: `▲` ascending, `▼` descending. Place after the column header: `Size ▼`. Click (or key) to toggle and cycle.
+Show which column is currently sorted: `▴` ascending, `▾` descending. Place after the column header: `Size ▾`. The larger `▲▼` are ambiguous-width. Click (or key) to toggle and cycle.
 
 ### Filtering
 
@@ -506,7 +508,7 @@ Terminal layouts assume a fixed number of cells per string, so translated text b
 - **Budget for growth.** Translations run longer than English, and short strings grow most. IBM's globalization guidelines allow 100–200% extra space for strings up to 10 characters and 30% past 70 ([IBM](https://public.dhe.ibm.com/systems/power/docs/systemi/v5r2/en_US/rbagsmstp3.pdf), p. 16), and Microsoft's pseudo-localization lengthens text by 40% ([Microsoft](https://learn.microsoft.com/en-us/globalization/methodology/pseudolocalization)). Footer hints, column headers, and button labels are exactly those short strings. Size columns from the rendered text rather than the English labels, and let labels truncate before data does, with the full text in help.
 - **Test with a pseudo-locale.** Before any translation exists, run the UI with every string lengthened by about half and wrapped in markers, as Windows' `qps-ploc`, Android's `en-XA`, and ICU's `en_XA` do, then pressure-test the floor from *Responsive design*. A 60-column split with long labels is where layouts fail. General catalog tools such as gettext's `en@boldquot` and Translate Toolkit's `podebug` produce the strings.
 - **Right-to-left text.** Most terminals don't implement bidi. kitty, Alacritty, Ghostty, and Windows Terminal show Arabic and Hebrew in logical order, left to right; VTE (GNOME Terminal) and Konsole reorder lines by default, and WezTerm and iTerm2 only experimentally. The [terminal-wg recommendation](https://terminal-wg.pages.freedesktop.org/bidi/recommendation/basic-modes.html) has full-screen apps turn off the terminal's reordering (`CSI 8 l` on entry, `CSI 8 h` on exit), which leaves visual order to the app. Either way, keep right-to-left strings in their own field or line, never mix directions inside one cell, and don't promise correct shaping.
-- **Ambiguous-width characters.** Unicode's East Asian Ambiguous class ([UAX #11](https://www.unicode.org/reports/tr11/tr11-46.html)) is narrow by default and wide only in East Asian legacy contexts, and terminals expose the choice as a setting: iTerm2, VTE, and Windows Terminal 1.25+. Nearly all box drawing, including the rounded corners, is ambiguous, and so are `…`, `·`, `•`, `●`, `★`, and the arrows `←↑→↓`. When the app and the terminal disagree, borders and markers misalign. go-runewidth switches to wide under any `ja`, `ko`, or `zh` locale, while most other width libraries default to narrow. Test with the terminal's ambiguous-wide setting on, prefer narrow-class markers where they fit (`▸ ▾ ✓ ✗ ⋯` and the Braille spinner frames), and keep the ASCII border set from *ASCII fallback* one switch away.
+- **Ambiguous-width characters.** Unicode's East Asian Ambiguous class ([UAX #11](https://www.unicode.org/reports/tr11/tr11-46.html)) is narrow by default and wide only in East Asian legacy contexts, and terminals expose the choice as a setting: iTerm2, VTE, and Windows Terminal 1.25+. Nearly all box drawing, including the rounded corners, is ambiguous, and so are the block elements (`▀` through `▏`, plus `▒ ▓ ▔ ▕`, so every progress-bar block), the triangles `▲ ▶ ▼ ◀`, the shapes `● ○ ■ □ ◆ ★`, `…`, `·`, `•`, and the arrows `←↑→↓`. When the app and the terminal disagree, borders and markers misalign. go-runewidth switches to wide under any `ja`, `ko`, or `zh` locale, while most other width libraries default to narrow. Test with the terminal's ambiguous-wide setting on, prefer narrow-class markers where they fit (`▸ ▾ ▴ ◉ ◦ ⋅ ✓ ✗ ⋯` and the Braille spinner frames), and keep the ASCII border set from *ASCII fallback* and the ASCII bar from *Determinate progress bars* one switch away. Check a glyph against [EastAsianWidth.txt](https://www.unicode.org/Public/18.0.0/ucd/EastAsianWidth.txt); class `A` is ambiguous, `N` or `Na` is not.
 - **Numbers, dates, and units.** Format human output with the user's locale, because separators, grouping, and even digits differ: 1234567.891 is `1 234 567,891` in French and `12,34,567.891` in Indian English. Use the platform's locale library (`Intl`, Babel, `golang.org/x/text/message`, ICU4X) rather than hand-built strings. Keep machine output (`--json`, `--plain`) locale-independent: under a comma-decimal locale, POSIX `printf` both prints and parses numbers with commas, so pin `LC_NUMERIC=C` for anything a script will read. Fixed-width ISO-8601 dates remain the right choice inside tables.
 - **Locale detection.** Read `LC_ALL`, then the category variable (`LC_CTYPE` for encoding, `LC_NUMERIC` and `LC_TIME` for formats), then `LANG`, skipping empty values ([POSIX](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap08.html)). `C.UTF-8` is a glibc name rather than a POSIX one, and CI may run in either the C locale or a full one (GitHub's macOS runners set `LC_ALL=en_US.UTF-8`), so tests should pin the locale they expect.
 
@@ -541,13 +543,13 @@ Some apps merge status and footer into one line. Some skip the header. Complex f
 ### Status / mode line
 
 - Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
-- Auto-fade after a few seconds (or replace with idle state).
+- Success and info messages may fade after a few seconds or give way to the idle state. Keep errors and warnings until the user dismisses them or the next result replaces them: a message that vanishes unread can't be acted on.
 - The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Modal (vim-style)*).
-- Color-coded: green = OK / saved, yellow = pending, red = error.
+- Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
 
 ### Footer hint bar
 
-Lay hints out as `key action · key action · key action`, with `·` (middle dot) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Which shortcuts to show, how many, and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+Lay hints out as `key action ⋅ key action ⋅ key action`, with `⋅` (U+22C5; the middle dot `·` is ambiguous-width) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Which shortcuts to show, how many, and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
 
 ---
 
@@ -581,6 +583,8 @@ These give 8 sub-positions per cell. A 40-cell-wide bar can represent 40 × 8 = 
 ```
 [████████▎             ] 41%
 ```
+
+The block elements are East Asian Ambiguous width: where the terminal renders ambiguous characters wide, each cell doubles and the bar overflows its row. Keep the blocks as the default, but offer the ASCII bar (`[#####     ] 50%`) behind the same switch as the ASCII borders, and always print the percent so the bar is never the only signal.
 
 Show: percent, current/total counts where meaningful, ETA for long operations.
 
@@ -682,9 +686,9 @@ These rules come from Sampath, Merrick, and Macvean's study of blind developers 
 - **Say it in words.** End every command with a status line, because silent success leaves users guessing. Make progress an occasional line (`Uploaded 3 of 10`), not spinner frames or a bar, which are read out character by character.
 - **Flatten structure.** Turn table rows into labelled `Header: value` lines or offer `--format csv|json`; aligned columns force users to memorize column order. Drop borders, box drawing, and ASCII art, which are heard as symbol noise.
 - **Number the choices.** An arrow-key menu is re-read whenever the highlight moves; print a numbered list and read a typed answer.
-- **Label lines.** Prefix output kinds (`error:`, `warning:`, speaker names in a chat) so a listener knows what a line is before hearing it.
+- **Label lines.** Prefix output kinds (`error:`, `warning:`, speaker names in a chat) so a listener knows what a line is before hearing it. For `error:`/`warning:`, follow the one rule in `cli-basics.md` → *Error messages*.
 - **Write errors to be spoken.** Say what failed and what to do next, without regexes or symbol-dense jargon.
-- **Keep the cursor on the focus.** Screen readers and magnifiers follow the terminal cursor, which full-screen apps usually hide. Leave it on the focused field or row, or return it to the prompt after printing.
+- **Keep the cursor on the focus.** Screen readers and magnifiers follow the terminal cursor, which full-screen apps usually hide. Hide it only while a frame is painting, then re-show it on the focused field or row (at minimum in the accessible mode), or return it to the prompt after printing.
 
 [Claude Code's screen-reader mode](https://code.claude.com/docs/en/accessibility) is the most complete published example: flat text without box drawing, `Header: value` tables, numbered menus, labelled lines, no fullscreen, and the terminal bell when it needs input.
 
@@ -713,7 +717,7 @@ None of these makes a full-screen app accessible by itself. Check the ecosystem 
 ### Motion
 
 - Treat animation as decoration with an off switch, and default it off in plain and screen-reader modes. No cross-tool reduced-motion variable exists, so name yours and document it, as gh (`GH_SPINNER_DISABLED`) and Textual (`TEXTUAL_ANIMATIONS=none`) do.
-- With motion off, print one static line (`Working…`) and then the final status, rather than a frozen spinner frame.
+- With motion off, print one static line (`Working...`) and then the final status, rather than a frozen spinner frame.
 - Never blink text (see *Typography in monospace*), and don't animate content the user is reading.
 
 ### Keyboard, focus, and color
@@ -736,4 +740,4 @@ None of these makes a full-screen app accessible by itself. Check the ecosystem 
 9. **Tiny status bar** that hides important state under the fold.
 10. **No visual focus indication** — users tab around guessing where they are.
 
-When reviewing a TUI, walk this list. Most existing apps fail on 3–5 items.
+When reviewing a TUI, walk this list.

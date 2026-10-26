@@ -7,10 +7,9 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 - [Inline, alt-screen, or overlay — where the UI lives](#inline-alt-screen-or-overlay--where-the-ui-lives)
 - [Borders — when, what, and why](#borders--when-what-and-why)
 - [Color in depth](#color-in-depth)
-- [Typography in monospace](#typography-in-monospace)
+- [Typography in monospace](#typography-in-monospace) (includes visual hierarchy)
 - [Density: pack vs pad](#density-pack-vs-pad) (includes the clutter audit)
 - [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor)
-- [Visual hierarchy in monospace](#visual-hierarchy-in-monospace)
 - [Tables and lists](#tables-and-lists)
 - [Localization](#localization) (translation growth, right-to-left text, ambiguous-width characters, locale formatting)
 - [Status bars, headers, footers](#status-bars-headers-footers)
@@ -166,8 +165,6 @@ Before choosing a layout, choose a screen buffer. The **alternate screen** is a 
 
 **Default heuristic: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, and dashboards — long-lived, navigational, full-screen — usually belong on the alt screen so they do not pollute scrollback. Prefer inline for bounded pickers, prompts, confirmations, and progress when preserving shell context matters. A picker with a large preview or unusually deep workflow may still earn a full-screen buffer; choose from the working set and exit contract, not the label alone.
 
-### Mechanics per framework
-
 All four frameworks support both modes. How each enters the alternate screen or stays inline, and how it prints permanent lines above an inline UI, is in its ecosystem reference: `ecosystem-go.md`, `ecosystem-rust.md`, and `ecosystem-python.md` → *Lifecycle and terminal handoff*, and `ecosystem-typescript.md` → *Strengths and weaknesses*.
 
 ### The fzf model — bounded inline viewport
@@ -182,11 +179,7 @@ On exit, do one of two respectable things: erase the transient UI completely (fz
 
 ### Choose by workflow
 
-| Workflow | Mode |
-|---|---|
-| One-shot pick / confirm / progress | Prefer inline; erase cleanly or leave a concise receipt |
-| Explore / monitor / edit session | Alt screen; restore on exit |
-| Hybrid (fzf-like; logs + live status) | Inline with a height cap (`--height 40%`, `Viewport::Inline`) |
+One-shot pick, confirm, or progress: prefer inline, erasing cleanly or leaving a concise receipt. Explore, monitor, or edit sessions: alt screen, restored on exit. Hybrids (fzf-like pickers; logs plus live status): inline with a height cap (`--height 40%`, `Viewport::Inline`).
 
 ---
 
@@ -202,49 +195,23 @@ The Unicode box-drawing block is U+2500–U+257F:
 
 Nearly all of it is East Asian Ambiguous width, so every border cell doubles where the terminal or locale renders ambiguous characters wide. *ASCII fallback* below is the fallback, and *Localization* has the test.
 
-### The aesthetic landscape
+### Choosing a style
 
-- **Single-line** — default for most modern TUIs (lazygit, k9s, btop, htop). Reads cleanly without dominating.
-- **Rounded corners** — the Charm aesthetic (Bubble Tea apps, gum, glow). Slightly softer; modern.
-- **Heavy** — emphasis. Use sparingly — for the focused panel border, or a "hot" warning state.
-- **Double** — reads as "DOS." Avoid for modern apps unless you're going for retro.
+Single-line is the default for most modern TUIs (lazygit, k9s, btop, htop); rounded corners are the Charm look (Bubble Tea apps, gum, glow). Reserve heavy for the focused panel or a "hot" warning state. Double reads as "DOS", so avoid it unless going retro.
 
 ### When to use borders
 
-- The pane has dynamic content needing a visible boundary.
-- Focus state must be communicated visually, with a cue that survives `NO_COLOR` (ranking: `interaction-patterns.md` → *Focus indicators*).
-- Adjacent panels need clear separation.
-- The border is doing real work — not just decoration.
-
-### When to skip borders
-
-- Content is static (htop has no internal borders — it's all dense layout).
-- Density matters more than structure.
-- The pane is implicitly bounded (only thing on screen, or at the edge).
-
-Don't decorate — whitespace is usually separator enough (see *The clutter audit* below).
+Draw a border only where it does work: a dynamic pane needs a visible boundary, adjacent panels need separation, or focus must show with a cue that survives `NO_COLOR` (ranking: `interaction-patterns.md` → *Focus indicators*). Skip it for static content (htop has no internal borders), when density matters more than structure, or when the pane is implicitly bounded. Whitespace is usually separator enough (see *The clutter audit* below).
 
 ### The background-leak problem
 
-Each terminal cell has only fg/bg colors. A border cell renders the line in the foreground but the cell's background "leaks" through behind the border characters. If your panel has a contrasting background to its parent, this looks wrong:
-
-```
-parent_bg has black background
-panel has dark blue background
-border characters: render in panel's blue background
-        ^^^ creates a visible "step" between border and content
-```
-
-**Solutions:**
-- Use the same background for panel and borders.
-- Or use one-eighth block characters (`▏▕▔▁`) as borders — Textual does this for themed apps. They are ambiguous-width too, with the same ASCII fallback.
+A terminal cell has one foreground and one background. A border cell draws the line in the foreground, but its background shows behind it, so a panel whose background differs from its parent's gets a visible "step" at the border. Use the same background for panel and borders, or one-eighth block characters (`▏▕▔▁`) as borders, as Textual does for themed apps; they are ambiguous-width too, with the same ASCII fallback.
 
 ### ASCII fallback
 
 For legacy SSH, Windows conhost, `TERM=dumb`, or any system where Unicode might be unreliable:
-- Single-line `─│┌┐└┘├┤┬┴┼` → `-|+++++++++`
+- Single-line `─│┌┐└┘├┤┬┴┼` → `-|+++++++++`; rounded `╭╮╰╯` → `+`
 - Heavy → `=|+++` (or just bold the ASCII)
-- Rounded `╭╮╰╯` → `+`
 
 Detect it from the first non-empty variable among `$LC_ALL`, `$LC_CTYPE`, and `$LANG` (does it name UTF-8?), and via terminal capability queries. The ASCII set also sidesteps ambiguous-width box drawing; see *Localization*. Provide a config option (`--ascii`, `MYAPP_ASCII=1`) for explicit override.
 
@@ -280,51 +247,37 @@ accent.secondary  → complementary
 border.default    → muted
 border.focus      → accent.primary (plus a non-color cue)
 
-git.staged        → green
+git.staged/added  → green
 git.modified      → yellow
 git.untracked     → red or cyan
-git.added         → green (foreground)
 git.deleted       → red (foreground)
 ```
 
 Then map tokens to palette colors. **Lipgloss v2's `LightDark`** (`AdaptiveColor` in v1/compat), **Textual's CSS variables**, and **Ratatui's palette indirection** all implement this.
 
-This indirection earns its keep when adding themes (Catppuccin Latte + Frappé + Macchiato + Mocha is one config file, not four code changes) or when supporting light/dark modes.
+This indirection earns its keep when adding themes (four Catppuccin flavors are one config file, not four code changes) or supporting light/dark modes.
 
 ### Conventional meanings
 
-| Color | Meaning |
-|---|---|
-| Green | Success, added, online, OK |
-| Red | Error, deleted, danger, offline |
-| Yellow | Warning, modified, pending, in-progress |
-| Cyan / Blue | Info, paths, links, hints |
-| Magenta | Special, highlights, attention without alarm |
-| Dim / gray | Secondary, disabled, metadata, timestamps |
-| Bold (any color) | Title, primary content, emphasis |
+- **Green** — success, added, online, OK.
+- **Red** — error, deleted, danger, offline.
+- **Yellow** — warning, modified, pending, in-progress.
+- **Cyan / Blue** — info, paths, links, hints.
+- **Magenta** — special, highlights, attention without alarm.
+- **Dim / gray** — secondary, disabled, metadata, timestamps.
+- **Bold (any color)** — title, primary content, emphasis.
 
 Stick to conventions. A green error message confuses everyone.
 
 ### Color and accessibility
 
-About 8% of males have red-green color vision deficiency. Don't rely on color alone:
-
-- Pair color with **letters**: lazygit shows file status as `M` (modified, yellow), `A` (added, green), `D` (deleted, red), `??` (untracked, cyan). Even if color is invisible, the letters carry meaning.
-- Pair color with **symbols**: delta's `+` and `-` line prefixes work in monochrome.
-- Pair color with **position**: errors at the end of output, success in a separate column.
-
-**Safe color pairs for CVD:**
-- Blue + orange.
-- Blue + yellow.
-- Black + white (and any high-contrast neutral pair).
-
-Avoid red + green as the only distinction. If you must use them, add letters or symbols.
+About 8% of males have red-green color vision deficiency, so don't rely on color alone. Pair it with **letters** (lazygit's `M`/`A`/`D`/`??` file status), **symbols** (delta's `+`/`-` prefixes work in monochrome), or **position** (errors at the end of output, success in a separate column). Safe pairs for CVD are blue + orange, blue + yellow, and any high-contrast neutral pair. Avoid red + green as the only distinction; if you must use them, add letters or symbols.
 
 ### Honor `NO_COLOR`
 
 [no-color.org](https://no-color.org) is an informal standard proposed in 2017. Respect it: when `NO_COLOR` is present with a non-empty value, suppress automatic color output. An explicit user choice such as `--color=always` may override that default if the tool documents the precedence.
 
-`ripgrep`, `bat`, `eza`, `fd`, `gh`, `cargo`, and `htop` (3.5+) honor it. Library behavior varies: some detect it automatically, while others require an optional capability feature or an application-level gate. For example, `owo-colors` only consults terminal and environment support when its `supports-colors` feature and `if_supports_color` path are used. Make `NO_COLOR` part of the app's semantic color policy instead of assuming a styling dependency will enforce it.
+Library behavior varies: some detect it automatically, while others need an optional capability feature or an application-level gate (`owo-colors` consults the environment only through its `supports-colors` feature and `if_supports_color`). Make `NO_COLOR` part of the app's semantic color policy instead of assuming a styling dependency enforces it.
 
 Provide tool-specific `MYAPP_NO_COLOR` and `MYAPP_FORCE_COLOR` for finer control. Keep precedence consistent with the policy in `references/cli-basics.md` → *Color*.
 
@@ -346,7 +299,20 @@ You can't change font size. Typography signals are limited but useful:
 
 **Reverse video is the canonical "current selection" signal.** It's the most reliable and most readable. Use it for the highlighted row in lists, the current cell in tables, the cursor position.
 
-**Bold** the focused panel's title. Which cues carry focus, and in what order, is in `interaction-patterns.md` → *Focus indicators*.
+**Bold** the focused panel's title; which cues carry focus, and in what order, is in `interaction-patterns.md` → *Focus indicators*.
+
+### Visual hierarchy
+
+Since you can't change font size, hierarchy comes from:
+
+1. **Position** — top/left reads first; status bar at bottom.
+2. **Weight and color** — bold + accent for headlines; dim for secondary; reverse video for the current selection.
+3. **Indentation and connectors** — `├─ └─` for trees (ASCII fallback `|-` and `` `- ``); consistent indent units (2 cells is standard).
+4. **Whitespace** — blank rows for separation; pads around important content.
+5. **Bullets / symbols** — `▸` expandable, `▾` expanded, `◉` active, `◦` inactive, `∙` static bullet. These are narrow-class; their ambiguous-width lookalikes (`▶ ▼ ● ○ •`) are the ones to avoid (see *Localization*).
+6. **Borders** — a heavier border weight marks the focused panel.
+
+Spend signals by the budget in *The clutter audit*: at most one color cue plus one non-color cue per state. The current selection: reverse video alone. The focused panel: a heavier border or marked title, plus the accent color. A warning: yellow plus a `!` prefix.
 
 ---
 
@@ -354,40 +320,9 @@ You can't change font size. Typography signals are limited but useful:
 
 You have a fixed grid. Two strategies:
 
-### Pack (high density)
+**Pack (high density)** — htop, btop, k9s. For data scanned at a glance, updated in real time, and read horizontally across rows. Use tight one-line records, compact dim headers, abbreviations and units (`GiB`, `1.2k`, `99.9%`), and sparklines or mini-bars.
 
-Examples: htop, btop, k9s.
-
-Used when:
-- Data is scanned at a glance.
-- It updates in real time.
-- Users read horizontally across rows.
-
-Tactics:
-- Tight rows (no extra spacing).
-- Compact headers (one line, dim text).
-- Abbreviations and units (`GiB`, `1.2k`, `99.9%`).
-- Sparklines, mini-bars.
-- One-line per record.
-
-### Pad (low density)
-
-Examples: gum/huh forms, glow markdown, Posting.
-
-Used when:
-- Users are reading prose.
-- Filling forms (fields need breathing room).
-- Making single decisions.
-
-Tactics:
-- Generous vertical spacing between fields.
-- One field per line; labels above for narrow.
-- Single column for forms.
-- Lots of margin around modals.
-
-For separation in moderate-density layouts, reach for whitespace before borders (see *The clutter audit* below).
-
-### Hybrid: hierarchy through density
+**Pad (low density)** — gum/huh forms, glow, Posting. For prose, forms, and single decisions. Use generous vertical spacing, one field per line with labels above for narrow terminals, a single column, and lots of margin around modals.
 
 Use density to communicate hierarchy: dense data tables in the main panel, padded settings/forms in modals, dense status bars at the bottom.
 
@@ -401,7 +336,7 @@ Use density to communicate hierarchy: dense data tables in the main panel, padde
 - **Chrome-to-data ratio.** Add up the cells spent on borders, titles, padding, labels, and repeated boilerplate (a full ISO date on every log line when only the time changes) versus cells showing actual data. A high chrome ratio *is* the cluttered feeling.
 - **The removal test.** For each decorative element ask: "if I delete this, do I lose information?" If no, delete it. Whitespace is not empty space — it's the cheapest separator you have, and a single blank row routinely out-reads a heavy border.
 
-Run this pass on any layout — yours or someone else's. "Three concentric borders before the content, status encoded four ways, a marker on every row, full datestamps repeated every log line" tells the user exactly what to cut. "Simplify it" tells them nothing.
+Run this pass on any layout, yours or someone else's. "Three concentric borders, status encoded four ways, a marker on every row" tells the user exactly what to cut; "simplify it" tells them nothing.
 
 ---
 
@@ -472,8 +407,6 @@ Reserve a cell for the ellipsis `…`, which is ambiguous-width (see *Localizati
 
 Show which column is currently sorted: `▴` ascending, `▾` descending. Place after the column header: `Size ▾`. The larger `▲▼` are ambiguous-width. Click (or key) to toggle and cycle.
 
-### Filtering
-
 Filter behavior (response time, match count, highlighting, smart case) is defined in `interaction-patterns.md` → *Search and filter*.
 
 ### Wide tables on narrow terminals
@@ -482,19 +415,14 @@ Three approaches:
 
 1. **Hide low-priority columns.** Define column priority; drop them as width shrinks.
 2. **Horizontal scroll.** htop scrolls the process table left and right with the arrow keys when columns overflow.
-3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The universal escape hatch.
-
-Detail-on-Enter is the highest-leverage pattern: you can show fewer columns, and the user is one keypress away from full detail.
+3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The highest-leverage option: show fewer columns, and the user is one keypress from full detail.
 
 ### Virtualization
 
 **Always virtualize** lists that might exceed a few hundred items.
 
-- **k9s** virtualizes for thousands of pods.
-- **Toolong** tails multi-GB log files.
-- **Textual `DataTable`** virtualizes by default.
-- **Ratatui `List` + `ListState`** handles offsetting efficiently.
-- **Bubbles `list`** virtualizes.
+- **k9s** (thousands of pods) and **Toolong** (multi-GB logs) virtualize.
+- **Textual `DataTable`**, **Ratatui `List` + `ListState`**, and **Bubbles `list`** virtualize or offset efficiently.
 - **Ink** needs an explicitly windowed slice or viewport for a changing collection. `<Static>` is only for finalized append-only history; it does not virtualize selectable, filtered, or otherwise mutable rows.
 
 The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ items.
@@ -518,33 +446,19 @@ Terminal layouts assume a fixed number of cells per string, so translated text b
 
 ### A common full-screen four-section layout
 
-```
-┌─────────────────────────────────────────┐
-│ Header (top)                            │ ← persistent context: app, dataset, mode
-├─────────────────────────────────────────┤
-│                                         │
-│   Main area (middle)                    │ ← the panels
-│                                         │
-├─────────────────────────────────────────┤
-│ Status / mode line                      │ ← ephemeral feedback
-│ Footer hint bar                         │ ← contextual shortcuts
-└─────────────────────────────────────────┘
-```
-
-Some apps merge status and footer into one line. Some skip the header. Complex full-screen apps benefit from persistent context around the work area; bounded inline tools often need neither a header nor a dedicated footer.
+Header (persistent context: app, dataset, mode), then the main area (the panels), then a status/mode line (ephemeral feedback), then a footer hint bar (contextual shortcuts). Some apps merge status and footer into one line, and some skip the header. Complex full-screen apps benefit from persistent context around the work area; bounded inline tools often need neither a header nor a dedicated footer.
 
 ### Header content
 
-- App name (often with logo char or color block).
-- Current dataset / context: branch name (lazygit), cluster + namespace (k9s), file path (bat/glow).
+- App name, plus the current dataset or context: branch name (lazygit), cluster + namespace (k9s), file path (bat/glow).
 - Mode indicator (NORMAL / INSERT in editors).
-- Right-aligned: time, host, version (sparingly — only if meaningful).
+- Right-aligned: time, host, version, sparingly and only if meaningful.
 
 ### Status / mode line
 
 - Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
 - Success and info messages may fade after a few seconds or give way to the idle state. Keep errors and warnings until the user dismisses them or the next result replaces them: a message that vanishes unread can't be acted on.
-- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Modal (vim-style)*).
+- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Keybinding philosophies and modal vs modeless*).
 - Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
 
 ### Footer hint bar
@@ -563,7 +477,7 @@ The de facto modern default for indeterminate work: **Braille spinners**.
 ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏
 ```
 
-Ten frames at ~80ms per frame (cli-spinners' `dots`) = smooth rotation. `cli-spinners` (the npm package, vendored everywhere) ships ~70+ named styles.
+Ten frames at ~80ms per frame (cli-spinners' `dots`) give a smooth rotation.
 
 **Rules:**
 - Show only after ~100–200ms — instant work shouldn't flash a spinner.
@@ -578,7 +492,7 @@ Block characters for sub-cell precision:
 ▏▎▍▌▋▊▉█
 ```
 
-These give 8 sub-positions per cell. A 40-cell-wide bar can represent 40 × 8 = 320 distinct progress states.
+These give 8 sub-positions per cell.
 
 ```
 [████████▎             ] 41%
@@ -590,27 +504,17 @@ Show: percent, current/total counts where meaningful, ETA for long operations.
 
 ### Multi-progress
 
-Multiple parallel tasks each with their own bar:
-
-```
-package-a [████████████████████] 100% ✓
-package-b [████████▎           ]  41%
-package-c [██▎                 ]  10%
-```
-
-indicatif `MultiProgress`, rich `Progress` (multiple tasks), and listr2 `concurrent` mode support this out of the box; Bubbles ships only a single `progress` component — compose multiple bars by hand. Used by Docker pulls, npm/cargo builds, parallel installers.
+Parallel tasks each get their own bar (`package-b [████████▎           ]  41%`, with `100% ✓` on finished rows). indicatif `MultiProgress`, rich `Progress` (multiple tasks), and listr2 `concurrent` mode support this out of the box; Bubbles ships only a single `progress` component — compose multiple bars by hand.
 
 ### Pulse / fade
 
-Ambient indication of background work without commanding attention. lazygit's auto-fetch, for example, shows only a small spinner and status message instead of a blocking dialog. Useful when work is happening but doesn't need to be in the user's face.
+Ambient indication of background work without commanding attention: lazygit's auto-fetch shows only a small spinner and status message instead of a blocking dialog.
 
 ### Empty states and loading states
 
-**Empty states:** never just "No data." Say what to do next: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
-
-**Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
-
-**Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
+- **Empty states:** never just "No data." Say what to do next: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
+- **Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
+- **Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
 
 **Disconnected, stale, or hung states:**
 - Keep the last-known-good view visible, dimmed, with a "stale" or "reconnecting" marker instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case.
@@ -621,48 +525,27 @@ Ambient indication of background work without commanding attention. lazygit's au
 
 ## Theming systems
 
-Most production TUIs support themes. The canonical approach:
-
-1. **Define semantic tokens** (`status.error`, `text.muted`, etc.).
-2. **Define palette mappings** as TOML/YAML/CSS — one file per theme.
-3. **Allow theme selection** via config, env var, or runtime command.
+Most production TUIs support themes: define semantic tokens (`status.error`, `text.muted`), map them to palette colors in one file per theme (TOML/YAML/CSS), and allow selection via config, env var, or runtime command.
 
 ### Configuration formats
 
-- **TOML** — bottom, helix, starship, alacritty (since 0.13); btop's `btop.conf` is a TOML-like `key = value` file.
-- **YAML** — lazygit (`config.yml`), lazydocker, k9s (including `plugins.yaml`).
-- **Flag files / git config** — bat's config file is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives in `.gitconfig` under `[delta]`.
-- **TCSS (Textual CSS)** — Textual apps; live-reloads.
-- **JSON** — VS Code-style; less common in TUIs.
-
-No format is the TUI standard. Matching the tool your users already configure, as when mirroring lazygit, is a good reason to use its format; otherwise choose the one that suits your own settings.
+No format is the TUI standard. Common ones: TOML (bottom, helix, starship, alacritty 0.13+), YAML (lazygit, lazydocker, k9s), TCSS (Textual, live-reloads), and flag files or git config (bat's config is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives under `[delta]` in `.gitconfig`). Matching the tool your users already configure, as when mirroring lazygit, is a good reason to use its format; otherwise choose the one that suits your own settings.
 
 ### Community palettes for themeable, broadly distributed apps
 
-If theming is part of the product, either ship popular palettes or document how to import them:
-
-- **Catppuccin** (Latte, Frappé, Macchiato, Mocha).
-- **Dracula**.
-- **Nord**.
-- **Gruvbox** (light, dark; soft, medium, hard).
-- **Tokyo Night**.
-- **Rose Pine** (Main, Moon, Dawn).
-- **Solarized** (light, dark).
-- **base16** umbrella spec — many themes follow this.
-
-The community has built theme repos for most popular tools; users of highly themeable apps expect plug-and-play. Small single-purpose tools still need semantic colors and light/dark safety, but do not need to bundle every palette.
+If theming is part of the product, ship popular palettes (Catppuccin, Dracula, Nord, Gruvbox, Tokyo Night, Rose Pine, Solarized) or document how to import them; the base16 spec underlies many. Users of highly themeable apps expect plug-and-play. Small single-purpose tools still need semantic colors and light/dark safety, but do not need to bundle every palette.
 
 ### Icons and Nerd Fonts — there is no detection, only opt-in
 
-No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal — not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty. Fonts are a client-side rendering concern the terminal protocol has no capability query for; even reading the configured font name from a config file (the one heuristic tool that tries this, `has-nerd-font`, checks a list of terminals that bundle Nerd Font glyphs, then parses the terminal's config for the font name, and still needs a `NERD_FONT=1` override) doesn't guarantee the font is actually installed, and font-fallback chains mean a declared font can silently substitute per-glyph anyway. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
+No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal (not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty): the protocol has no font capability query, and font-fallback chains can substitute per glyph anyway. Even `has-nerd-font`, which guesses from the terminal's configured font name, still needs a `NERD_FONT=1` override. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
 
-- **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence — it fully trusts the user.
+- **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence.
 - **lazygit** — `gui.nerdFontsVersion: '2' | '3' | ""`; empty (the default) means no icons at all.
-- **yazi** — icons are default-on in the shipped theme rather than gated by a flag; the FAQ's answer for users without a Nerd Font is to override the icon tables in `theme.toml`, not a switch.
+- **yazi** — icons are default-on in the shipped theme; users without a Nerd Font override the icon tables in `theme.toml`.
 
-**Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 reorganized Material Design Icons' codepoints (`F500–FD46` → `F0001+`) because the old range collided with CJK Unicode — a real, documented breaking change, which is exactly why lazygit's config asks for `'2'` or `'3'` explicitly rather than shipping one hardcoded set.
+**Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 moved Material Design Icons' codepoints (`F500–FD46` → `F0001+`), a documented breaking change, which is why lazygit's config asks for `'2'` or `'3'` explicitly.
 
-The fallback ladder — Nerd Font glyphs → plain Unicode symbols → ASCII — is real, but starship is the cleanest evidence of a tool actually shipping all three rungs as named presets (`nerd-font-symbols` / `no-nerd-font` / `plain-text-symbols`). Most tools are binary (icons on with a Nerd Font, or off), not a full three-tier ladder — don't imply every icon-capable tool implements all three.
+The fallback ladder is Nerd Font glyphs → plain Unicode symbols → ASCII. starship ships all three rungs as named presets (`nerd-font-symbols` / `no-nerd-font` / `plain-text-symbols`), but most tools are binary (icons on or off), so don't imply every icon-capable tool implements all three.
 
 ### Light/dark detection
 
@@ -722,7 +605,7 @@ None of these makes a full-screen app accessible by itself. Check the ecosystem 
 
 ### Keyboard, focus, and color
 
-- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least one cue besides color (border weight, reverse video, or a marker), combined as `interaction-patterns.md` → *Focus indicators* describes.
+- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least one cue besides color; the ranking is in `interaction-patterns.md` → *Focus indicators*.
 - Color rules live in *Color and accessibility* and *Honor `NO_COLOR`* above. Keep a 16-color theme: those colors follow the user's terminal palette, including high-contrast palettes, while truecolor values override it.
 
 ---
@@ -731,13 +614,12 @@ None of these makes a full-screen app accessible by itself. Check the ecosystem 
 
 1. **Hardcoded colors** that clash with user themes. Use semantic tokens.
 2. **Decorative borders** that don't earn their keep.
-3. **Color-only signaling.** Pair with letters or symbols.
+3. **Color-only signaling**, or **emoji as the only signal** (some terminals render boxes). Pair with letters or symbols.
 4. **Misaligned tables** when text contains CJK or emoji. Use `unicode_width` / `string-width`.
 5. **Over-bolding.** Bold loses meaning when half the screen is bold.
 6. **Inconsistent capitalization** in headers (mix of "Branch", "branch", "BRANCH").
-7. **Emoji as the only signal.** Some terminals render them as boxes.
-8. **Light-mode-only colors** (low contrast on dark, or vice versa).
-9. **Tiny status bar** that hides important state under the fold.
-10. **No visual focus indication** — users tab around guessing where they are.
+7. **Light-mode-only colors** (low contrast on dark, or vice versa).
+8. **Tiny status bar** that hides important state under the fold.
+9. **No visual focus indication** — users tab around guessing where they are.
 
 When reviewing a TUI, walk this list.

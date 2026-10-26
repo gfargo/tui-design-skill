@@ -4,9 +4,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Contents:**
 - [Quick recommendation](#quick-recommendation)
-- [Textual](#textual-textualizetextual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens)
-- [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools)
-- [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
+- [Textual](#textual-textualizetextual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens) · [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools) · [Notable Textual apps](#notable-textual-apps) · [Pitfalls](#pitfalls)
 - [Rich](#rich-textualizerich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
 - [Argument parsing: argparse vs Click vs Typer](#argument-parsing-argparse-vs-click-vs-typer)
 
@@ -22,7 +20,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 | Argument parsing, decorator-style (no type hints) | **Click** |
 | Simple progress bar | **tqdm** (max performance) or **alive-progress** (polished, redirect-safe) |
 
-**Default for full TUI: Textual.** It's the most complete actively developed Python TUI framework and is genuinely well-designed. **Default for fancy CLI output: Rich.**
+**Default for full TUI: Textual.** **Default for fancy CLI output: Rich.**
 
 **Python floor:** target 3.11+ for new tools. Python 3.9 and 3.10 reached end of life in October 2025 and October 2026. Current Typer, Click 8.2+, prompt_toolkit 3.0.53 and pytest 9 need 3.10+, and cyclopts 5 needs 3.11+. Textual 8.2.8 and Rich 15 still install on 3.9.
 
@@ -34,7 +32,7 @@ Three tools occupy distinct niches: **Textual** (the modern reactive TUI framewo
 
 **Architectural model: reactive, async-first, message-passing.** Strongly inspired by web frameworks. App subclass + Widgets in a DOM-like tree (App → Screen → Widgets) + TCSS for layout/style + reactive attributes for state + Messages/Events for communication, all on asyncio.
 
-**Status:** Textualize the company wound down in mid-2025; Will McGugan maintains Textual and Rich as open source. If the user asks "isn't Textual dead?" — no. It shipped five major versions (4.0 through 8.0) since the May 2025 announcement, with 8.x current as of mid-2026, but releases have slowed: the latest are Textual 8.2.8 (June 2026) and Rich 15.0.0 (April 2026). In October 2026 McGugan said he will keep maintaining both, though issue responses may be slow. Treat them as stable and maintained, not fast-moving. Those majors did carry breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
+**Status:** Textualize the company wound down in mid-2025, and Will McGugan maintains Textual and Rich as open source. Textual shipped five major versions (4.0 through 8.0) since the May 2025 announcement, with 8.x current as of mid-2026 (Textual 8.2.8, Rich 15.0.0); releases have slowed and issue responses may be slow. Treat both as stable and maintained, not fast-moving. The majors carried breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading.
 
 **Canonical structure:**
 
@@ -78,7 +76,7 @@ Textual's driver restores application mode from `App.run()` / `run_async()` clea
 | Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
 | Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Subscribe to `app_resume_signal` to reload externally mutable data when needed. |
 
-These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspend-context-manager) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
+[`App.suspend()`](https://textual.textualize.io/guide/app/#suspend-context-manager) lends the terminal to code inside a context manager; `suspend_process` is Unix job control. Neither is a final-exit substitute.
 
 **Ctrl+C is not quit in Textual.** `ctrl+q` is bound to `quit`; `ctrl+c` is bound to `help_quit`, which only shows a toast naming the key that quits, and `Input` and `TextArea` use it to copy ([`app.py`](https://github.com/Textualize/textual/blob/v8.2.8/src/textual/app.py), `BINDINGS` and `action_help_quit`). To keep the "Ctrl+C cancels or quits" contract, rebind it with a priority binding so it fires even while a text field has focus, at the cost of copy there:
 
@@ -92,21 +90,18 @@ class QuitOnCtrlC(App):
 
 **Inline mode:** `app.run(inline=True)` (since 0.55) renders below the prompt instead of on the alternate screen. Set its height with CSS on `Screen`, as in `Screen { &:inline { height: 50vh; } }`. Inline mode is not supported on Windows.
 
-## Widgets
+### Widgets
 
-Textual ships dozens. Categories:
+Textual ships dozens, by category:
 
-**Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`, `LoadingIndicator`, `ProgressBar`.
+- **Display:** `Label`, `Static`, `Digits`, `Pretty`, `Markdown`, `MarkdownViewer`, `RichLog`, `Log`, `Sparkline`, `Rule`, `Placeholder`, `LoadingIndicator`, `ProgressBar`.
+- **Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+- **Container/structure:** `Header`, `Footer`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
+- **Data:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`.
 
-**Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+Use `DataTable` for any tabular display. Add columns with `add_columns`, rows with `add_rows`, configure cursor type (`cell`/`row`/`column`/`none`), enable `zebra_stripes`, hook into `on_data_table_row_selected`.
 
-**Container/structure:** `Header`, `Footer`, `TabbedContent`, `TabPane`, `Tabs`, `Collapsible`.
-
-**Data:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`.
-
-`DataTable` is excellent — it's what you should use for any tabular display. Add columns with `add_columns`, rows with `add_rows`, configure cursor type (`cell`/`row`/`column`/`none`), enable `zebra_stripes`, hook into `on_data_table_row_selected`.
-
-## Layout — TCSS
+### Layout — TCSS
 
 Layout is CSS:
 
@@ -138,14 +133,13 @@ DataTable {
 Concepts:
 - **`layout`** — `vertical | horizontal | grid`.
 - **Containers**: `Vertical`, `Horizontal`, `Grid`, `VerticalScroll`, `Center`, `Middle`.
-- **Sizing**: cells (`width: 30`), percentages (`width: 50%`), `auto`, fractional units (`width: 1fr`).
+- **Sizing**: cells (`width: 30`), percentages (`width: 50%`), `auto`, fractional units (`width: 1fr`); `overflow-x: auto` adds scrollbars.
 - **Grid**: `grid-size: 3 4`, `grid-columns`, `grid-rows`, `grid-gutter`, `column-span`, `row-span`.
-- **Docking**: `dock: top | right | bottom | left` for sticky edges. Used for `Header` and `Footer`.
-- **Overflow**: `overflow-x: auto` adds scrollbars.
+- **Docking**: `dock: top | right | bottom | left` for sticky edges, as `Header` and `Footer` do.
 
-**Selectors**: type (`Button { ... }` matches subclasses too — different from web CSS), id (`#dialog`), class (`.error`), pseudo (`:focus`, `:hover`, `:disabled`, `:dark`, `:light`). Nesting works. **Theme variables** (`$primary`, `$panel`, `$text`, `$accent`, `$error`, etc.) — semantic tokens that change with the active theme.
+**Selectors**: type (`Button { ... }` matches subclasses too, e.g. your `MyButton(Button)`, unlike web CSS; use a class selector for exact targeting), id (`#dialog`), class (`.error`), pseudo (`:focus`, `:hover`, `:disabled`, `:dark`, `:light`). Nesting works. **Theme variables** (`$primary`, `$panel`, `$text`, `$accent`, `$error`, etc.) — semantic tokens that change with the active theme.
 
-## Events and messages
+### Events and messages
 
 Two ways to handle events:
 
@@ -171,7 +165,7 @@ def handle_danger(self, event: Button.Pressed) -> None:
 
 Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: **"attributes down, messages up"** — parents set state on children via attributes; children notify parents via messages.
 
-## Reactive state
+### Reactive state
 
 ```python check=python/reactive
 from textual.reactive import reactive
@@ -202,13 +196,11 @@ class Counter(Widget):
 - `always_update=True` — fire even when value didn't change.
 - `layout=True` — trigger a re-layout, not just a re-render.
 - `bindings=True` — re-evaluate `BINDINGS` (useful for context-sensitive bindings).
-- `recompose=True` — re-run `compose()` (rebuild children).
-
-This is the heart of Textual's "reactive" claim — it's genuinely declarative state-driven UI.
+- `recompose=True` — re-run `compose()` (rebuild children; the manual route is `await self.remove_children()` + `await self.mount(...)`).
 
 **Hiding dependent widgets:** when one value controls another widget, react in `watch_<name>(old, new)` on the `reactive()` attribute, and hide the dependent widget with `widget.display = False` (removes it from layout) or `.visible = False` (hides it without reflowing).
 
-## Async and workers
+### Async and workers
 
 Handlers can be `async def`. The `@work` decorator turns methods into background workers:
 
@@ -233,7 +225,7 @@ def compute_heavy(self) -> None:
 
 `call_from_thread(fn, *args)` is required when modifying UI from a thread (vs an asyncio task). It exists only on `App`, so a Screen or Widget worker calls `self.app.call_from_thread(...)`; `self.call_from_thread` there raises `AttributeError`. `post_message` is also thread-safe. `set_interval(secs, callable)` schedules periodic UI updates without blocking.
 
-## Modal screens
+### Modal screens
 
 Push a screen on top for dialogs/modals:
 
@@ -266,7 +258,7 @@ async def action_delete(self) -> None:
 
 `push_screen_wait` is the await-able way; results come back via `dismiss(value)`. It only works inside a worker — the `@work` decorator is mandatory, so waiting for the screen doesn't block the app. Calling it from a plain handler raises `NoActiveWorker`.
 
-## Testing — Pilot + pytest-textual-snapshot
+### Testing — Pilot + pytest-textual-snapshot
 
 Pilot drives the app headlessly from pytest:
 
@@ -289,7 +281,7 @@ def test_homepage(snap_compare):
     assert snap_compare("path/to/app.py", press=["tab", "enter", "a"])
 ```
 
-Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. This is genuinely production-grade testing — in our view still the most complete story of any TUI framework, though Ratatui's `TestBackend` and Bubble Tea's `teatest` have matured.
+Snapshots are stored under `__snapshots__/`; failures generate an HTML diff page.
 
 Gotchas worth knowing:
 
@@ -297,9 +289,9 @@ Gotchas worth knowing:
 - **Pin `pytest>=8.4,<9` for snapshot suites.** pytest-textual-snapshot's last release, 1.1.0 (January 2025), pins `syrupy==4.8.0`, which requires `pytest<9`; pytest-asyncio 1.4 needs pytest 8.4 or later. On pytest 9, pip silently picks 1.0.0, which writes `.raw` snapshots instead of `.svg`. The fix PR has been open since November 2025.
 - **`run_test()` runs headless at `size=(80, 24)` and disables notifications and tooltips by default.** A test asserting on a `notify()` toast will silently see nothing — pass `notifications=True` (and `tooltips=True` if relevant) to `run_test`.
 - **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
-- **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded `Input.Submitted`/`Changed` message's `event.validation_result` (`is_valid`, `failure_descriptions`) — or on `input.is_valid` / the auto-applied `-invalid`/`-valid` CSS classes.
+- **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded message's `event.validation_result` (`is_valid`, `failure_descriptions`), on `input.is_valid`, or on the `-invalid`/`-valid` CSS classes.
 
-## Debugging
+### Debugging
 
 The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
 
@@ -309,36 +301,26 @@ Textual redirects `sys.stdout` and `sys.stderr` while the app runs, so `print()`
 - **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
 - **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
 
-**Profiling:** neither `textual run --dev`/`console` nor `textual diagnose` (from the `textual-dev` package) measure performance — `diagnose` is an environment report (Python/terminal/Textual versions), not a profiler, and there's no FPS or frame-timing overlay built in. For an actual "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`) — it needs no code changes, though attaching to a PID usually needs `sudo`; on Python 3.15+ the stdlib `python -m profiling.sampling attach <pid>` needs no install. One asyncio-specific gotcha: `py-spy` excludes idle/sleeping threads by default, and Textual's main loop spends most of its time awaiting the event loop, so a default run over a quiet window can misleadingly show almost nothing; pass `--idle` if you're not seeing the work you expect. Heavy synchronous work inside an `async def` handler with no `await` still blocks the whole UI exactly like it would in any event loop — offload it to `@work(thread=True)`, not just `@work`.
+**Profiling:** neither `textual run --dev`/`console` nor `textual diagnose` measures performance (`diagnose` is an environment report), and there is no built-in FPS or frame-timing overlay. For a "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`); it needs no code changes, though attaching to a PID usually needs `sudo`, and Python 3.15+ has the stdlib `python -m profiling.sampling attach <pid>`. `py-spy` excludes idle threads by default and Textual's main loop mostly awaits, so pass `--idle` if a run over a quiet window shows almost nothing. Heavy synchronous work inside an `async def` handler with no `await` blocks the whole UI; offload it to `@work(thread=True)`, not just `@work`.
 
-## Dev tools
+### Dev tools
 
-- **`textual serve app.py`** — serves the app over HTTP/WebSocket; runs in a browser tab. Same Python code, no changes.
-
-`textual serve` is genuinely unusual: the same codebase runs in a terminal, over SSH, or in a browser. Prefer it (self-hosted; works with Textual 8.2) over **textual-web**, the hosted service, which has had no release since 0.8.0 in August 2024.
+**`textual serve app.py`** serves the app over HTTP/WebSocket in a browser tab with no code changes, so the same codebase runs in a terminal, over SSH, or in a browser. Prefer `textual serve` (self-hosted; works with Textual 8.2) over **textual-web**, the hosted service, which has had no release since 0.8.0 in August 2024.
 
 **Accessibility:** `textual serve` is not an accessibility path. Its browser client paints the terminal grid with xterm.js on a canvas, with xterm's screen-reader mode off, so a screen reader gets no more than it would in a terminal. Textual itself has no screen-reader support; the roadmap item is still open. For reduced motion, `TEXTUAL_ANIMATIONS=none` (or setting `App.animation_level` to `"none"`) makes built-in animations jump to their end state and the loading indicator static; custom timers and spinners must check `app.animation_level` themselves. Design guidance: `visual-patterns.md` → *Accessibility*.
 
-## Notable Textual apps
+### Notable Textual apps
 
 - **Toad** — Will McGugan's universal terminal UI for agentic coding, with ACP support for Claude Code, Gemini CLI, and others. The flagship Textual app.
-- **Posting** — HTTP client (Postman alternative). The released 2.x line is Textual; `main` is now Posting 3, a Go rewrite.
-- **Harlequin** — SQL IDE.
-- **Memray** — Bloomberg's memory profiler.
-- **Dolphie** — MySQL/MariaDB monitor.
-- **Toolong** (log viewer), **elia** (LLM chat), **frogmouth** (markdown browser) — dormant and pinned to pre-1.0 Textual (0.43–0.79). Fine as design references; copy APIs from Toad, Harlequin or Dolphie, which track Textual 8.2.
-- **Trogon** — generates a form UI from a Click CLI (unmaintained; see the CLI section).
+- **Posting** (HTTP client; the released 2.x line is Textual, `main` is now Posting 3, a Go rewrite), **Harlequin** (SQL IDE), and **Dolphie** (MySQL monitor) track Textual 8.2; copy APIs from them. **Toolong**, **elia**, and **frogmouth** are dormant and pinned to pre-1.0 Textual (0.43–0.79), so use them as design references only.
 
-## Pitfalls
+### Pitfalls
 
 1. **Reactives in `__init__` fire watchers before mount** → `NoMatches` errors when watchers try to query DOM. Init in `on_mount` or use the `self.set_reactive(MyClass.attr, value)` method to bypass validators and watchers.
-2. **`compose()` runs once.** To rebuild children, use `reactive(..., recompose=True)` or `await self.remove_children()` + `await self.mount(...)`.
-3. **Don't bypass Textual's stdout capture.** `print()` is safe (it goes to `textual console`), but `sys.__stdout__`, fd 1 and inherited child-process output corrupt the screen. Run children inside `self.suspend()`; use `self.log(...)` for diagnostics.
-4. **TCSS type selectors match subclasses** (unlike web CSS). `Button { ... }` matches your custom `MyButton(Button)`. Use class selectors (`.my-button`) when you want exact targeting.
-5. **Inside Textual, use `ProgressBar` widget**, not Rich's `Live`/`Progress` — they fight each other for the screen.
-6. **For periodic updates from sync code**, use `self.app.call_from_thread`, not direct attribute assignment.
-7. **`can_focus = True`** on custom widgets that should receive key events. Without this, key events bypass them.
-8. **`DataTable.add_rows()` is not a bulk-insert optimization.** It is a plain loop over `add_row()`, paying the same per-row cost, so switching to it won't speed up a slow bulk insert.
+2. **Don't bypass Textual's stdout capture** (see Debugging). `print()` is safe, but `sys.__stdout__`, fd 1 and inherited child-process output corrupt the screen; run children inside `self.suspend()`.
+3. **Inside Textual, use `ProgressBar` widget**, not Rich's `Live`/`Progress` — they fight each other for the screen.
+4. **`can_focus = True`** on custom widgets that should receive key events. Without this, key events bypass them.
+5. **`DataTable.add_rows()` is not a bulk-insert optimization.** It is a plain loop over `add_row()`, paying the same per-row cost, so switching to it won't speed up a slow bulk insert.
 
 ---
 
@@ -373,13 +355,13 @@ for item in track(items, description="Processing...", console=err):
     do_work(item)
 ```
 
-**Components:** `Console`, markup (`[bold red]…[/]`), `Table`, `Panel`, `Columns`, `Tree`, `Syntax` (Pygments), `Markdown`, `Progress` (with multiple tasks), `Live` (animated regions), `RichHandler` for colorized logs, `install()` for pretty tracebacks.
+**Components:** `Console`, markup (`[bold red]…[/]`), `Table`, `Panel`, `Columns`, `Tree`, `Syntax` (Pygments), `Markdown`, `Progress` (with multiple tasks), `Live` (animated regions), `RichHandler` for colorized logs.
 
-**Diagnostics belong on stderr:** use a separate `Console(stderr=True)` for errors and progress so stdout stays pipeable. Rich honors `NO_COLOR`.
+Send errors and progress through a separate `Console(stderr=True)` so stdout stays pipeable. Rich honors `NO_COLOR`.
 
-**`from rich.traceback import install; install()`** replaces the default Python traceback with a much better one — beautiful syntax highlighting and source context. Drop into any script for a free upgrade. (There is no `rich.install()`; the sibling `rich.pretty.install()` only pretty-prints REPL results.)
+**`from rich.traceback import install; install()`** replaces the default traceback with a syntax-highlighted one with source context. (There is no `rich.install()`; the sibling `rich.pretty.install()` only pretty-prints REPL results.)
 
-**Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools; pip vendors Rich for its own output, and Textual, Harlequin, and most new Typer-based tools build on it. (Poetry uses cleo and Sphinx does not depend on Rich; do not cite them as Rich users.)
+**Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools; pip vendors Rich for its own output, and Textual, Harlequin, and most new Typer-based tools build on it. (Poetry uses cleo and Sphinx does not depend on Rich.)
 
 ---
 
@@ -422,13 +404,11 @@ choice = questionary.select(
 
 ## Other libraries
 
-- **Urwid** — pre-Textual TUI framework; mature and actively maintained again (3.0 in May 2025, 4.0 in March 2026, 4.2.x as of October 2026) after years of dormancy. New projects should still use Textual.
-- **Blessed** — modernized curses wrapper, cross-platform via `jinxed`. For bespoke games/animations where you want fine control. Not recommended as a first choice.
-- **curses** — stdlib, Unix-only, lowest level. Avoid for new code unless you have a strict zero-dep requirement.
+- **Urwid** — pre-Textual TUI framework, mature and maintained again (4.2.x as of October 2026). New projects should still use Textual.
+- **Blessed** (curses wrapper, cross-platform via `jinxed`) and stdlib **curses** (Unix-only, lowest level) — avoid for new code unless you need fine control or have a strict zero-dep requirement.
 - **InquirerPy** — Python port of Inquirer.js. Unmaintained (last release 0.3.4, June 2022); prefer questionary.
-- **tqdm** — battle-tested progress bars, max performance, the default for ML/data scripts. `with logging_redirect_tqdm():` routes `logging` output around the bar; it does not capture `print()` — use `tqdm.write()` for those.
-- **alive-progress** — animated, polished progress bars; better visual but slightly slower than tqdm.
-- **asciimatics** — animations + form-style TUIs. Niche; Textual has taken over its mindshare.
+- **tqdm** — progress bars, max performance, the default for ML/data scripts. `with logging_redirect_tqdm():` routes `logging` output around the bar; it does not capture `print()` — use `tqdm.write()`. **alive-progress** is more polished but slightly slower.
+- **asciimatics** — animations + form-style TUIs; niche, superseded by Textual.
 
 ---
 
@@ -449,7 +429,7 @@ def hello(name: str, count: int) -> None:
         click.echo(f"Hello, {name}!")
 ```
 
-**Typer** — type-hint-driven (FastAPI's author). The most ergonomic:
+**Typer** — type-hint-driven (FastAPI's author):
 ```python check=python/typer
 import typer
 

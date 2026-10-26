@@ -4,6 +4,55 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+Correctness patch for the 1.8 line from the October 2026 reference audit (#68–#71): wrong or missing facts in the ecosystem, CLI, and pattern references, and guidance that contradicted itself.
+
+### Fixed
+- **Go and Rust ([#68](https://github.com/gfargo/tui-design-skill/issues/68)):**
+  - Lipgloss v2 `Width`/`Height` include border and padding, so v1 layout math comes out 2 cells too narrow.
+  - A v1 → v2 cheat sheet gathers the Bubbles setters (`SetWidth`, `viewport.WithWidth`), `DefaultKeyMap()`, `isDark` style constructors, and `New`.
+  - Global keys such as `q` must not fire while a list filter is active, and Bubble Tea never binds Ctrl+Z for you.
+  - `tea.View.ProgramStatus` is not cleared on exit, and `gh` is on Glamour v2.
+  - `ratatui::restore()` disables only raw mode and the alternate screen, so the Ratatui section shows teardown for mouse capture, bracketed paste, and Kitty keyboard flags, on normal exit, on panic, and across an editor handoff.
+  - The canonical example uses `ratatui::run()`, and Ratatui has no suspend support, so a Unix suspend path is shown.
+  - Crossterm already drops color under `NO_COLOR`, the Tokio loop redraws only after a change, and the sixth template is `hello-world`.
+- **Python and TypeScript ([#69](https://github.com/gfargo/tui-design-skill/issues/69)):**
+  - Textual binds Ctrl+C to a help toast and Ctrl+Q to quit; the rebinding is `Binding("ctrl+c", "quit", priority=True)`.
+  - `call_from_thread` exists only on `App`, so widgets use `self.app.call_from_thread`.
+  - Textual captures `print()` and the real hazards are `sys.__stdout__`, fd 1, and child processes.
+  - `set_reactive` is a method, and the snapshot-suite pin is `pytest>=8.4,<9`.
+  - Clack and Inquirer exit 130 on cancel, with Inquirer's `ExitPromptError` caught.
+  - Prompt libraries and Ink write to stdout by default, so the redirect to stderr is shown.
+  - Ink rewrites the whole output unless `incrementalRendering` is set.
+  - OpenTUI 0.7 broke custom renderables and removed the hit grid.
+  - `<Newline>` goes inside `<Text>`, borders accept a `BoxStyle` object, `useAnimation` resets rather than pauses, Node dates are gone, and cac needs 7.0.1 or later.
+- **CLI and exemplars ([#70](https://github.com/gfargo/tui-design-skill/issues/70)):**
+  - A Go program exits on SIGPIPE by default, and `gh` compiles its update checker in only under the `updateable` tag.
+  - `gh auth login` has no `--no-browser`, and `GH_PROMPT_DISABLED` is the prompt-off convention.
+  - `gh` groups commands, not flags; examples lead the help text; yargs and picocli do not generate every shell's completions.
+  - starship installs a `preexec` hook, `.NET` has not adopted `DO_NOT_TRACK`, the config order is cited from clig.dev, and POSIX.1-2024 is current.
+  - create-astro uses `@astrojs/cli-kit`, atuin is inline with an `inline_height` cap, and the ranger heading lists Python, Go, C, and Rust.
+  - One error-format rule: a plain `error:` or `warning:` prefix and no log-level labels. The fix command comes last, `sysexits` is adopted whole or not at all, and cancelling a prompt exits 130.
+- **Visual and interaction patterns ([#71](https://github.com/gfargo/tui-design-skill/issues/71)):**
+  - Recommended glyphs are narrow (`▸ ▾ ▴ ⋅ ◉ ◦ ∙`). East Asian Ambiguous glyphs (block elements, box drawing, `▶ ▼ ▲ ○ …`) carry a stated risk and an ASCII fallback, including `[#####     ]` for progress bars.
+  - Contradictions resolved to one rule each:
+    - Focus must survive `NO_COLOR`: border weight, then reverse video, then a title marker, with color as reinforcement.
+    - Status messages lead with a symbol, and errors stay until dismissed.
+    - A state gets at most one color cue plus one non-color cue.
+    - Multi-select uses Space, or Tab in type-to-filter pickers.
+    - The Ctrl+P caveat is stated once.
+    - Breakpoints are 120+, 80–119, 60–79, and below minimum.
+    - The cursor is hidden only while painting and re-shown on the focused field.
+  - tmux 3.6 added mode-2031 theme reports, and DECRQSS can query the cursor shape.
+  - Mode 1000 already reports releases, and the kitty keyboard list now includes iTerm2, xterm.js, Rio, and Warp.
+  - no-color.org dates from 2017, and the unsupported statistics are removed.
+
+### Release engineering
+- **Sample checks:** six new `check=` samples cover Lipgloss block size, the Bubbles v2 API, list-filter key routing, Ratatui extra-mode teardown, Ratatui suspend, and the Textual Ctrl+C rebinding. The Rust `rust/run` sample is replaced by the canonical `ratatui::run()` example. The Rust harness adds `signal-hook`.
+- `scripts/reference-inventory.json` gains 24 entries: Lipgloss v2.0.6 block sizing, OpenTUI 0.7.0, cac 7.0.1, and source links for the new claims. Two links now point at immutable refs.
+
+### Evaluation
+- `evals/v182-correction-evals.json` covers the corrected facts with 39 rubric cases, including Lipgloss sizing, Bubbles v2, filter keys, Ratatui teardown, Textual Ctrl+C, `call_from_thread`, prompt-cancel exit codes, Go SIGPIPE, the error-format rule, ambiguous-width glyphs, and focus under `NO_COLOR`. It is rubric-only: no run is recorded.
+
 ## [1.8.1] — 2026-10-13
 
 Evidence release for the 1.8 line. It records baseline and with-skill runs on Claude Code and Codex, measures implicit triggering on both hosts, freezes eval-schema growth, and fixes one guidance gap the runs exposed.

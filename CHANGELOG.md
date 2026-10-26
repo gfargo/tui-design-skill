@@ -4,6 +4,8 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+## [1.8.2] — 2026-10-26
+
 Correctness patch for the 1.8 line from the October 2026 reference audit (#68–#71): wrong or missing facts in the ecosystem, CLI, and pattern references, and guidance that contradicted itself.
 
 ### Fixed
@@ -408,7 +410,8 @@ Freshness and accuracy pass on the ecosystem references. No structural changes; 
 
 Initial release. Universal TUI/CLI design principles in `SKILL.md` routing to eight reference files covering the Go, Rust, Python, and TypeScript ecosystems plus CLI basics, visual patterns, interaction patterns, and exemplar apps.
 
-[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.8.2...HEAD
+[1.8.2]: https://github.com/gfargo/tui-design-skill/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/gfargo/tui-design-skill/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/gfargo/tui-design-skill/compare/v1.7.4...v1.8.0
 [1.7.4]: https://github.com/gfargo/tui-design-skill/compare/v1.7.3...v1.7.4

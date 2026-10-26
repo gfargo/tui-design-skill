@@ -80,6 +80,16 @@ Textual's driver restores application mode from `App.run()` / `run_async()` clea
 
 These are two different APIs: [`App.suspend()`](https://textual.textualize.io/guide/app/#suspend-context-manager) temporarily lends the terminal to code inside a context manager, while `suspend_process` performs Unix job control. Neither is a final-exit substitute.
 
+**Ctrl+C is not quit in Textual.** `ctrl+q` is bound to `quit`; `ctrl+c` is bound to `help_quit`, which only shows a toast naming the key that quits, and `Input` and `TextArea` use it to copy ([`app.py`](https://github.com/Textualize/textual/blob/v8.2.8/src/textual/app.py), `BINDINGS` and `action_help_quit`). To keep the "Ctrl+C cancels or quits" contract, rebind it with a priority binding so it fires even while a text field has focus, at the cost of copy there:
+
+```python check=python/ctrl-c-quit
+from textual.app import App
+from textual.binding import Binding
+
+class QuitOnCtrlC(App):
+    BINDINGS = [Binding("ctrl+c", "quit", "Quit", show=False, priority=True)]
+```
+
 **Inline mode:** `app.run(inline=True)` (since 0.55) renders below the prompt instead of on the alternate screen. Set its height with CSS on `Screen`, as in `Screen { &:inline { height: 50vh; } }`. Inline mode is not supported on Windows.
 
 ## Widgets
@@ -218,10 +228,10 @@ async def fetch_data(self, url: str) -> None:
 @work(thread=True)
 def compute_heavy(self) -> None:
     result = expensive_sync_thing()
-    self.call_from_thread(self.update_result, result)
+    self.app.call_from_thread(self.update_result, result)
 ```
 
-`call_from_thread(fn, *args)` is required when modifying UI from a thread (vs an asyncio task). `set_interval(secs, callable)` schedules periodic UI updates without blocking.
+`call_from_thread(fn, *args)` is required when modifying UI from a thread (vs an asyncio task). It exists only on `App`, so a Screen or Widget worker calls `self.app.call_from_thread(...)`; `self.call_from_thread` there raises `AttributeError`. `post_message` is also thread-safe. `set_interval(secs, callable)` schedules periodic UI updates without blocking.
 
 ## Modal screens
 
@@ -284,7 +294,7 @@ Snapshots stored under `__snapshots__/`. Failures generate an HTML diff page. Th
 Gotchas worth knowing:
 
 - **Async tests need `pytest-asyncio`.** Its default strict mode fails an unmarked `async def` test ("async def functions are not natively supported"). Set `asyncio_mode = "auto"` under `[tool.pytest.ini_options]`, as Textual's own suite does, or mark each test `@pytest.mark.asyncio`.
-- **Pin `pytest<9` for snapshot suites.** pytest-textual-snapshot's last release, 1.1.0 (January 2025), pins `syrupy==4.8.0`, which requires `pytest<9`. On pytest 9, pip silently picks 1.0.0, which writes `.raw` snapshots instead of `.svg`. The fix PR has been open since November 2025.
+- **Pin `pytest>=8.4,<9` for snapshot suites.** pytest-textual-snapshot's last release, 1.1.0 (January 2025), pins `syrupy==4.8.0`, which requires `pytest<9`; pytest-asyncio 1.4 needs pytest 8.4 or later. On pytest 9, pip silently picks 1.0.0, which writes `.raw` snapshots instead of `.svg`. The fix PR has been open since November 2025.
 - **`run_test()` runs headless at `size=(80, 24)` and disables notifications and tooltips by default.** A test asserting on a `notify()` toast will silently see nothing — pass `notifications=True` (and `tooltips=True` if relevant) to `run_test`.
 - **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
 - **Form validation is testable end-to-end**: give `Input` `validators=[...]` and `validate_on`, drive it with the pilot, then assert on the recorded `Input.Submitted`/`Changed` message's `event.validation_result` (`is_valid`, `failure_descriptions`) — or on `input.is_valid` / the auto-applied `-invalid`/`-valid` CSS classes.
@@ -293,7 +303,7 @@ Gotchas worth knowing:
 
 The `textual` CLI lives in the separate **`textual-dev`** package — `pip install textual-dev`; installing `textual` alone gives you no `textual` command.
 
-Never `print()` inside a running Textual app — raw mode + the live display corrupt on any direct stdout write. Instead:
+Textual redirects `sys.stdout` and `sys.stderr` while the app runs, so `print()` is captured and sent to `textual console` instead of the screen. What corrupts the display is a write that bypasses the redirect: `sys.__stdout__`, file descriptor 1 (C extensions, `os.write(1, ...)`), and child processes that inherit the terminal. To see output:
 
 - **`textual console`** — a separate process that receives logs and `print()`/`self.log(...)` output. Run it in another terminal, then `textual run --dev myapp.py` in the app's terminal.
 - **`textual run --dev`** — hot-reloads TCSS on save and routes logs to `textual console`.
@@ -321,12 +331,12 @@ Never `print()` inside a running Textual app — raw mode + the live display cor
 
 ## Pitfalls
 
-1. **Reactives in `__init__` fire watchers before mount** → `NoMatches` errors when watchers try to query DOM. Init in `on_mount` or use `set_reactive(MyClass.attr, value)` to bypass watchers.
+1. **Reactives in `__init__` fire watchers before mount** → `NoMatches` errors when watchers try to query DOM. Init in `on_mount` or use the `self.set_reactive(MyClass.attr, value)` method to bypass validators and watchers.
 2. **`compose()` runs once.** To rebuild children, use `reactive(..., recompose=True)` or `await self.remove_children()` + `await self.mount(...)`.
-3. **Don't `print()` inside Textual.** Corrupts the screen. Use `self.log(...)` and `textual console` to view.
+3. **Don't bypass Textual's stdout capture.** `print()` is safe (it goes to `textual console`), but `sys.__stdout__`, fd 1 and inherited child-process output corrupt the screen. Run children inside `self.suspend()`; use `self.log(...)` for diagnostics.
 4. **TCSS type selectors match subclasses** (unlike web CSS). `Button { ... }` matches your custom `MyButton(Button)`. Use class selectors (`.my-button`) when you want exact targeting.
 5. **Inside Textual, use `ProgressBar` widget**, not Rich's `Live`/`Progress` — they fight each other for the screen.
-6. **For periodic updates from sync code**, use `self.call_from_thread`, not direct attribute assignment.
+6. **For periodic updates from sync code**, use `self.app.call_from_thread`, not direct attribute assignment.
 7. **`can_focus = True`** on custom widgets that should receive key events. Without this, key events bypass them.
 8. **`DataTable.add_rows()` is not a bulk-insert optimization.** It is a plain loop over `add_row()`, paying the same per-row cost, so switching to it won't speed up a slow bulk insert.
 
@@ -346,7 +356,7 @@ console = Console()
 err = Console(stderr=True)  # diagnostics and progress stay off stdout
 
 # Markup syntax (like BBCode)
-err.print("[bold red]Error:[/] file not found")
+err.print("[bold red]error:[/] file not found")
 
 # Tables
 table = Table(title="Users")

@@ -1,38 +1,36 @@
 # Exemplar apps — what makes specific TUIs great
 
-Concrete case studies. When the user asks "how should I lay out my dashboard" or "how do I handle drilling into resources" or "what makes lazygit feel so good," point at one of these. Each entry covers: layout pattern, what it does well, specific features worth copying, lessons for builders.
+Concrete case studies for design questions ("how should I lay out my dashboard?", "what makes lazygit feel so good?"). Each entry has four parts: **Layout** (the shape), **Copy this** (specific features worth stealing), **Lesson** (what transfers), and **Cite when** (the question that should send you here). Point at the app so the user can study its source. The abstract rules live in `visual-patterns.md`, `interaction-patterns.md`, and `cli-basics.md`; this file is the case-study companion and owns only app-specific facts.
 
-For abstract principles, see `visual-patterns.md` and `interaction-patterns.md`. This file is the case-study companion.
-
-## How to use this file
-
-When the user asks about a design choice and you're unsure of the answer, find the analogous case here:
-
-- "How should I lay out a dashboard?" → btop, bottom, htop.
-- "How should drilling-down work?" → k9s, lazydocker.
-- "How should I make searching fast?" → fzf, atuin.
-- "How do I handle a million-row table?" → Harlequin, Toolong.
-- "How should help/discovery work?" → htop's F-keys, helix's which-key, lazygit's footer.
-- "How do I keep my AI chat smooth at high token rates?" → Claude Code and Copilot CLI (alternate screen, virtualized transcript) versus Gemini CLI (inline, Ink `<Static>` history).
-- "What's the spec for my undo system?" → lazygit's git-action stack.
-- "How should mouse work in my TUI?" → btop (clickable keys and boxes), helix (keyboard-first; mouse on by default but never required), lazygit (augmentation).
-- "How fast does my prompt picker need to be?" → fzf (<100ms), starship (per-module time budgets).
-- "What does a polished setup wizard look like?" → @clack/prompts (create-vite; create-astro has the same look via its own `@astrojs/cli-kit`) — see `ecosystem-typescript.md`.
-- "How do I theme well?" → btop, bottom, helix, Posting (community palette support).
-
-Concrete examples beat abstract principles for design questions. When in doubt, point at the app and the user can study its source.
-
-**Entries, grouped:**
-- Git: [lazygit](#lazygit-go-gocui) · [gitui](#gitui-rust-ratatui)
-- Kubernetes / Docker: [k9s](#k9s-go-tview) · [lazydocker](#lazydocker-go-gocui)
-- Monitors: [btop / btop++](#btop--btop-c) · [bottom / btm](#bottom--btm-rust-ratatui) · [htop](#htop-c-ncurses)
+**Contents:**
+- Git and Docker: [lazygit (with gitui and lazydocker)](#lazygit-go-gocui)
+- Kubernetes: [k9s](#k9s-go-tview)
+- Monitors: [btop (with bottom)](#btop-c-with-bottom) · [htop](#htop-c-ncurses)
 - Pickers and search: [fzf](#fzf-go) · [atuin](#atuin-rust-ratatui)
-- Editors: [helix](#helix-rust-custom-renderer) · [neovim](#neovim-c--lua)
-- File managers: [yazi](#yazi-rust-ratatui) · [ranger / lf / nnn / broot](#ranger--lf--nnn--broot-python-go-c-rust)
-- IDE-style apps: [Posting](#posting-python-textual) · [Harlequin](#harlequin-python-textual)
-- Viewers: [Toolong](#toolong-python-textual) · [Glow](#glow-go-bubble-tea)
+- Editors: [helix](#helix-rust-custom-renderer)
+- File managers: [yazi (with ranger, lf, nnn, broot)](#yazi-rust-ratatui)
+- IDE-style apps and viewers: [Posting](#posting-python-textual) · [Harlequin and Toolong](#harlequin-and-toolong-python-textual)
 - Chat-style AI tools: [Claude Code / Copilot CLI / Gemini CLI](#claude-code-github-copilot-cli-gemini-cli-typescript)
-- CLI output discipline: [starship](#starship-rust-no-ui-framework) · [yt-dlp / aria2](#yt-dlp--aria2-cli-but-excellent-terminal-output)
+- Output discipline: [starship](#starship-rust-no-ui-framework)
+
+## App → lesson → when to cite
+
+| App | Lesson | Cite when |
+|---|---|---|
+| lazygit | Persistent multi-panel, context-sensitive letters, scoped git undo | Multi-pane layouts, an undo spec, a "lazy*" tool for another domain, mouse as augmentation |
+| k9s | Drill-down stack, resource-aware actions, instant filter | Drilling into resources, live-updating lists |
+| btop | Independent widgets, truecolor with degradation, theme files, mouse as augmentation | Dashboard layout, theming, mouse support |
+| htop | Always-visible F-key strip | Help and discovery |
+| fzf | Speed is the feature; bounded inline picker | Search latency, picker design, summoning a picker from a TUI |
+| atuin | Replace a familiar built-in | Adoption strategy, inline picker height |
+| helix | Mode visible in the statusline; pickers instead of trees | Modal editing, which-key, mode cues |
+| yazi | Async everything; sibling file managers compete on startup | File managers, slow filesystems |
+| Posting | Empty states name the next action; jump mode | IDE-style three-panel apps, theming |
+| Harlequin, Toolong | Virtualize from day one | Million-row tables, multi-GB logs |
+| Claude Code, Copilot CLI, Gemini CLI | Inline append-only versus alt screen with a virtualized transcript | Chat UIs at high token rates |
+| starship | Startup time is a budget | Anything run on every prompt |
+
+Related pickers: `@clack/prompts` (create-vite; create-astro has the same look via its own `@astrojs/cli-kit`) is the polished setup-wizard reference; see `ecosystem-typescript.md`.
 
 ---
 
@@ -40,19 +38,20 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > Multi-pane git client. The aesthetic that defined "lazy*."
 
-**Layout:** persistent multi-panel — 5 panels on the left (Status, Files, Branches, Commits, Stash), 1 large panel on the right (Diff/details), command log strip at the bottom.
+**Layout:** persistent multi-panel: 5 left panels (Status, Files, Branches, Commits, Stash), one large right panel (diff/details), a command log strip at the bottom. Panels carry sub-tabs on `[`/`]` (Branches: Local / Remotes / Tags). Go, gocui (jesseduffield's fork, copied into the repo as `pkg/gocui` in April 2026) on tcell v3.
 
-**What it does well:**
-- **Per-pane sub-tabs.** The Branches panel has Local / Remotes / Tags as `[`/`]` tabs.
-- **Undo/redo for git operations** (`z` / `Z`), driven by the reflog — so it can walk back a rebase, but not working-tree or stash changes, pushes, or branch creation, and not while a rebase is in progress. This is unusually thoughtful for a TUI.
-- **Unobtrusive background-fetch status** (a small spinner) — present without commanding attention.
-- **Custom commands and aliases** in YAML config (`config.yml`).
-- A "command log" pane showing what git commands actually ran (transparency).
+**Copy this:**
+- **Undo/redo** (`z` / `Z`), driven by the reflog: it can walk back a rebase, but not working-tree or stash changes, pushes, or branch creation, and not while a rebase is in progress.
+- A **command log** showing the git commands that actually ran (transparency).
 - Confirmation popups for destructive actions (Enter confirms, Esc cancels).
+- A small spinner for background fetch: present without commanding attention.
+- Custom commands and aliases in YAML config (`config.yml`).
 
-**Pattern recipe:** the numeric-panel-jump + context-sensitive-letter interaction lazygit defined is dissected in `references/interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*.
+**Lesson:** the numeric-panel-jump + context-sensitive-letter interaction is dissected in `interaction-patterns.md` → *The lazygit pattern — multi-pane with numeric tabs*. Two siblings show how far the template travels:
+- **lazydocker** (Go, gocui): same paradigm, a sidebar (Project / Containers / Services / Images / Volumes / Networks) plus a main panel with `[`/`]` tabs (Logs / Stats / Env / Config / Top), live log streaming with an auto-scroll toggle, and resource graphs in Stats. For a "lazy*" tool in another domain (Kubernetes, AWS, your CI system), use persistent sidebar + tabbed main panel + per-context single letters + footer hint bar.
+- **gitui** (Rust, Ratatui, `git2` plus `gix`): fast on huge repos, with async git operations: work runs on a worker thread that posts progress events back (fetch, push, and pull progress render in-app) so the UI stays responsive. If your tool wraps git, the experience hinges on that.
 
-**Stack:** Go, gocui (jesseduffield's fork, copied into the lazygit repo as `pkg/gocui` in April 2026) on tcell v3, YAML config.
+**Cite when:** laying out a multi-pane app, specifying undo, building a lazy* tool for another domain, or wrapping git.
 
 ---
 
@@ -60,132 +59,38 @@ Concrete examples beat abstract principles for design questions. When in doubt, 
 
 > Kubernetes TUI. Drill-down stack + command mode.
 
-**Layout:** drill-down stack with command-mode navigation. Top status header (cluster, context, namespace), main resource list, footer hints. Drill into a resource → full-screen detail view → `Esc` back.
+**Layout:** drill-down stack with command-mode navigation: a top status header (cluster, context, namespace), the main resource list, footer hints. Drill into a resource for a full-screen detail view, `Esc` back. Go, derailed's forks of tview and tcell, K8s client-go.
 
-**What it does well:**
-- **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes. Different resources get different actions.
+**Copy this:**
+- **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes; different resources get different actions.
 - **Sortable columns** via Shift+letter (`shift-n` name, `shift-a` age, `shift-o` the selected column).
-- **Instant filter** (`/`) to narrow huge lists in real time — regex by default; `/-f` switches to fuzzy matching.
-- **Live updates** — pods change state; k9s reflects without refresh, via a debounced redraw (don't refresh on every event).
-- **Plugin system** for custom actions (`plugins.yaml`).
-- **Status-header** showing the current "address" of where you are.
+- **Instant filter** (`/`) narrows huge lists in real time: regex by default, `/-f` switches to fuzzy matching.
+- **Live updates** without manual refresh, via a debounced redraw (don't refresh on every event).
+- A status header showing the current "address" of where you are; a plugin system for custom actions (`plugins.yaml`).
 
-**Pattern recipe:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `references/interaction-patterns.md` → *The k9s pattern — command-driven*.
+**Lesson:** the ex-command mode (`:pods`, `:svc`, tab-completion, aliases) is dissected in `interaction-patterns.md` → *The k9s pattern — command-driven*.
 
-**Stack:** Go, derailed's forks of tview and tcell (`derailed/tview`, `derailed/tcell`), YAML config, K8s client-go.
+**Cite when:** designing drill-down into resources, live-updating lists, or a command-driven navigation layer.
 
 ---
 
-## btop / btop++ (C++)
+## btop (C++), with bottom
 
 > System monitor. The pinnacle of widget dashboard layouts.
 
-**Layout:** widget dashboard. CPU graph full-width on top; memory above network on the left; processes table on the right. Boxes can be toggled, swapped to alternate positions, and saved as presets — not drag-resized — all configurable in `btop.conf` (a TOML-like `key = value` file).
+**Layout:** widget dashboard. CPU graph full-width on top; memory above network on the left; processes table on the right. Boxes can be toggled, swapped to alternate positions, and saved as presets (not drag-resized), all configured in `btop.conf` (a TOML-like `key = value` file).
 
-**What it does well:**
-- **Truecolor gradient meters** that look genuinely beautiful.
-- **One tunable refresh rate** (`update_ms`, default 2000) that every box shares; each box keeps its own scroll, focus, and graph history.
-- **Mouse support** that doesn't get in your way: highlighted keys and boxes are clickable, lists scroll with the wheel, and there is no drag-resize to fight.
-- **Theme system** with dozens of community themes.
-- **Help modal (`h`, `?`, or F1)** that's actually informative, organized by widget.
+**Copy this:**
+- **Truecolor gradient meters**, defaulting to truecolor and degrading.
+- **One tunable refresh rate** (`update_ms`, default 2000) shared by every box; each box keeps its own scroll, focus, and graph history.
+- **Mouse that doesn't get in the way:** highlighted keys and boxes are clickable, lists scroll with the wheel, no drag-resize to fight.
+- **Themes** as one `.theme` file per theme (a simple `theme[key]="#hex"` format), with dozens of community themes.
+- A **help modal** (`h`, `?`, or F1) organized by widget.
+- **bottom / btm** (Rust, Ratatui; inspired by gtop, gotop, and htop rather than by btop): layout defined in TOML rows and column ratios, a tree process view as a single-key toggle (`t`), a battery widget, process search and filter, and per-widget focus for full keyboard access.
 
-**Specific features worth copying:**
-- Widget independence for focus, scroll, and layout (boxes can be shown, hidden, and rearranged individually).
-- Theme system as one `.theme` file per theme (a simple `theme[key]="#hex"` format).
-- The decision to default to truecolor and degrade — most users have it now.
+**Lesson:** every widget should be independent: its own scroll, focus, and data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive. If you ship a dashboard, ship a way to rearrange it, since default layouts are never right for everyone. cjbassi/gotop was archived in 2020; the maintained fork is xxxserxxx/gotop, so don't cite the original as a current peer.
 
-**Lessons:** in a dashboard, every widget should be independent — its own scroll, its own focus, its own data source. Share a refresh clock when the data sources are cheap and uniform (btop does); give a widget its own cadence only when its source is slow or expensive.
-
-**Stack:** C++ (btop). Related monitors: Rust's bottom (`btm`), inspired by gtop, gotop, and htop rather than by btop. cjbassi/gotop was archived in 2020 — the maintained fork is xxxserxxx/gotop; don't treat the original as a current peer.
-
----
-
-## fzf (Go)
-
-> The fuzzy finder. Pattern-defining.
-
-**Layout:** full-screen by default; `--height` opts into a bounded picker below the cursor. Either form does one thing and exits.
-
-**What it does well:**
-- **Preview pane** with `--preview` — shows file contents, command output, anything, without leaving the picker.
-- **Composable** — pipes to anywhere. `git branch | fzf | xargs git checkout` is the canonical pattern; even a full TUI can have a "summon fzf for picking" sub-flow.
-- Opens `/dev/tty` for its interactive UI while keeping the selected value on stdout. Use `--height` when shell context must remain visible; see `references/visual-patterns.md` → *Inline, alt-screen, or overlay*.
-
-**Pattern recipe:** the instant-fuzzy-filter interaction (sub-100ms updates, match count, smart-case, ranking) is dissected in `references/interaction-patterns.md` → *The fzf pattern in detail*.
-
-**Lessons:** speed is a feature. Users summon fzf hundreds of times a day; making it 50ms instead of 200ms transforms the experience.
-
-**Stack:** Go, no UI framework — its own renderer on Unix, tcell on Windows.
-
----
-
-## helix (Rust, custom renderer)
-
-> Modal editor. Selection-first, multi-cursor first.
-
-**Layout:** main editor area (with multiple split views) plus a bottom statusline and diagnostics; everything else arrives as a picker. Even its file explorer (`Space e`, released in 25.07) is a directory-browsing picker, not a persistent sidebar tree — helix's identity is pickers instead of trees.
-
-**What it does well:**
-- **Tree-sitter** for syntax-aware text objects.
-- **Space-based which-key.** Press `Space`, see a menu of `f` (file picker), `b` (buffer picker), `s` (symbols), etc.
-- **`:` command mode** with completion.
-- **Built-in LSP** (no plugins needed for most languages).
-- Single-binary distribution with sensible defaults — works out of the box.
-
-**Pattern recipe:** selection-first editing and multi-cursor-as-primary are dissected in `references/interaction-patterns.md` → *The helix pattern — selection-first modal editing*.
-
-**Lessons:** modes don't have to be confusing. helix shows the mode in the statusline (`NOR`/`INS`/`SEL`) plus which-key for leaders; by default the cursor is a block in every mode and `color-modes` is off, so per-mode cursor shapes and colors are opt-in config (`[editor.cursor-shape]`, `color-modes = true`) — worth enabling, and worth shipping on by default in your own modal app.
-
-**Stack:** Rust, custom rendering (Ratatui-adjacent).
-
----
-
-## yazi (Rust, Ratatui)
-
-> File manager with image preview. Miller columns.
-
-**Layout:** miller columns — parent / current / preview, configurable widths (default `[1, 4, 3]`).
-
-**What it does well:**
-- **Async I/O everywhere.** Even directory listing is non-blocking. The UI never stalls.
-- **Built-in image preview** via Sixel / kitty / iTerm2 (auto-detected).
-- **Vim-style keybindings**, with `;` / `:` to run a shell command (`:` blocks until it finishes).
-- **Plugins in Lua** — extends without recompile.
-- **Tasks pane** for ongoing work (copies, transcodes).
-
-**Specific features worth copying:**
-- Async-everything — no operation should block the UI.
-- The decision to support all three image protocols.
-- Lua plugins for extension — extension without forking.
-
-**Lessons:** in a file manager, *every* I/O can be slow on the wrong filesystem (network mounts, encrypted drives, dead USB). Async-first isn't optional; it's the foundation.
-
-**Stack:** Rust, Ratatui, Crossterm, async via Tokio.
-
----
-
-## atuin (Rust, Ratatui)
-
-> Shell history with sync. Replaces Ctrl+R.
-
-**Layout:** inline, capped at `inline_height` (default 40 lines; `0` = full screen) — the same bounded model as fzf `--height`, not an overlay. It replaces the default shell reverse-search with a richer fzf-style picker.
-
-**What it does well:**
-- **Replaces a built-in** (Ctrl+R) seamlessly. Users don't have to change muscle memory; they get a better version of what they already use.
-- **Fuzzy filter with metadata** — when you ran the command, exit code, working directory, hostname.
-- **Optional encrypted sync** to share history across machines.
-- **Both CLI and TUI** from the same core. CLI for scripts (`atuin search`), TUI for interactive use.
-
-**Specific features worth copying:**
-- The "replace a familiar built-in" strategy. Far easier adoption than a new tool to learn.
-- Showing metadata on every result (when, where, exit code) without cluttering.
-- Dual CLI + TUI — the CLI handles scripts, the TUI handles exploration.
-
-**Lessons:** the highest-leverage tools replace existing workflows rather than adding new ones. Users will switch to a slightly better Ctrl+R; they won't switch to a wholly new mental model.
-
-Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintained alongside it.
-
-**Stack:** Rust, Ratatui, optional self-hosted sync server.
+**Cite when:** laying out a dashboard, theming, or deciding how mouse should work (btop clickable keys and boxes; helix keyboard-first; lazygit augmentation).
 
 ---
 
@@ -193,46 +98,87 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 > Process viewer. Old-school, still excellent.
 
-**Layout:** persistent dense — header (CPU/mem/swap meters), process list (sortable), F-key strip at the bottom.
+**Layout:** persistent dense: header (CPU/mem/swap meters), sortable process list, F-key strip at the bottom.
 
-**What it does well:**
-- **F-key strip** — `F1`–`F10` always visible at the bottom, telling you exactly what's available. The single most useful discoverability pattern.
-- **Tree mode** (`F5`) — collapsible process tree.
-- **Filter** (`F4`) and **search** (`F3`).
-- **Color meters** in the header.
-- **Mouse support** for clicking column headers to sort.
+**Copy this:**
+- **F-key strip:** `F1`–`F10` always visible at the bottom. If you have 10 actions, show them rather than making users press `?` to discover them.
+- Tree mode (`F5`), filter (`F4`), search (`F3`); nice/renice on `F7`/`F8` keep less-common but valuable actions one key away.
+- Sortable column headers (click or key); color meters in the header.
 
-**Specific features worth copying:**
-- The F-key strip. If you have 10 actions, just show them at the bottom — don't make users press `?` to discover them.
-- Sortable column headers (click or key).
-- Nice/renice via `F7`/`F8` — fast access to less-common but valuable actions.
+**Lesson:** persistent footer hints + sortable tables + mouse augmentation + keyboard primary is a recipe that just works.
 
-**Lessons:** there's a reason htop has been the standard for 20 years. Persistent footer hints + sortable tables + mouse augmentation + keyboard primary = a recipe that just works. Sometimes the best design is the obvious one done well.
-
-**Stack:** C, ncurses.
+**Cite when:** designing help and discovery (footer rules are in `visual-patterns.md` → *Footer hint bar*).
 
 ---
 
-## bottom / btm (Rust, Ratatui)
+## fzf (Go)
 
-> System monitor in Rust, inspired by gtop, gotop, and htop.
+> The fuzzy finder. Pattern-defining.
 
-**Layout:** widget dashboard, configurable.
+**Layout:** full-screen by default; `--height` opts into a bounded picker below the cursor. Either form does one thing and exits. Go, no UI framework: its own renderer on Unix, tcell on Windows.
 
-**What it does well:**
-- **Tree process view** (`t`).
-- **Battery widget** (laptops!).
-- **Search and filter** in the process list.
-- **Configurable layouts** via TOML — define rows and column ratios.
-- **Per-widget basis** — focus a widget for full keyboard access.
+**Copy this:**
+- **Preview pane** (`--preview`): file contents or command output without leaving the picker.
+- **Composable:** `git branch | fzf | xargs git checkout` is the canonical pattern; even a full TUI can have a "summon fzf for picking" sub-flow.
+- Opens `/dev/tty` for its interactive UI while keeping the selected value on stdout. Use `--height` when shell context must remain visible; see `visual-patterns.md` → *Inline, alt-screen, or overlay*.
 
-**Specific features worth copying:**
-- TOML layout config. Users will want to customize.
-- Tree view as a single-key toggle.
+**Lesson:** speed is a feature. Users summon fzf hundreds of times a day; 50ms instead of 200ms transforms the experience. The instant-fuzzy-filter interaction (sub-100ms updates, match count, smart-case, ranking) is dissected in `interaction-patterns.md` → *The fzf pattern in detail*.
 
-**Lessons:** if you ship a dashboard, ship a way to rearrange it. Default layouts are never quite right for everyone.
+**Cite when:** designing search latency or a picker.
 
-**Stack:** Rust, Ratatui, Crossterm.
+---
+
+## atuin (Rust, Ratatui)
+
+> Shell history with sync. Replaces Ctrl+R.
+
+**Layout:** inline, capped at `inline_height` (default 40 lines; `0` = full screen): the same bounded model as fzf `--height`, not an overlay. It replaces the default shell reverse-search with a richer fzf-style picker.
+
+**Copy this:**
+- **Replace a familiar built-in** (Ctrl+R) so users keep their muscle memory and get a better version of what they already use.
+- **Metadata on every result** (when you ran it, exit code, working directory, hostname) without clutter, plus optional encrypted sync across machines.
+- **CLI and TUI from the same core:** the CLI for scripts (`atuin search`), the TUI for interactive use.
+
+**Lesson:** the highest-leverage tools replace existing workflows rather than adding new ones; users will switch to a slightly better Ctrl+R, not to a wholly new mental model.
+
+**Cite when:** choosing an adoption strategy or the height of an inline picker.
+
+---
+
+## helix (Rust, custom renderer)
+
+> Modal editor. Selection-first, multi-cursor first.
+
+**Layout:** main editor area (with multiple split views) plus a bottom statusline and diagnostics; everything else arrives as a picker. Even its file explorer (`Space e`, released in 25.07) is a directory-browsing picker, not a persistent sidebar tree: helix's identity is pickers instead of trees.
+
+**Copy this:**
+- **Space-based which-key:** press `Space`, see a menu of `f` (file picker), `b` (buffer picker), `s` (symbols), etc.
+- A `:` command mode with completion; tree-sitter for syntax-aware text objects; built-in LSP, so most languages need no plugins.
+- **Mouse:** on by default but never required (keyboard-first).
+
+**Lesson:** modes don't have to be confusing. helix shows the mode in the statusline (`NOR`/`INS`/`SEL`) plus which-key for leaders. By default the cursor is a block in every mode and `color-modes` is off, so per-mode cursor shapes and colors are opt-in config (`[editor.cursor-shape]`, `color-modes = true`): worth enabling, and worth shipping on by default in your own modal app. Selection-first editing and multi-cursor-as-primary are dissected in `interaction-patterns.md` → *The helix pattern — selection-first modal editing*.
+
+**Cite when:** designing a modal app, which-key discovery, or mode cues.
+
+---
+
+## yazi (Rust, Ratatui)
+
+> File manager with image preview. Miller columns.
+
+**Layout:** miller columns (parent / current / preview), configurable widths (default `[1, 4, 3]`). Layout details are in `visual-patterns.md`.
+
+**Copy this:**
+- **Async I/O everywhere**, even directory listing; the UI never stalls. A tasks pane shows ongoing work (copies, transcodes).
+- **Built-in image preview** via Sixel / kitty / iTerm2 (auto-detected), supporting all three protocols.
+- **Vim-style keybindings**, with `;` / `:` to run a shell command (`:` blocks until it finishes).
+- **Lua plugins**: extension without recompiling or forking.
+
+**Lesson:** every I/O can be slow on the wrong filesystem (network mounts, encrypted drives, dead USB), so async-first is the foundation, not an option.
+
+**Siblings:** ranger (Python, mature, many features, slower startup), lf (Go, very fast, minimal), nnn (C, fastest and most minimal), broot (Rust, tree mode + fuzzy filter at once). All share vim-style `hjkl`, bookmarks, and shell composability (`ranger --choosefile=/tmp/path`); the cd-on-exit wrapper is in `cli-basics.md`. For browsing tools, startup time is a real axis to compete on.
+
+**Cite when:** designing a file manager or anything that touches slow filesystems.
 
 ---
 
@@ -240,164 +186,34 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 > HTTP client. Postman-alternative for the terminal.
 
-**Layout:** IDE three-panel — collection tree (left), request editor (main), response (bottom or right).
+**Layout:** IDE three-panel: collection tree (left), request editor (main), response (bottom or right).
 
-**What it does well:**
-- **Empty states explain next action** — an empty collection says "Collection is empty. Press ctrl+s to save the current request."
-- **Multiple themes** (Catppuccin, Gruvbox, Tokyo Night, Solarized, custom).
-- **Vim keys** plus a "jump mode" for reaching any widget in two keystrokes.
-- **Import and export** of curl commands, Postman collections, and OpenAPI specs.
-- **Variable substitution** (`{{token}}`) with environment switching.
-- **Keyboard-first** — every action keyboard-reachable; mouse is augmentation.
+**Copy this:**
+- **Empty states that name the next action:** an empty collection says "Collection is empty. Press ctrl+s to save the current request." (the pattern is in `visual-patterns.md` → *Empty states and loading states*).
+- **Jump mode:** label every focusable widget with a letter so a keyboard user never tabs through a form; plus vim keys.
+- **Runtime theme switching** (Catppuccin, Gruvbox, Tokyo Night, Solarized, custom).
+- Import/export of curl commands, Postman collections, and OpenAPI specs; `{{token}}` variable substitution with environment switching.
 
-**Specific features worth copying:**
-- The empty-state pattern (`X is empty. Press <key> to <action>.`) — never just say "No data."
-- Theme switching at runtime.
-- Jump mode: label every focusable widget with a letter so a keyboard user never tabs through a form.
+**Lesson:** Postman-style apps don't have to be GUIs; a keyboard-first TUI can be faster and offline-friendly. This is the released Posting 2.x line (Python, Textual, `httpx`); `main` now holds Posting 3, a Go rewrite, so cite Posting 2 when you need a Textual example.
 
-**Lessons:** Postman-style apps don't have to be GUIs. A well-designed TUI can replace bulky Electron apps and be faster, more keyboard-friendly, and offline-friendly.
-
-**Stack:** Python, Textual, with `httpx` for HTTP. That is the released Posting 2.x line; `main` now holds Posting 3, a Go rewrite, so cite Posting 2 when you need a Textual example.
+**Cite when:** designing an IDE-style three-panel app, empty states, jump navigation, or runtime theming.
 
 ---
 
-## Harlequin (Python, Textual)
+## Harlequin and Toolong (Python, Textual)
 
-> SQL IDE. Database client + editor.
+> Harlequin: SQL IDE. Toolong: log viewer for multi-GB files.
 
-**Layout:** IDE three-panel — schema/catalog (left), SQL editor (top-right), results table (bottom-right).
+**Layout:** Harlequin is an IDE three-panel: schema/catalog (left), SQL editor (top-right), results table (bottom-right). Toolong is a single panel (the log) with an optional filter sidebar.
 
-**What it does well:**
-- **Multi-adapter** — DuckDB, SQLite, Postgres, MySQL/MariaDB, and ODBC from the maintainers, plus community adapters for many more databases, all from the same UI.
-- **Tree-sitter SQL** highlighting in the editor.
-- **Fast result virtualization** for million-row queries.
-- **Query history** (`F8`) as a searchable screen.
+**Copy this:**
+- **Result virtualization** for million-row queries (Harlequin, with `textual-fastdatatable`) and for multi-GB files that are never loaded whole (Toolong).
+- Toolong: real-time tailing (`-f`-style follow), a regex filter that stays fast on huge files, merging multiple logs by timestamp, highlighting for common formats (JSON, syslog, NGINX).
+- Harlequin: a clean adapter abstraction (DuckDB, SQLite, Postgres, MySQL/MariaDB, and ODBC from the maintainers, plus community adapters), tree-sitter SQL highlighting, and searchable query history (`F8`).
 
-**Specific features worth copying:**
-- The plugin/adapter pattern (clean abstraction → swap database backend).
-- Result virtualization for huge tables.
+**Lesson:** with potentially huge data, "render the first 1000" fails in production; virtualize from day one, the difference between a 10MB sample and 50GB rotated logs. Toolong has had no release since April 2024: study it for the design, not as a maintained dependency.
 
-**Lessons:** when your TUI is a productivity tool, take performance seriously. Million-row results require real virtualization, not "render the first 1000."
-
-**Stack:** Python, Textual, with `textual-fastdatatable` for performance.
-
----
-
-## ranger / lf / nnn / broot (Python, Go, C, Rust)
-
-> File managers. The miller-columns lineage.
-
-**Layout:** miller columns (parent / current / preview).
-
-**What they do well:**
-- **Vim-style navigation** (`hjkl`).
-- **Bookmarks** (`m{a-z}`, `'{a-z}`).
-- **Image preview** in the right column (terminal-graphics or ASCII).
-- **Composable with shell** — `ranger --choosefile=/tmp/path` for "use ranger to pick a file in scripts."
-- **Each handles a different niche:**
-  - **ranger** — Python, mature, lots of features, slower startup.
-  - **lf** — Go, very fast, minimal.
-  - **nnn** — C, the fastest, most minimal.
-  - **broot** — Rust, tree-mode + fuzzy filter at the same time.
-
-**Lessons:** for browsing tools, startup time matters as much as a fancy UI. nnn opens in single-digit ms; ranger takes a noticeable beat. Both have devoted users; performance is a real axis to compete on.
-
----
-
-## gitui (Rust, Ratatui)
-
-> Git TUI in Rust.
-
-**Layout:** persistent multi-panel, similar to lazygit but Rust-based.
-
-**What it does well:**
-- **Fast, even on huge repos.** Async git operations.
-- **Diff viewer** with syntax highlighting.
-- **Async fetch with no UI block.**
-- **Push/pull progress** rendered in-app.
-
-**Specific features worth copying:**
-- The pattern of running git operations on a worker thread and posting progress events back.
-- Showing diff with proper syntax highlighting (Tree-sitter or syntect).
-
-**Lessons:** git operations on huge repos can be slow. If your tool wraps git, the user experience hinges on whether you keep the UI responsive. Threading-pool with progress events is the pattern.
-
-**Stack:** Rust, Ratatui, `git2` plus `gix` (gitoxide).
-
----
-
-## lazydocker (Go, gocui)
-
-> Docker TUI. Same paradigm as lazygit.
-
-**Layout:** persistent multi-panel — sidebar with Project / Containers / Services / Images / Volumes / Networks, main panel showing details (Logs / Stats / Env / Config / Top tabs).
-
-**What it does well:**
-- **Tabbed-within-panel** in the main panel — `[`/`]` cycle Logs/Stats/Env/Config/Top.
-- **Live log streaming** with auto-scroll toggle.
-- **Resource graphs** (CPU / memory / network) in the Stats tab.
-- **Custom commands** in YAML config.
-
-**Lessons:** if you're building a "lazy*" tool for some other domain (kubernetes, AWS, your CI system), this template works. Persistent sidebar + main panel with tabs + per-context single letters + footer hint bar.
-
-**Stack:** Go, gocui (jesseduffield's fork).
-
----
-
-## neovim (C + Lua)
-
-> Editor. The most-customized TUI in existence.
-
-**Why study:** the *plugin* and *config* ecosystem teaches lessons about extensibility. Every successful neovim plugin (telescope.nvim, which-key.nvim, lualine.nvim, nvim-tree.lua, lazy.nvim) demonstrates a UI pattern worth knowing:
-
-- **telescope.nvim** — fuzzy picker for everything (files, buffers, LSP symbols, git refs). The "picker for X" pattern generalizes.
-- **which-key.nvim** — popup showing available leader-key follow-ups. Discoverability by default.
-- **lualine.nvim** — status line as a configurable component pipeline. Mode + git branch + diagnostics + filename + position.
-- **nvim-tree.lua** — file tree sidebar with vim navigation.
-- **lazy.nvim** — plugin manager with lazy-loading. Cold-start matters.
-
-**Lessons:** the design choices in vim — modal editing, leader keys, command mode, registers, marks, buffers, splits — have proven robust over decades. Even non-editor TUIs benefit from borrowing these mental models when they fit.
-
-**Stack:** C (core), Lua (config and plugins).
-
----
-
-## Toolong (Python, Textual)
-
-> Log viewer for multi-GB files.
-
-**Layout:** single panel (the log) with optional filter sidebar.
-
-**What it does well:**
-- **Virtualization for multi-GB files.** Doesn't load the whole file.
-- **Real-time tailing** with `-f`-style follow.
-- **Regex filter** that doesn't slow down on huge files.
-- **Merge multiple log files** by timestamp.
-- **Pretty syntax highlighting** for common log formats (JSON, syslog, NGINX).
-
-**Lessons:** when working with potentially-huge data, virtualization is the difference between "it works on my 10MB sample" and "it works in production on 50GB rotated logs." Plan for it from day one.
-
-**Stack:** Python, Textual. Toolong has had no release since April 2024; study it for the design, not as a maintained dependency.
-
----
-
-## Glow (Go, Bubble Tea)
-
-> Markdown reader for the terminal.
-
-**Layout:** single panel (the rendered Markdown) with optional file picker.
-
-**What it does well:**
-- **Beautiful Markdown rendering** via Glamour.
-- **Multiple themes** (light, dark, custom JSON).
-- **Local + remote files** (GitHub URLs work directly).
-- Scope discipline: Glow 2.0 removed the cloud stash feature rather than carry a dead backend.
-
-**Specific features worth copying:**
-- The decision to ship as both a CLI (`glow README.md` pipes to terminal) and a TUI (`glow` opens the picker).
-- Glamour's themes as JSON — define style once, apply everywhere.
-
-**Stack:** Go, Bubble Tea v2 (since Glow 3), Glamour.
+**Cite when:** designing a million-row table or a large-file viewer.
 
 ---
 
@@ -405,48 +221,26 @@ Atuin Desktop (a GUI runbook app) launched in 2025; the CLI/TUI remains maintain
 
 > AI coding assistants in the terminal.
 
-**Layout:** chat-like — transcript above, input pinned at the bottom.
+**Layout:** chat-like: transcript above, input pinned at the bottom. Two render models, both shipping:
+- **Inline, append-only:** Gemini CLI's default and Claude Code's classic renderer. Finalized turns go to native scrollback (Ink's `<Static>` or an equivalent), so the terminal's own scrollback, search, and copy work for free. The cost grows with the transcript: long streaming sessions can flicker, jump the scroll position, and grow memory.
+- **Alternate screen with a virtualized transcript:** Claude Code's fullscreen renderer (a research preview; the default for users who first ran Claude Code on or after May 6, 2026; `/tui` switches) and Copilot CLI (default since 1.0.8, no opt-out since 1.0.12). Only visible messages render, so memory stays flat and nothing flickers. The cost: the app must rebuild what the terminal gave for free (search, copy, exporting the transcript to scrollback) and keep an inline fallback. Claude Code forces its classic renderer in screen-reader mode.
 
-**Two render models, both shipping:**
-- **Inline, append-only** — Gemini CLI's default and Claude Code's classic renderer. Finalized turns go to native scrollback (Ink's `<Static>` or an equivalent), so the terminal's own scrollback, search, and copy work for free. The cost grows with the transcript: long streaming sessions can flicker, jump the scroll position, and grow memory.
-- **Alternate screen with a virtualized transcript** — Claude Code's fullscreen renderer (a research preview; the default for users who first ran Claude Code on or after May 6, 2026; `/tui` switches) and Copilot CLI (default since 1.0.8, no opt-out since 1.0.12). Only visible messages render, so memory stays flat and nothing flickers. The cost: the app must rebuild what the terminal gave for free — search, copy, exporting the transcript to scrollback — and keep an inline fallback. Claude Code forces its classic renderer in screen-reader mode.
+**Copy this:** status indicators (thinking, tool use, error) that don't overwhelm; inline diff rendering for code changes; `/`-prefixed slash commands; shell integration (paste files, run commands, read the working directory).
 
-**What they do well:**
-- **Status indicators** (thinking, tool-use, error states) without overwhelming.
-- **Inline diff rendering** for code changes.
-- **`/`-prefixed slash commands** for actions (clear, model switch, etc.).
-- **Shell integration** — paste files, run commands, read working directory.
+**Lesson:** a chat TUI is something users live in, so it faces the same choice as any app (`visual-patterns.md` → *Inline, alt-screen, or overlay*). Inline with `<Static>` for finalized turns is the simpler start. Move to the alternate screen with a virtualized transcript when sessions run long, and ship search, copy, scrollback export, and an inline or accessible fallback with it. Ink's README lists all three as users, and Gemini CLI renders with a fork of Ink (React, Yoga); the internals of Claude Code's and Copilot CLI's alternate-screen renderers aren't documented.
 
-**Lessons:** a chat TUI is something users live in, so it faces the same inline-versus-alt-screen choice as any other app (`visual-patterns.md` → *Inline, alt-screen, or overlay*). Inline with `<Static>` for finalized turns is the simpler start. Move to the alternate screen with a virtualized transcript when sessions run long, and ship search, copy, scrollback export, and an inline or accessible fallback with it.
-
-**Stack:** TypeScript. Ink's README lists all three as users, and Gemini CLI renders with a fork of Ink (React, Yoga); the internals of Claude Code's and Copilot CLI's alternate-screen renderers aren't documented.
+**Cite when:** a chat or agent UI must stay smooth at high token rates.
 
 ---
 
 ## starship (Rust, no UI framework)
 
-> Cross-shell prompt.
+> Cross-shell prompt: not a TUI, but a performance exemplar.
 
-**Why study:** not technically a TUI, but the **performance discipline** is exemplary. Starship runs on every prompt, so startup is a budget users feel.
+**Layout:** none; direct ANSI emission from a single binary, configured by one TOML file with a block per module (`[character]`, `[directory]`, `[git_branch]`).
 
-**What it does well:**
-- **Per-module time budgets instead of a single startup number** — `scan_timeout` (30ms) and `command_timeout` (500ms) bound every module; a module that overruns is dropped from that prompt with a warning instead of delaying it.
-- **Single TOML config** with semantic blocks (one per "module": `[character]`, `[directory]`, `[git_branch]`).
-- **Cross-shell** — bash, zsh, fish, pwsh, ion, nu — all from one binary.
+**Copy this:** per-module time budgets instead of a single startup number, so a module that overruns is dropped from that prompt with a warning instead of delaying it. The numbers (`scan_timeout`, `command_timeout`) are in `cli-basics.md` → *Startup time*.
 
-**Lessons:** for any tool that runs frequently (shell prompts, file pickers, fuzzy finders), startup time is a feature. Profile, optimize, never regress. Users feel 100ms even if they can't articulate it.
+**Lesson:** for any tool that runs frequently (shell prompts, pickers, fuzzy finders), startup time is a feature; users feel 100ms even if they can't articulate it.
 
-**Stack:** Rust, no UI framework — direct ANSI emission.
-
----
-
-## yt-dlp / aria2 (CLI, but excellent terminal output)
-
-> Downloaders.
-
-**Why study:** great example of progress UI in non-TUI tools. They show:
-- **Multi-stream progress** (parallel downloads, all visible).
-- **Adaptive output** — full progress bars on TTY, simple percentage on CI.
-- **Final summary** at the end (success / failed counts, total size).
-
-**Lessons:** even non-interactive CLIs benefit from thoughtful output design. Show progress, show summary, degrade for non-TTY.
+**Cite when:** setting a startup or per-module latency budget.

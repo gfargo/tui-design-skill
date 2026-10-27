@@ -181,6 +181,34 @@ for path in markdown_files:
             )
         paragraph_owners[normalized] = path
 
+# Section pointers (`file.md` → *Heading*) must name a real heading. The cited text is
+# the heading, or the part before its " — " or " (" subtitle, so a pointer survives a
+# changed subtitle. Matching is case-insensitive and ignores code ticks.
+def plain_heading(text):
+    return re.sub(r"[`*]", "", text).strip().lower()
+
+heading_forms = {}
+for path in markdown_files:
+    forms = set()
+    for line in path.read_text().splitlines():
+        match = re.match(r"#{1,6} (.+)", line)
+        if match:
+            heading = plain_heading(match.group(1))
+            forms.update({heading, heading.split(" — ")[0].strip(), heading.split(" (")[0].strip()})
+    heading_forms[path.name] = forms
+pointer = re.compile(r"`?(?:references/)?([\w-]+\.md)`? → \*([^*]+)\*")
+for path in markdown_files:
+    without_code = re.sub(r"```.*?```", "", path.read_text(), flags=re.DOTALL)
+    for match in pointer.finditer(without_code):
+        target, cited = match.group(1), plain_heading(match.group(2))
+        if target not in heading_forms:
+            raise SystemExit(f"cross-reference names an unknown file: {path.relative_to(root)} -> {target}")
+        if cited not in heading_forms[target]:
+            raise SystemExit(
+                "cross-reference names no heading: "
+                f"{path.relative_to(root)} -> {target} -> *{match.group(2)}*"
+            )
+
 for path in sorted((root / "evals").glob("*.json")):
     data = json.loads(path.read_text())
     if data.get("skill_name") != "tui-design":

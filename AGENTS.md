@@ -35,3 +35,8 @@ See [CHANGELOG.md](https://github.com/gfargo/tui-design-skill/blob/vX.Y.Z/CHANGE
 
 **Full comparison:** https://github.com/gfargo/tui-design-skill/compare/vPREVIOUS...vX.Y.Z
 ```
+
+## Cross-references
+
+- Point to another section as `file.md` → *Heading*, citing the heading text before its ` —` or ` (` subtitle, so the pointer survives a changed subtitle. Put the file name first; a bare *Heading* means a section of the same file.
+- `scripts/validate-release.sh` fails when a `file.md → *Heading*` pointer in `SKILL.md` or a reference names no heading, so rename a heading and its pointers together.

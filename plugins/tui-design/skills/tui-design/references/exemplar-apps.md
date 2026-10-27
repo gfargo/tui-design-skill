@@ -189,7 +189,7 @@ Related pickers: `@clack/prompts` (create-vite; create-astro has the same look v
 **Layout:** IDE three-panel: collection tree (left), request editor (main), response (bottom or right).
 
 **Copy this:**
-- **Empty states that name the next action:** an empty collection says "Collection is empty. Press ctrl+s to save the current request." (the pattern is in `visual-patterns.md` → *Empty states and loading states*).
+- **Empty states that name the next action:** an empty collection says "Collection is empty. Press ctrl+s to save the current request." (the pattern is in `visual-patterns.md` → *States*).
 - **Jump mode:** label every focusable widget with a letter so a keyboard user never tabs through a form; plus vim keys.
 - **Runtime theme switching** (Catppuccin, Gruvbox, Tokyo Night, Solarized, custom).
 - Import/export of curl commands, Postman collections, and OpenAPI specs; `{{token}}` variable substitution with environment switching.

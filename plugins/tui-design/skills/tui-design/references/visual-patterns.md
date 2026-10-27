@@ -10,9 +10,10 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 - [Typography in monospace](#typography-in-monospace) (includes visual hierarchy)
 - [Density: pack vs pad](#density-pack-vs-pad) (includes the clutter audit)
 - [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor) (includes one app at three widths)
-- [Tables and lists](#tables-and-lists)
+- [Tables and lists](#tables-and-lists) (includes emoji width in columns and diff views)
 - [Localization](#localization) (translation growth, right-to-left text, ambiguous-width characters, locale formatting)
 - [Status bars, headers, footers](#status-bars-headers-footers)
+- [Modals and dialogs](#modals-and-dialogs)
 - [Progress indicators](#progress-indicators)
 - [States](#states) (initial, loading, empty, partial, success, error, stale, too small)
 - [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
@@ -420,6 +421,15 @@ Three approaches:
 
 The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ items.
 
+### Emoji and aligned columns
+
+Emoji whose base character is East Asian Wide (`✅ ❌ ⭐`, plus most pictographs) take 2 cells everywhere. Emoji built from a narrow base plus a variation selector or joiner (`⚠️` is U+26A0 + U+FE0F, `✔️`, `❤️`, ZWJ families) take 1 or 2 depending on the terminal and the width library, so a column that contains them can misalign by a cell per row. For status columns use narrow text symbols (`✓ ✗ !`) or words; if you want emoji, choose Wide-base ones, measure with a grapheme-aware width library, and test on the terminals you support (see *Localization* for the width classes).
+
+### Diff views
+
+Choose by width: **unified** below about 120 columns, **side-by-side** at 120 or more, where each side keeps at least 55 columns plus a 2-cell gutter. Mark lines with a `+` or `-` in the first column (color only reinforces it), keep a line-number gutter, and highlight changed words inside a changed line. Navigate by hunk with `]`/`[` (or `n`/`N`). Don't wrap in side-by-side; truncate and scroll horizontally.
+
+
 ---
 
 ## Localization
@@ -451,6 +461,7 @@ Header (persistent context: app, dataset, mode), then the main area (the panels)
 
 - Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
 - Success and info messages fade after 3–5 seconds or give way to the idle state. Keep errors and warnings until the user dismisses them, then move them to a message log the user can reopen (a `:messages` command or a key): a message that vanishes unread can't be acted on.
+- **Toasts and the message log.** Show a transient message in the status line, or as a toast at the bottom-right just above the footer so it never covers the row being acted on, with at most two visible. Every message, errors included, is also written to a log the user can reopen (`:messages` or a key): newest last, with a timestamp and kind, capped around 200 entries for the session.
 - The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Keybinding philosophies and modal vs modeless*).
 - Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
 
@@ -464,6 +475,15 @@ Lay hints out as `key action ⋅ key action ⋅ key action`, with `⋅` (U+22C5;
 ```
 
 Drop hints from the right of the least frequent until the line fits, keeping `?` so the full list stays one key away. Which shortcuts to show and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+
+---
+
+## Modals and dialogs
+
+- **Width:** 60–80% of the terminal, at most about 80 columns for prose, at least 30. Center it horizontally and place it slightly above vertical center.
+- **One modal at a time.** A second request replaces the first or queues behind it; `Esc` closes one modal per press (`interaction-patterns.md` → *Esc, q, and Ctrl+C*). The modal traps focus.
+- **Clear the cells behind it** (draw a blank background) so underlying text doesn't bleed through, and give it its own border and a title.
+- **Modality must not rest on dimming.** Dim the background with the faint attribute where supported, but dimming is an attribute, not a color, and some terminals ignore it. The border, the title, and the changed footer hints say "you are in a dialog" under `NO_COLOR` and without faint.
 
 ---
 

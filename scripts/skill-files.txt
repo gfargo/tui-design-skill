@@ -10,4 +10,5 @@ references/ecosystem-rust.md
 references/ecosystem-typescript.md
 references/exemplar-apps.md
 references/interaction-patterns.md
+references/terminal-protocols.md
 references/visual-patterns.md

@@ -1,0 +1,82 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.9.0 content-and-structure regressions (#73 so far: layout sketches at the floor size, the States section, concrete defaults, the clutter-audit example, palette and `/` guidance). Later v1.9.0 issues add cases here. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-26): rubric-only, no run is recorded under evals/results/.",
+  "evals": [
+    {
+      "id": "floor-sketch-layout",
+      "name": "floor-sketch-layout",
+      "prompt": "I'm building a TUI for browsing Kubernetes pods: a namespace sidebar, a pod list, and a detail pane with logs. Design the layout for me.",
+      "files": [],
+      "assertions": [
+        "Recommends a layout shape (for example IDE-style panes or a drill-down stack) before explaining it",
+        "Includes an ASCII sketch of the wide layout and an ASCII sketch at 60 columns or the 80x24 floor",
+        "Shows what folds away at the narrow size (for example the detail pane first, then the sidebar) and that a single-pane fallback exists",
+        "Names a minimum size below which the app shows a 'terminal too small' state that states the dimensions it needs",
+        "Draws the sketches with ASCII or narrow-width characters, or names an ASCII fallback for box drawing"
+      ]
+    },
+    {
+      "id": "state-coverage",
+      "name": "state-coverage",
+      "prompt": "Review the screens of my release-dashboard TUI. It fetches build status from five CI servers, and I only designed the happy path. What states does it need?",
+      "files": [],
+      "assertions": [
+        "Lists the states beyond the happy path: initial, loading, empty, partial, error, disconnected or stale, and too small",
+        "Describes partial as showing what loaded while marking the failed sources inline (for example '4 of 5 servers') with a retry action, rather than blanking the screen or hiding the failure",
+        "Says a stale or disconnected view keeps the last-known-good data visible, dimmed, with an age or 'stale' marker",
+        "Gives every state a next action (retry, cancel, change scope) instead of a bare message",
+        "Does not rely on color alone to distinguish the states"
+      ]
+    },
+    {
+      "id": "clutter-audit-counts",
+      "name": "clutter-audit-counts",
+      "prompt": "This feels busy. Each row of my test list looks like `> [PASS] (ok) build 2.1s`, and the whole list is inside two nested bordered boxes. How do I clean it up?",
+      "files": [],
+      "assertions": [
+        "Counts offenders instead of saying 'simplify': border-nesting depth, signals per status, and the always-on `>` marker",
+        "Reports that the status is encoded more than once (tag, `(ok)`, and color) and keeps at most one color cue plus one non-color cue",
+        "Removes the always-on row marker, reserving a marker or reverse video for the selected row",
+        "Removes the nested borders so at most one border sits between the terminal edge and the content, or none",
+        "Mentions the share of cells spent on chrome versus data"
+      ]
+    },
+    {
+      "id": "status-message-timing",
+      "name": "status-message-timing",
+      "prompt": "How long should status-line messages stay on screen in my TUI, and what should happen to errors?",
+      "files": [],
+      "assertions": [
+        "Says success and info messages fade after about 3-5 seconds",
+        "Says errors and warnings stay until the user dismisses them",
+        "Says dismissed errors move to a message log the user can reopen",
+        "Leads messages with a symbol or label word so the kind survives NO_COLOR"
+      ]
+    },
+    {
+      "id": "footer-hint-collapse",
+      "name": "footer-hint-collapse",
+      "prompt": "Design the footer hint bar for my file-manager TUI. It has about eight actions. Show what it looks like at 80 columns and at 40.",
+      "files": [],
+      "assertions": [
+        "Shows one rendered footer line at 80 columns and a shorter line at 40 columns",
+        "Orders hints by frequency of use with the most frequent first",
+        "Keeps `?` for help as the last hint at both widths so the full list stays one key away",
+        "Drops the least frequent hints first as width shrinks",
+        "Uses a narrow-width separator such as `⋅` or `|` rather than an ambiguous-width middle dot, or names the risk"
+      ]
+    },
+    {
+      "id": "palette-and-slash",
+      "name": "palette-and-slash",
+      "prompt": "My log viewer has about 35 actions across several screens. Should I add a command palette, and what should `/` do?",
+      "files": [],
+      "assertions": [
+        "Recommends a command palette because the app is past roughly 20 actions and its actions span several contexts",
+        "Says every keybound action should also be a palette command, with its key shown beside it",
+        "Says `/` searches in documents and logs, with Enter jumping to the first match and n/N cycling, and filters in lists",
+        "Warns that Ctrl+P can be captured (Zellij, readline) and offers `:` or a leader key as an alternative"
+      ]
+    }
+  ]
+}

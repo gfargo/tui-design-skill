@@ -3,11 +3,10 @@
 A deep dive into how users interact with TUIs — keybinding philosophy, focus management, navigation patterns, mouse support, and discoverability. The top-level `SKILL.md` covers the principles; this file goes deeper into the *why* and the trade-offs.
 
 **Contents:**
-- [Keybinding philosophies](#keybinding-philosophies)
+- [Keybinding philosophies and modal vs modeless](#keybinding-philosophies-and-modal-vs-modeless)
 - [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
 - [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect)
 - [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
-- [Modal vs modeless — the deeper trade-off](#modal-vs-modeless--the-deeper-trade-off)
 - [Focus management](#focus-management)
 - [Search and filter](#search-and-filter)
 - [Multi-select](#multi-select)
@@ -21,80 +20,22 @@ A deep dive into how users interact with TUIs — keybinding philosophy, focus m
 
 ---
 
-## Keybinding philosophies
+## Keybinding philosophies and modal vs modeless
 
-There are four major schools. Most apps blend them.
+Most apps blend four schools:
 
-### 1. Vim-style (modal)
+| School | Identity | Examples | Costs |
+|---|---|---|---|
+| **Modal (vim-style)** | Modes (NORMAL, INSERT, VISUAL, COMMAND); single-letter motions and operators with counts (`5dw`), leader keys for namespaces. Dense and composable, no Ctrl/Alt needed | vim, helix, kakoune, k9s (ex-mode), aerc | Steep learning curve; mode confusion when the indicator is weak; modal text input fights conventional editing (Ctrl+A, Ctrl+E) |
+| **Chord (Emacs-style)** | Modifier-prefixed bindings (`C-x C-s`, `M-x`), no modes, nested key tables; discoverable with which-key | emacs, readline shells, weechat | Modifier strain; collides with terminal-reserved keys; slower than modal for repetitive editing |
+| **Modeless (arrow / GUI-like)** | Arrows, Enter, Tab, Esc, single-letter shortcuts; state changes via widget focus; mouse-friendly; zero learning curve | btop, htop, fzf, gum, Posting, Harlequin, most Textual apps | Fewer keys means fewer commands; Ctrl/Alt for less-common actions; screen space spent on focus indicators |
+| **Hybrid** | On navigational surfaces, arrows and compatible `hjkl` aliases together. Vim shortcuts are power-user paths, never requirements, and printable aliases yield while a text field owns input | lazygit, k9s, yazi, gh dash | Slightly more code; risk of inconsistent key meanings |
 
-**Identity:** modes (NORMAL, INSERT, VISUAL, COMMAND), single-letter motions and operators in NORMAL mode, leader keys for namespaces.
+**Decision rule.** Default to hybrid for a new navigational, full-screen TUI. A bounded prompt or form can keep a smaller conventional keymap. Go modal only for editor-like tools where keystrokes are the primary interaction and users are likely vim-familiar, never for a general-purpose tool aimed at non-vim users. Choose chords only when inheriting a convention; rarely from scratch.
 
-**Examples:** vim, neovim, helix, kakoune, k9s (ex-mode), aerc.
-
-**Strengths:**
-- Densely expressive — `5dw` ("delete five words") is an operator plus a motion with a count.
-- Hands stay on home row; minimal modifier-key gymnastics.
-- Power users get fast.
-
-**Weaknesses:**
-- Steep learning curve.
-- "What mode am I in?" confusion if mode indicator is weak.
-- Modal text input fights conventional editing (Ctrl+A, Ctrl+E, etc.).
-
-**When to use:** editor-like tools where keystrokes are the primary interaction, users are likely to be vim-familiar, you want dense expressivity. Not appropriate for general-purpose tools targeting non-vim users.
-
-### 2. Emacs-style (chord)
-
-**Identity:** modifier-prefixed bindings (`C-x C-s` to save, `M-x` for command), no modes, deeply nested key tables.
-
-**Examples:** emacs (the originator), readline-based shells, weechat (default), some bash bindings.
-
-**Strengths:**
-- No modes; what you press is what you get.
-- Rich modifier space (`C-`, `M-`, `S-`, combinations).
-- Discoverable with which-key.
-
-**Weaknesses:**
-- Modifier strain ("Emacs pinky").
-- Conflicts with terminal-reserved keys.
-- Less efficient than modal for repetitive editing.
-
-**When to use:** rarely from scratch. Most Emacs-style apps inherit the convention from a long history. New apps usually go modal or modeless.
-
-### 3. Arrow-key / GUI-like (modeless)
-
-**Identity:** arrow keys + Enter + Tab + Esc + single-letter shortcuts. Mouse-first or mouse-friendly.
-
-**Examples:** btop, htop (somewhat), fzf, gum, Posting, Harlequin, most modern Textual apps.
-
-**Strengths:**
-- Zero learning curve.
-- Inclusive — works for users who've never touched vim.
-- Pairs naturally with mouse support.
-
-**Weaknesses:**
-- Slower for power users.
-- Less expressive — fewer keys means fewer commands.
-- Modifier keys (Ctrl/Alt) for less-common actions.
-
-**When to use:** general-purpose tools, dashboards, monitors, anything where you want broad usability.
-
-### 4. Hybrid (modeless + vim motions)
-
-**Identity:** on navigational surfaces, support arrows and compatible `hjkl` aliases simultaneously. Vim shortcuts are power-user paths, never requirements, and printable aliases yield while a text field owns input.
-
-**Examples:** lazygit, k9s, yazi, gh dash, most modern TUIs.
-
-**Strengths:**
-- Best of both worlds — onboarding via arrows, speed via hjkl.
-- Inclusive without sacrificing power.
-- Familiar to users from many backgrounds.
-
-**Weaknesses:**
-- Slightly more code (handle both).
-- Risk of inconsistency between which keys do what.
-
-**When to use:** a strong default for new navigational, full-screen TUIs. A bounded prompt or form can keep a smaller conventional keymap.
+- **Modal needs** a persistent mode indicator (status-bar color or label), a distinct cursor shape per mode (block in NORMAL, bar in INSERT, underline in REPLACE) reset on exit (see *Terminal modes and protocols* → *Output*), and a way to learn the modes.
+- **Modeless needs** clear focus indication (see *Focus indicators*) and modifier bindings for less-common actions.
+- **Contextual bindings** let the focused panel decide what a key means: lazygit's `space` stages in Files, checks out in Branches, applies in Stash, and k9s adds panel-specific actions to the global ones. This is context-sensitive modeless; it works when panel-specific actions are rich and a footer hint bar shows what each key does right now.
 
 ---
 
@@ -131,16 +72,16 @@ These have crystallized across the ecosystem. Use them unless you have a strong 
 
 ## Reserved keys — preserve what users expect
 
-In cooked (line) mode these keys belong to the terminal driver and shell. In raw mode — which every full-screen framework enables — they arrive as ordinary keypresses: no SIGINT, SIGTSTP, or XOFF is generated unless your app produces that behavior itself.
+In cooked (line) mode these keys belong to the terminal driver and shell. In raw mode, which every full-screen framework enables (`cfmakeraw` also clears `IXON`), they arrive as ordinary keypresses: no SIGINT, SIGTSTP, or XOFF is generated unless your app produces that behavior itself. Flow-control freezes (and the `stty -ixon` workaround) only matter for cooked-mode programs.
 
 | Key | Expected behavior |
 |---|---|
 | **Ctrl+C** | Interrupt — cancel the current operation or quit cleanly |
 | **Ctrl+Z** | Suspend — restore the terminal, stop, and redraw on `fg` |
 | **Ctrl+\\** | Abort — SIGQUIT (core dump) in cooked mode |
-| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control, for line-mode programs where the tty driver still sees them |
+| **Ctrl+S** / **Ctrl+Q** | XON/XOFF flow control (cooked mode only; see above) |
 
-A full-screen app *may* handle these keys, and real ones do: helix binds `Ctrl-c` to toggle comments and `Ctrl-s` to `save_selection`; nano and micro save on `Ctrl+S`. What you owe users is the expected behavior, not a hands-off policy: keep `Ctrl+C` as cancel/quit unless there's a strong reason not to (and then offer an obvious exit), and implement `Ctrl+Z` suspend through the framework's support so the terminal is restored. Flow-control freezes (and the `stty -ixon` workaround) only matter for cooked-mode programs; raw mode as set by `cfmakeraw` also clears `IXON`.
+A full-screen app *may* handle these keys, and real ones do: helix binds `Ctrl-c` to toggle comments and `Ctrl-s` to `save_selection`; nano and micro save on `Ctrl+S`. What you owe users is the expected behavior, not a hands-off policy: keep `Ctrl+C` as cancel/quit unless there's a strong reason not to (and then offer an obvious exit), and implement `Ctrl+Z` suspend through the framework's support so the terminal is restored.
 
 Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
 
@@ -152,102 +93,27 @@ Every action a user can take should be discoverable through *at least one* of th
 
 ### Layer 1: Always-visible footer hints
 
-For a full-screen app, keep the 3–5 most-useful shortcuts visible at the bottom and update them by context. A one-step inline prompt can show its controls beside the prompt instead of reserving a footer row.
+For a full-screen app, keep the 3–5 most-useful shortcuts visible at the bottom and update them by context. For a complex app this is usually the strongest discoverability tool, since most users read what is visible rather than the docs. A one-step inline prompt can show its controls beside the prompt instead of reserving a footer row.
 
-For a complex full-screen app, this is usually the strongest discoverability tool. Most users will not begin in the docs; they read what is visible in context.
+Examples: htop's F1–F10 strip, lazygit's per-pane hints (`space stage  c commit  P push  p pull  ?`), helix's status line.
 
-Examples:
-- htop's F1–F10 strip.
-- lazygit's per-pane hints (`space stage  c commit  P push  p pull  ?`).
-- helix's status line.
-
-Auto-generation is a force multiplier:
-- **Bubble Tea**: `bubbles/help` reads from `key.KeyMap`.
-- **Textual**: `Footer` widget renders `BINDINGS`.
-- **Ratatui**: not auto-generated; build a helper that reads from your keybinding map.
-- **Ink**: not auto-generated; build with `<Box>` + the same keymap source.
-
-Define keys *once*, derive the footer.
+Define keys *once*, derive the footer. **Bubble Tea**'s `bubbles/help` reads `key.KeyMap` and **Textual**'s `Footer` renders `BINDINGS`; **Ratatui** and **Ink** don't generate one, so build a helper that reads your keybinding map.
 
 ### Layer 2: `?` help screen
 
-Pressing `?` opens a modal or full-screen help with **all** keybindings, grouped by context.
-
-Every full-screen app with more than a handful of actions should provide this or an equivalent discoverable help view. A tiny picker whose complete keymap is already visible does not need a separate modal. lazygit's `?` shows a categorized list of keys, with sections per panel. Textual's `?` (when implemented) typically shows a key table.
-
-Format: `key  action  context`. Group by mode/panel/category.
+Pressing `?` opens a modal or full-screen help with **all** keybindings, grouped by mode, panel, or category (`key  action  context`). Every full-screen app with more than a handful of actions should provide this or an equivalent discoverable help view. A tiny picker whose complete keymap is already visible does not need a separate modal. lazygit's `?` shows a categorized list with sections per panel.
 
 ### Layer 3: Leader-key / which-key
 
-After pressing a leader (Space, `,`, `\`), show a popup with available follow-up keys. The user can:
-- Read the list and pick.
-- Type the key to dismiss the popup and trigger the action.
-- Press Esc to cancel.
-
-**The gold standard:** helix's `Space-` menu. Press Space, see `f` (file picker), `b` (buffer picker), `s` (symbols), `a` (LSP actions), etc. `which-key.nvim` is near-universal in neovim.
-
-When to add: when your keymap exceeds ~20 distinct actions. Below that, `?` help is enough.
+After pressing a leader (Space, `,`, `\`), show a popup with the available follow-up keys. The user reads and picks, types the key to dismiss the popup and trigger the action, or presses Esc to cancel. helix's `Space-` menu is the gold standard (`f` file picker, `b` buffer picker, `s` symbols, `a` LSP actions); `which-key.nvim` is near-universal in neovim. Add one when your keymap exceeds ~20 distinct actions; below that, `?` help is enough.
 
 ### Layer 4: Command palette
 
 `Ctrl+P` (or similar) opens a fuzzy-matched action list. The user types to filter. Keep an alternative binding: Zellij's default mode captures `Ctrl+P` and readline uses it for previous history. A route that needs no Ctrl chord, such as `:` or a leader key, avoids both collisions.
 
-Add a palette when the action set is large, spans multiple contexts, or benefits from search; a small app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description.
+Add a palette when the action set is large, spans multiple contexts, or benefits from search; a small app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description. Show the keybinding next to each command name, so the palette doubles as keybinding documentation.
 
-Examples:
-- Textual's built-in command palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT).
-- VS Code's Ctrl+Shift+P (the conceptual ancestor for many TUIs).
-- helix's `:` (ex-style command, not strictly a palette but similar role).
-- k9s's `:` (resource-typing, but adopts the same "type to filter actions" model).
-
-Format each command:
-```
-Action name              keybinding
-Description / context
-```
-
-Show the keybinding next to the command name — the palette doubles as keybinding documentation.
-
----
-
-## Modal vs modeless — the deeper trade-off
-
-### Modal (vim-style)
-
-You're in a mode (NORMAL, INSERT, etc.). Keystrokes interpreted differently per mode.
-
-**Requires:**
-- Persistent mode indicator (status bar color or label).
-- Distinct cursor shapes per mode (block in NORMAL, bar in INSERT, underline in REPLACE), reset on exit (see *Terminal modes and protocols* → *Output*).
-- A way to learn modes — usually a tutorial or readme.
-
-**Trade-offs:**
-- Pro: dense keybindings (no Ctrl/Alt needed for most operations).
-- Pro: composable operators (`d` + motion = delete-by-motion).
-- Con: confusion if mode is weakly indicated.
-- Con: muscle memory required.
-
-### Modeless
-
-What you press is what you get. State changes happen via widget focus.
-
-**Requires:**
-- Clear focus indication (see *Focus indicators*).
-- Modifier-key bindings for less-common actions.
-
-**Trade-offs:**
-- Pro: zero learning curve.
-- Pro: no mode confusion.
-- Con: less expressive — limited by Ctrl/Alt combinations.
-- Con: more visual real estate spent on focus indicators.
-
-### The third option: contextual
-
-Bindings change based on which panel is focused. Not "modes" in the vim sense — more like "the current panel determines what `space` means."
-
-Examples: lazygit (`space` stages in Files, checks out in Branches, applies in Stash), k9s (panel-specific actions in addition to global ones).
-
-This is **context-sensitive modeless** — works well if you have rich, panel-specific actions and a footer hint bar that shows what's available right now.
+Examples: Textual's built-in palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT), VS Code's Ctrl+Shift+P (the conceptual ancestor), and the `:` of helix and k9s (resource-typing, but the same "type to filter actions" model).
 
 ---
 
@@ -328,86 +194,31 @@ After multi-selecting, an action key applies to all marked items: `d` deletes al
 
 ## Mouse support — the real trade-off
 
-The fight between camps:
+Textual treats the mouse as first-class (`:hover`, click, wheel), btop makes every highlighted key clickable, and lazygit selects on click, range-selects by dragging, and reorders commits by dragging (v0.64+). Keyboard-first users resist it, and capture has a cost: it takes over click-and-drag text selection, so users must hold a bypass modifier (Shift in most terminals, Option in iTerm2, Fn in Terminal.app). helix and fzf turn the mouse on by default but never require it.
 
-### Pro-mouse
+**Mouse augments keyboard, never replaces required actions.** Every mouse-reachable target needs a keyboard equivalent. Implement mouse for focusing a panel, switching tabs, scrolling lists and viewports, and clicking form buttons. Don't require it for the critical path, power-user actions, or anything that should work over a serial console or restricted SSH.
 
-- Textual treats mouse as first-class with `:hover`, click, scroll wheel.
-- btop makes every highlighted key clickable and scrolls lists with the wheel.
-- lazygit selects on click, range-selects by dragging, and reorders commits by dragging (v0.64+).
-- Modern users expect to be able to click things.
-
-### Anti-mouse
-
-- vim purists, and keyboard-first users of any tool (helix and fzf turn the mouse on by default but never require it).
-- Mouse capture takes over click-and-drag text selection; users must hold a bypass modifier (Shift in most terminals, Option in iTerm2, Fn in Terminal.app).
-- Adds complexity without speed benefit for power users.
-
-### The pragmatic compromise
-
-**Mouse augments keyboard, never replaces required actions.** Every mouse-reachable target needs a keyboard equivalent.
-
-Implement mouse for:
-- Clicking a panel to focus it.
-- Clicking a tab to switch.
-- Scrolling lists / viewports.
-- Clicking buttons in forms.
-
-Don't require mouse for:
-- Anything in the critical path.
-- Power-user actions.
-- Anything that should work over a serial console or restricted SSH.
-
-**Document the selection bypass** for your users' terminals, since the modifier isn't always Shift, and offer a way to turn mouse capture off. Inside tmux 3.8+, the bypass is needed even for apps that never enable the mouse (*Terminal environments*). When mouse capture is on, regular click-drag selects via the app, not via the terminal. Users learn this pattern from one app and transfer it.
+**Document the selection bypass** for your users' terminals, since the modifier isn't always Shift, and offer a way to turn mouse capture off. Inside tmux 3.8+, the bypass is needed even for apps that never enable the mouse (*Terminal environments*).
 
 ---
 
 ## Undo / redo
 
-Hard for non-editor apps, but lazygit notably offers `z` (undo) / `Z` (redo) for git actions recorded in the reflog — commits, checkouts, resets, even a whole botched rebase. It is honest about the limits: working-tree and stash changes, pushes, and branch creation can't be undone, and undo is unavailable mid-rebase. Even bounded, this is a *huge* user comfort feature for destructive tools.
+Hard for non-editor apps, but lazygit offers `z` (undo) / `Z` (redo) for git actions recorded in the reflog: commits, checkouts, resets, even a botched rebase. It states its limits: working-tree and stash changes, pushes, and branch creation can't be undone, and undo is unavailable mid-rebase. Even bounded, this is a large comfort for destructive tools.
 
-**Two implementation strategies:**
-
-1. **Action stack** — model every user action as a reversible operation. On undo, pop and reverse.
-2. **State snapshots** — periodically snapshot full state; undo restores a snapshot. Cheaper to implement but coarser.
-
-For destructive actions without undo, use modal confirmation. **Never silently destroy.**
+Implement it as an **action stack** (each action a reversible operation; pop and reverse) or **state snapshots** (cheaper, coarser). For destructive actions without undo, use confirmation. **Never silently destroy.**
 
 ---
 
 ## Confirmation patterns
 
-Three levels of friction:
+Match friction to consequence, in three levels:
 
-### Light: y/n prompt
+- **Light, y/n prompt:** `Delete 3 files? [y/N]`. Default to **No**, so pressing Enter doesn't delete.
+- **Medium, typed name:** `Type the database name to confirm: prod-main` (Heroku's app deletion). Forces the user to think about what they're deleting.
+- **Heavy, dual confirmation:** type `delete`, then answer `Are you sure? [y/N]`. For nuclear actions; used rarely.
 
-```
-Delete 3 files? [y/N]
-```
-
-Default to **No** — pressing Enter shouldn't delete.
-
-### Medium: typed name
-
-```
-This will delete the production database.
-Type the database name to confirm: prod-main
-```
-
-Used by Heroku for app deletion. Forces the user to *think* about what they're deleting.
-
-### Heavy: dual confirmation
-
-```
-Step 1: Type "delete" to confirm
-> delete
-
-Step 2: Are you sure? [y/N]
-```
-
-For nuclear actions. Used rarely.
-
-**Match friction to consequence.** Y/n for "stage all files" is fine. Typed name for "delete production." Don't make every confirmation typed-name — users learn to just type fast and lose the safety.
+Y/n suits "stage all files"; a typed name suits "delete production." Don't make every confirmation typed-name: users learn to type fast and lose the safety.
 
 ---
 
@@ -466,7 +277,7 @@ The ecosystem references own the API names.
 ### Output
 
 - **Synchronized output (2026).** Wrap each frame in `CSI ? 2026 h` … `CSI ? 2026 l` so the terminal paints it at once instead of tearing mid-redraw ([spec](https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md)), and detect support with DECRQM (`CSI ? 2026 $ p`). Always send the end sequence, error paths included; a terminal releases a stuck frame only after its own timeout (150 ms in Alacritty, 1 s in Ghostty, 2 s in kitty). kitty, WezTerm, foot, Alacritty, Ghostty, iTerm2, Windows Terminal 1.23.20211+, and tmux 3.7+ support it. Without it, write each frame in one `write`, send only changed cells, and hide the cursor while drawing, then re-show it on the focused row or field after each frame (*Accessibility* in `visual-patterns.md` says why).
-- **Cursor shape (DECSCUSR, `CSI n SP q`).** Pair shapes with modes (block in normal mode, bar in insert; see *Modal vs modeless*), and reset with `CSI 0 SP q` on exit. Windows Terminal, foot, and Ghostty read 0 as the user's configured cursor, but xterm reads it as a blinking block; only xterm patch 411 and later restore the user's choice, with `CSI 7 SP q`. xterm and tmux 3.6+ can report the current shape: send DECRQSS `DCS $ q SP q ST` and read the reply `DCS 1 $ r Ps SP q ST`, which names the shape to restore. Other terminals may not answer, so bound the wait and fall back to the reset above. Ratatui's `restore()` doesn't touch the shape, so an app that sets one resets it.
+- **Cursor shape (DECSCUSR, `CSI n SP q`).** Pair shapes with modes (block in normal mode, bar in insert; see *Keybinding philosophies*), and reset with `CSI 0 SP q` on exit. Windows Terminal, foot, and Ghostty read 0 as the user's configured cursor, but xterm reads it as a blinking block; only xterm patch 411 and later restore the user's choice, with `CSI 7 SP q`. xterm and tmux 3.6+ can report the current shape: send DECRQSS `DCS $ q SP q ST` and read the reply `DCS 1 $ r Ps SP q ST`, which names the shape to restore. Other terminals may not answer, so bound the wait and fall back to the reset above. Ratatui's `restore()` doesn't touch the shape, so an app that sets one resets it.
 - **Window title (OSC 2).** Set a title only when it helps users find the window, for example the open file or the remote host. Push the old title with `CSI 22 ; 0 t` before setting yours and pop it with `CSI 23 ; 0 t` on exit. xterm, kitty, foot, iTerm2, Alacritty, and tmux keep that stack; WezTerm, Ghostty, and Windows Terminal ignore it, so the user's title is lost there. Bubble Tea clears the title on exit rather than restoring it.
 - **Progress (OSC 9;4).** `OSC 9 ; 4 ; state ; percent ST` shows progress on the tab or taskbar; state 0 removes it, 1 is normal, 2 error, 3 indeterminate, and 4 paused ([ConEmu](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC), [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences)). Windows Terminal, Ghostty 1.2+, kitty, iTerm2, and tmux 3.7+ understand it. A terminal that knows only OSC 9 notifications may pop it up as a notification, so send it where you know it is supported, and clear it with state 0 on every exit. Bubble Tea's view-level progress bar sends it without checking.
 - **Shell-integration marks (OSC 133).** Prompt marks (`A` prompt, `B` input, `C` output, `D;exit-code` end) let a terminal jump between prompts, select one command's output, and show its exit status ([proposal](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/6b555699e41ab47ce210610d1a17cfc1662ec8d7/proposals/semantic-prompts.md)). A REPL should mark its own prompts, adding `aid=` when it runs inside a shell that marks them too; a full-screen TUI should not.
@@ -537,9 +348,7 @@ Some interactions aren't between the user and your app — they're between your 
 
 ## The fzf pattern in detail
 
-The instant-filter interaction has spread far beyond fzf itself: telescope.nvim, atuin, zoxide, helix's `Space+f`, and Textual's command palette match fuzzily; k9s's `/` (regex) and lazygit's `/` (substring by default) keep the instant filter with a stricter matcher.
-
-The pattern:
+The instant-filter interaction has spread far beyond fzf: telescope.nvim, atuin, zoxide, helix's `Space+f`, and Textual's command palette match fuzzily; k9s's `/` (regex) and lazygit's `/` (substring by default) keep the instant filter with a stricter matcher.
 
 1. **Open** with a key (often `/` or `Ctrl+P`).
 2. **Type to filter** — shows results updating in real time.
@@ -558,56 +367,19 @@ For Go: `sahilm/fuzzy` or `lithammer/fuzzysearch`. For Rust: `nucleo` (used by h
 
 ## The lazygit pattern — multi-pane with numeric tabs
 
-Used by: lazygit, lazydocker (and inspired by mc / Norton Commander).
-
-**Recipe:**
-1. 5+ persistent panels in fixed positions.
-2. `1`–`9` keys jump directly to numbered panels.
-3. `Tab` cycles in order.
-4. **Single letters trigger panel-specific actions** — `c` does something different in each panel.
-5. **Footer hint bar updates per panel** — shows which actions `c` and friends do *right now*.
-
-**The bet:** users tolerate context-sensitive single letters in exchange for dense bindings, *because the footer always shows what each key does in the current context.*
-
-**The trade-off:** higher cognitive load — `c` does N different things. The footer hint bar is what makes it work.
-
-**Case study:** `references/exemplar-apps.md` → *lazygit*.
+Used by lazygit and lazydocker (after mc / Norton Commander): 5+ persistent panels in fixed positions, `1`–`9` jump to numbered panels, `Tab` cycles, and single letters trigger panel-specific actions (`c` does something different in each panel). The bet is that users tolerate context-sensitive letters for dense bindings *because the footer hint bar always shows what each key does right now*; without that bar the cognitive load is too high. Case study: `references/exemplar-apps.md` → *lazygit*.
 
 ---
 
 ## The k9s pattern — command-driven
 
-Used by: k9s, helix (`:` ex-commands), weechat (`/` slash-commands), aerc.
-
-**Recipe:**
-1. Press `:` to enter command mode.
-2. Type a resource type or command name (`pods`, `nodes`, `svc`, `ingress`).
-3. Tab-completion narrows.
-4. Enter runs.
-5. Aliases for common commands (`po` = `pods`).
-
-**Pros:** fast for power users, scales to many commands.
-
-**Cons:** demands tab-completion or a discoverability layer — k9s suggests completions as you type in `:` mode and lists every alias in its own view (`Ctrl-A`). Without that, users won't know what's possible.
-
-**When to use:** when there are many resource types or actions, and users will repeat them often.
-
-**Case study:** `references/exemplar-apps.md` → *k9s*.
+Used by k9s, helix (`:` ex-commands), weechat (`/` commands), and aerc: press `:`, type a resource or command name (`pods`, `svc`), Tab-completion narrows, Enter runs, and aliases shorten common ones (`po` = `pods`). It is fast for power users and scales to many commands, but demands completion or a discoverability layer: k9s suggests completions as you type and lists every alias in its own view (`Ctrl-A`). Use it when there are many resource types or actions that users repeat often. Case study: `references/exemplar-apps.md` → *k9s*.
 
 ---
 
 ## The helix pattern — selection-first modal editing
 
-Helix's bet against vim: select first, then act. `wd` selects-word-then-deletes (vs vim's `dw` "delete-word"). Multi-cursor is core. Tree-sitter integration. `Space` opens which-key.
-
-**Why it matters for general TUI design:**
-- **Selection-then-act** has visual feedback before the destructive action — users see what they're about to delete.
-- **Multi-cursor** as primary scales beautifully for batch edits.
-- **Which-key for leader keys** is a discoverability pattern any modal app should consider.
-
-You probably won't build a modal editor, but the *visual-feedback-before-action* principle is widely applicable: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited.
-
-**Case study:** `references/exemplar-apps.md` → *helix*.
+Helix selects first, then acts (`wd` selects the word and deletes it, vs vim's `dw`), with multi-cursor as the core and `Space` opening which-key. The transferable principle is *visual feedback before the action*: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited. Which-key for leader keys suits any modal app. Case study: `references/exemplar-apps.md` → *helix*.
 
 ---
 

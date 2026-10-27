@@ -4,18 +4,15 @@ The Node.js ecosystem splits along two axes:
 - **Pretty CLI** (argument parsing + color + prompts/spinners) vs **full TUI**.
 - **Imperative/retained-mode** vs **declarative/React-style**.
 
-**Ink has effectively won the high-end TUI space.** It powers Claude Code, GitHub Copilot CLI, Gemini CLI, Cloudflare Wrangler, Gatsby CLI, Prisma, Shopify CLI, Linear's internal CLI, Canva CLI, and tap. Anthropic's Claude Code is publicly TypeScript + React + Ink + Yoga + Bun.
+**Ink has effectively won the high-end TUI space.** It powers Claude Code (publicly TypeScript + React + Ink + Yoga + Bun), GitHub Copilot CLI, Gemini CLI, and Cloudflare Wrangler.
 
 **Contents:**
-- [Quick recommendation](#quick-recommendation)
-- [Ink](#ink-vadimdemedesink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedesink-ui)
-- [Testing](#testing--ink-testing-library) · [Debugging](#debugging)
-- [Pastel](#pastel--nextjs-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Pitfalls](#pitfalls)
+- [Quick recommendation](#quick-recommendation) · [Runtime floors and ESM](#runtime-floors-and-esm)
+- [Ink](#ink-vadimdemedesink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [ink-ui](#ink-ui-vadimdemedesink-ui) · [Testing](#testing--ink-testing-library) · [Debugging](#debugging) · [Pastel](#pastel--nextjs-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Ink pitfalls](#ink-pitfalls)
 - [Modern prompts: @clack/prompts](#modern-prompts-clackprompts) · [@inquirer/prompts](#inquirerprompts)
 - [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
-- [OpenTUI](#opentui-anomalycoopentui) · [blessed / neo-blessed / terminal-kit](#blessed--neo-blessed--terminal-kit)
-- [Notable JS/TS TUI apps](#notable-jsts-tui-apps-to-study)
-- [Pitfalls common to JS/TS](#pitfalls-common-to-jsts-terminal-apps)
+- [OpenTUI](#opentui-anomalycoopentui) · [blessed / terminal-kit](#blessed--terminal-kit)
+- [Cross-library pitfalls](#cross-library-pitfalls)
 - [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
 
 ## Quick recommendation
@@ -38,7 +35,20 @@ The Node.js ecosystem splits along two axes:
 | Beyond Ink's perf ceiling | **OpenTUI** (Zig-backed, v0.x) |
 | Image rendering in terminal | **terminal-image** 5 (Kitty/iTerm2 protocols, half-block fallback) |
 
-**Default full-TUI stack: Ink + @inkjs/ui + zustand + commander + ink-testing-library** (@inkjs/ui and ink-testing-library have not shipped since May 2024 but still work with Ink 8 — see their caveats). For other project shapes, see "Stack recommendations by project shape" at the end.
+**Default full-TUI stack: Ink + @inkjs/ui + zustand + commander + ink-testing-library** (the last two UI/test packages are unmaintained but work with Ink 8; see ink-ui and Testing). For other project shapes, see "Stack recommendations by project shape" at the end.
+
+## Runtime floors and ESM
+
+Node 20 is end-of-life; target Node 22 or Node 24 (check the Node release schedule for LTS status). The current majors below need Node 22; use the last Node 20 line only as a bridge for a deployment that can't move yet.
+
+| Package | Current major needs | Last line for Node 20 |
+|---|---|---|
+| Ink | Ink 7 and 8 require Node ≥ 22; Ink 8 also requires React ≥ 19.3 (Ink 7: ≥ 19.2) | Ink 6 (Node ≥ 20, React ≥ 19) |
+| chalk | chalk 6 requires Node ≥ 22 | chalk 5 |
+| commander | v15 is ESM-only and needs Node ≥ 22.12 | v14 (security fixes until May 2027) |
+| listr2, execa | listr2 11 requires Node ≥ 22.13; execa 10 requires Node ≥ 22 | previous major |
+
+Much of the modern stack (chalk v5+, ora v6+, ink v4+, commander v15+, @inquirer/prompts, @clack/prompts) is ESM-only at latest. On Node 20.19+/22.12+, CommonJS code can `require()` synchronous ESM packages such as chalk (`require('chalk').default`), commander, @clack/prompts, and @inquirer/prompts, so don't pin old CJS majors. Ink is the exception: Yoga's top-level await makes `require('ink')` throw `ERR_REQUIRE_ASYNC_MODULE` (Ink 6.8–8), so from CommonJS use `await import('ink')` or a bundler.
 
 ---
 
@@ -46,7 +56,7 @@ The Node.js ecosystem splits along two axes:
 
 **Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, and rewrites the live output in a single buffered terminal write. By default each frame replaces the whole live region; `incrementalRendering: true` updates only the changed lines ([readme](https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#incrementalrendering)).
 
-Current major: **Ink 8** (8.0.x, October 2026). Ink 7 and 8 require **Node ≥ 22**; Ink 8 also requires **React ≥ 19.3** (Ink 7: ≥ 19.2). Node 20 is end-of-life, so target Node 22 or Node 24 (check the Node release schedule for LTS status). Ink 6 (Node ≥ 20, React ≥ 19), commander 14, and chalk 5 are the last majors that run on Node 20 — use them only as a bridge for a deployment that can't move yet.
+Current major: **Ink 8** (8.0.x, October 2026); runtime floors are in the table above.
 
 **Hello world:**
 
@@ -87,7 +97,7 @@ Ink 7.1+ (unchanged in 8.0) distinguishes permanent React-tree unmounting from a
 
 The tagged [`suspendTerminal` documentation](https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#suspendterminalcallback) includes callback, manual, non-interactive, and nesting behavior. A second overlapping suspension is an error, so centralize ownership rather than letting arbitrary components suspend independently.
 
-## Primitives
+### Primitives
 
 Ink ships only a handful of components — everything else composes from these:
 
@@ -95,10 +105,10 @@ Ink ships only a handful of components — everything else composes from these:
 - **`<Box>`** — flexbox container. Props: `padding`, `paddingX/Y/Top/Right/Bottom/Left`, `margin*`, `borderStyle`, `borderColor`, `borderTop`/`Bottom`/`Left`/`Right` (selective borders), `width`, `height`, `minWidth`/`maxWidth` (numbers only in Ink 8), `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `justifyContent`, `alignItems`, `gap`, `display: 'flex' | 'none'`, `overflow`/`overflowX`/`overflowY`. Ink 8 adds `contentOffsetX`/`contentOffsetY` for scrolling: give a fixed-height viewport `overflow="hidden"`, wrap the content in a `flexShrink={0}` box that carries any padding, and clamp the offset to `content.height - clientHeight` from `useBoxMetrics()`.
 - **`<Newline>`** — newline characters; only valid inside `<Text>`. Use `gap` or margin for vertical spacing between boxes.
 - **`<Spacer>`** — flex-grow filler in a flex layout.
-- **`<Static>`** — renders items permanently above the live UI; once rendered, never re-renders. Suited to log streaming — completed tests (tap) or generated pages (Gatsby) — so the live UI doesn't have to repaint thousands of historical log lines.
+- **`<Static>`** — renders items permanently above the live UI; once rendered, never re-renders. Suited to log streaming, so the live UI doesn't repaint thousands of historical lines.
 - **`<Transform>`** — wraps children and transforms their rendered string. Used for gradients, OSC 8 hyperlinks, custom effects.
 
-## Layout
+### Layout
 
 Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, or a custom `BoxStyle` object (`topLeft`, `top`, `topRight`, `left`, `right`, `bottomLeft`, `bottom`, `bottomRight`).
 
@@ -118,7 +128,7 @@ Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no class
 </Box>
 ```
 
-## Hooks
+### Hooks
 
 Ink-specific (items marked 7+ are not in Ink 6):
 - **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, backspace, delete, ctrl, shift, meta, pageUp, pageDown, home, end}` (plus Kitty-protocol extras). Ink 8 drops mouse, focus, and cursor-position reports instead of passing them in as typed text, so mouse support must parse raw stdin.
@@ -137,22 +147,17 @@ Plus all standard React hooks (`useState`, `useEffect`, `useReducer`, `useContex
 
 State management for larger apps: **Zustand** (recommended), **Jotai**, or just `useReducer` + Context.
 
-## ink-ui (vadimdemedes/ink-ui)
+### ink-ui (vadimdemedes/ink-ui)
 
-The companion component library — themeable widgets you don't want to write yourself:
+The companion component library of themeable widgets:
 
 - `<TextInput>`, `<EmailInput>`, `<PasswordInput>` — uncontrolled inputs: `defaultValue`, `onChange`, `onSubmit`, and no `value` prop (issue #20), so remount with a new `key` to clear one.
-- `<Select>`, `<MultiSelect>` — choose from options.
-- `<ConfirmInput>` — y/n prompt.
+- `<Select>`, `<MultiSelect>`, `<ConfirmInput>` (y/n), `<ProgressBar>` (determinate), `<Badge>`, `<StatusMessage>` (`success`/`info`/`warning`/`error`), `<Alert>`.
 - `<Spinner>` — animated spinner (use this inside Ink, not `ora`).
-- `<ProgressBar>` — determinate progress.
-- `<Badge>` — colored status pill.
-- `<StatusMessage>` — `success`/`info`/`warning`/`error` variants.
-- `<Alert>` — bordered alert box.
 
-Theming via theme objects passed at the root. @inkjs/ui has had no release since 2.0.0 (May 2024; peer `ink >=5`), but it still works on Ink 8; fork or wrap any component you need to change.
+Theming via theme objects passed at the root. @inkjs/ui has had no release since 2.0.0 (May 2024) but works on Ink 8; fork or wrap any component you need to change.
 
-## Testing — ink-testing-library
+### Testing — ink-testing-library
 
 ```tsx check=typescript/ink-testing-library
 import {render} from 'ink-testing-library';
@@ -169,65 +174,42 @@ unmount();
 
 Plus `renderToString()` (Ink 6.8+) for synchronous render-to-string in tests.
 
-**Staleness caveat.** ink-testing-library's last release is v4.0.0 (May 2024, unmaintained; its devDeps still pin `ink ^5` / React 18), but it installs and works with Ink 6.8, 7.1, and 8. `stdin.write` drives `useInput` and `usePaste` as long as the test awaits after each write, because frames update asynchronously. The reported "stdin.write() does not trigger useInput callbacks" failure reproduces only on Ink 5.0.1 when the test writes immediately after `render()`. Frames are text only because chalk sees a non-TTY stream, not because of the library (set `FORCE_COLOR=1` to assert styles). For app-wide context providers, wrap `render` in a small helper (Gemini CLI's vitest harness does this around Ink's own `render`), and add a few PTY-level tests (**node-pty** + `strip-ansi`) that drive the built CLI for real keyboard flows. Both `ink` and `ink-testing-library` are ESM-only, so vitest is the path of least resistance over Jest.
+**Staleness caveat.** ink-testing-library 4.0.0 was built against Ink 5 / React 18 (May 2024; unmaintained and still the latest release) but installs and works with Ink 6.8, 7.1, and 8. `stdin.write` drives `useInput` and `usePaste` as long as the test awaits after each write, because frames update asynchronously (the "stdin.write() does not trigger useInput" report reproduces only on Ink 5.0.1 when writing immediately after `render()`). Frames are text only because chalk sees a non-TTY stream (set `FORCE_COLOR=1` to assert styles). For app-wide context providers, wrap `render` in a small helper, and add a few PTY-level tests (**node-pty** + `strip-ansi`) that drive the built CLI for real keyboard flows. Both `ink` and `ink-testing-library` are ESM-only, so vitest is the path of least resistance over Jest.
 
-## Debugging
+### Debugging
 
 - **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*` calls, clears the live output, renders the message above it, and repaints the UI. If console output *is* garbling the screen, something bypassed the patch — direct `process.stdout.write` calls or child-process stdio inherited straight to the terminal.
 - **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place — the single best tool for answering "which frame went wrong".
-- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (documented for Ink 8, which connects over Node's built-in `WebSocket` instead of bundling `ws`; exit the CLI manually with Ctrl+C afterwards). **This is for tree/props inspection only — don't reach for it to profile performance.** Ink's own docs never mention the Profiler/flame-chart tab, and its reconciler sets none of the flags React's Profiler mechanism needs; the Components tab genuinely works, but treat the Profiler tab as unsupported for Ink.
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree (exit the CLI manually with Ctrl+C afterwards). **This is for tree/props inspection only — don't use it to profile performance.** Ink's reconciler sets none of the flags React's Profiler needs, so treat the Profiler/flame-chart tab as unsupported.
 - **High-volume tracing** goes to stderr — `useStderr().write()` preserves Ink's output — or to a file you `tail -f` in another terminal. Never stdout; Ink owns it.
-- **Profiling:** `node --cpu-prof` is the real path — it writes a `.cpuprofile` on process exit (no signal-forwarding gotcha to worry about, unlike Rust's `perf`-based tooling), loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink-specific cost sinks: unmemoized components re-rendering on every parent update (each one potentially triggers a fresh Yoga layout pass, pricier than a DOM diff); `<Static>` misuse — it exists for content written once and never revisited, and Ink 3 made it nearly 2x faster specifically because putting the wrong content in it (or leaving genuinely-static content out of it) was a known pain point; and a small always-animating leaf component (the standard `ink-spinner` is a named example) keeping the whole render cycle continuously active instead of idle between real state changes.
+- **Profiling:** `node --cpu-prof` is the real path; it writes a `.cpuprofile` on process exit, loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink-specific cost sinks: unmemoized components re-rendering on every parent update (each can trigger a fresh Yoga layout pass); `<Static>` misuse (it is for content written once and never revisited, so leaving static content out of it or putting changing content in it both hurt); and a small always-animating leaf component (such as `ink-spinner`) keeping the render cycle continuously active instead of idle between real state changes.
 
-## Pastel — Next.js-style filesystem routing
+### Pastel — Next.js-style filesystem routing
 
-`vadimdemedes/pastel` builds CLI command structure from filesystem layout, with Zod schemas for argument validation. Like Next.js for CLIs:
+`vadimdemedes/pastel` builds CLI command structure from filesystem layout, with Zod schemas for argument validation. Like Next.js for CLIs: each file under `commands/` is a command (`index.tsx` is `myapp`, `create.tsx` is `myapp create`, `user/add.tsx` is `myapp user add`) and exports a default React component plus optional `args`/`options` Zod schemas. Pastel 4 calls Ink's `render()` without options, so `alternateScreen`, `kittyKeyboard`, `incrementalRendering`, and `concurrent` can't be set (issue #43); full-screen apps that need them should call `render()` directly.
 
-```
-commands/
-  index.tsx        // "myapp"
-  create.tsx       // "myapp create"
-  list.tsx         // "myapp list"
-  user/
-    add.tsx        // "myapp user add"
-    remove.tsx     // "myapp user remove"
-```
+### Strengths and weaknesses
 
-Each file exports a default React component plus optional `args`/`options` Zod schemas. Pastel 4 calls Ink's `render()` without options, so `alternateScreen`, `kittyKeyboard`, `incrementalRendering`, and `concurrent` can't be set (issue #43); full-screen apps that need them should call `render()` directly.
+Ink's strengths are the declarative React model (any state library or hooks) and Yoga flexbox layout. Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Inline stays the default, and the option applies only in interactive mode; it is ignored in CI or with piped stdout.
 
-## Strengths and weaknesses
-
-**Strengths:**
-- Declarative, full React ecosystem available (use any state library, any hooks).
-- Yoga flexbox is genuinely good for terminal layout.
-- Render-to-string and `stdin.write` input tests work with ink-testing-library (await after each write); add PTY tests for end-to-end keyboard flows.
-- React Devtools work (`DEV=true` env var).
-- Native alternate-screen mode since Ink 7: `render(<App />, {alternateScreen: true})` enters the alt screen and restores the terminal on exit. Inline stays the default, and the option applies only in interactive mode; it is ignored in CI or with piped stdout. Historically Ink's biggest gap — previously papered over with `fullscreen-ink` hacks.
-- Used by some of the most-deployed CLIs in the world.
-
-**Weaknesses:**
+Weaknesses:
 - **Heavy startup**: loading React + Yoga + the reconciler takes roughly 150–250 ms to the first frame on a modern laptop (measure yours with `hyperfine`). Bad for one-shot scripts where users expect instant response. For frequently-invoked commands (`mycli --version`, `mycli completion`), provide a fast path that bypasses Ink.
-- **ESM-only since Ink 4** (March 2023), and unlike chalk or commander it can't be `require()`d even on Node 22: Yoga's top-level await makes `require('ink')` throw `ERR_REQUIRE_ASYNC_MODULE` (Ink 6.8–8). From CommonJS, use `await import('ink')` or a bundler.
-- **Node 22 floor** on Ink 7 and 8 (React ≥ 19.2 on Ink 7, ≥ 19.3 on Ink 8); Ink 6 is the last major for the end-of-life Node 20.
 - **High-frequency re-renders used to flicker.** Ink 6.7+ ships synchronized updates (plus an opt-in Kitty keyboard protocol), which largely fixed this. When streaming LLM tokens or tailing logs, still prefer `useDeferredValue` (fully functional only with `render(<App />, {concurrent: true})`) or manual debounce; `<Static>` exists specifically to handle large append-only logs without re-rendering them. Ink 8's `incrementalRendering: true` rewrites only the changed part of each line, and a lower `maxFps` (default 30) cuts churn further.
 - **Screen-reader support is opt-in and partial.** Ink 6.2 added `aria-label` and `aria-hidden` (on `<Box>` and `<Text>`), `aria-role` and `aria-state` (on `<Box>`, from fixed lists), and a screen-reader renderer that turns on only through `render(..., {isScreenReaderEnabled: true})` or `INK_SCREEN_READER=true`. Nothing detects a screen reader; `useIsScreenReaderEnabled()` only reports that flag. The renderer prints linear text without borders or color and replaces children with their `aria-label`, but it still erases and rewrites the whole live region on every change. In that mode, move finished output into `<Static>`, keep the live part small, and stop per-tick spinners and timers; Gemini CLI's `--screen-reader` mode also swaps in a separate layout and a static spinner. Design guidance: `visual-patterns.md` → *Accessibility*.
 
-## Pitfalls
+### Ink pitfalls
 
-1. **Strings as direct children of `<Box>` throw.** Wrap in `<Text>`.
-2. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
-3. **`ora` and Ink fight over the terminal.** Use `<Spinner>` from `@inkjs/ui` instead inside Ink.
-4. **`console.log` from Ink 3+ is intercepted** and displayed cleanly above the live UI. Don't fight it.
-5. **Ink 7 fixed Backspace reporting as `key.backspace`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade—check `key.backspace`.
-6. **Ink 8 upgrades break in three places:** percentage `minWidth`/`maxWidth` (numbers only now), `useStdout().stdout.columns` (no longer typed; use `useWindowSize()`), and `useInput` handlers that parsed mouse or focus reports (now dropped).
+1. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
+2. **Ink 7 fixed Backspace reporting as `key.backspace`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade—check `key.backspace`.
+3. **Ink 8 upgrades break in three places:** percentage `minWidth`/`maxWidth` (numbers only now), `useStdout().stdout.columns` (no longer typed; use `useWindowSize()`), and `useInput` handlers that parsed mouse or focus reports (now dropped).
 
-Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "Pitfalls common to JS/TS terminal apps" below.
+Raw-mode/TTY guards, CI detection, and Windows caveats apply here too — see "Cross-library pitfalls" below.
 
 ---
 
 ## Modern prompts: @clack/prompts
 
-`@clack/prompts` has largely displaced Inquirer for new wizard-style CLIs. Now stable at 1.x under the bombshell-dev org (bomb.sh/clack) and actively released. Used by **create-vite, `sv` (Svelte's CLI), and create-t3-app**, and inspired the Rust port `cliclack`; create-astro ships the same look through its own `@astrojs/cli-kit` rather than Clack.
+`@clack/prompts` has largely displaced Inquirer for new wizard-style CLIs. Stable at 1.x (bomb.sh/clack); used by **create-vite, `sv` (Svelte's CLI), and create-t3-app**. create-astro ships the same look through its own `@astrojs/cli-kit` rather than Clack.
 
 ```ts check=typescript/clack
 import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
@@ -268,7 +250,7 @@ outro(`You're all set!`);
 
 **`isCancel(value)`** is critical — it detects Ctrl+C per prompt and lets you clean up gracefully. Exit 130 on cancel, not 0, so `cli && next` stops; Clack's own `cancel()` example exits 1.
 
-The visual style — blue-bordered connectors between prompts, single Unicode glyph progress markers — has become a recognizable aesthetic. If the user's building a `create-*`-style scaffolder, this is the right choice.
+Its look (connectors between prompts, single-glyph progress markers) is now a recognizable aesthetic; it is the right choice for a `create-*`-style scaffolder.
 
 ---
 
@@ -296,9 +278,7 @@ try {
 
 Ctrl+C rejects the prompt with `ExitPromptError`; uncaught, it prints a stack trace in the user's terminal. Catch it as above ([recipe](https://github.com/SBoudrias/Inquirer.js/blob/ea3130ebc609a6a3910b5397244044de7eda3d05/packages/prompts/README.md#handling-ctrlc-gracefully)).
 
-**Modular packages:** `@inquirer/input`, `@inquirer/select`, `@inquirer/checkbox`, `@inquirer/confirm`, `@inquirer/password`, `@inquirer/editor`, `@inquirer/expand`, `@inquirer/rawlist`, `@inquirer/search`, `@inquirer/number`. Pull only what you use.
-
-**i18n** via `@inquirer/i18n`.
+**Modular packages:** one per prompt (`@inquirer/input`, `select`, `checkbox`, `confirm`, `password`, `editor`, `search`, `number`, …); pull only what you use. i18n via `@inquirer/i18n`.
 
 **When to choose Inquirer over Clack:** complex prompt flows with conditional questions, validation chains, custom prompt types (extensible plugin architecture), i18n requirements. **When to choose Clack over Inquirer:** modern aesthetic, minimal API, you're scaffolding (a `create-*` tool).
 
@@ -313,9 +293,9 @@ Ctrl+C rejects the prompt with `ExitPromptError`; uncaught, it prints a stack tr
 | **kleur** | Small | Fast | Chainable | Middle ground |
 | **ansis** | Small | Fastest when chaining 2+ | Chainable + truecolor | Performance-critical with chained styles |
 
-Color-disable behavior varies by library and version. Treat `NO_COLOR`, non-TTY output, and an explicit `--color` override as an application-level output policy, then configure or bypass the styling library accordingly. **chalk v5+ is ESM-only**, but CommonJS code on Node 20.19+/22.12+ can load it with `require('chalk').default` (`require(esm)`), so there is no need to pin chalk 4. **chalk 6 requires Node ≥ 22**; chalk 5 is the last line for the end-of-life Node 20. For zero dependencies, `node:util` `styleText` (added in Node 20.12, stable since 22.13; honors `NO_COLOR`/TTY since 20.18/22.8; hex colors since 24.16/26.1) covers basic styling.
+Color-disable behavior varies by library and version. Treat `NO_COLOR`, non-TTY output, and an explicit `--color` override as an application-level output policy, then configure or bypass the styling library accordingly. chalk is ESM-only from v5 (floors and `require(esm)` in Runtime floors and ESM). For zero dependencies, `node:util` `styleText` (added in Node 20.12, stable since 22.13; honors `NO_COLOR`/TTY since 20.18/22.8; hex colors since 24.16/26.1) covers basic styling.
 
-Recommendation: **picocolors for libraries / internal tools, chalk for user-facing CLIs.**
+**picocolors for libraries / internal tools, chalk for user-facing CLIs.**
 
 ---
 
@@ -323,12 +303,11 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 
 - **ora** — single elegant spinner; 90 styles via `cli-spinners`. Use outside Ink. Inside Ink, use `<Spinner>` from `@inkjs/ui`.
 - **cli-progress** — single and multi-bar progress with ETA. Use outside Ink.
-- **listr2** — hierarchical animated task list with concurrency, retries, rollback. Renderers: `default` (live), `simple` (line-per-task, CI-friendly), `verbose`, `silent`, `test`. Used by Angular CLI, GraphQL Code Generator, and Electron Forge (lint-staged dropped it in v17.1). listr2 11 requires Node ≥ 22.13.
-- **boxen** — text in boxes; used by `update-notifier`. Useful for one-time announcements ("Update available!").
-- **figlet** + **gradient-string** — banner text with color gradients, for branding splashes.
+- **listr2** — hierarchical animated task list with concurrency, retries, rollback. Renderers: `default` (live), `simple` (line-per-task, CI-friendly), `verbose`, `silent`, `test`. Used by Angular CLI and Electron Forge.
+- **boxen** — text in boxes; used by `update-notifier` for one-time announcements ("Update available!").
 - **terminal-link** — OSC 8 hyperlinks; falls back to plain URL on terminals without support.
 - **string-width** — cell width for strings (handles CJK, emoji). Ink uses it internally.
-- **update-notifier** — checks npm registry for newer versions; shows a boxed notice.
+- **update-notifier** — checks the npm registry for newer versions and shows a boxed notice.
 
 ---
 
@@ -336,14 +315,14 @@ Recommendation: **picocolors for libraries / internal tools, chalk for user-faci
 
 | Parser | Adoption | Style | Best for |
 |---|---|---|---|
-| **commander** | The most downloaded by a wide margin | Fluent API | The default for most projects (webpack-cli, Babel CLI, Svelte's `sv`); v15 is ESM-only and needs Node ≥ 22.12 (CommonJS callers load it through `require(esm)`); v14, the last line for Node 20, gets security fixes until May 2027 |
+| **commander** | The most downloaded by a wide margin | Fluent API | The default for most projects (webpack-cli, Babel CLI, Svelte's `sv`); floors in Runtime floors and ESM |
 | **yargs** | Very high | Fluent + middleware | Best validation; used by Jest and nyc |
 | **citty** | Growing | TS-first, declarative | UnJS ecosystem (Nuxt, Nitro, unbuild) |
 | **cac** | Niche | One ~20 KB file, no deps | Vite uses it; ESM-only since v7; use ≥ 7.0.1, which fixes a prototype-pollution bug with dotted option names |
 | **oclif** | Plugin marketplace | Class-per-command | Heroku, Salesforce, Shopify CLI; heaviest startup of the group |
-| **node:util.parseArgs** | stdlib | Argument parsing only | Experimental in Node 18, stable since Node 20; zero-dep; Mocha 12 moved to it from yargs |
+| **node:util.parseArgs** | stdlib | Argument parsing only | Stable since Node 20; zero-dep |
 
-**Startup overhead** grows from the stdlib parser and cac, through commander and yargs, to oclif's plugin loader at the heavy end. Measure your own binary with `hyperfine 'mycli --version'` rather than trusting published numbers; for frequently-invoked CLIs the difference matters.
+**Startup overhead** grows from the stdlib parser and cac, through commander and yargs, to oclif's plugin loader. Measure your own binary with `hyperfine 'mycli --version'`.
 
 **commander hello world:**
 
@@ -370,41 +349,21 @@ program.parse();
 
 The credible new entrant, built by Anomaly: TypeScript bindings over a Zig native core via C ABI. Double-buffered rendering with alpha blending, scissor clipping, per-node hit testing for mouse. Packages: `@opentui/core` (low-level), `@opentui/react` and `@opentui/solid` (React and SolidJS renderers), and `@opentui/three` — a Three.js WebGPU renderer that rasterizes 3D scenes into terminal cells, its most differentiating capability.
 
-Powers **opencode** (Anomaly's terminal coding agent) in production.
+Powers **opencode** (Anomaly's terminal coding agent).
 
 **Choose if** pushing past Ink's performance ceiling — animations, real-time streaming with low latency, or complex layouts where Yoga's CPU cost matters. **Trade-off:** v0.x churn (0.6 moved layout and painting into the native core, and 0.6 and 0.7 each broke custom renderables; 0.7 also dropped the screen-sized hit grid and reads renderable hooks from the class at construction), smaller community than Ink, native binary in the install. `@opentui/core` 0.6+ declares `engines` of Bun ≥ 1.3.14 or Node ≥ 26.4. Read the [0.7.0 release notes](https://github.com/anomalyco/opentui/releases/tag/v0.7.0) before upgrading.
 
 ---
 
-## blessed / neo-blessed / terminal-kit
+## blessed / terminal-kit
 
-Retained-mode classics, pre-Ink era.
-
-- **blessed** — reimplements ncurses in pure JS with terminfo/termcap parsing, painter's algorithm with damage buffers. Massive widget set: `box`, `list`, `form`, `textbox`, `textarea`, `progressbar`, `log`, `table`, `tree`, `terminal` (embedded shell). **Largely abandoned** — last release (0.1.81) in September 2015.
-- **neo-blessed** — fork of blessed; also unmaintained (last publish 0.2.0, June 2018).
-- **terminal-kit** — cursor control, screen buffers, input fields, menus, **truecolor image drawing with half-block cells** (no Sixel), even a Document model.
-
-**Choose** for precise damage-region control or maintaining legacy code; for images, prefer terminal-image (see the table at the top). **Don't choose** for new TUI apps in 2026 — Ink is better-supported and the React/JSX model is more productive.
+Retained-mode classics, pre-Ink era. **blessed** (ncurses in pure JS; last release 0.1.81, September 2015) is abandoned, and its fork **neo-blessed** is also unmaintained (last publish 0.2.0, June 2018). **terminal-kit** offers cursor control, screen buffers, input fields, menus, and truecolor image drawing with half-block cells (no Sixel). Choose them only for precise damage-region control or legacy code; for images prefer terminal-image (see the table at the top). **Don't choose** them for new TUI apps in 2026 — Ink is better-supported and more productive.
 
 ---
 
-## Notable JS/TS TUI apps to study
+## Cross-library pitfalls
 
-- **Claude Code** (Anthropic) — Ink + React.
-- **GitHub Copilot CLI** — Ink.
-- **Gemini CLI** — Ink.
-- **Cloudflare Wrangler** — Ink.
-- **Gatsby CLI** — Ink (was one of the first major adopters).
-- **Prisma CLI** — Ink.
-- **opencode** (Anomaly) — OpenTUI.
-- **create-vite, create-astro, `sv`** — Clack-style scaffolders (`sv` replaced the deprecated create-svelte).
-- **Listr** demos — task runner aesthetic.
-
----
-
-## Pitfalls common to JS/TS terminal apps
-
-1. **ESM/CJS and Node floors**. Much of the modern stack (chalk v5+, ora v6+, ink v4+, commander v15+, @inquirer/prompts, @clack/prompts) is ESM-only at latest, and the current majors of ink (7+), chalk (6), commander (15), listr2 (11), and execa (10) require Node ≥ 22; target Node 22 or 24. On Node 20.19+/22.12+, CommonJS code can `require()` synchronous ESM packages such as chalk, commander, @clack/prompts, and @inquirer/prompts, so don't pin old CJS majors. Ink is the exception: `require('ink')` throws `ERR_REQUIRE_ASYNC_MODULE`, so load it with `await import('ink')` or bundle.
+1. **ESM/CJS and Node floors.** See Runtime floors and ESM; target Node 22 or 24 and load Ink with `await import('ink')` from CommonJS.
 2. **Restore terminal state on exit.** Ink: `exit()` or `unmount()`, then await `waitUntilExit()`; blessed: `screen.destroy()`. Treat OS signal listeners as an application boundary because Ink's Ctrl+C input handling does not cover SIGTERM.
 3. **Detect non-TTY and CI.** `process.stdout.isTTY === false` or `process.env.CI` — degrade to plain output. Spinners and prompts must not run in CI.
 4. **Raw mode requires `process.stdin.isTTY`.** Pipe input fails silently otherwise. Guard.
@@ -418,35 +377,13 @@ Retained-mode classics, pre-Ink era.
 
 ## Stack recommendations by project shape
 
-**Simple non-interactive CLI** (~50ms cold start, 19 packages and under 1 MB installed):
-```
-commander + picocolors + ora
-```
-
-**Interactive setup wizard** (`create-*` tool):
-```
-@clack/prompts + picocolors + commander
-```
-
-**Complex CLI with tasks**:
-```
-commander + @inquirer/prompts + listr2 + chalk + boxen + update-notifier
-```
-
-**Full TUI app**:
-```
-ink + @inkjs/ui + zustand + commander + ink-testing-library
-```
-(ink-testing-library 4.0.0 was built against Ink 5 / React 18 but still works with Ink 6–8; await after each `stdin.write`.)
-
-**Heroku-class plugin CLI**:
-```
-oclif + ink + chalk + listr2
-```
-
-**Performance-critical / animated TUI**:
-```
-@opentui/core or @opentui/react
-```
+| Project shape | Stack |
+|---|---|
+| Simple non-interactive CLI (~50 ms cold start, 19 packages, under 1 MB installed) | `commander + picocolors + ora` |
+| Interactive setup wizard (`create-*` tool) | `@clack/prompts + picocolors + commander` |
+| Complex CLI with tasks | `commander + @inquirer/prompts + listr2 + chalk + boxen + update-notifier` |
+| Full TUI app | `ink + @inkjs/ui + zustand + commander + ink-testing-library` |
+| Heroku-class plugin CLI | `oclif + ink + chalk + listr2` |
+| Performance-critical / animated TUI | `@opentui/core` or `@opentui/react` |
 
 ---

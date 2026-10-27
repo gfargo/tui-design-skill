@@ -31,9 +31,7 @@ The bar for a CLI to feel professional is lower than a TUI, but the principles a
 
 **Discoverable.** GUIs put options on screen; CLIs compensate with help text, examples, "did you mean…?" suggestions, and shell completions.
 
-**Conversational and consistent** across tools — same flag names mean the same things.
-
-**Robust and empathetic** — validate input early, fail fast, never lie about state.
+**Consistent and robust.** Same flag names mean the same things across tools; validate input early, fail fast, never lie about state.
 
 **Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
 
@@ -124,39 +122,27 @@ Use color sparingly: red for errors, dim for secondary text, bold for headings, 
 
 ### Unicode and emoji
 
-Glyphs like ✅, ❌, ⚠ clarify state — yubikey-agent and starship use them well. But:
+Glyphs like ✅, ❌, ⚠ clarify state, but:
 - Detect locale and `TERM`; fall back to ASCII (`[ok]`, `[!]`, `[X]`) when piped or unsupported.
 - Never use emoji as the only signal — pair with words.
-- Newer Windows Terminal and macOS/Linux terminals handle emoji fine; older terminals don't.
 
 ### Paging
 
-Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. A common choice is `LESS=FIRX` (or `less -FIRX`); git's default when `LESS` is unset is `FRX`:
-- `F` — exit immediately if content fits one screen.
-- `I` — case-insensitive search.
-- `R` — pass through ANSI color codes.
-- `X` — don't clear the screen on exit (leaves content in scrollback).
-
-`bat`, `git`, `gh` all do this. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
+Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**. A common choice is `LESS=FIRX` (git's default when `LESS` is unset is `FRX`): `F` exits immediately if content fits one screen, `I` makes search case-insensitive, `R` passes ANSI color through, `X` leaves content in scrollback on exit. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
 
 ---
 
 ## Exit codes
 
-### Universal conventions
+### Universal and shell-defined
 
 | Code | Meaning |
 |---|---|
 | 0 | Success |
 | 1 | General failure |
 | 2 | Common usage/parse error in many tools; not a universal standard |
-
-### Shell-defined
-
-| Code | Meaning |
-|---|---|
-| 126 | Found but not executable |
-| 127 | Command not found |
+| 126 | Found but not executable (shell) |
+| 127 | Command not found (shell) |
 | 128 + N | Terminated by signal N (130 = SIGINT/Ctrl-C, 143 = SIGTERM, 137 = SIGKILL) |
 
 ### BSD `sysexits.h` (legacy, nonportable richer signaling)
@@ -354,24 +340,7 @@ On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On
 
 ### Environment variables
 
-- Prefix `TOOL_FOO_BAR` (uppercase, underscores).
-- Single-line values only.
-- Honor general-purpose vars:
-
-| Variable | Purpose |
-|---|---|
-| `NO_COLOR` | Disable color (when non-empty) |
-| `FORCE_COLOR` | Force color (`0` forces it off in chalk/supports-color) |
-| `DEBUG` | Enable debug output |
-| `EDITOR` / `VISUAL` | Preferred text editor |
-| `PAGER` | Preferred pager |
-| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Proxy settings |
-| `TMPDIR` | Temp directory |
-| `HOME` | User home |
-| `SHELL` | Login shell |
-| `TERM` | Terminal type |
-| `LINES` / `COLUMNS` | Terminal size |
-| `LANG` / `LC_*` | Locale |
+Prefix tool-specific variables `TOOL_FOO_BAR` (uppercase, underscores, single-line values) and honor the general-purpose ones that apply: `NO_COLOR`, `FORCE_COLOR`, and `CLICOLOR_FORCE` (see *Color*), `DO_NOT_TRACK` (see *Telemetry*), `DEBUG`, `EDITOR`/`VISUAL`, `PAGER`, `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`, `TMPDIR`, `TERM`, `LINES`/`COLUMNS`, and `LANG`/`LC_*`.
 
 ### Secrets — what NOT to do
 
@@ -393,14 +362,14 @@ Never accept secrets via `--password=`, `--token=`, etc. on the command line. Th
 
 Two patterns dominate, and both are legitimate:
 
-1. **Browser + OAuth device-code flow**, token written to the OS keychain. Increasingly the default for modern dev-tool CLIs — `gh auth login` and `vercel login` both work this way: open a browser tab (or show a URL and one-time code to enter on another device), the user approves, the CLI polls until the token arrives. Support a non-browser fallback (`--with-token`, reading a PAT from stdin) for headless use.
-2. **Direct prompt for long-lived credentials**, written to a plaintext config file. Older but still standard for cloud-infra CLIs with long-lived access-key-style credentials (`aws configure`) — though even AWS is moving federated auth toward device-flow (`aws configure sso`).
+1. **Browser + OAuth device-code flow**, token written to the OS keychain (`gh auth login`, `vercel login`): open a browser tab, or show a URL and one-time code, and poll until the user approves. Support a non-browser fallback (`--with-token`, a PAT from stdin) for headless use.
+2. **Direct prompt for long-lived credentials**, written to a plaintext config file — still standard for access-key-style cloud CLIs (`aws configure`), though AWS is moving federated auth to device flow (`aws configure sso`).
 
-**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both, not just stdin)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`, and `GH_PROMPT_DISABLED` (any value turns gh's prompts off)—not a flag. There is no settled `--no-input`-style flag name across tools (Django uses `--no-input`, Terraform uses `-input=false`, git uses `GIT_TERMINAL_PROMPT=0`, npm and gh have no such flag at all)—don't present one as a standard; pick whatever fits your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`, and `GH_PROMPT_DISABLED` (any value turns gh's prompts off)—not a flag. There is no settled `--no-input`-style flag name (Django uses `--no-input`, Terraform `-input=false`, git `GIT_TERMINAL_PROMPT=0`, npm and gh none)—don't present one as a standard; fit your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
 
-**Keychain libraries, if you want OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; broader backend support, including a built-in encrypted-file fallback for headless environments). Rust — the `keyring` crate. Python — `keyring` on PyPI (set `PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` to disable). Node — **not `keytar`: it's been archived and unmaintained since December 2022**; even VS Code migrated off it, to Electron's `safeStorage` API. For a plain Node CLI with no Electron, fall back to a config file. On Linux specifically, keychain backends depend on a running Secret Service daemon (GNOME Keyring/KWallet) — headless containers often don't have one, so ship an explicit plaintext fallback (gh's `--insecure-storage` flag makes this opt-in, with secure storage as the default) rather than silently failing.
+**Keychain libraries for OS-native storage:** Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; more backends, including an encrypted-file fallback for headless hosts). Rust — the `keyring` crate. Python — `keyring` (`PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` disables it). Node — **not `keytar`, archived and unmaintained since December 2022**; VS Code moved to Electron's `safeStorage`, and a plain Node CLI should fall back to a config file. On Linux, keychain backends need a running Secret Service daemon (GNOME Keyring/KWallet) that headless containers often lack, so ship an explicit plaintext fallback (gh's opt-in `--insecure-storage`) rather than failing silently.
 
-**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped exactly this bug (CVE-2026-13769): with a default umask, three subcommands (`codeartifact login`, `iam create-virtual-mfa-device`, `deploy register`) wrote credential and config files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
+**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped this bug (CVE-2026-13769): under a default umask, three subcommands wrote credential files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
 
 ---
 
@@ -499,75 +468,25 @@ If you check for updates: check async, cache the result (once a day is the norm 
 - **fd** — regex by default, colorized, gitignore-aware; `-x cmd {}` simpler than `find -exec`.
 - **bat** — TTY-aware (colorizes/pages on terminal, plain `cat` when piped); `--plain`/`-p`; honors `$BAT_PAGER`/`$PAGER`.
 - **jq** — tiny startup; `-r` raw output, `-c` compact NDJSON, `-s` slurp; help-on-empty-invocation.
-- **httpie / xh** — human-friendly HTTP; pretty on TTY, raw on pipe; xh reimplements httpie's interface in Rust with a focus on performance.
-- **kubectl** — rich `-o` (`json`, `yaml`, `wide`, `name`, `jsonpath`, `go-template`, `custom-columns`); tab completion from API; `--dry-run=client|server`.
+- **httpie / xh** — human-friendly HTTP; pretty on TTY, raw on pipe.
 - **docker** — multi-level subcommands; parallel per-layer progress bars during pulls; backward-compat aliases (`docker ps` ≡ `docker container ls`).
-- **delta** — side-by-side diff via git's `core.pager`; demonstrates plug-in via stdin.
-- **eza** (formerly exa) — defaults closer to `ls -lh --color`; git status integration; `--tree`.
-- **starship** — cross-shell prompt; per-module time budgets (`scan_timeout`, `command_timeout`); single TOML config.
 
 ---
 
 ## Final checklist
 
-A good CLI:
+Answer each before shipping; a "no" points to the section that owns the rule.
 
-**Exit & streams**
-- Returns 0 on success, non-zero on failure.
-- Sends primary output to stdout, messages and errors to stderr.
-- Reads `-` as stdin; honors `--`.
-- Exits cleanly on SIGPIPE (no stack trace).
-- First Ctrl-C graceful, second force.
-- Distinct exit codes for distinct failure classes.
-
-**Help & versioning**
-- Shows help on no-arg / `-h` / `--help` / `help` (subcommand or global).
-- Help has synopsis, examples up front, and grouped commands or flags.
-- Ships shell completions and `--version` with semver + commit.
-
-**Flags**
-- Every short flag has a long form.
-- Uses standard names (`--quiet`, `--verbose`, `--output`, `--force`, `--dry-run`, `--json`, `--no-color`).
-- Prefers flags to args when ambiguous.
-
-**Output**
-- Human-friendly by default; `--json` / `--plain` for scripts.
-- Tables have no borders and toggleable headers.
-- Color auto-detects TTY and honors `NO_COLOR` / `FORCE_COLOR` / `TERM=dumb`.
-- No animations when not a TTY.
-- No log-level labels or per-line prefixes on routine output.
-
-**Errors**
-- State what / why / how-to-fix, fix last.
-- Failures and warnings start with plain `error:` / `warning:` (see *Error messages*).
-- Suggests "did you mean…?" without auto-running.
-- No stack traces unless `--debug`.
-
-**Interactivity**
-- Prompts only on TTY.
-- Provides a documented non-interactive flag, environment variable, or stdin contract appropriate to the ecosystem.
-- Confirms destructive ops with `--yes` / `--force` override.
-- No secrets via flag.
-
-**Configuration**
-- Precedence: flag > env > config > default.
-- Uses XDG dirs.
-- Env vars prefixed `MYTOOL_…`.
-
-**Performance**
-- Cold start <500ms (ideally <100ms for shell-prompt-tier).
-- Streams output line-by-line.
-- `--dry-run` for destructive ops.
-- Atomic writes; idempotent re-runs.
-
-**Subcommands**
-- No catch-all default subcommand.
-- No prefix-matching.
-- Same flags mean the same things across subcommands.
-
-**Future-proofing**
-- Machine output is stable.
-- Deprecations carry a release-cycle warning before removal.
+- **Streams and signals:** Does the result go to stdout and everything else to stderr, with `-` and `--` honored, and do SIGPIPE and a second Ctrl-C end cleanly? → *Stdin / stdout / stderr discipline*, *Signals*
+- **Exit codes:** Does each failure class have a documented code, and does a cancelled prompt exit 130? → *Exit codes*, *Interactivity*
+- **Help:** Does every entry point show help, with examples near the top and completions for each shell your parser supports? → *Help and discoverability*
+- **Flags and subcommands:** Do flags use standard names with one meaning everywhere, and does the tool avoid catch-all defaults and prefix-matching? → *Argument syntax*, *Subcommands*
+- **Output:** Can a script rely on stable machine output while the human default degrades cleanly without a TTY, under `NO_COLOR`, and on `TERM=dumb`? → *Output design*, *Color*
+- **Errors:** Does each failure say what, why, and how to fix it, fix last, under a plain `error:` and without a stack trace? → *Error messages*
+- **Interactivity and secrets:** Does it prompt only on a TTY, offer a documented non-interactive path, and never take a secret as a flag? → *Interactivity*, *Secrets — what NOT to do*
+- **Configuration:** Do precedence, XDG paths, and `MYTOOL_` env names follow the conventions? → *Configuration and state*
+- **Performance and safety:** Is cold start within budget, output streamed, destructive work behind `--dry-run`, and writes atomic and idempotent? → *Performance and signals*
+- **Future-proofing:** Will existing scripts survive the next release? → *Future-proofing*
 
 ---
 

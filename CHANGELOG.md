@@ -4,6 +4,14 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Changed
+- **Reference trim ([#77](https://github.com/gfargo/tui-design-skill/issues/77)):** the references drop from 4,461 to 3,680 lines (−781, −17.5%) and from 40,027 to 36,356 words (−3,671, −9.2%), freeing room for the 1.9 additions without growing the skill. Cuts are history, anecdotes, production-user lists, and prose repeated across files; no rule or v1.8.2 correction was removed.
+  - **Exemplar apps:** neovim, Glow, and yt-dlp/aria2 are gone; Harlequin and Toolong are one entry, lazydocker and gitui are folded into lazygit, bottom into btop, and ranger/lf/nnn/broot into yazi. Every entry now has Layout / Copy this / Lesson / Cite when, and the intro is an app → lesson → when-to-cite table.
+  - **Interaction patterns:** *Keybinding philosophies* and *Modal vs modeless* are one section with a decision rule, the named patterns are shortened to the fzf recipe plus a short paragraph each, and the raw-mode flow-control fact is stated once.
+  - **Visual patterns:** *Visual hierarchy* is a subsection of *Typography*, the border, density, theming, and Nerd Fonts lists are shorter, and the focus rule points to `interaction-patterns.md` → *Focus indicators* instead of repeating it.
+  - **CLI basics:** the environment-variable table is one sentence, and the final checklist is ten review questions that point to the owning sections.
+  - **Ecosystems:** TypeScript has one runtime-floors table, its stack recommendations are a table, and its two "Pitfalls" headings are renamed *Ink pitfalls* and *Cross-library pitfalls*. Framework subsections in the Python and TypeScript references moved from `##` to `###`. Go and Rust drop release history, production-user lists, and repeated companion-crate text.
+
 ## [1.8.2] — 2026-10-26
 
 Correctness patch for the 1.8 line from the October 2026 reference audit (#68–#71): wrong or missing facts in the ecosystem, CLI, and pattern references, and guidance that contradicted itself.

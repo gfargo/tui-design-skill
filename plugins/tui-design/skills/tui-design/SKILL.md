@@ -15,7 +15,7 @@ Design terminal software that is calm, predictable, fast, and honest about the m
 | Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
 | Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
 | TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
-| One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
+| One-shot commands, arguments, streams, exit codes, `--json` and errors, completions, paging, config, Windows, CLI testing, automation | `references/cli-basics.md` |
 | Layouts, buffers, borders, hierarchy, color, density, responsive behavior, states, tables, diff views, modals, messages, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
 | Keys, the Esc/q/Ctrl+C quit order, focus, navigation, scrolling, live-data selection, log follow mode, trees, text input, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
 | Escape sequences and terminal modes (paste, keyboard, mouse, sync output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color and theme detection | `references/terminal-protocols.md` |
@@ -115,6 +115,7 @@ Verify at least:
 - `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
 - wide characters, combining marks, truncation, sorting, and virtualization;
 - no stdout corruption and no blocking I/O in the event/render path.
+- for one-shot CLIs, stdout, stderr, and the exit code in golden tests, with no TTY and under `NO_COLOR` (`cli-basics.md` → *Testing one-shot CLIs*).
 
 Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
 

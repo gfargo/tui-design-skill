@@ -1,0 +1,127 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.9.0 CLI regressions for #75: SIGINT re-raise, structured --json errors and schema compatibility, one-shot CLI testing, the exit-code scheme, Windows behavior, atomic writes, the completions contract, pagination and config explainability, the macOS config-dir footgun, and MYTOOL_DEBUG. Checked against primary sources on 2026-10-27 (Cracauer, the bash manual, POSIX, Microsoft docs, clap_complete 4.6.11, Click 8.5.0, Typer 0.27.3, go-internal 1.16.0). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status: rubric-only; the 1.9.0 evidence round records baseline and with-skill runs on Claude Code and Codex after the content issues land.",
+  "evals": [
+    {
+      "id": "sigint-re-raise",
+      "name": "sigint-re-raise",
+      "prompt": "My Go CLI catches SIGINT, cleans up, and calls os.Exit(130). Users report that Ctrl+C in a shell loop doesn't stop the loop. What's wrong?",
+      "files": [],
+      "assertions": [
+        "Explains that after catching SIGINT the program should restore the default handler and re-raise SIGINT to itself so the parent sees death by signal",
+        "Explains that exit(130) reads as 'handled' to bash, which keeps running the loop or script",
+        "Shows the Go approach: signal.Reset(os.Interrupt), then syscall.Kill(syscall.Getpid(), syscall.SIGINT), noting it does not apply on Windows",
+        "Does not claim that a plain exit(130) is equivalent to dying from SIGINT"
+      ]
+    },
+    {
+      "id": "json-errors",
+      "name": "json-errors",
+      "prompt": "I'm adding --json to my CLI. How should failures look when the flag is set, and what are the compatibility rules for the output?",
+      "files": [],
+      "assertions": [
+        "Writes one compact structured error object to stderr, leaving stdout empty, with a non-zero exit code",
+        "Includes a stable machine-readable code that scripts can branch on, separate from the human message",
+        "Versions the error object together with the success schema",
+        "Says to add fields but never remove, rename, or retype them, and to ignore unknown fields on the consumer side",
+        "Uses one document for bounded results and NDJSON for unbounded or streaming results",
+        "Emits RFC 3339 UTC timestamps with a Z suffix"
+      ]
+    },
+    {
+      "id": "cli-testing",
+      "name": "cli-testing",
+      "prompt": "How should I test a one-shot CLI written in Go? I mostly care about output and exit codes.",
+      "files": [],
+      "assertions": [
+        "Tests the built binary as a black box on stdout, stderr, and the exit code",
+        "Recommends testscript for Go and notes that `! exec` only asserts a non-zero status, so an exact exit code needs a custom command",
+        "Covers the no-TTY case and a NO_COLOR case",
+        "Uses golden files for text but not color escapes"
+      ]
+    },
+    {
+      "id": "exit-code-scheme",
+      "name": "exit-code-scheme",
+      "prompt": "What exit codes should my CLI use? I want 0 for success and something for usage errors, plus a few of my own.",
+      "files": [],
+      "assertions": [
+        "Uses 0 for success, 1 for general failure, and 2 for usage errors",
+        "Puts documented domain codes in the 3-123 range and says to document them in --help",
+        "Avoids 124-128 and above for its own errors because timeout, xargs, and the shell give them meaning",
+        "Notes the exit status is 8 bits, so computed codes must be clamped (exit(256) is success)"
+      ]
+    },
+    {
+      "id": "windows-one-shot",
+      "name": "windows-one-shot",
+      "prompt": "What changes for a one-shot CLI that also has to run on Windows?",
+      "files": [],
+      "assertions": [
+        "Says Windows has no SIGPIPE, SIGHUP, or 128+N exit codes and treats a closed pipe as a write error",
+        "Says ANSI output requires enabling virtual terminal processing for Go and Rust, colorama in Python, and that Node handles it",
+        "Says the shell does not expand globs, so the CLI must",
+        "Does not map an unhandled Ctrl+C to exit code 130"
+      ]
+    },
+    {
+      "id": "atomic-writes",
+      "name": "atomic-writes",
+      "prompt": "My CLI writes a report file and users sometimes get a truncated file after Ctrl+C or a crash. How do I make that safe?",
+      "files": [],
+      "assertions": [
+        "Writes to a temp file in the same directory as the target, fsyncs it, and renames it over the target",
+        "Explains why the temp file must be on the same filesystem as the target",
+        "Mentions setting the final file mode explicitly",
+        "Says to exit non-zero and never leave a truncated file at the final path, or to keep an explicit partial name",
+        "Notes Windows replace is best effort rather than guaranteed atomic"
+      ]
+    },
+    {
+      "id": "completions-contract",
+      "name": "completions-contract",
+      "prompt": "How should I ship shell completions for my Rust CLI, including dynamic completion of argument values?",
+      "files": [],
+      "assertions": [
+        "Provides a `completion <shell>` command that prints the script to stdout without writing files",
+        "Names install locations: bash user completions directory, zsh `_mytool` on fpath, and fish completions directory",
+        "Mentions clap_complete and that its dynamic completion (COMPLETE=<shell>) is still behind an unstable feature",
+        "Says dynamic completion runs the binary on every Tab press, so it must be fast, side-effect free, and silent except for candidates"
+      ]
+    },
+    {
+      "id": "pagination-config",
+      "name": "pagination-config",
+      "prompt": "My list command hits a paginated API. How should limits and truncation work, and how can users see where config values come from?",
+      "files": [],
+      "assertions": [
+        "Gives the list command a documented --limit with a finite default and a way to fetch everything (--paginate or a cursor)",
+        "Reports truncation on stderr with the flag that fixes it, and keeps stdout clean",
+        "Offers a command that prints each effective config value with its source, as `git config --show-origin` does",
+        "Accepts --config and a MYTOOL_CONFIG environment variable"
+      ]
+    },
+    {
+      "id": "macos-config-dir",
+      "name": "macos-config-dir",
+      "prompt": "I'm using Go's os.UserConfigDir for my CLI's config and a macOS user set XDG_CONFIG_HOME but my tool ignores it. Why?",
+      "files": [],
+      "assertions": [
+        "Explains that os.UserConfigDir returns ~/Library/Application Support on macOS and ignores XDG_CONFIG_HOME there",
+        "Recommends checking an absolute XDG_CONFIG_HOME first and falling back to ~/.config by hand",
+        "Notes that other helpers (Rust dirs/directories) behave the same way"
+      ]
+    },
+    {
+      "id": "debug-env-var",
+      "name": "debug-env-var",
+      "prompt": "Should my CLI read the DEBUG environment variable to turn on stack traces?",
+      "files": [],
+      "assertions": [
+        "Recommends a tool-specific variable such as MYTOOL_DEBUG instead of plain DEBUG",
+        "Explains that the Node debug package owns DEBUG, so DEBUG=* set for another tool would turn on noisy output in yours",
+        "Keeps a --debug flag as the primary switch"
+      ]
+    }
+  ]
+}

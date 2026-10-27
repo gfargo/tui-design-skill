@@ -572,6 +572,6 @@ When the user is building something similar, point them at it as a reference.
 Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows (Terminal, conhost, ConEmu). Windows quirks:
 - Older `cmd.exe` doesn't support all ANSI; target Windows Terminal (Windows 10+).
 - Mouse events differ slightly; test on Windows if it's a target.
-- Environment differences (signals, `WT_SESSION`, Unicode output, multiplexer keys): `interaction-patterns.md` → *Terminal environments*.
+- Environment differences (signals, `WT_SESSION`, Unicode output, multiplexer keys): `terminal-protocols.md` → *Terminal environments*.
 
 ---

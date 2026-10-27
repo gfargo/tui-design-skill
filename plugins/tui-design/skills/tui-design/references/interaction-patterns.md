@@ -5,7 +5,7 @@ A deep dive into how users interact with TUIs — keybinding philosophy, focus m
 **Contents:**
 - [Keybinding philosophies and modal vs modeless](#keybinding-philosophies-and-modal-vs-modeless)
 - [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
-- [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect)
+- [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect) · [Keys the environment steals](#keys-the-environment-steals)
 - [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
 - [Focus management](#focus-management)
 - [Search and filter](#search-and-filter)
@@ -13,10 +13,10 @@ A deep dive into how users interact with TUIs — keybinding philosophy, focus m
 - [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
 - [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
 - [Forms and settings screens](#forms-and-settings-screens)
-- [Terminal modes and protocols](#terminal-modes-and-protocols) (paste, keyboard, mouse, focus, sync output, cursor, title, progress, color queries, terminal environments)
-- [Talking to the terminal emulator — OSC 8, 52, 9](#talking-to-the-terminal-emulator--osc-8-52-9)
 - Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
 - [Common interaction pitfalls](#common-interaction-pitfalls)
+
+Terminal modes, escape sequences (paste, keyboard and mouse protocols, OSC 8/52/9), and multiplexer, SSH, and Windows behavior live in `terminal-protocols.md`.
 
 ---
 
@@ -33,7 +33,7 @@ Most apps blend four schools:
 
 **Decision rule.** Default to hybrid for a new navigational, full-screen TUI. A bounded prompt or form can keep a smaller conventional keymap. Go modal only for editor-like tools where keystrokes are the primary interaction and users are likely vim-familiar, never for a general-purpose tool aimed at non-vim users. Choose chords only when inheriting a convention; rarely from scratch.
 
-- **Modal needs** a persistent mode indicator (status-bar color or label), a distinct cursor shape per mode (block in NORMAL, bar in INSERT, underline in REPLACE) reset on exit (see *Terminal modes and protocols* → *Output*), and a way to learn the modes.
+- **Modal needs** a persistent mode indicator (status-bar color or label), a distinct cursor shape per mode (block in NORMAL, bar in INSERT, underline in REPLACE) reset on exit (`terminal-protocols.md` → *Modes and sequences*, cursor shape), and a way to learn the modes.
 - **Modeless needs** clear focus indication (see *Focus indicators*) and modifier bindings for less-common actions.
 - **Contextual bindings** let the focused panel decide what a key means: lazygit's `space` stages in Files, checks out in Branches, applies in Stash, and k9s adds panel-specific actions to the global ones. This is context-sensitive modeless; it works when panel-specific actions are rich and a footer hint bar shows what each key does right now.
 
@@ -84,6 +84,22 @@ In cooked (line) mode these keys belong to the terminal driver and shell. In raw
 A full-screen app *may* handle these keys, and real ones do: helix binds `Ctrl-c` to toggle comments and `Ctrl-s` to `save_selection`; nano and micro save on `Ctrl+S`. What you owe users is the expected behavior, not a hands-off policy: keep `Ctrl+C` as cancel/quit unless there's a strong reason not to (and then offer an obvious exit), and implement `Ctrl+Z` suspend through the framework's support so the terminal is restored.
 
 Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
+
+---
+
+## Keys the environment steals
+
+Multiplexers, shells, and the legacy key encoding take or merge keys before your app sees them. Design the keymap around that, and read `terminal-protocols.md` → *Terminal environments* before shipping a Ctrl or Alt binding.
+
+| Key | Who takes it | Design response |
+|---|---|---|
+| **Ctrl+B** | tmux prefix | Never the only path to an action |
+| **Ctrl+A** | GNU screen prefix; readline line-start | Same; don't bind it as the leader |
+| **Ctrl+G/P/T/N/H/S/O/Q/B**, many Alt keys | Zellij's default mode (the Unlock-First preset frees the Ctrl keys, not Alt) | Keep a non-Ctrl, non-Alt path to every action |
+| **Ctrl+P** | readline previous-history; Zellij | Offer `:` or a leader key too (see Layer 4) |
+| **Ctrl+I / H / M / [** | Legacy encoding: the same byte as Tab, (often) Backspace, Enter, Esc | Don't bind them separately from Tab, Backspace, Enter, Esc |
+| **Shift+Enter, Ctrl+Enter, Ctrl+Tab** | Legacy encoding can't send them | Accelerators only: enable the kitty keyboard protocol where reported, and keep a legacy binding for every action |
+| **Lone Esc** | tmux waits `escape-time` (500 ms before 3.5, 10 ms since) to tell Esc from an Alt sequence | Don't make Esc latency-critical, and test inside tmux |
 
 ---
 
@@ -198,7 +214,7 @@ Textual treats the mouse as first-class (`:hover`, click, wheel), btop makes eve
 
 **Mouse augments keyboard, never replaces required actions.** Every mouse-reachable target needs a keyboard equivalent. Implement mouse for focusing a panel, switching tabs, scrolling lists and viewports, and clicking form buttons. Don't require it for the critical path, power-user actions, or anything that should work over a serial console or restricted SSH.
 
-**Document the selection bypass** for your users' terminals, since the modifier isn't always Shift, and offer a way to turn mouse capture off. Inside tmux 3.8+, the bypass is needed even for apps that never enable the mouse (*Terminal environments*).
+**Document the selection bypass** for your users' terminals, since the modifier isn't always Shift, and offer a way to turn mouse capture off. Inside tmux 3.8+, the bypass is needed even for apps that never enable the mouse (`terminal-protocols.md` → *Terminal environments*).
 
 ---
 
@@ -247,102 +263,6 @@ There's no single widely adopted TUI convention for settings persistence. Choose
 - **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` in the Status panel to open the raw config file in the user's editor. Since v0.44, lazygit reloads the changed file when its terminal regains focus; only a few settings (refresh and fetch intervals, update checks) still need a restart, and lazygit says which. If you take this route, reload on focus or file change rather than demanding a restart.
 
 There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
-
----
-
-## Terminal modes and protocols
-
-Full-screen apps switch terminal modes on with DECSET (`CSI ? n h`) and must switch each one off (`CSI ? n l`) on every exit path, including errors, panics, and suspend. That is the lifecycle contract in `SKILL.md`. Frameworks restore what they enable, but nothing you enable yourself: Ratatui's `restore()` undoes only raw mode and the alternate screen. Treat every capability query as optional. A terminal or multiplexer may answer late or never, so render a working default first and wait for replies with a timeout. xterm's [control sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html) define the classic modes; newer ones have their own specs, linked below.
-
-### What each framework turns on
-
-| Mode | Bubble Tea v2 | crossterm / Ratatui | Textual | Ink 8 |
-|---|---|---|---|---|
-| Bracketed paste (2004) | On | Off | On | While a paste hook is mounted |
-| Kitty keyboard | On (disambiguate), plus `modifyOtherKeys` | Off | On (disambiguate, all keys, associated text) | Opt-in |
-| Mouse reporting | Off | Off | On, all motion | None |
-| Focus reports (1004) | Off | Off | On | None |
-| Synchronized output (2026) | When the terminal reports it; not queried over SSH unless `TERM` names a known terminal | The app's job | When reported; never inline | Always, on a TTY |
-| Grapheme clusters (2027) | Same query and SSH rule as 2026 | None | None | None |
-
-The ecosystem references own the API names.
-
-### Input
-
-- **Bracketed paste (2004).** The terminal wraps a paste in `CSI 200~` … `CSI 201~`, so the app can tell pasted text from typing. Without it, kitty and Ghostty turn a pasted newline into Enter, and the app may run half a paste as commands. Enable it for any free-text input, and decide per field what a multi-line paste means: a single-line field should keep the first line or refuse, never submit. xterm, kitty, Ghostty, and foot neutralize escape characters inside a paste so it cannot end itself early; don't assume every terminal does.
-- **Kitty keyboard protocol.** Push enhancement flags with `CSI > flags u` and pop them with `CSI < u` on exit; `CSI ? u` asks whether the terminal supports it ([spec](https://sw.kovidgoyal.net/kitty/keyboard-protocol/)). The first flag, "disambiguate", makes Shift+Enter, Ctrl+Enter, Ctrl+Tab, and Ctrl+I distinct from their legacy twins and sends plain Esc as its own code, so the app no longer guesses whether Esc starts an Alt sequence. Flag 2 adds key-release events. kitty, foot, Alacritty 0.13+, Ghostty, iTerm2, Rio, Warp, xterm.js, Windows Terminal 1.25+, and WezTerm (with `enable_kitty_keyboard`) support it; xterm's `modifyOtherKeys` (`CSI > 4 ; 2 m`) covers some of the same keys. Treat the extra keys as accelerators. Every action still needs a binding that works in the legacy encoding, which is what reaches you inside tmux, whose `extended-keys` option is off by default.
-- **Mouse reporting.** Mode 1000 reports button presses and releases, 1002 adds drags, and 1003 adds every pointer move. Pair any of them with 1006 (SGR encoding), which reports coordinates past column 223 and says which button was released ([xterm](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking)). Enable the smallest mode the UI needs, since 1003 sends an event on every pointer move. crossterm's `EnableMouseCapture` turns on all of them at once. Any mouse mode takes over the terminal's own text selection; see *Mouse support* for the bypass and the off switch.
-- **Focus reports (1004).** The terminal sends `CSI I` and `CSI O` when its window gains or loses focus. Use them to pause animation and polling in the background and to refresh stale data on return; lazygit dims its panels on focus loss and refreshes on focus. tmux forwards them only with `focus-events on`, which is off by default.
-
-### Output
-
-- **Synchronized output (2026).** Wrap each frame in `CSI ? 2026 h` … `CSI ? 2026 l` so the terminal paints it at once instead of tearing mid-redraw ([spec](https://github.com/contour-terminal/vt-extensions/blob/05050a11e793c8f4362bf4e34a59ed3f7e5105fe/synchronized-output.md)), and detect support with DECRQM (`CSI ? 2026 $ p`). Always send the end sequence, error paths included; a terminal releases a stuck frame only after its own timeout (150 ms in Alacritty, 1 s in Ghostty, 2 s in kitty). kitty, WezTerm, foot, Alacritty, Ghostty, iTerm2, Windows Terminal 1.23.20211+, and tmux 3.7+ support it. Without it, write each frame in one `write`, send only changed cells, and hide the cursor while drawing, then re-show it on the focused row or field after each frame (*Accessibility* in `visual-patterns.md` says why).
-- **Cursor shape (DECSCUSR, `CSI n SP q`).** Pair shapes with modes (block in normal mode, bar in insert; see *Keybinding philosophies*), and reset with `CSI 0 SP q` on exit. Windows Terminal, foot, and Ghostty read 0 as the user's configured cursor, but xterm reads it as a blinking block; only xterm patch 411 and later restore the user's choice, with `CSI 7 SP q`. xterm and tmux 3.6+ can report the current shape: send DECRQSS `DCS $ q SP q ST` and read the reply `DCS 1 $ r Ps SP q ST`, which names the shape to restore. Other terminals may not answer, so bound the wait and fall back to the reset above. Ratatui's `restore()` doesn't touch the shape, so an app that sets one resets it.
-- **Window title (OSC 2).** Set a title only when it helps users find the window, for example the open file or the remote host. Push the old title with `CSI 22 ; 0 t` before setting yours and pop it with `CSI 23 ; 0 t` on exit. xterm, kitty, foot, iTerm2, Alacritty, and tmux keep that stack; WezTerm, Ghostty, and Windows Terminal ignore it, so the user's title is lost there. Bubble Tea clears the title on exit rather than restoring it.
-- **Progress (OSC 9;4).** `OSC 9 ; 4 ; state ; percent ST` shows progress on the tab or taskbar; state 0 removes it, 1 is normal, 2 error, 3 indeterminate, and 4 paused ([ConEmu](https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC), [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences)). Windows Terminal, Ghostty 1.2+, kitty, iTerm2, and tmux 3.7+ understand it. A terminal that knows only OSC 9 notifications may pop it up as a notification, so send it where you know it is supported, and clear it with state 0 on every exit. Bubble Tea's view-level progress bar sends it without checking.
-- **Shell-integration marks (OSC 133).** Prompt marks (`A` prompt, `B` input, `C` output, `D;exit-code` end) let a terminal jump between prompts, select one command's output, and show its exit status ([proposal](https://gitlab.freedesktop.org/Per_Bothner/specifications/-/blob/6b555699e41ab47ce210610d1a17cfc1662ec8d7/proposals/semantic-prompts.md)). A REPL should mark its own prompts, adding `aid=` when it runs inside a shell that marks them too; a full-screen TUI should not.
-- **Grapheme clusters (2027).** With mode 2027 on, the terminal sizes cells by grapheme cluster, so emoji sequences and combining marks take the width the app computed ([spec](https://github.com/contour-terminal/contour/blob/b719d05aed54f29ee7d629f5dd7d760b2f4b4320/docs/vt-extensions/unicode-core.md)). Bubble Tea turns it on when the terminal reports support; the other frameworks don't. Where it is off, app and terminal can still disagree; kitty, for one, segments graphemes without implementing 2027. Test emoji-heavy rows on the terminals you support.
-
-### Color and appearance
-
-- **Color depth.** `COLORTERM=truecolor` (or `24bit`) is the [convention](https://github.com/termstandard/colors/blob/caf0bb949ad64307d938a055f7fbec76ce65d91e/README.md#truecolor-detection) for 24-bit color; `TERM` alone proves little, since most terminals call themselves `xterm-256color`. Libraries read it differently: chalk 6 accepts only `truecolor` (with `24bit` it falls back to whatever `TERM` suggests), and crossterm consults `TERM` only when `COLORTERM` is unset. The variable is also the first thing lost over SSH. OpenSSH forwards no environment variables by default, and only recent Debian and Ubuntu releases send and accept `COLORTERM` at both ends. tmux 3.6+ sets `COLORTERM=truecolor` in its panes and downsamples for the outer terminal. To recover truecolor remotely, ask the terminal (XTGETTCAP `RGB`, which Bubble Tea's capability request sends) or let users set it; otherwise fall back to 256 colors over the 16-color theme from `visual-patterns.md` → *Color in depth*.
-- **Background color (OSC 11).** `OSC 11 ; ? ST` returns the background as `rgb:rrrr/gggg/bbbb`. The Linux console, PuTTY, mosh, GNU Screen, and ConEmu never answer, so follow it with a query every terminal answers (DA1, `CSI c`, or the status report `CSI 5 n`). If that reply arrives first, no background reply is coming. Cap the wait anyway (Neovim uses 100 ms, lazygit 500 ms for slow SSH, Lip Gloss 2 s), render with a default palette meanwhile, and switch when the answer arrives. tmux 3.4+ answers OSC 11 itself with the attached client's colors.
-- **Dark/light changes (2031).** After `CSI ? 2031 h`, the terminal reports a theme switch as `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n` (light), and `CSI ? 996 n` asks for the current theme ([spec](https://github.com/contour-terminal/contour/blob/ab57ab3288c3dca5ff727311cb3f1401bac30549/docs/vt-extensions/color-palette-update-notifications.md)). kitty 0.38.1+, Ghostty, foot 1.23+, and iTerm2 3.7+ support it; WezTerm does not; tmux 3.6+ reports it too, guessing from the background color, and 3.8 forwards the outer terminal's own theme. Probe with DECRQM before enabling it, re-query OSC 11 when a report arrives instead of trusting the report alone, as lazygit and Neovim do, and turn the mode off before handing the terminal to a child process. Bubble Tea passes the parsed reports through without enabling the mode; Textual, Ink, and Ratatui don't handle it.
-
-### Terminal environments
-
-The same app runs inside multiplexers, over SSH, and on Windows consoles. Each changes which keys arrive and which modes work:
-
-| Environment | What breaks | Detect | Fallback |
-|---|---|---|---|
-| tmux | The prefix `Ctrl+B` never reaches the app. A lone Esc waits `escape-time` before delivery (500 ms before 3.5, 10 ms since). Since 3.8 the `mouse` option defaults to on: unless the app enables mouse reporting, a plain drag starts tmux's copy-mode selection and the wheel enters copy mode (except on the alternate screen), while Ctrl-drag, Alt-drag, and Alt+right-click always belong to tmux | `$TMUX`, `TERM_PROGRAM=tmux` | Never make `Ctrl+B` the only path to an action; document the `tmux.conf` options below |
-| GNU screen | The prefix `Ctrl+A` never reaches the app. Truecolor is dropped unless `truecolor on` (5.0+); OSC sequences other than titles and colors are discarded; the alternate screen is off by default. The default flow control (`auto`) still passes Ctrl+S and Ctrl+Q to raw-mode apps on Linux, but `flow on` swallows them | `$STY`, `TERM=screen*` | 256-color theme; no OSC-dependent feature without a fallback; clear the screen on exit |
-| Zellij | Its default mode captures `Ctrl+G/P/T/N/H/S/O/Q/B` and many Alt keys. The Unlock-First preset (0.41+) frees the Ctrl keys but keeps its Alt bindings | `$ZELLIJ` | Keep a non-Ctrl, non-Alt path to every action; point users at Unlock-First |
-| SSH | Every capability query costs a network round trip; `COLORTERM` usually doesn't arrive; the remote may lack terminfo for the local terminal (kitty's `xterm-kitty`, Ghostty's entry); OSC 52 is the only clipboard path | `$SSH_TTY`, `$SSH_CONNECTION` | Bounded query timeouts, truecolor from a query or a user setting, `TERM=xterm-256color` when terminfo is missing (kitty's `kitten ssh` and Ghostty's SSH integration copy it over) |
-| Windows | No SIGTSTP, SIGWINCH, or SIGCONT: no job-control suspend, and resize arrives as console events. The legacy console has no VT processing before the Windows 10 Anniversary Update. Windows Terminal sets no `TERM` or `COLORTERM` | `WT_SESSION` (Windows Terminal) | A non-suspend path to the shell; target Windows Terminal, the default since Windows 11 22H2. Go, Rust, and Python write Unicode through the wide console API, so no `chcp 65001` is needed |
-| CI, pipes | No TTY: no prompts, no full-screen UI | `CI`, stdout not a terminal | `cli-basics.md` → *Interactivity* and *Output design* |
-
-Sources: [tmux.1](https://github.com/tmux/tmux/blob/3.8/tmux.1) and [CHANGES](https://github.com/tmux/tmux/blob/3.8/CHANGES) at 3.8, [screen.1](https://git.savannah.gnu.org/cgit/screen.git/tree/src/doc/screen.1?h=v.5.0.2) at 5.0.2, [Zellij's keybinding presets](https://zellij.dev/documentation/keybinding-presets.html), [Microsoft's console VT notes](https://devblogs.microsoft.com/commandline/new-experimental-console-features/), and the [Windows 11 default-terminal announcement](https://devblogs.microsoft.com/commandline/windows-terminal-is-now-the-default-in-windows-11/).
-
-**tmux options.** tmux answers or forwards most of these itself: synchronized output and progress (3.7+), hyperlinks (3.4+), the clipboard (`set-clipboard`), focus reports (`focus-events on`), extended keys (`extended-keys`), and the dark/light theme (3.6+). Notifications and image protocols need DCS passthrough (`ESC P tmux; … ESC \` with every inner ESC doubled) and `allow-passthrough on`, which is off by default ([tmux.1](https://github.com/tmux/tmux/blob/3.8/tmux.1)). Several of these depend on options that are off by default, so document the `tmux.conf` lines your app needs.
-
----
-
-## Talking to the terminal emulator — OSC 8, 52, 9
-
-Some interactions aren't between the user and your app — they're between your app and the *terminal emulator*: open a link, set the clipboard, pop a desktop notification. OSC escape sequences carry these requests in-band, down the same byte stream as your output. That's their superpower: they traverse SSH, containers, and nested shells, because the emulator on the user's *local* machine interprets them — no X11 forwarding, no remote clipboard daemon.
-
-### OSC 8 — hyperlinks
-
-`ESC ] 8 ; params ; URI ESC \` … link text … `ESC ] 8 ; ; ESC \`. The optional `id=` param stitches one logical link across wrapped lines or split regions so all its cells underline together on hover; simple filters shouldn't set ids, full-screen apps that manage the screen should.
-
-**Support:** iTerm2, kitty, WezTerm, Ghostty, foot, Windows Terminal (1.4+), Alacritty (0.11+), tmux 3.4+. Degradation is graceful — a terminal that doesn't know OSC 8 ignores it and renders the visible text normally — but strip it when stdout isn't a TTY, or the raw bytes land in files and pipes.
-
-**Libraries:** Lipgloss v2 has `Style.Hyperlink(url)`; Rich/Textual support links via the `link` style attribute. **Ratatui has no native support** — escape sequences inside `Text`/`Span` break its per-cell width accounting (open issue #1227); workarounds (the `hyperrat` crate, the `tui-link` repo) exist but work around the buffer model rather than fixing it.
-
-**Over SSH, remember the link opens on the local machine.** A `file://` URI pointing at a remote path won't resolve. For "open this file," suspend and spawn `$EDITOR` on the remote side instead; save OSC 8 for `https://` URLs and the like.
-
-### OSC 52 — write the system clipboard
-
-`ESC ] 52 ; c ; <base64 payload> ESC \` asks the emulator to set the system clipboard — from anywhere, including over SSH. Practical limits: the common ceiling comes from xterm/hterm's 100,000-byte maximum sequence length, ≈74,994 bytes of decoded text; older kitty builds capped far lower. Keep payloads to tens of KB or chunk them.
-
-**tmux:** `set-clipboard` controls forwarding — `on` lets inner apps set the outer clipboard; `external` (the default since 2.6) reserves that for tmux itself. Forwarding needs tmux to know the outer terminal handles OSC 52: an `Ms` terminfo entry, or (tmux 3.6+) the terminal's device-attributes reply. tmux understands OSC 52 natively — it does **not** need `allow-passthrough`.
-
-**Security:** writing is the safe half. Clipboard *reads* are how a malicious remote exfiltrates data, so most terminals disable or prompt on them (kitty prompts; WezTerm ignores queries; Alacritty disabled paste-back by default in 0.13). Alacritty has ignored OSC 52 from unfocused windows since 0.11, and other terminals may apply similar focus gates, so a background job cannot count on the write landing either. Design for write-only, and treat the write as best-effort.
-
-**Libraries:** crossterm 0.29 added OSC 52 copy; Bubble Tea v2 ships `tea.SetClipboard`. Still provide a local fallback (`pbcopy` / `xclip` / `wl-copy`, or Rust's `arboard`) — OS clipboard APIs are more reliable when you're not over SSH, and some terminals disable OSC 52 entirely.
-
-### OSC 9 / 777 — desktop notifications
-
-`ESC ] 9 ; message ESC \` (OSC 9, iTerm2-originated) has the widest support: kitty, WezTerm, Ghostty, iTerm2, foot. Never start the message with digits and a semicolon: `OSC 9;n` is also ConEmu's command namespace (`9;4` is a progress bar), parsed by Windows Terminal, Ghostty, and tmux 3.7+, so `3; tests failed` becomes a command or gets dropped. Prefix the text (`build: 3 tests failed`) or use OSC 777. OSC 777 (`ESC ] 777 ; notify ; title ; body ESC \`) adds a title where supported (WezTerm, Ghostty, foot); a reasonable strategy is 777 where you know it works, else 9. tmux swallows both unless wrapped in DCS passthrough with `allow-passthrough on` (tmux 3.3+).
-
-**Etiquette:** notify only when long-running work finishes (or fails) while the user is likely elsewhere — build done, tests finished, deploy complete. Fire once, keep it short, prefer in-UI status when the app has focus. Never notify for routine events or things the user just did.
-
-### The rest of the family, in one line each
-
-- **OSC 11** (background color) and **mode 2031** (dark/light changes) — see *Terminal modes and protocols* → *Color and appearance*.
-- **OSC 9;4** (progress) and **OSC 133** (prompt marks) — see *Terminal modes and protocols* → *Output*.
-- **Bracketed paste (mode 2004)** — see *Terminal modes and protocols* → *Input*.
 
 ---
 

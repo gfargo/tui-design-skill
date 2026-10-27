@@ -17,7 +17,8 @@ Design terminal software that is calm, predictable, fast, and honest about the m
 | TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
 | One-shot commands, arguments, streams, exit codes, automation | `references/cli-basics.md` |
 | Layouts, buffers, borders, hierarchy, color, density, responsive behavior, tables, themes, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
-| Keys, focus, navigation, modes, forms, mouse, confirmation, undo, OSC features | `references/interaction-patterns.md` |
+| Keys, focus, navigation, keybinding philosophy, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
+| Escape sequences and terminal modes (paste, keyboard, mouse, sync output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color and theme detection | `references/terminal-protocols.md` |
 | Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
 | Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
 

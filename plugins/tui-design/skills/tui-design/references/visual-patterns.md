@@ -221,7 +221,7 @@ Detect it from the first non-empty variable among `$LC_ALL`, `$LC_CTYPE`, and `$
 
 ### The three tiers
 
-Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier (detection details: `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*). SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
+Design in three layers: monochrome, 16 ANSI, then 256/truecolor. Use truecolor only when the terminal advertises it (`COLORTERM=truecolor` or `24bit`, or your framework's color-profile detection); `COLORTERM` often doesn't survive ssh or sudo, so let users force a tier (detection details: `terminal-protocols.md` → *Modes and sequences* and *Notes that change a decision*). SKILL.md → *Meaning and access* sets the token and `NO_COLOR` rules this section builds on. The depth worth adding here: the user's terminal theme is sacred. The 16 ANSI colors are *theme variables* — the user's `red` might be `#ef5350` (Material), `#dc322f` (Solarized), or `#f38ba8` (Catppuccin). You design in terms of "red means error," not "use #ff0000 for errors."
 
 ### Semantic tokens
 
@@ -549,7 +549,7 @@ The fallback ladder is Nerd Font glyphs → plain Unicode symbols → ASCII. sta
 
 ### Light/dark detection
 
-- OSC `]11;?` query — many terminals respond with their background color; others never answer, so bound the wait. Mode 2031 reports later theme switches where supported. The query, timeout, and sentinel details are in `interaction-patterns.md` → *Terminal modes and protocols* → *Color and appearance*.
+- OSC `]11;?` query — many terminals respond with their background color; others never answer, so bound the wait. Mode 2031 reports later theme switches where supported. The query, timeout, and sentinel details are in `terminal-protocols.md` → *Modes and sequences* and *Notes that change a decision*.
 - `$COLORFGBG` env var — set by some terminals (rxvt-derivatives).
 - Lipgloss v2's `LightDark` (`AdaptiveColor` in v1/compat) and Textual's runtime theme switching abstract this.
 

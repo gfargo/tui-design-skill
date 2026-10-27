@@ -4,6 +4,16 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Added
+- **Layout wireframes and States ([#73](https://github.com/gfargo/tui-design-skill/issues/73)):** `visual-patterns.md` now shows the design instead of only describing it.
+  - *The seven canonical layouts* is a decision table (use when, avoid when, 60-column fallback, exemplars) plus an ASCII thumbnail of each layout wide and at its 60-column fallback. The long per-layout prose became short notes.
+  - *Responsive design* adds one app at 120, 80, and 60 columns with default pane ratios: sidebar 20–30% clamped to 20–40 columns, list at least 30, and the detail pane folding away first.
+  - A new *States* section covers initial, loading, empty, partial, success, error, stale, and too small, each with a sketch and a rule. It replaces the empty, loading, and disconnected bullets that sat under *Progress indicators*.
+  - Concrete defaults replace vague wording: info messages fade after 3–5 seconds while errors stay until dismissed and then go to a message log; footer hints are shown at 80 and 40 columns, most frequent first and `?` last; one blank row between groups, 1-cell padding, a 2-cell column gutter, and modals at most 60–80% wide; table status columns are left-aligned; a command palette from about 20 actions; and `/` filters lists but searches documents and logs.
+  - *The clutter audit* gains a before/after example with the counts it would report.
+  - `SKILL.md` tells the agent to include an ASCII sketch at the floor size in design answers.
+  - `evals/v190-content-evals.json` adds six rubric cases for these behaviors (rubric-only; later v1.9.0 issues extend it).
+
 ### Changed
 - **Terminal protocols reference ([#72](https://github.com/gfargo/tui-design-skill/issues/72)):** the terminal modes, escape sequences, and environment matrix moved out of `interaction-patterns.md` into a new `references/terminal-protocols.md`, so design questions about keys, focus, and confirmation no longer load DECRQM and OSC details. The new file keeps the framework-defaults table, turns the per-mode bullets into one table (Mode | Enable / disable | Detect | Support floor | Gotcha), and trims per-terminal timeout and version trivia. `interaction-patterns.md` shrinks 41% by characters (40,919 to 23,934) and keeps a short *Keys the environment steals* table because it constrains keymap design; total reference size does not grow.
   - `SKILL.md` gains a routing row for escape sequences, terminal modes, multiplexer, SSH, and Windows behavior, clipboard, links, notifications, and color and theme detection.

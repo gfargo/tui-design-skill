@@ -127,7 +127,7 @@ After pressing a leader (Space, `,`, `\`), show a popup with the available follo
 
 `Ctrl+P` (or similar) opens a fuzzy-matched action list. The user types to filter. Keep an alternative binding: Zellij's default mode captures `Ctrl+P` and readline uses it for previous history. A route that needs no Ctrl chord, such as `:` or a leader key, avoids both collisions.
 
-Add a palette when the action set is large, spans multiple contexts, or benefits from search; a small app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description. Show the keybinding next to each command name, so the palette doubles as keybinding documentation.
+Add a palette once the app has more than about 20 actions, or when its actions span multiple contexts or benefit from search; a smaller app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description. Show the keybinding next to each command name, so the palette doubles as keybinding documentation.
 
 Examples: Textual's built-in palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT), VS Code's Ctrl+Shift+P (the conceptual ancestor), and the `:` of helix and k9s (resource-typing, but the same "type to filter actions" model).
 
@@ -171,11 +171,11 @@ Some panels should "trap" focus — Tab inside them cycles through internal widg
 
 ## Search and filter
 
-Two distinct interactions:
+Two distinct interactions, usually on the same key: `/` filters lists and searches documents and logs, so the focused view decides which one it does.
 
 ### Search (forward through content)
 
-Bound to `/`. Opens a search prompt; `Enter` jumps to first match; `n` / `N` cycles. Examples: vim's `/`, less's `/`, lazygit's `/`.
+Bound to `/` in documents and logs. Opens a search prompt; `Enter` jumps to first match; `n` / `N` cycles. Examples: vim's `/`, less's `/`, lazygit's `/`.
 
 - Show match count: `(2/15)`.
 - Highlight all matches; focus the current one with reverse video or accent.
@@ -183,7 +183,7 @@ Bound to `/`. Opens a search prompt; `Enter` jumps to first match; `n` / `N` cyc
 
 ### Filter (narrow what's shown)
 
-Bound to `/` (when search isn't needed) or another key. Filters the list to matching items. Examples: fzf's whole identity, k9s's `/`, Textual's `Input` widget on a list.
+Bound to `/` in lists. Filters the list to matching items. Examples: fzf's whole identity, k9s's `/`, Textual's `Input` widget on a list.
 
 - Sub-100ms response — anything slower feels broken.
 - Show count: `123/45678`.

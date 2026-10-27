@@ -3,17 +3,18 @@
 A deep dive into the visual design choices that make TUIs feel professional. The top-level `SKILL.md` covers the principles; this file goes deeper with the *why*, the *when*, and the trade-offs.
 
 **Contents:**
-- [The seven canonical layouts in detail](#the-seven-canonical-layouts-in-detail)
+- [The seven canonical layouts in detail](#the-seven-canonical-layouts-in-detail) (decision table, ASCII thumbnails with 60-column fallbacks)
 - [Inline, alt-screen, or overlay — where the UI lives](#inline-alt-screen-or-overlay--where-the-ui-lives)
 - [Borders — when, what, and why](#borders--when-what-and-why)
 - [Color in depth](#color-in-depth)
 - [Typography in monospace](#typography-in-monospace) (includes visual hierarchy)
 - [Density: pack vs pad](#density-pack-vs-pad) (includes the clutter audit)
-- [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor)
+- [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor) (includes one app at three widths)
 - [Tables and lists](#tables-and-lists)
 - [Localization](#localization) (translation growth, right-to-left text, ambiguous-width characters, locale formatting)
 - [Status bars, headers, footers](#status-bars-headers-footers)
-- [Progress indicators](#progress-indicators) (includes disconnected/stale-data and timeout/cancel UX)
+- [Progress indicators](#progress-indicators)
+- [States](#states) (initial, loading, empty, partial, success, error, stale, too small)
 - [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
 - [Accessibility](#accessibility) (screen readers, the plain-mode contract, framework support, motion)
 - [Common visual pitfalls](#common-visual-pitfalls)
@@ -22,140 +23,100 @@ A deep dive into the visual design choices that make TUIs feel professional. The
 
 ## The seven canonical layouts in detail
 
-### 1. Persistent multi-panel
+Pick the layout from the user's loop, then sketch it at the floor size before writing code. The table is the decision; the thumbnails show each layout wide (left) and at its 60-column fallback (right), drawn in ASCII so they survive any terminal.
 
-All panels visible simultaneously in fixed positions. Focus shifts via Tab or numeric keys. The user builds spatial memory: "files are top-left, branches are below, diff is on the right."
+| Layout | Use when | Avoid when | 60-column fallback | Exemplars |
+|---|---|---|---|---|
+| **Persistent multi-panel** | Users watch several related views at once; data is read at a glance; numeric jumps (`1`–`5`) make sense | Each pane needs full attention, or the total would overwhelm a small terminal | Show the focused panel only, with the others as tabs or `1`–`5` jumps | lazygit (5 left panels plus one right), btop, htop (header, list, F-key footer) |
+| **Miller columns** | Hierarchical data (filesystems, JSON, K8s trees) where parent context and a preview matter | Non-hierarchical data, or terminals under 80 columns | One pane (the middle column); the preview opens on demand | yazi (`[1, 4, 3]`), ranger, nnn, lf, broot |
+| **Drill-down stack** | Many resource types to pivot between; each detail view deserves the full screen; command-mode navigation fits | Users must compare two things side by side, or the stack would pass three levels | Unchanged: one view at a time is the native shape | k9s, lazydocker, gh dash |
+| **Widget dashboard** | Monitoring where users compose their own view and each widget updates on its own cadence | Static data, or users who want one curated experience | One widget at a time with a next-widget key | btop, bottom, glances, gtop |
+| **IDE three-panel** | Compose, execute, inspect workflows with a navigator beside the work | Pure browsing with no composition step | The main panel only; the sidebar and output become toggles | Posting, Harlequin |
+| **Overlay / popup** | Summon, choose, output, exit; shell-pipeline tools; replacing a built-in such as Ctrl+R | Long-running interactions, or anything that keeps state between runs | Unchanged: shrink the preview first | fzf, atuin, zoxide with fzf, gum |
+| **Tabbed within a panel** | One panel needs several related views of the selected object | Unrelated tabs (use panels) or more than 5–6 tabs | Collapse the tab row to the active tab with a count and `[`/`]` | lazygit's branch tabs, lazydocker's right pane |
 
-**Examples:** lazygit (5 left panels + 1 right), btop (full-width CPU on top; memory above network on the left, processes on the right), htop (header / process list / F-key footer).
+**Persistent multi-panel**
 
-**When to use:**
-- Users want to see multiple related views at once without switching.
-- The data is observed at a glance (monitors, dashboards).
-- Numeric panel jumps make sense (`1`–`5`).
+```
++---------+----------------+    +--------------------------+
+| 1 Files |                |    | [1 Files] 2 Branch 3 Log |
++---------+ 4 Diff         |    |                          |
+| 2 Branch|                |    |   focused panel only     |
++---------+----------------+    +--------------------------+
+| space stage  c commit  ? |    | space stage  c commit  ? |
++--------------------------+
+```
 
-**When to avoid:**
-- Each pane needs full attention (use IDE three-panel or drill-down stack instead).
-- Total information would overwhelm at smaller terminal sizes.
+**Miller columns**
 
-**Implementation notes:**
-- Mark the focused panel with a cue that survives `NO_COLOR` (heavier border or a marked title) and let border color reinforce it; the ranking is in `interaction-patterns.md` → *Focus indicators*.
-- Footer hint bar should be **panel-aware**: `c` does different things in lazygit's Files vs Commits panel; show what's relevant.
-- Numeric jumps (`1`–`5`) should work from any panel — don't make users return to a "menu" first.
+```
++------+---------+---------+    +--------------------------+
+| up   | current | preview |    | src/app/                 |
+| src/ | > app/  | main.go |    | > main.go                |
+| doc/ |   lib/  | ...     |    |   util.go   (l: preview) |
++------+---------+---------+    +--------------------------+
+        1 : 4 : 3
+```
 
-### 2. Miller columns
+**Drill-down stack**
 
-Three (sometimes more) columns: parent → current → preview. `h`/`l` (or `←`/`→`) ascend/descend.
+```
+pods > api-7d > logs            api-7d
++--------------------------+    +--------------------------+
+| NAME     READY  AGE      |    | Ready: 1/1   Age: 4d     |
+| > api-7d 1/1    4d       |    | Enter: logs  Esc: back   |
+|   web-2c 1/1    4d       |    +--------------------------+
++--------------------------+
+```
 
-**Examples:** yazi (default ratio `[1, 4, 3]` for parent/current/preview), ranger (the original), broot (tree-mode variant), nnn, lf.
+**Widget dashboard**
 
-**When to use:**
-- Hierarchical data: filesystems, JSON, K8s resource trees.
-- Users need to see context (parent) and outcome (preview) without losing position.
+```
++-----------+------------+      +--------------------------+
+| CPU       | MEM        |      | CPU            (1 of 4)  |
++-----------+------------+      |                          |
+| NET       | PROCS      |      | Tab: next widget         |
++-----------+------------+      +--------------------------+
+```
 
-**When to avoid:**
-- Narrow terminals (<80 cols) — degrades poorly. Provide a single-pane fallback.
-- Non-hierarchical data — the parent column is wasted.
+**IDE three-panel**
 
-**Implementation notes:**
-- The middle column should be widest — that's where the user works.
-- Preview column shows file content / nested object / pod logs depending on what's selected.
-- Selection in the middle column updates the preview live (debounce if expensive).
+```
++------+-----------+-----+      +--------------------------+
+| tree | editor    | out |      | editor      [tab][tab]   |
+|      | [tab][tab]|     |      |                          |
+|      |           |     |      +--------------------------+
++------+-----------+-----+      | F2 tree   F3 output      |
+```
 
-### 3. Drill-down stack
+**Overlay / popup**
 
-Browser-style: navigate into deeper views with a back-stack, `Esc` returns to the previous view.
+```
+$ vim $(fzf)                    > src/lib.go
+  src/main.go                     3/120   (no preview)
+> src/lib.go
+  3/120   (inline, 40% height)
+```
 
-**Examples:** k9s (`:pods` → Enter on pod → `Esc` back), lazydocker (sidebar → drill into container → `Esc`), gh dash (PR list → PR detail).
+**Tabbed within a panel**
 
-**When to use:**
-- Many resource types where the user needs to pivot between them.
-- Each detail view is full-screen and demands attention.
-- Command-mode navigation is natural (`:resource`).
+```
++--------------------------+    +--------------------+
+| [Local] Remote  Tags     |    | < Local 1/3 >      |
++--------------------------+    +--------------------+
+| > main                   |    | > main             |
+|   dev                    |
+```
 
-**When to avoid:**
-- Users need to compare two things side-by-side (use multi-panel).
-- The back-stack would get deep (>3 levels confuses users).
+### Notes by layout
 
-**Implementation notes:**
-- Status bar should show the current "address" (breadcrumb): `cluster/namespace/pods/my-pod-7d9f`.
-- `Esc` always backs up one level. The user should never feel trapped.
-- Implement a stack of view-state objects. On push, save the current view; on pop, restore.
-
-### 4. Widget dashboard
-
-Independent widgets in a grid, each owning its data lifecycle. Layout is configurable.
-
-**Examples:** bottom (btm), btop, glances, gtop. Configurability varies: bottom defines rows and column ratios in TOML; btop toggles boxes and layout presets in `btop.conf`; glances uses an INI file; gtop has no layout config.
-
-**When to use:**
-- Monitoring/observability where users want to compose their own view.
-- Each widget has its own update cadence.
-
-**When to avoid:**
-- Static data layouts — config overhead doesn't earn its keep.
-- Users who want a single curated experience.
-
-**Implementation notes:**
-- Define a config schema (TOML/YAML) early. Users *will* want to customize.
-- Each widget should be independently scrollable/expandable.
-- Mouse-resize is rare; btop, for example, offers click-to-focus and scroll but no drag-resize.
-
-### 5. IDE three-panel
-
-Sidebar → main content → detail/output. The main panel often has tabs giving it multiple personalities.
-
-**Examples:** Posting (collection tree → request editor → response), Harlequin (catalog → editor → results). helix is the counterexample: its file explorer is a picker, not a persistent sidebar.
-
-**When to use:**
-- Editor-like workflows where users compose then execute then inspect.
-- A small set of "current items" needs prominent focus while keeping a navigator.
-
-**When to avoid:**
-- Pure browsing (no composition step) — multi-panel is simpler.
-- Mobile-style narrow terminals — too many panels to fit.
-
-**Implementation notes:**
-- Sidebar collapsible (`Ctrl+B` or similar — but `Ctrl+B` is tmux's default prefix, so keep an alternative). Users will toggle it.
-- Main panel tabs cycled with `[`/`]`. (`Ctrl+Tab` isn't reliably delivered without the kitty keyboard protocol or `modifyOtherKeys`.)
-- Output panel often docked bottom or right; resizable.
-
-### 6. Overlay / popup
-
-Appears over the shell, does one thing, exits.
-
-**Examples:** fzf (the canonical example), atuin (replaces Ctrl+R), zoxide+fzf for directory selection, gum prompts.
-
-**When to use:**
-- "Summon → choose → output → exit" interactions.
-- Tools meant to compose with shell pipelines.
-- Replacing a built-in like Ctrl+R reverse-search.
-
-**When to avoid:**
-- Long-running interactions — users will resent the cramped popup space.
-- Anything that needs to persist state between invocations.
-
-**Implementation notes:**
-- Buffer choice (inline vs alt screen) and the exit contract are covered in full below — see *Inline, alt-screen, or overlay*.
-- Startup time is part of the design, because users summon these dozens of times a day; budgets are in `cli-basics.md` → *Startup time*.
-
-### 7. Tabbed within panel
-
-Tab bars inside a larger layout, cycled with `[`/`]` (`Ctrl+Tab` only where the enhanced keyboard protocol is active).
-
-**Examples:** lazygit's Local/Remotes/Tags tabs in the branches panel; lazydocker's Logs/Stats/Env/Config/Top tabs in the right pane.
-
-**When to use:**
-- One panel needs multiple personalities without changing the global layout.
-- The tabs are related (different views of the same selected object).
-
-**When to avoid:**
-- Tabs are unrelated — that's a sign you actually need different panels.
-- More than 5–6 tabs — split into nested tabs or use a different pattern.
-
-**Implementation notes:**
-- Active tab visually distinct: underline or reverse video, with the accent color as reinforcement.
-- Tab key labels (`Logs [1]`, `Stats [2]`, `Env [3]`) so users can jump directly.
-- Cycle order matches reading order (left to right).
+- **Multi-panel:** the focus cue must survive `NO_COLOR` (ranking in `interaction-patterns.md` → *Focus indicators*). Make the footer hint bar panel-aware (`c` does different things in lazygit's Files and Commits panels), and let numeric jumps work from any panel.
+- **Miller columns:** the middle column is the widest because it is where the user works. The preview follows the selection live; debounce it when it is expensive.
+- **Drill-down stack:** show the current address in the status bar (`cluster/namespace/pods/my-pod-7d9f`). `Esc` always backs up one level, so the user never feels trapped. Keep a stack of view-state objects: push saves the current view, pop restores it.
+- **Widget dashboard:** define the config schema (TOML or YAML) early, because users will customize. bottom sets rows and column ratios in TOML, btop toggles boxes in `btop.conf`, glances reads INI, and gtop has no layout config. Make each widget independently scrollable or expandable. Drag-resize is rare (btop offers click-to-focus and scrolling, no drag-resize).
+- **IDE three-panel:** make the sidebar collapsible, but `Ctrl+B` is tmux's default prefix, so keep an alternative. Cycle main-panel tabs with `[`/`]`, since `Ctrl+Tab` needs an enhanced keyboard protocol. helix is the counterexample: its file explorer is a picker, not a persistent sidebar.
+- **Overlay:** buffer choice and the exit contract are in *Inline, alt-screen, or overlay* below. Startup time is part of the design because users summon these dozens of times a day; budgets are in `cli-basics.md` → *Startup time*.
+- **Tabs:** mark the active tab with underline or reverse video, with the accent color as reinforcement. Label tabs with their jump keys (`Logs [1]`, `Stats [2]`), and cycle them in reading order.
 
 ---
 
@@ -326,6 +287,8 @@ You have a fixed grid. Two strategies:
 
 Use density to communicate hierarchy: dense data tables in the main panel, padded settings/forms in modals, dense status bars at the bottom.
 
+**Spacing defaults.** One blank row between groups, 1 cell of inner padding inside a bordered panel, a 2-cell gutter between table columns, and modals no wider than 60–80% of the terminal (fixed to content below that, never edge to edge).
+
 ### The clutter audit — making "feels busy" countable
 
 "It feels noisy" is a real signal but useless until you convert it into specific offenders. When a layout feels cluttered, **count — don't squint** — and report the count, not a vibe:
@@ -337,6 +300,29 @@ Use density to communicate hierarchy: dense data tables in the main panel, padde
 - **The removal test.** For each decorative element ask: "if I delete this, do I lose information?" If no, delete it. Whitespace is not empty space — it's the cheapest separator you have, and a single blank row routinely out-reads a heavy border.
 
 Run this pass on any layout, yours or someone else's. "Three concentric borders, status encoded four ways, a marker on every row" tells the user exactly what to cut; "simplify it" tells them nothing.
+
+A worked example. Before (the PASS and FAIL tags are green and red):
+
+```
++--------------------------------------+
+| +----------------------------------+ |
+| | > [PASS] (ok)  build        2.1s | |
+| | > [PASS] (ok)  lint         0.8s | |
+| | > [FAIL] (!!)  test         4.5s | |
+| +----------------------------------+ |
++--------------------------------------+
+```
+
+The audit reports: border-nesting depth 2; three signals for one status (tag, `(ok)` or `(!!)`, color); a `>` marker on 3 of 3 rows; and 189 of 226 non-blank cells (84%) spent on chrome. After (FAIL in red):
+
+```
+ Task    Status  Time
+ build   PASS    2.1s
+ lint    PASS    0.8s
+ test    FAIL    4.5s
+```
+
+Depth 0, two signals on the failure (the word and red) and none on passes, no always-on marker, and 14 of 51 non-blank cells (27%) on the header labels. The selected row gets reverse video alone.
 
 ---
 
@@ -351,7 +337,30 @@ Decide behavior per width band, widest to narrowest. Exact thresholds depend on 
 - **Wide (120+ cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
 - **Standard (80–119)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
 - **Narrow (60–79)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here. (lazygit's `--screen-mode full` is a related single-panel mode — but it's a user-selectable escape hatch, not automatic responsive behavior.)
-- **Below the application-specific minimum** — don't render garbage or panic. Show a clean message naming the dimensions the app actually requires, such as `terminal too small: need 48x12`, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
+- **Below the application-specific minimum** — don't render garbage or panic. Show the too-small state (see *States*), naming the dimensions the app actually requires, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
+
+### One app at three widths
+
+A sidebar, a list, and a detail pane, drawn at half scale. Defaults: the sidebar takes 20–30% of the width, clamped to 20–40 columns; the list never goes under 30 columns; the detail pane takes the rest and needs at least 30. A pane below its minimum folds away instead of shrinking: detail first, then the sidebar.
+
+```
+120 columns: sidebar 30, list 40, detail 50
++---------------+--------------------+-------------------------+
+| sidebar       | list               | detail                  |
++---------------+--------------------+-------------------------+
+
+80 columns: sidebar becomes a toggle; list 40, detail 40
++--------------------+--------------------+
+| list               | detail             |
++--------------------+--------------------+
+
+60 columns: one pane; Enter opens the detail, Esc returns
++------------------------------+
+| list                         |
++------------------------------+
+```
+
+Below the whole layout's minimum, show the too-small state from *States*.
 
 This is why a **drill-down model degrades better than a fixed grid**: when only one primary thing is ever on screen, narrowing just shrinks it; a fixed 2×2 grid has nowhere to go and turns to mush. If you find yourself unable to make a grid responsive, that's often a sign the layout should have been drill-down in the first place.
 
@@ -367,22 +376,6 @@ When reviewing a layout, state the degradation plan concretely: "at 80×24 the p
 
 ---
 
-## Visual hierarchy in monospace
-
-Since you can't change font size, hierarchy comes from:
-
-1. **Position** — top/left reads first; status bar at bottom.
-2. **Color and weight** — bold + accent for headlines; dim for secondary.
-3. **Reverse video** — current selection.
-4. **Indentation and connectors** — `├─ └─` for trees (ASCII fallback `|-` and `` `- ``); consistent indent units (2 cells is standard).
-5. **Whitespace** — blank rows for separation; pads around important content.
-6. **Bullets / symbols** — `▸` expandable, `▾` expanded, `◉` active, `◦` inactive, `∙` static bullet. These are narrow-class; their ambiguous-width lookalikes (`▶ ▼ ● ○ •`) are the ones to avoid (see *Localization*).
-7. **Borders** — a heavier border weight marks the focused panel, with border color as reinforcement.
-
-Spend signals by the budget in *The clutter audit*: at most one color cue plus one non-color cue per state. The current selection: reverse video alone. The focused panel: a heavier border or marked title, plus the accent color. A warning: yellow plus a `!` prefix.
-
----
-
 ## Tables and lists
 
 ### Alignment rules
@@ -390,7 +383,7 @@ Spend signals by the budget in *The clutter audit*: at most one color cue plus o
 - **Numerics: right-aligned.** Easy to scan magnitudes.
 - **Text: left-aligned.** Standard.
 - **Dates: fixed-width ISO-8601** (`2026-04-28 14:30`). Sortable; doesn't shift on locale.
-- **Status / categorical: centered or left** — be consistent.
+- **Status / categorical: left-aligned**, like text.
 
 ### Truncation
 
@@ -457,13 +450,20 @@ Header (persistent context: app, dataset, mode), then the main area (the panels)
 ### Status / mode line
 
 - Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
-- Success and info messages may fade after a few seconds or give way to the idle state. Keep errors and warnings until the user dismisses them or the next result replaces them: a message that vanishes unread can't be acted on.
+- Success and info messages fade after 3–5 seconds or give way to the idle state. Keep errors and warnings until the user dismisses them, then move them to a message log the user can reopen (a `:messages` command or a key): a message that vanishes unread can't be acted on.
 - The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Keybinding philosophies and modal vs modeless*).
 - Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
 
 ### Footer hint bar
 
-Lay hints out as `key action ⋅ key action ⋅ key action`, with `⋅` (U+22C5; the middle dot `·` is ambiguous-width) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Which shortcuts to show, how many, and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+Lay hints out as `key action ⋅ key action ⋅ key action`, with `⋅` (U+22C5; the middle dot `·` is ambiguous-width) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Put the most frequent action first and `?` last, and show one rendered line per width:
+
+```
+80 columns:  q quit ⋅ / filter ⋅ enter open ⋅ space select ⋅ d delete ⋅ ? help
+40 columns:  q quit ⋅ / filter ⋅ ? help
+```
+
+Drop hints from the right of the least frequent until the line fits, keeping `?` so the full list stays one key away. Which shortcuts to show and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
 
 ---
 
@@ -510,16 +510,45 @@ Parallel tasks each get their own bar (`package-b [████████▎  
 
 Ambient indication of background work without commanding attention: lazygit's auto-fetch shows only a small spinner and status message instead of a blocking dialog.
 
-### Empty states and loading states
+---
 
-- **Empty states:** never just "No data." Say what to do next: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
-- **Loading states:** skeleton text or "Loading..." with a delayed spinner (don't flash for sub-200ms loads). Animate only when something is happening.
-- **Error states:** what failed and how to recover. "Connection refused. Press `r` to retry."
+## States
 
-**Disconnected, stale, or hung states:**
-- Keep the last-known-good view visible, dimmed, with a "stale" or "reconnecting" marker instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case.
-- Never let a transient failure rewrite persistent config. btop has an open bug where a temporarily unavailable GPU permanently rewrites the user's saved widget layout instead of hiding the metric until it returns.
-- Show elapsed time once a wait passes a second or two, and let `Esc` cancel the in-flight request. There is no TUI convention for an automatic give-up time, so prefer elapsed time and cancel over picking one.
+Every screen passes through the same states, and each one needs a design before the happy path is done: initial, loading, empty, partial, success, error, disconnected or stale, and too small. Every state names what happened, offers the next action, and keeps its meaning under `NO_COLOR` (a symbol or label word, never color alone).
+
+```
+Initial      Welcome to myapp.
+             n new request   i import   ? help
+
+Loading      Pods (staging)                    loading... 3s   Esc cancel
+             api-7d  1/1  4d                   <- old rows stay visible
+
+Empty        No pods in namespace "staging".
+             n change namespace   c create one
+
+Partial      Pods (2 of 3 clusters)            ! prod-eu unreachable   r retry
+             api-7d  1/1  4d
+
+Success      ✓ Saved notes.txt                 fades after 3-5 s
+
+Error        ✗ Cannot connect to 10.0.0.4:6443 (connection refused)
+             r retry   l view log   Esc dismiss
+
+Stale        Pods (staging)          STALE 2m   reconnecting (3)   r retry now
+             api-7d  1/1  4d         <- dimmed, last known good
+
+Too small    terminal too small: need 48x12
+             resize the window, or press q to quit
+```
+
+- **Initial.** The first launch, before the user has done anything. Render the frame at once and show where to start; a blank screen reads as a hang.
+- **Loading.** Draw the layout immediately and show the delayed spinner from *Progress indicators* inside the content area. Add elapsed time once a wait passes a second or two, and let `Esc` cancel the request. There is no TUI convention for an automatic give-up time, so prefer elapsed time and cancel over picking one. When refreshing, keep the last rows visible.
+- **Empty.** Never just "No data." Name the scope that is empty and the next action: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
+- **Partial.** Show what loaded and mark each source that failed, inline, with a count (`2 of 3`) and a retry key. Do not blank the screen for one failed source or hide the failure.
+- **Success.** Confirm in the status line (3–5 seconds, per *Status bars*); a long operation also leaves a receipt in scrollback or the message log.
+- **Error.** Say what failed and how to recover, with the retry or escape key beside it. It stays until dismissed, then moves to the message log.
+- **Disconnected or stale.** Keep the last-known-good view visible, dimmed, with a `STALE` or `reconnecting` marker and the age instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case. Never let a transient failure rewrite persistent config: btop has an open bug where a temporarily unavailable GPU permanently rewrites the user's saved widget layout instead of hiding the metric until it returns.
+- **Too small.** Name the dimensions the layout needs, and keep `q` and `Ctrl+C` working. Don't render a broken frame; the threshold comes from *Responsive design*.
 
 ---
 

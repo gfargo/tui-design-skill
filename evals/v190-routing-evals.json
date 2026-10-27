@@ -1,0 +1,52 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.9.0 routing regressions for #78: prompts that should reach terminal-protocols.md (tmux flicker, a Shift+Enter that does not arrive) and the visual and interaction rows (status bar, spinner, Unicode width, search, multi-select). Assertions grade the answer; whether the right reference was loaded is checked separately from the run transcript. Status: rubric-only; the 1.9.0 evidence round records runs on Claude Code and Codex.",
+  "evals": [
+    {
+      "id": "tmux-flicker",
+      "name": "tmux-flicker",
+      "prompt": "My full-screen TUI flickers when it runs inside tmux. It redraws the whole screen on every update. What should I do?",
+      "files": [],
+      "assertions": [
+        "Recommends wrapping each frame in synchronized output (mode 2026) so the terminal paints it at once, and detecting support with DECRQM",
+        "Notes tmux supports synchronized output from version 3.7 and that without it each frame should be written in one write, send only changed cells, and hide the cursor while drawing",
+        "Says to always send the end sequence, error paths included",
+        "Does not suggest simply lowering the frame rate as the only fix"
+      ]
+    },
+    {
+      "id": "shift-enter-missing",
+      "name": "shift-enter-missing",
+      "prompt": "Shift+Enter inserts nothing different from Enter in my TUI's input field, especially inside tmux. How do I get a newline?",
+      "files": [],
+      "assertions": [
+        "Explains that Shift+Enter is distinguishable from Enter only with the kitty keyboard protocol or modifyOtherKeys, which the terminal must support",
+        "Notes tmux needs the extended-keys option, which is off by default",
+        "Falls back to Alt+Enter or Ctrl+J for inserting a newline and tells users the key",
+        "Treats the extra keys as accelerators and keeps a binding that works in the legacy encoding"
+      ]
+    },
+    {
+      "id": "status-and-unicode-routing",
+      "name": "status-and-unicode-routing",
+      "prompt": "My status bar shows a spinner and my table has emoji and CJK text that misalign. Where should I look and what are the rules?",
+      "files": [],
+      "assertions": [
+        "Treats the spinner and status bar as the progress and status-line guidance (delayed spinner, static line in plain mode, messages that lead with a symbol or label)",
+        "Explains that emoji and CJK widths differ and recommends grapheme-aware width measurement",
+        "Mentions ambiguous-width characters and narrow-class alternatives or an ASCII fallback"
+      ]
+    },
+    {
+      "id": "search-and-multiselect-routing",
+      "name": "search-and-multiselect-routing",
+      "prompt": "In my list view, `/` should do what, and how should multi-select work if the list also has a type-to-filter box?",
+      "files": [],
+      "assertions": [
+        "Says `/` filters lists and searches documents and logs",
+        "Says Space toggles the mark when no text field owns input, and Tab marks in a type-to-filter picker",
+        "Shows the match count and clears the filter with Esc"
+      ]
+    }
+  ]
+}

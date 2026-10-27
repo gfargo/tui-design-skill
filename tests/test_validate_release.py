@@ -98,6 +98,26 @@ class ValidateReleaseTest(unittest.TestCase):
         reference.write_text(reference.read_text() + "\n```bash\necho unclosed\n")
         self.assert_fails_with("unbalanced fenced code block")
 
+    def test_cross_reference_must_name_a_heading(self) -> None:
+        self.edit(
+            str(SKILL / "references/exemplar-apps.md"),
+            "`visual-patterns.md` → *States*",
+            "`visual-patterns.md` → *No such heading*",
+        )
+        self.assert_fails_with("cross-reference names no heading")
+
+    def test_cross_reference_may_cite_the_heading_before_its_subtitle(self) -> None:
+        # "Focus indicators" is a prefix of "Focus indicators (in order of strength)".
+        path = self.root / SKILL / "references/exemplar-apps.md"
+        path.write_text(path.read_text() + "\nSee `interaction-patterns.md` → *Focus indicators*.\n")
+        completed = self.validate()
+        self.assertNotIn("cross-reference", completed.stderr)
+
+    def test_cross_reference_must_name_a_known_file(self) -> None:
+        path = self.root / SKILL / "references/exemplar-apps.md"
+        path.write_text(path.read_text() + "\nSee `missing-file.md` → *Anything*.\n")
+        self.assert_fails_with("cross-reference names an unknown file")
+
     def test_manifest_descriptions_must_match_each_other(self) -> None:
         path = self.root / "plugins/tui-design/.claude-plugin/plugin.json"
         manifest = json.loads(path.read_text())

@@ -1,0 +1,61 @@
+import {expect, test, vi} from 'vitest';
+import type {FakeStdin, FakeStdout} from './fake-tty.js';
+
+// Fake TTY streams for Ink plus a fake `execFile` that honours the AbortSignal, so the
+// sample runs verbatim (including its render() call) without spawning anything.
+const harness: {
+  options?: Record<string, unknown>;
+  instance?: {waitUntilExit: () => Promise<unknown>};
+  stdin?: FakeStdin;
+  stdout?: FakeStdout;
+} = {};
+
+vi.mock('node:child_process', () => ({
+  execFile: (_cmd: string, _args: string[], options: {signal: AbortSignal}, done: (error: Error | null) => void) => {
+    options.signal.addEventListener('abort', () => done(new Error('aborted')));
+  },
+}));
+
+vi.mock('ink', async importOriginal => {
+  const ink = await importOriginal<typeof import('ink')>();
+  const {FakeStdin, FakeStdout} = await import('./fake-tty.js');
+  return {
+    ...ink,
+    render: (tree: React.ReactNode, options: Record<string, unknown>) => {
+      harness.options = options;
+      harness.stdin = new FakeStdin();
+      harness.stdout = new FakeStdout();
+      harness.instance = ink.render(tree as never, {
+        ...options, stdin: harness.stdin as never, stdout: harness.stdout as never, debug: true, patchConsole: false,
+      });
+      return harness.instance as never;
+    },
+  };
+});
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+test('first Ctrl+C cancels the running work, second quits with 130', async () => {
+  await import('./cancel.js');
+  const {stdin, stdout, instance} = harness;
+  expect(harness.options).toMatchObject({exitOnCtrlC: false});
+
+  // The event loop stays free while the child runs, so the spinner keeps ticking.
+  await sleep(400);
+  expect(new Set(stdout!.frames.map(frame => frame[0])).size).toBeGreaterThan(2);
+
+  stdin!.write('\u0003');
+  await sleep(50);
+  expect(stdout!.frames.at(-1)).toContain('stopped');
+
+  let exited = false;
+  void instance!.waitUntilExit().then(() => { exited = true; });
+  await sleep(50);
+  expect(exited).toBe(false);  // the first Ctrl+C did not quit
+
+  stdin!.write('\u0003');
+  await sleep(50);
+  expect(exited).toBe(true);
+  expect(process.exitCode).toBe(130);
+  process.exitCode = 0;
+});

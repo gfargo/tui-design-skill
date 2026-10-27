@@ -35,3 +35,35 @@ def test_questionary_ctrl_c_exits_130():
     with pytest.raises(SystemExit) as raised:
         run_with_keys(questionary_sample, "\x03")
     assert raised.value.code == 130
+
+
+def ctrl_c_stdout(capsys, ask):
+    with create_pipe_input() as pipe:
+        pipe.send_text("\x03")
+        pipe.close()
+        with create_app_session(input=pipe, output=DummyOutput()):
+            result = ask()
+    return result, capsys.readouterr().out
+
+
+def test_ask_prints_cancelled_message_to_stdout(capsys):
+    import questionary
+
+    result, out = ctrl_c_stdout(capsys, lambda: questionary.text("Name?").ask())
+    assert result is None
+    assert "Cancelled by user" in out
+
+
+def test_empty_kbi_msg_still_writes_a_blank_line(capsys):
+    import questionary
+
+    result, out = ctrl_c_stdout(capsys, lambda: questionary.text("Name?").ask(kbi_msg=""))
+    assert (result, out) == (None, "\n")
+
+
+def test_unsafe_ask_leaves_stdout_clean(capsys):
+    import questionary
+
+    with pytest.raises(KeyboardInterrupt):
+        ctrl_c_stdout(capsys, lambda: questionary.text("Name?").unsafe_ask())
+    assert capsys.readouterr().out == ""

@@ -1,0 +1,38 @@
+#![allow(unused)]
+<<sample rust/inline until="fn main">>
+<<sample rust/inline from="/// Permanent output">>
+
+use ratatui::backend::TestBackend;
+use ratatui::layout::Position;
+
+fn inline_terminal() -> Terminal<TestBackend> {
+    let mut backend = TestBackend::new(20, 10);
+    backend.set_cursor_position(Position::new(0, 3)).unwrap(); // the shell prompt's row
+    Terminal::with_options(backend, TerminalOptions { viewport: Viewport::Inline(3) }).unwrap()
+}
+
+#[test]
+fn inline_viewport_logs_above_and_erases_in_place() {
+    let mut terminal = inline_terminal();
+    assert_eq!(terminal.get_frame().area(), ratatui::layout::Rect::new(0, 3, 20, 3));
+    terminal.draw(|f| f.render_widget("pick one", f.area())).unwrap();
+
+    log_above(&mut terminal, "done: a").unwrap();
+    terminal.draw(|f| f.render_widget("pick one", f.area())).unwrap();
+    let origin = terminal.get_frame().area().as_position();
+    assert_eq!(origin, Position::new(0, 4), "inserted lines push the viewport down");
+    let backend = terminal.backend();
+    let rows: Vec<String> = (0..10)
+        .map(|y| (0..20).map(|x| backend.buffer()[(x, y)].symbol().to_string()).collect::<String>())
+        .collect();
+    assert_eq!(rows[3].trim_end(), "done: a");
+    assert_eq!(rows[4].trim_end(), "pick one");
+
+    erase_inline(&mut terminal).unwrap();
+    terminal.backend_mut().assert_cursor_position(origin);
+    let rows: Vec<String> = (0..10)
+        .map(|y| (0..20).map(|x| terminal.backend().buffer()[(x, y)].symbol().to_string()).collect::<String>())
+        .collect();
+    assert_eq!(rows[3].trim_end(), "done: a", "permanent output survives");
+    assert!(rows[4..].iter().all(|r| r.trim().is_empty()), "the transient UI is gone: {rows:?}");
+}

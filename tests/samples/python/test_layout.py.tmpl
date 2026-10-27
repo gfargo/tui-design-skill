@@ -1,7 +1,7 @@
 import pytest
 from textual.app import App, ComposeResult
-from textual.containers import Vertical
-from textual.widgets import DataTable, Static
+from textual.containers import Horizontal, HorizontalGroup, Vertical, VerticalGroup
+from textual.widgets import DataTable, Label, Static
 
 
 class LayoutApp(App[None]):
@@ -14,8 +14,57 @@ class LayoutApp(App[None]):
             yield Static("failed", classes="error")
 
 
+class PanesApp(App[None]):
+    CSS = "#a { width: 30; } #b { width: 1fr; }"
+    wrap = False
+
+    def compose(self) -> ComposeResult:
+        if self.wrap:
+            with Horizontal():
+                yield Vertical(id="a")
+                yield Vertical(id="b")
+        else:
+            yield Vertical(id="a")
+            yield Vertical(id="b")
+
+
+class WrappedPanesApp(PanesApp):
+    wrap = True
+
+
+class SizingApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield VerticalGroup(Label("a"), Label("b"), id="vgroup")
+        yield HorizontalGroup(Label("a"), Label("b"), id="hgroup")
+        yield Vertical(id="vertical")
+        yield Horizontal(id="horizontal")
+
+
 @pytest.mark.asyncio
 async def test_stylesheet_parses_and_applies():
     app = LayoutApp()
     async with app.run_test(size=(80, 24)):
-        assert app.query_one("#sidebar").region.width == 30  # border included
+        sidebar = app.query_one("#sidebar").region
+        main = app.query_one("#main").region
+        assert sidebar.width == 30  # border included
+        assert (sidebar.y, main.x, main.y) == (0, 30, 0)  # side by side, not stacked
+
+
+@pytest.mark.asyncio
+async def test_screen_stacks_panes_unless_wrapped_in_horizontal():
+    stacked = PanesApp()
+    async with stacked.run_test(size=(80, 24)):
+        assert stacked.query_one("#b").region.y > 0
+    wrapped = WrappedPanesApp()
+    async with wrapped.run_test(size=(80, 24)):
+        assert (wrapped.query_one("#b").region.x, wrapped.query_one("#b").region.y) == (30, 0)
+
+
+@pytest.mark.asyncio
+async def test_group_containers_size_to_content_and_plain_ones_expand():
+    app = SizingApp()
+    async with app.run_test(size=(80, 24)):
+        assert app.query_one("#vgroup").region.height == 2
+        assert app.query_one("#hgroup").region.height == 1
+        assert app.query_one("#vertical").region.height > 5
+        assert app.query_one("#horizontal").region.height > 5

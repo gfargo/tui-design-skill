@@ -1,0 +1,21 @@
+package realcursor
+
+import (
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+)
+
+type model struct {
+	input textinput.Model
+}
+
+func newModel() model {
+	var m model
+	<<sample go/real-cursor until="// In View">>
+	return m
+}
+
+func (m model) View() tea.View {
+	<<sample go/real-cursor from="v := tea.NewView">>
+	return v
+}

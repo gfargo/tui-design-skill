@@ -1,0 +1,35 @@
+import asyncio
+
+import pytest
+from textual import work
+from textual.app import App, ComposeResult
+from textual.containers import VerticalScroll
+from textual.widgets import Markdown
+
+<<sample python/markdown-stream>>
+
+
+class ChatApp(App[None]):
+    stream_reply = stream_reply
+
+    def compose(self) -> ComposeResult:
+        with VerticalScroll():
+            yield Markdown()
+
+
+async def tokens(count: int):
+    for index in range(count):
+        yield f"line {index}\n\n"
+        await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_stream_flushes_everything_and_follows_the_tail():
+    app = ChatApp()
+    async with app.run_test(size=(60, 10)) as pilot:
+        await app.stream_reply(tokens(80)).wait()
+        await pilot.pause(0.3)
+        scroller = app.query_one(VerticalScroll)
+        assert "line 79" in app.query_one(Markdown).source
+        assert scroller.max_scroll_y > 0
+        assert scroller.scroll_y == scroller.max_scroll_y  # anchored

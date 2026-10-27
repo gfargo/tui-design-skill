@@ -1,4 +1,6 @@
+import asyncio
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -21,6 +23,34 @@ class WorkerApp(App[None]):
 
     def update_result(self, result: str) -> None:
         self.query_one("#result", Static).update(result)
+
+
+FETCHED: list[tuple[str, int]] = []
+
+
+def slow_fetch(query: str, page: int) -> tuple[str, int]:
+    time.sleep(0.01)
+    if query == "boom":
+        raise RuntimeError("backend down")
+    FETCHED.append((query, page))
+    return (query, page)
+
+
+class SearchApp(App[None]):
+    # Bind the sample's methods; show_rows and notify are the app's own.
+    search = search
+    on_worker_state_changed = on_worker_state_changed
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.shown: list[tuple[str, int]] = []
+        self.errors: list[str] = []
+
+    def show_rows(self, rows: tuple[str, int]) -> None:
+        self.shown.append(rows)
+
+    def notify(self, message: str, **kwargs) -> None:
+        self.errors.append(message)
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -81,3 +111,29 @@ async def test_widget_thread_worker_reaches_call_from_thread_through_app():
         await panel.compute_heavy().wait()
         await pilot.pause()
         assert str(panel.content) == "computed"
+
+
+@pytest.mark.asyncio
+async def test_new_search_cancels_the_previous_thread_worker():
+    FETCHED.clear()
+    app = SearchApp()
+    async with app.run_test():
+        first = app.search("a")
+        async with asyncio.timeout(5):
+            while not FETCHED:
+                await asyncio.sleep(0.005)
+        app.search("b")
+        await asyncio.sleep(0.6)
+        assert first.is_cancelled
+        assert len([row for row in app.shown if row[0] == "a"]) < 20  # stopped by polling the flag
+        assert len([row for row in app.shown if row[0] == "b"]) == 20
+
+
+@pytest.mark.asyncio
+async def test_worker_error_reaches_state_handler_without_exiting():
+    app = SearchApp()
+    async with app.run_test():
+        app.search("boom")
+        await asyncio.sleep(0.2)
+        assert app.errors == ["backend down"]
+        assert app.is_running

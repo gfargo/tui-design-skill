@@ -1,0 +1,17 @@
+package overlay
+
+import (
+	"charm.land/lipgloss/v2"
+	tea "charm.land/bubbletea/v2"
+)
+
+type hitMsg string
+
+var dialogStyle = lipgloss.NewStyle().Padding(0, 1).BorderStyle(lipgloss.RoundedBorder())
+
+type model struct {
+	width, height int
+	body, dialog  string
+}
+
+<<sample go/overlay>>

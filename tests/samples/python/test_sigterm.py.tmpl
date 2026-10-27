@@ -1,0 +1,53 @@
+import asyncio
+import os
+import signal
+import subprocess
+import sys
+import threading
+from pathlib import Path
+
+import pytest
+
+<<sample python/sigterm>>
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(sys.platform == "win32", reason="Unix signals")
+async def test_sigterm_exits_through_the_app():
+    app = Service()
+    async with app.run_test():
+        os.kill(os.getpid(), signal.SIGTERM)
+        await asyncio.sleep(0.2)
+        assert not app.is_running
+        assert app.return_code == 143
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Unix signals")
+def test_run_returns_the_code_to_the_shell_after_sigterm():
+    script = (
+        "import sys\n"
+        "from test_sigterm import Service\n"
+        "class Probe(Service):\n"
+        "    def on_mount(self):\n"
+        "        super().on_mount()\n"
+        "        sys.__stdout__.write('ready\\n')\n"
+        "        sys.__stdout__.flush()\n"
+        "app = Probe()\n"
+        "app.run(headless=True)\n"
+        "sys.exit(app.return_code)\n"
+    )
+    child = subprocess.Popen(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).parent,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    watchdog = threading.Timer(15, child.kill)
+    watchdog.start()
+    try:
+        assert child.stdout.readline().strip() == "ready"  # print() is captured by Textual
+        child.send_signal(signal.SIGTERM)
+        assert child.wait(timeout=10) == 143
+    finally:
+        watchdog.cancel()
+        child.kill()

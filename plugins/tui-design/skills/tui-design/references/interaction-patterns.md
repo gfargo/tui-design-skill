@@ -5,14 +5,15 @@ A deep dive into how users interact with TUIs — keybinding philosophy, focus m
 **Contents:**
 - [Keybinding philosophies and modal vs modeless](#keybinding-philosophies-and-modal-vs-modeless)
 - [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
-- [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect) · [Keys the environment steals](#keys-the-environment-steals)
+- [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect) · [Esc, q, and Ctrl+C — the quit ladder](#esc-q-and-ctrlc--the-quit-ladder) · [Keys the environment steals](#keys-the-environment-steals)
 - [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
 - [Focus management](#focus-management)
 - [Search and filter](#search-and-filter)
-- [Multi-select](#multi-select)
+- [Scrolling and position](#scrolling-and-position) · [Live data — keeping the selection steady](#live-data--keeping-the-selection-steady) · [Logs and streams — follow mode](#logs-and-streams--follow-mode)
+- [Multi-select](#multi-select) · [Tree views](#tree-views)
 - [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
 - [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
-- [Forms and settings screens](#forms-and-settings-screens)
+- [Text input — fields, history, completion](#text-input--fields-history-completion) · [Forms and settings screens](#forms-and-settings-screens)
 - Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
 - [Common interaction pitfalls](#common-interaction-pitfalls)
 
@@ -45,16 +46,16 @@ These have crystallized across the ecosystem. Use them unless you have a strong 
 
 | Key | Action |
 |---|---|
-| `q` | quit |
+| `q` | back out of a nested view; quit at the root (see *Esc, q, and Ctrl+C*) |
 | `?` | help |
 | `/` | search / filter |
 | `n` / `N` | next / prev match |
-| `Esc` | cancel / back / dismiss |
+| `Esc` | one step down the quit ladder: cancel, close overlay, clear filter, back (see *Esc, q, and Ctrl+C*) |
 | `Enter` / `Return` | confirm / drill in |
 | `Space` | toggle / mark for multi-select (`Tab` in type-to-filter pickers; see *Multi-select*) |
 | `:` | command mode |
-| `gg` | top |
-| `G` | bottom |
+| `gg` / `G`, `Home` / `End` | top / bottom |
+| `PgUp` / `PgDn`, `Ctrl+U` / `Ctrl+D` | page / half page (see *Scrolling and position*) |
 | `Tab` / `Shift+Tab` | switch focus |
 | `r` | refresh |
 | `1`–`9` | jump to panel / numbered tab |
@@ -84,6 +85,27 @@ In cooked (line) mode these keys belong to the terminal driver and shell. In raw
 A full-screen app *may* handle these keys, and real ones do: helix binds `Ctrl-c` to toggle comments and `Ctrl-s` to `save_selection`; nano and micro save on `Ctrl+S`. What you owe users is the expected behavior, not a hands-off policy: keep `Ctrl+C` as cancel/quit unless there's a strong reason not to (and then offer an obvious exit), and implement `Ctrl+Z` suspend through the framework's support so the terminal is restored.
 
 Ctrl+H is sometimes Backspace, sometimes a free key — it depends on terminal config. Test before binding.
+
+---
+
+## Esc, q, and Ctrl+C — the quit ladder
+
+`Esc` has five jobs in most apps and no order between them. Make it one rule: **each press takes the innermost step that applies, once, and quitting comes last.**
+
+| Step | Applies when | Esc does |
+|---|---|---|
+| 1. Cancel | A request, load, or long action is running | Cancels it and keeps the old data |
+| 2. Close | A modal, menu, palette, help screen, or completion popup is open | Closes the top one only |
+| 3. Clear | A filter, search, or multi-selection is active | Clears it, and a cancelled search returns to the prior position |
+| 4. Go back | A drill-down, detail view, or focus trap is open | Backs up one level |
+| 5. Root | Nothing above applies | Nothing: `Esc` never quits |
+
+- **`q`** goes back one level in a nested view and quits only at the root. While a text field owns input it is a letter. In a single-view app it quits.
+- **`Ctrl+C`** cancels a running operation first. With nothing running it quits from anywhere, without walking the ladder. When quitting would lose something, the first press says so on the status line (`Press Ctrl+C again to quit`) and a second press within about two seconds quits.
+- **Confirm a quit only when it loses something**: unsaved edits, or running work that cannot resume (`Quit? 2 jobs are still running [y/N]`, default No, per *Confirmation patterns*). An idle quit never asks.
+- Every quit path runs the same teardown (`SKILL.md` → *Terminal lifecycle*), including the second `Ctrl+C` and a confirmed `q`.
+
+A lone `Esc` is ambiguous with the start of an Alt sequence, so don't make it latency-critical (see *Keys the environment steals*).
 
 ---
 
@@ -194,6 +216,44 @@ Bound to `/` in lists. Filters the list to matching items. Examples: fzf's whole
 
 ---
 
+## Scrolling and position
+
+| Keys | Moves |
+|---|---|
+| `↑`/`↓`, `k`/`j` | One row |
+| `PgUp` / `PgDn` | One page, minus one row of overlap |
+| `Ctrl+U` / `Ctrl+D` | Half a page |
+| `Home` / `End`, `g` / `G` | Top / bottom |
+| Mouse wheel | The viewport under the pointer, not the selection |
+
+Keep the cursor at least 3 rows from the viewport edge while it moves (1 row in viewports under 12 rows tall), so the next rows are visible before the user reaches them. Show where the user is: `42/1,203` right-aligned in the panel title or footer for lists, a percentage for documents. A scrollbar is optional decoration; the count carries the meaning, survives screen readers, and costs no width.
+
+---
+
+## Live data — keeping the selection steady
+
+Lists that refresh (processes, pods, builds) move under the user's cursor unless you prevent it.
+
+- **Track the selection by a stable ID** (pod UID, file path, row key), never by row index, and re-resolve it after every refresh, sort, and filter.
+- **If the selected ID disappears,** select its nearest surviving neighbor (the next row, else the previous), not the first row.
+- **Don't scroll under the cursor.** When rows insert or vanish above the selection, keep the selected row at the same screen position; move the viewport only when the selection would leave it.
+- **Don't re-sort on refresh** unless the user changed the sort. A list sorted by a volatile key (CPU%) reorders constantly by design.
+- **Offer a freeze key** shown in the footer (htop's `Z` pauses updates). While frozen, stop reorders and appends, mark the header `PAUSED`, show the count of pending changes, and apply them on resume.
+
+---
+
+## Logs and streams — follow mode
+
+A viewer for output that keeps arriving (logs, build output, chat transcripts) has two states, and the user must always know which one it is in.
+
+- **Following:** pinned to the bottom; new lines scroll in. This is the default on open.
+- **Paused:** any upward movement (`k`, `PgUp`, wheel up, `g`) stops following and holds the viewport still. Show the backlog in the corner: `▾ 37 new`. `G` (jump to the end) or `F` (toggle follow, as in `less`) re-pins.
+- **Wrap toggle** (`w`): wrapped by default for prose, unwrapped (truncate with `…` and scroll sideways) for columnar or JSON logs.
+- **Ring buffer.** Cap retained lines (10,000–100,000 is typical) and say when the oldest were dropped (`oldest 52,310 lines dropped`); offer to write the full stream to a file if users need it.
+- A filter keeps following: new lines that match appear, and the count updates.
+
+---
+
 ## Multi-select
 
 Universal pattern: **Space toggles** the row's marked state when no text field owns input. In a type-to-filter picker (fzf `--multi`), Space is a query character, so **Tab** marks the row instead (fzf marks and moves down; Shift+Tab marks and moves up) and no longer cycles focus. Marked rows show a `*` prefix, with an accent background as reinforcement.
@@ -208,9 +268,25 @@ After multi-selecting, an action key applies to all marked items: `d` deletes al
 
 ---
 
+## Tree views
+
+| Key | On a folder | On a leaf or collapsed child |
+|---|---|---|
+| `l` / `→` | Expand; if already open, move to its first child | Open or activate |
+| `h` / `←` | Collapse | Move to the parent |
+| `Enter` | Toggle, or open when the node has an action | Open or activate |
+
+- Indent 2 cells per level, with connectors (`├─ └─`, ASCII fallback `|-` and `` `- ``).
+- Load children lazily and show a per-node spinner on the row being expanded, not a global one.
+- **Keep expansion state by node ID** across refreshes and filters. When a filter is active, keep the ancestors of every match visible and expanded.
+
+---
+
 ## Mouse support — the real trade-off
 
 Textual treats the mouse as first-class (`:hover`, click, wheel), btop makes every highlighted key clickable, and lazygit selects on click, range-selects by dragging, and reorders commits by dragging (v0.64+). Keyboard-first users resist it, and capture has a cost: it takes over click-and-drag text selection, so users must hold a bypass modifier (Shift in most terminals, Option in iTerm2, Fn in Terminal.app). helix and fzf turn the mouse on by default but never require it.
+
+**Default for full-screen apps with click targets:** enable modes 1000 + 1002 + 1006 (press and release, drags, SGR coordinates), and 1003 only for hover effects, since it reports every pointer move (`terminal-protocols.md` → *Modes and sequences*). Provide an off switch (`--no-mouse` or a config key). Inline tools leave the mouse off, so selection and scrollback keep working.
 
 **Mouse augments keyboard, never replaces required actions.** Every mouse-reachable target needs a keyboard equivalent. Implement mouse for focusing a panel, switching tabs, scrolling lists and viewports, and clicking form buttons. Don't require it for the critical path, power-user actions, or anything that should work over a serial console or restricted SSH.
 
@@ -235,6 +311,18 @@ Match friction to consequence, in three levels:
 - **Heavy, dual confirmation:** type `delete`, then answer `Are you sure? [y/N]`. For nuclear actions; used rarely.
 
 Y/n suits "stage all files"; a typed name suits "delete production." Don't make every confirmation typed-name: users learn to type fast and lose the safety.
+
+---
+
+## Text input — fields, history, completion
+
+Free-text fields matter most in chat and agent TUIs, where the field is the product.
+
+- **Editing keys.** Arrows, `Home`/`End`, `Backspace`/`Delete`, and `Ctrl+W` (delete word), `Ctrl+U` (delete to line start), `Ctrl+K` (delete to line end), and `Ctrl+A`/`Ctrl+E` as aliases, never the only route: `Ctrl+A` is GNU screen's prefix (see *Keys the environment steals*).
+- **History.** `↑`/`↓` recall previous entries when the cursor is on the first or last line of the field (any press in a single-line field). Keep history across sessions and skip consecutive duplicates.
+- **Completion and ghost text.** Show the suggestion dimmed after the cursor; `→` or `End` accepts it, as fish does. `Tab` completes when a completion exists (the first press lists candidates when several match); otherwise it moves focus. A field that completes owns `Tab`, so move focus with `Esc` then `Tab`, or with a dedicated key.
+- **Multi-line submit.** In chat-style fields `Enter` sends and a modifier inserts a newline. `Shift+Enter` is distinct from `Enter` only with the kitty keyboard protocol, so fall back to `Alt+Enter` or `Ctrl+J` (a line feed, distinct from `Enter`'s carriage return in the legacy encoding), and a trailing `\` then `Enter` as a third route. State the newline key in the placeholder or footer (`Enter send ⋅ Alt+Enter newline`). In editor-like fields invert it: `Enter` inserts a newline and `Ctrl+Enter` or `Ctrl+S` sends. Bracketed paste inserts pasted newlines and never submits (`terminal-protocols.md` → *Modes and sequences*).
+- **Validation timing** is under *Forms and settings screens* below.
 
 ---
 
@@ -317,5 +405,8 @@ Helix selects first, then acts (`wd` selects the word and deletes it, vs vim's `
 10. **Mouse-only actions** with no keyboard equivalent.
 11. **Tab order that skips around** (not following visual reading order).
 12. **No multi-select where users need it** (file managers, lists of items to act on).
+13. **Selection jumps on refresh**, or a viewport that scrolls under the cursor (*Live data*).
+14. **A log viewer that keeps scrolling while the user reads** (*Logs and streams*), or no way to tell it is paused.
+15. **`Esc` that quits, or a `q` that quits from a nested view with unsaved work** (*Esc, q, and Ctrl+C*).
 
 When reviewing a TUI's interaction design, walk this list.

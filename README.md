@@ -44,7 +44,7 @@ The skill uses progressive disclosure: its 139-line `SKILL.md` carries the workf
 - `ecosystem-typescript.md` — Ink (used by Claude Code, GitHub Copilot CLI, Gemini CLI), @clack/prompts, @inquirer/prompts, OpenTUI, color-library tradeoffs, argument-parser comparison
 - `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs, plus shell integration hooks, shipping/update/telemetry etiquette, and first-run auth flows, and a VHS fallback for demo recordings
 - `visual-patterns.md` — deep dive on the 7 layouts (decision table and ASCII thumbnails with 60-column fallbacks), inline vs alt-screen (and the receipt-pattern exit contract), borders, color tiers, semantic tokens, density, the clutter audit, responsive design (the breakpoint ladder + the floor), tables, status bars, progress, a States section (initial, loading, empty, partial, error, stale, too small), theming, Nerd Font icon conventions, localization (translation growth, right-to-left text, ambiguous-width characters, locale formatting), and accessibility (what screen readers hear, the plain-mode contract, reduced motion)
-- `interaction-patterns.md` — keybinding philosophies and modal vs modeless, the keys multiplexers and the legacy encoding steal, focus management, forms and settings-screen design, the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
+- `interaction-patterns.md` — keybinding philosophies and modal vs modeless, the Esc/q/Ctrl+C quit ladder, the keys multiplexers and the legacy encoding steal, focus management, scrolling, selection stability and log follow mode, text input, tree views, forms and settings-screen design, the fzf/lazygit/k9s/helix patterns dissected, confirmation friction levels, undo/redo
 - `terminal-protocols.md` — terminal modes and escape sequences in one table (bracketed paste, kitty keyboard, mouse and focus reporting, synchronized output, cursor and title restore, progress, color and theme queries, OSC 8/52/9 for hyperlinks, clipboard-over-SSH, and notifications), plus a tmux/screen/Zellij/SSH/Windows environment matrix
 - `exemplar-apps.md` — case studies of lazygit, k9s, btop, fzf, helix, yazi, atuin, htop, Posting, Harlequin, Claude Code, starship, and others
 
@@ -326,6 +326,7 @@ tui-design-skill/
 │   ├── v180-trigger-evals.json
 │   ├── v182-correction-evals.json
 │   ├── v190-content-evals.json
+│   ├── v190-interaction-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

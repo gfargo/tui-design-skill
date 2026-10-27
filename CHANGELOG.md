@@ -13,6 +13,12 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - *The clutter audit* gains a before/after example with the counts it would report.
   - `SKILL.md` tells the agent to include an ASCII sketch at the floor size in design answers.
   - `evals/v190-content-evals.json` adds six rubric cases for these behaviors (rubric-only; later v1.9.0 issues extend it).
+- **Interaction gaps ([#74](https://github.com/gfargo/tui-design-skill/issues/74)):** `interaction-patterns.md` and `visual-patterns.md` cover the problems that no reference addressed, each with one owning section and a concrete default.
+  - *Esc, q, and Ctrl+C*: a quit ladder (cancel, close overlay, clear filter, go back, nothing at the root), `q` backing out of nested views, Ctrl+C cancelling first, and a quit confirmation only when quitting loses work.
+  - *Scrolling and position*, *Live data* (selection by stable ID, nearest neighbor on removal, a freeze key), and *Logs and streams* (follow mode, `▾ 37 new`, `G`/`F`, wrap toggle, ring buffer).
+  - *Text input*: readline aliases, history, ghost text and the Tab collision, and multi-line submit with `Alt+Enter` or `Ctrl+J` when Shift+Enter is unavailable. *Tree views*, and a mouse default of modes 1000 + 1002 + 1006 with an off switch.
+  - In `visual-patterns.md`: emoji width in aligned columns, diff views, modal geometry, and toasts with a message log.
+  - `SKILL.md` routing rows name the new topics, and `evals/v190-interaction-evals.json` adds eleven rubric cases (rubric-only).
 
 ### Changed
 - **Terminal protocols reference ([#72](https://github.com/gfargo/tui-design-skill/issues/72)):** the terminal modes, escape sequences, and environment matrix moved out of `interaction-patterns.md` into a new `references/terminal-protocols.md`, so design questions about keys, focus, and confirmation no longer load DECRQM and OSC details. The new file keeps the framework-defaults table, turns the per-mode bullets into one table (Mode | Enable / disable | Detect | Support floor | Gotcha), and trims per-terminal timeout and version trivia. `interaction-patterns.md` shrinks 41% by characters (40,919 to 23,934) and keeps a short *Keys the environment steals* table because it constrains keymap design; total reference size does not grow.

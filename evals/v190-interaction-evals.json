@@ -1,0 +1,143 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.9.0 interaction-guidance regressions for #74: the Esc/q/Ctrl+C quit ladder, scrolling and position, selection stability under live data, log follow mode, text input and multi-line submit, tree views, modal geometry, emoji width in columns, the mouse default, and diff views. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-26): rubric-only; the 1.9.0 evidence round records baseline and with-skill runs on Claude Code and Codex after the content issues land.",
+  "evals": [
+    {
+      "id": "quit-ladder",
+      "name": "quit-ladder",
+      "prompt": "My nested TUI uses Esc for five different things and q quits from anywhere. What order should Esc, q, and Ctrl+C follow?",
+      "files": [],
+      "assertions": [
+        "Gives an ordered Esc ladder: cancel the running operation, close the topmost overlay, clear the filter or search, go back one level, and do nothing at the root",
+        "Says each Esc press takes only the innermost applicable step",
+        "Says Esc never quits the app",
+        "Says q goes back in nested views and quits only at the root, and that q is a letter while a text field owns input",
+        "Says Ctrl+C cancels a running operation first and otherwise quits, with a second press to confirm when work would be lost",
+        "Confirms a quit only when it loses something (unsaved edits or running work), with a default of No, and never asks on an idle quit"
+      ]
+    },
+    {
+      "id": "follow-mode",
+      "name": "follow-mode",
+      "prompt": "I'm adding a live log viewer to my TUI. How should auto-scroll behave while the user reads?",
+      "files": [],
+      "assertions": [
+        "Follows (pins to the bottom) by default when opened",
+        "Pauses following on any upward scroll and holds the viewport still",
+        "Shows a pending-lines indicator such as '37 new' while paused",
+        "Re-pins with G (jump to end) or F (toggle follow)",
+        "Caps retained lines with a ring buffer and says when the oldest lines were dropped",
+        "Offers a wrap toggle, rather than always wrapping or always truncating"
+      ]
+    },
+    {
+      "id": "selection-stability",
+      "name": "selection-stability",
+      "prompt": "The process list in my TUI refreshes every second and the cursor keeps jumping to different rows. How do I fix it?",
+      "files": [],
+      "assertions": [
+        "Tracks the selection by a stable ID rather than a row index and re-resolves it after refresh, sort, and filter",
+        "Moves to the nearest surviving neighbor, not the first row, when the selected item disappears",
+        "Keeps the selected row at the same screen position when rows are inserted or removed above it",
+        "Does not re-sort on refresh unless the user changed the sort",
+        "Offers a freeze or pause key shown in the footer, with a PAUSED marker and a count of pending changes"
+      ]
+    },
+    {
+      "id": "multiline-submit",
+      "name": "multiline-submit",
+      "prompt": "My chat TUI's input field should send on Enter but let users add newlines. Shift+Enter doesn't seem to work in some terminals. What should I do?",
+      "files": [],
+      "assertions": [
+        "Explains that Shift+Enter is distinguishable from Enter only with the kitty keyboard protocol or similar enhanced keyboard reporting",
+        "Falls back to Alt+Enter or Ctrl+J for inserting a newline",
+        "Tells users the newline key in the placeholder or footer",
+        "Makes pasted newlines insert newlines instead of submitting (bracketed paste)"
+      ]
+    },
+    {
+      "id": "text-input-keys",
+      "name": "text-input-keys",
+      "prompt": "Which editing, history, and completion behaviors should the text field in my agent TUI have, and how do I handle Tab?",
+      "files": [],
+      "assertions": [
+        "Supports arrows, Home/End, and readline-style aliases such as Ctrl+W, Ctrl+U, and Ctrl+K, without making them the only route",
+        "Notes that Ctrl+A collides with GNU screen's prefix",
+        "Recalls history with Up and Down when the cursor is on the first or last line",
+        "Accepts dimmed ghost-text suggestions with Right or End",
+        "Resolves the Tab collision: a field that completes owns Tab, and focus moves another way"
+      ]
+    },
+    {
+      "id": "scroll-keys",
+      "name": "scroll-keys",
+      "prompt": "Which scrolling keys and position indicator should my list view have?",
+      "files": [],
+      "assertions": [
+        "Includes PgUp/PgDn, Ctrl+U/Ctrl+D for half a page, and Home/End or g/G",
+        "Keeps a scroll-off margin of a few rows between the cursor and the viewport edge",
+        "Shows a position indicator such as 42/1,203 or a percentage",
+        "Treats a scrollbar as optional and does not rely on it alone"
+      ]
+    },
+    {
+      "id": "tree-keys",
+      "name": "tree-keys",
+      "prompt": "What keys and behaviors should a tree view in my TUI have?",
+      "files": [],
+      "assertions": [
+        "Uses l or Right to expand (moving to the first child if already open) and h or Left to collapse or move to the parent",
+        "Shows a per-node loading spinner for lazily loaded children",
+        "Keeps expansion state by node ID across refreshes and filters",
+        "Keeps the ancestors of matches visible and expanded while a filter is active"
+      ]
+    },
+    {
+      "id": "modal-geometry",
+      "name": "modal-geometry",
+      "prompt": "How wide should confirmation dialogs be in my TUI, and how do I show a modal when NO_COLOR is set?",
+      "files": [],
+      "assertions": [
+        "Sizes the modal to about 60-80% of the terminal width with a sensible maximum, centered",
+        "Allows one modal at a time",
+        "Clears the cells behind the modal instead of letting text show through",
+        "Does not rely on dimming alone to signal modality: uses a border, title, and changed footer hints that survive NO_COLOR"
+      ]
+    },
+    {
+      "id": "emoji-columns",
+      "name": "emoji-columns",
+      "prompt": "My table has a status column with ⚠️ and ✅ and the columns misalign in some terminals. Why, and what do I do?",
+      "files": [],
+      "assertions": [
+        "Explains that emoji built from a narrow base plus a variation selector or joiner (such as ⚠️) render as 1 or 2 cells depending on the terminal and width library, while Wide-base emoji such as ✅ take 2 cells",
+        "Recommends narrow text symbols or words for status columns",
+        "Says to use a grapheme-aware width measurement and test on target terminals if emoji are kept"
+      ]
+    },
+    {
+      "id": "mouse-default",
+      "name": "mouse-default",
+      "prompt": "Which mouse reporting modes should my full-screen TUI enable, and should my inline picker use the mouse?",
+      "files": [],
+      "assertions": [
+        "Enables modes 1000, 1002, and 1006 for a full-screen app with click targets, not 1003 unless hover effects need it",
+        "Provides an off switch for mouse capture",
+        "Leaves the mouse off in inline tools",
+        "Keeps every mouse action reachable from the keyboard"
+      ]
+    },
+    {
+      "id": "diff-view-choice",
+      "name": "diff-view-choice",
+      "prompt": "How should my TUI show diffs on both a 100-column and a 160-column terminal?",
+      "files": [],
+      "assertions": [
+        "Chooses unified view on narrower terminals and side-by-side on wide ones, with a width threshold around 120 columns",
+        "Marks changed lines with + and - in a gutter column, not by color alone",
+        "Provides hunk navigation keys",
+        "Does not wrap lines in side-by-side mode"
+      ]
+    }
+  ]
+}

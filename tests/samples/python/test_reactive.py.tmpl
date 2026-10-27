@@ -4,9 +4,21 @@ from textual.app import App, ComposeResult
 <<sample python/reactive>>
 
 
+class Tracked(Counter):
+    seen = 0
+
+    def watch_history(self, old: list[int], new: list[int]) -> None:
+        self.seen += 1
+
+
 class CounterApp(App[None]):
     def compose(self) -> ComposeResult:
         yield Counter()
+
+
+class TrackedApp(App[None]):
+    def compose(self) -> ComposeResult:
+        yield Tracked()
 
 
 @pytest.mark.asyncio
@@ -22,3 +34,35 @@ async def test_validate_clamps_and_compute_follows():
         assert (counter.count, counter.label) == (0, "Count: 0")
         with pytest.raises(AttributeError):
             counter.label = "read-only"
+
+
+@pytest.mark.asyncio
+async def test_in_place_changes_need_mutate_reactive():
+    app = TrackedApp()
+    async with app.run_test() as pilot:
+        tracked = app.query_one(Tracked)
+        await pilot.pause()
+        before = tracked.seen
+        tracked.history.append(1)  # invisible to Textual
+        await pilot.pause()
+        assert tracked.seen == before
+        tracked.count = 3
+        tracked.remember()
+        await pilot.pause()
+        assert (tracked.seen, tracked.history) == (before + 1, [1, 3])
+        assert Tracked().history is not Tracked().history  # one list per widget
+
+
+@pytest.mark.asyncio
+async def test_var_skips_repaint_but_reactive_repaints():
+    app = CounterApp()
+    async with app.run_test() as pilot:
+        counter = app.query_one(Counter)
+        await pilot.pause()
+        refreshes = []
+        refresh = counter.refresh
+        counter.refresh = lambda *args, **kwargs: (refreshes.append(1), refresh(*args, **kwargs))[1]
+        counter.cursor = 4
+        assert refreshes == []
+        counter.count = 4
+        assert refreshes

@@ -1,0 +1,29 @@
+#![allow(unused)]
+use ratatui::backend::{Backend, TestBackend};
+use ratatui::text::Line;
+use ratatui::Terminal;
+
+<<sample rust/input-cursor>>
+
+fn cursor_after(text: &str, cursor: usize, width: u16) -> ratatui::layout::Position {
+    let mut terminal = Terminal::new(TestBackend::new(width, 3)).unwrap();
+    terminal.draw(|f| draw_input(f, f.area(), text, cursor)).unwrap();
+    terminal.get_cursor_position().unwrap()
+}
+
+#[test]
+fn cursor_is_placed_in_cells_inside_the_border() {
+    // "日本語" is 9 bytes, 3 chars, 6 cells; the border and padding start at (1, 1).
+    assert_eq!(cursor_after("日本語", 6, 20), (1 + 4, 1).into());
+    assert_eq!(cursor_after("abc", 3, 20), (1 + 3, 1).into());
+    // A full line keeps the cursor on the last inner column instead of the border.
+    assert_eq!(cursor_after("abcdefghij", 10, 8), (6, 1).into());
+}
+
+#[test]
+fn cell_width_counts_what_the_renderer_draws() {
+    use ratatui::buffer::CellWidth;
+    // U+FF9E is a halfwidth voiced-sound mark: unicode-width says 0, terminals draw 1.
+    assert_eq!("ﾊﾞ".cell_width(), 2);
+    assert_eq!(Line::from("ﾊﾞ").width(), 1);
+}

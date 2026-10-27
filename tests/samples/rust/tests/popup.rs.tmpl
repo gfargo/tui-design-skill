@@ -1,0 +1,36 @@
+#![allow(unused)]
+use ratatui::backend::TestBackend;
+use ratatui::layout::Rect;
+use ratatui::style::Color;
+use ratatui::Terminal;
+
+<<sample rust/popup>>
+
+#[test]
+fn popup_clears_its_rect_and_shadows_the_background() {
+    let mut terminal = Terminal::new(TestBackend::new(20, 10)).unwrap();
+    terminal
+        .draw(|frame| {
+            let filler = vec!["x".repeat(20); 10].join("\n");
+            frame.render_widget(ratatui::widgets::Paragraph::new(filler), frame.area());
+            draw_popup(frame, "Delete?");
+        })
+        .unwrap();
+    let area = Rect::new(0, 0, 20, 10).centered(
+        Constraint::Percentage(60),
+        Constraint::Length(5),
+    );
+    let buffer = terminal.backend().buffer();
+    assert_eq!(buffer[(area.x - 1, area.y + 1)].symbol(), "x", "background is filled");
+    // Inside the popup: text, then cleared blanks (no "x" from the background).
+    assert_eq!(buffer[(area.x + 1, area.y + 1)].symbol(), "D");
+    for x in area.x + 1 + 7..area.right() - 1 {
+        assert_eq!(buffer[(x, area.y + 1)].symbol(), " ", "Clear erased the background");
+    }
+    // Beside the popup, offset by (2, 1): the shadow replaced the background.
+    let shadow = &buffer[(area.right(), area.y + 2)];
+    assert_eq!(shadow.symbol(), "▓");
+    assert_eq!(shadow.bg, Color::DarkGray);
+    // Past the shadow the background is untouched.
+    assert_eq!(buffer[(area.right() + 2, area.y + 2)].symbol(), "x");
+}

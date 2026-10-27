@@ -127,7 +127,7 @@ Before choosing a layout, choose a screen buffer. The **alternate screen** is a 
 
 **Default heuristic: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, and dashboards — long-lived, navigational, full-screen — usually belong on the alt screen so they do not pollute scrollback. Prefer inline for bounded pickers, prompts, confirmations, and progress when preserving shell context matters. A picker with a large preview or unusually deep workflow may still earn a full-screen buffer; choose from the working set and exit contract, not the label alone.
 
-All four frameworks support both modes. How each enters the alternate screen or stays inline, and how it prints permanent lines above an inline UI, is in its ecosystem reference: `ecosystem-go.md`, `ecosystem-rust.md`, and `ecosystem-python.md` → *Lifecycle and terminal handoff*, and `ecosystem-typescript.md` → *Strengths and weaknesses*.
+All four frameworks support both modes. How each enters the alternate screen or stays inline, and how it prints permanent lines above an inline UI, is in its ecosystem reference: `ecosystem-go.md`, `ecosystem-rust.md` → *Inline viewport*, and `ecosystem-python.md` and `ecosystem-typescript.md` → *Lifecycle and terminal handoff*.
 
 ### The fzf model — bounded inline viewport
 

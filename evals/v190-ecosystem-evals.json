@@ -1,0 +1,196 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Focused v1.9.0 ecosystem-gap regressions for #76: Bubble Tea first frame and spinner ticks, Lipgloss layers and hit-testing, the real cursor for IME, Ratatui inline mode, popups and shadow, text-input cursor cells, tui-logger features, Textual in-place reactives, container layout, worker cancellation, SIGTERM and LLM streaming, and Ink list virtualization, input routing, Ctrl+C cancel, and async commander actions. Checked against the pinned sources and, for samples, run in the sample harnesses. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status: rubric-only; the 1.9.0 evidence round records baseline and with-skill runs on Claude Code and Codex after the content issues land.",
+  "evals": [
+    {
+      "id": "go76-spinner-never-moves",
+      "name": "go76-spinner-never-moves",
+      "prompt": "My Bubble Tea v2 model embeds a bubbles spinner and a bubbles timer. I created them in New() and render m.spinner.View(), but the spinner is frozen on its first frame and the timer never counts down. My Init returns nil. What do I change?",
+      "files": [],
+      "assertions": [
+        "Says the spinner does not start itself and Init must return the spinner's Tick command (m.spinner.Tick, the method value, which is a tea.Cmd), batched with the timer",
+        "Returns the timer's Init() (or equivalent start command) from the parent Init, usually combined with tea.Batch",
+        "Says the spinner keeps animating only while its spinner.TickMsg is forwarded to spinner.Update and the Cmd it returns is kept; dropping that Cmd stops the animation",
+        "Does not invent a spinner.Init() method or tell the user to call spinner.Tick as a package-level function"
+      ]
+    },
+    {
+      "id": "go76-first-frame-placeholder",
+      "name": "go76-first-frame-placeholder",
+      "prompt": "My Bubble Tea v2 app embeds a bubbles list and a viewport. On startup the list renders as a garbled fragment and the viewport is empty until I resize the terminal. How should I handle sizing?",
+      "files": [],
+      "assertions": [
+        "Explains that the model has no size until the first tea.WindowSizeMsg arrives and that Bubbles do not read WindowSizeMsg by themselves",
+        "Sizes the children in Update on tea.WindowSizeMsg using the v2 setters (list.SetSize, viewport.SetWidth/SetHeight), not v1 exported fields",
+        "Renders a placeholder from View until the first WindowSizeMsg has been received (for example when the stored width is 0)",
+        "Does not claim the children size themselves from the terminal or suggest sleeping or polling for the size"
+      ]
+    },
+    {
+      "id": "go76-lipgloss-overlay-hit",
+      "name": "go76-lipgloss-overlay-hit",
+      "prompt": "In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?",
+      "files": [],
+      "assertions": [
+        "Builds the overlay with lipgloss layers (lipgloss.NewLayer) with X and Y positions and a higher Z for the dialog, and composes them with lipgloss.NewCompositor(...).Render() instead of splicing strings",
+        "Gives each layer a click can land on an ID and uses Compositor.Hit(x, y) to find the top-most layer under the click",
+        "Enables mouse input on the view (v.MouseMode) and hit-tests either in v.OnMouse against the compositor built in View, or in Update on tea.MouseClickMsg with a compositor rebuilt from the same layout",
+        "Does not use removed v1 options such as tea.WithMouseCellMotion, and does not assume Z is added to a parent layer's Z"
+      ]
+    },
+    {
+      "id": "go76-real-cursor-ime",
+      "name": "go76-real-cursor-ime",
+      "prompt": "Users typing Japanese with an IME in my Bubble Tea v2 textinput say the candidate window pops up at the bottom-left of the screen instead of next to the text. How do I fix it?",
+      "files": [],
+      "assertions": [
+        "Explains that the textinput draws a virtual cursor by default and the terminal's own cursor is hidden, so the IME has nothing to anchor to",
+        "Calls m.input.SetVirtualCursor(false) and sets v.Cursor = m.input.Cursor() in View, with the input focused because Cursor() is nil while blurred",
+        "Adds the input's offset within the frame to the returned cursor position, since Cursor() is relative to the input",
+        "Warns that textinput.Cursor() counts runes rather than display cells, so wide CJK characters leave the cursor short and need a correction or a textarea"
+      ]
+    },
+    {
+      "id": "ratatui-inline-exit-cursor",
+      "name": "ratatui-inline-exit-cursor",
+      "prompt": "I built a Ratatui file picker that runs inline under the shell prompt. I start it with `ratatui::run(...)` but it takes over the whole screen, and when I switched to a hand-built terminal the shell prompt printed on the last line of my UI after I quit. How do I run it inline and exit cleanly?",
+      "files": [],
+      "assertions": [
+        "Says ratatui::run() and ratatui::init() always enter the alternate screen, and uses ratatui::init_with_options(TerminalOptions { viewport: Viewport::Inline(n) }) (raw mode and panic hook, no alternate screen)",
+        "Draws into frame.area() rather than assuming the viewport starts at (0, 0), because an inline viewport starts at the cursor row",
+        "Prints permanent lines above the UI with Terminal::insert_before, and optionally mentions Ratatui's scrolling-regions feature to avoid clearing and redrawing the viewport",
+        "Explains that the last frame stays on screen with the cursor at its end, so keeping the result needs a println!() after restore(), while erasing a transient UI needs clear() plus moving the cursor back to the viewport origin because Terminal::clear() restores the old cursor position"
+      ]
+    },
+    {
+      "id": "ratatui-popup-clear-shadow",
+      "name": "ratatui-popup-clear-shadow",
+      "prompt": "My Ratatui confirm dialog is a bordered Paragraph rendered over the main view, but the text underneath shows through the blank parts of the dialog. How do I center it and fix that, and can I give it a drop shadow?",
+      "files": [],
+      "assertions": [
+        "Centers the popup with Rect::centered(horizontal, vertical) on frame.area() (or centered_horizontally/centered_vertically), not hand-rolled percentage Layout splits",
+        "Renders the Clear widget into the popup rect before rendering the popup widget",
+        "Offers Block::shadow(Shadow::...) for a drop shadow and says it needs Ratatui 0.30.1 or later",
+        "Does not claim Clear covers the shadow; the shadow is painted beside the block, outside the cleared rect"
+      ]
+    },
+    {
+      "id": "ratatui-input-cursor-cells",
+      "name": "ratatui-input-cursor-cells",
+      "prompt": "In my Ratatui search box the blinking cursor is in the wrong place after I type Japanese text, and there is no cursor at all when I just render a Paragraph. How should I position the real terminal cursor?",
+      "files": [],
+      "assertions": [
+        "Calls frame.set_cursor_position((x, y)) during the draw, and says the cursor stays hidden when it is not called, so it is called only while the input has focus",
+        "Computes x in terminal cells (for example text[..cursor].cell_width() with ratatui::buffer::CellWidth, available since 0.30.1, or Line::width()/unicode-width) from the inner area's origin, not from text.len() bytes or chars().count()",
+        "Notes that wide (CJK) characters take two cells, and keeps the cursor inside the input's inner area rather than on the border"
+      ]
+    },
+    {
+      "id": "ratatui-tui-logger-crossterm-feature",
+      "name": "ratatui-tui-logger-crossterm-feature",
+      "prompt": "I'm adding tui-logger 0.18 to my Ratatui 0.30 app. A blog post says I must enable tui-logger's `crossterm` feature or the widget won't compile with my crossterm backend. Is that right?",
+      "files": [],
+      "assertions": [
+        "Says it is not required: tui-logger depends on ratatui without default features, so the widget works with whatever backend the app's own ratatui enables",
+        "Says the crossterm and termion features of tui-logger only gate its bundled demo example (and forward to ratatui's backend feature)",
+        "Notes the app translates its own key events into TuiWidgetEvent values for the widget state"
+      ]
+    },
+    {
+      "id": "py76-textual-search-cancel",
+      "name": "py76-textual-search-cancel",
+      "prompt": "My Textual 8 app runs a search in a thread worker on every keystroke (`@work(thread=True)`). Old searches keep running and their rows flicker into the table after a newer search has started. How do I make a new search replace the old one?",
+      "files": [],
+      "assertions": [
+        "Uses @work(thread=True, exclusive=True) with a group name so starting a new worker cancels earlier workers in the same group (on the same widget)",
+        "Explains that cancelling a thread worker does not interrupt the thread, so the function must poll get_current_worker().is_cancelled (and return before updating the UI)",
+        "Updates the UI from the thread with self.app.call_from_thread (or post_message), not by touching widgets directly",
+        "Mentions exit_on_error=False and handling the ERROR state in on_worker_state_changed (or event.worker.error) if a failing search must not quit the app"
+      ]
+    },
+    {
+      "id": "py76-textual-side-by-side-panes",
+      "name": "py76-textual-side-by-side-panes",
+      "prompt": "In my Textual app the TCSS gives #sidebar `width: 30` and #main `width: 1fr`, both are Vertical containers yielded from App.compose, but they stack on top of each other instead of sitting side by side. Also my toolbar HorizontalGroup shrinks to one row while my Horizontal swallows the whole screen. Why, and how do I fix it?",
+      "files": [],
+      "assertions": [
+        "Explains that a Screen lays out its children vertically by default, so the two panes stack",
+        "Fixes it with `layout: horizontal` on Screen or by wrapping the panes in a Horizontal container",
+        "States that Vertical, Horizontal and Grid expand to fill (1fr width and height) while VerticalGroup, HorizontalGroup and ItemGrid are height: auto and hug their content",
+        "Does not claim width: 1fr on #main alone places it beside the sidebar"
+      ]
+    },
+    {
+      "id": "py76-textual-in-place-reactive",
+      "name": "py76-textual-in-place-reactive",
+      "prompt": "In Textual I have `items: reactive[list[str]] = reactive(list)` and call `self.items.append(x)`, but my `watch_items` never fires and the widget does not repaint. I also have a `cursor` index that changes constantly and I do not want it to repaint the widget. What should I do?",
+      "files": [],
+      "assertions": [
+        "Explains that Textual detects assignment rather than in-place mutation, so append does not trigger watchers or a refresh",
+        "Calls self.mutate_reactive(Class.items) after the in-place change (or assigns a new list)",
+        "Uses var(...) for the cursor so changes fire watchers but do not repaint or relayout",
+        "Does not suggest calling watch_items manually or refresh() as the only fix for the missing watcher"
+      ]
+    },
+    {
+      "id": "py76-textual-sigterm-and-llm-stream",
+      "name": "py76-textual-sigterm-and-llm-stream",
+      "prompt": "My Textual 8 chat app streams an LLM reply into a Markdown widget by calling `markdown.update(full_text)` for every token, which is slow, and the view does not follow the new text. Separately, `kill <pid>` (SIGTERM) leaves my terminal in a broken state. How do I fix both?",
+      "files": [],
+      "assertions": [
+        "Streams with Markdown.get_stream(markdown) and awaits stream.write(chunk), stopping the stream in a finally block so queued text is flushed",
+        "Keeps the view on the newest text by calling anchor() on the scrolling container",
+        "Registers SIGTERM with the running event loop (loop.add_signal_handler(signal.SIGTERM, ...)) so it calls self.exit(...) and the normal shutdown restores the terminal, noting this is Unix-only",
+        "Does not restore the terminal from inside a low-level signal.signal handler"
+      ]
+    },
+    {
+      "id": "ink-virtualize-long-list",
+      "name": "ink-virtualize-long-list",
+      "prompt": "My Ink 8 app lists 20,000 log entries. I wrapped them all in a Box with overflow=\"hidden\" and contentOffsetY to scroll, but every arrow press is sluggish. What should I change?",
+      "files": [],
+      "assertions": [
+        "Explains that contentOffsetY (with overflow hidden) only shifts and clips the children: Yoga still lays out, and Ink still paints, every child, so cost scales with the full list",
+        "Recommends keeping the selection or scroll offset in state and mounting only the visible slice (for example items.slice(top, top + height)) in a fixed-height box",
+        "Makes each row exactly one line, using <Text wrap=\"truncate-end\"> (inside a fixed-width Box per cell), because the slice math assumes one row per line and the default wrap grows the row",
+        "Does not recommend <Static> as the virtualization mechanism for selectable or mutable rows"
+      ]
+    },
+    {
+      "id": "ink-focus-input-routing",
+      "name": "ink-focus-input-routing",
+      "prompt": "In my Ink 8 app a file list and a search box (@inkjs/ui TextInput) share the screen. I used useFocus in both so Tab switches between them, but typing in the search box also moves the list selection and arrow keys in the list edit the search text. Why, and how do I fix it?",
+      "files": [],
+      "assertions": [
+        "States that every mounted useInput handler receives every key unless its isActive option is false, and that useFocus only tracks which component Tab selected without muting other handlers",
+        "Gates the list's useInput with { isActive: isFocused } taken from useFocus (or an equivalent mode flag)",
+        "Says @inkjs/ui inputs such as TextInput have no useFocus integration and are controlled with isDisabled, so passes isDisabled={!isFocused}",
+        "Does not claim that wrapping the components in useFocus alone stops input from reaching the unfocused one"
+      ]
+    },
+    {
+      "id": "ink-ctrl-c-cancel-then-quit",
+      "name": "ink-ctrl-c-cancel-then-quit",
+      "prompt": "My Ink 8 CLI runs a build with execSync and shows a spinner. I want the first Ctrl+C to cancel the build and a second Ctrl+C to quit. The spinner never moves and Ctrl+C just kills the app. What do I change?",
+      "files": [],
+      "assertions": [
+        "Says execSync (or spawnSync, readFileSync on large files) blocks the single event loop, so the spinner freezes and keystrokes queue until it returns; replaces it with an async child (execFile or spawn) that takes an AbortSignal",
+        "Passes exitOnCtrlC: false to render because the default makes Ink quit on Ctrl+C before useInput handlers see it",
+        "Handles key.ctrl && input === 'c' in useInput: aborts the running work on the first press and calls exit() on the second",
+        "Keeps that Ctrl+C handler always active (not focus-gated), because with no active input hook raw mode is off and Ctrl+C becomes SIGINT again",
+        "Optionally exits with status 130 when quitting after a cancel"
+      ]
+    },
+    {
+      "id": "commander-async-action-ink",
+      "name": "commander-async-action-ink",
+      "prompt": "My commander 15 CLI has `.action(async () => { const app = render(<App />); await app.waitUntilExit(); })` and I call program.parse() at the bottom. Errors thrown in the action crash with an unhandled rejection and post-run code sometimes runs too early. What is wrong?",
+      "files": [],
+      "assertions": [
+        "Says parse() returns before an async action settles, so a rejection escapes as an unhandled rejection and code after parse() runs early",
+        "Recommends await program.parseAsync() whenever any action handler is async",
+        "Keeps awaiting the render handle's waitUntilExit() inside the action so post-run output waits for Ink to unmount"
+      ]
+    }
+  ]
+}

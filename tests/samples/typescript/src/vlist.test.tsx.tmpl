@@ -1,0 +1,51 @@
+import React from 'react';
+import {Box} from 'ink';
+import {render} from 'ink-testing-library';
+import {expect, test} from 'vitest';
+import {VirtualList} from './vlist.js';
+
+const tick = () => new Promise(resolve => setTimeout(resolve, 20));
+const rows = (prefix: string) =>
+  Array.from({length: 100_000}, (_, i) => `${prefix}${i} ${'x'.repeat(40)}`);
+const press = async (stdin: {write: (data: string) => void}, data: string, times = 1) => {
+  for (let i = 0; i < times; i++) {
+    stdin.write(data);
+    await tick();
+  }
+};
+
+test('virtual list renders only the slice and routes keys to the focused pane', async () => {
+  const {lastFrame, stdin, unmount} = render(
+    <Box>
+      <VirtualList items={rows('a')} height={5} width={20} />
+      <VirtualList items={rows('b')} height={5} width={20} />
+    </Box>,
+  );
+  await tick();
+  const lines = () => lastFrame()!.split('\n');
+
+  // 100,000 rows each, but only `height` lines exist: slice mounted, long rows truncated.
+  expect(lines()).toHaveLength(5);
+  expect(lastFrame()).toContain('a0 xxx');
+  expect(lastFrame()).toContain('…');
+
+  // Nothing is focused yet, so arrow keys reach no handler even though both useInput hooks are mounted.
+  await press(stdin, '\u001B[B', 8);
+  expect(lastFrame()).toContain('a0 ');
+  expect(lastFrame()).toContain('b0 ');
+
+  // Tab focuses the first pane; only it scrolls, and the window follows the selection.
+  await press(stdin, '\t');
+  await press(stdin, '\u001B[B', 8);
+  expect(lastFrame()).toContain('a10 ');
+  expect(lastFrame()).not.toContain('a0 ');
+  expect(lastFrame()).toContain('b0 ');
+  expect(lines()).toHaveLength(5);
+
+  // Tab again moves focus; the first pane keeps its position and the second starts scrolling.
+  await press(stdin, '\t');
+  await press(stdin, '\u001B[B', 8);
+  expect(lastFrame()).toContain('a10 ');
+  expect(lastFrame()).toContain('b10 ');
+  unmount();
+});

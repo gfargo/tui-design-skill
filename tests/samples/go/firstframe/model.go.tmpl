@@ -1,0 +1,43 @@
+package firstframe
+
+import (
+	"time"
+
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/timer"
+	tea "charm.land/bubbletea/v2"
+)
+
+type item string
+
+func (i item) Title() string       { return string(i) }
+func (i item) Description() string { return "" }
+func (i item) FilterValue() string { return string(i) }
+
+type model struct {
+	width, height int
+	list          list.Model
+	spinner       spinner.Model
+	timer         timer.Model
+}
+
+func newModel() model {
+	return model{
+		list:    list.New([]list.Item{item("one"), item("two")}, list.NewDefaultDelegate(), 0, 0),
+		spinner: spinner.New(),
+		timer:   timer.New(time.Minute),
+	}
+}
+
+<<sample go/first-frame until="// In Update">>
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	<<sample go/first-frame from="case tea.WindowSizeMsg" until="func (m model) View">>
+	}
+	return m, cmd
+}
+
+<<sample go/first-frame from="func (m model) View">>

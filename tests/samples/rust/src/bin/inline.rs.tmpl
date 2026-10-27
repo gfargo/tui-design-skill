@@ -1,0 +1,9 @@
+#![allow(unused)]
+use ratatui::DefaultTerminal;
+
+fn run(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+    terminal.draw(|frame| frame.render_widget("pick one", frame.area()))?;
+    Ok(())
+}
+
+<<sample rust/inline>>

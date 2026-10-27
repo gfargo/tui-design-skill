@@ -607,6 +607,253 @@
       "kind": "source_link",
       "file": "plugins/tui-design/skills/tui-design/references/cli-basics.md",
       "url": "https://learn.microsoft.com/en-us/windows/console/handlerroutine"
+    },
+    {
+      "id": "go76-spinner-tick-no-init",
+      "framework": "Bubbles",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"spinner has no Init: your Init must return m.spinner.Tick (the method value is the Cmd) ... timer and stopwatch have an Init() that starts them\" (as of v2.2.1)",
+      "pinned_version": "2.2.1",
+      "granularity": "minor",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/bubbles/v2"
+      }
+    },
+    {
+      "id": "go76-textinput-real-cursor",
+      "framework": "Bubbles",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"SetVirtualCursor(false) and v.Cursor = m.input.Cursor() ... textinput.Cursor() counts runes, not cells (v2.2.1); textarea counts cells\"",
+      "pinned_version": "2.2.1",
+      "granularity": "patch",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/bubbles/v2"
+      }
+    },
+    {
+      "id": "go76-lipgloss-layer-compositor",
+      "framework": "Lipgloss",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"NewLayer(...).ID().X().Y().Z(), NewCompositor(...).Render(), Compositor.Hit returns the top-most layer with an ID; Z is compared as written, not added to the parent's\" (as of v2.0.6)",
+      "pinned_version": "2.0.6",
+      "granularity": "minor",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/lipgloss/v2"
+      }
+    },
+    {
+      "id": "go76-bubbletea-onmouse-keyboard-enhancements",
+      "framework": "Bubble Tea",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
+      "claim": "\"v.OnMouse runs against the last drawn frame; Update still gets the raw MouseClickMsg\" and \"tea.KeyboardEnhancementsMsg arrives only if the terminal answers ... msg.SupportsKeyDisambiguation()\" (as of v2.1.0)",
+      "pinned_version": "2.1.0",
+      "granularity": "minor",
+      "registry": {
+        "type": "go_proxy",
+        "module": "charm.land/bubbletea/v2"
+      }
+    },
+    {
+      "id": "rust76-block-shadow",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui-widgets/src/block/shadow.rs"
+    },
+    {
+      "id": "rust76-cell-width",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui-core/src/buffer/cell_width.rs"
+    },
+    {
+      "id": "rust76-rect-centered",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui-core/src/layout/rect.rs"
+    },
+    {
+      "id": "rust76-inline-viewport",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui-core/src/terminal/inline.rs"
+    },
+    {
+      "id": "rust76-termina-reexport",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui/src/lib.rs"
+    },
+    {
+      "id": "rust76-changelog-0302",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/CHANGELOG.md"
+    },
+    {
+      "id": "rust76-tui-logger-features",
+      "framework": "Ratatui",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-rust.md",
+      "url": "https://github.com/gin66/tui-logger/blob/v0.18.3/Cargo.toml"
+    },
+    {
+      "id": "py76-textual-worker-cancellation",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"exclusive=True cancels earlier workers in the same group on the same widget ... a thread worker cannot be interrupted, since cancelling only flips its state to CANCELLED, so poll get_current_worker().is_cancelled\" (as of Textual 8.2.8)",
+      "pinned_version": "8.2.8",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "textual"
+      }
+    },
+    {
+      "id": "py76-textual-mutate-reactive-var",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"Textual detects assignment, not mutation: after append or d[k] = v, call self.mutate_reactive(Cls.attr). Use var for state that needs watchers but no repaint or relayout\" (as of Textual 8.2.8)",
+      "pinned_version": "8.2.8",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "textual"
+      }
+    },
+    {
+      "id": "py76-textual-containers",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"Vertical, Horizontal and Grid expand (width and height: 1fr); VerticalGroup, HorizontalGroup and ItemGrid are height: auto\" (as of Textual 8.2.8)",
+      "pinned_version": "8.2.8",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "textual"
+      }
+    },
+    {
+      "id": "py76-textual-push-screen-callback",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"a callback works from any handler, no worker needed ... the callback receives [the dismiss value] (None for a bare dismiss()); push_screen_wait returns it inline but needs the @work decorator; from a plain handler it raises NoActiveWorker\" (as of Textual 8.2.8)",
+      "pinned_version": "8.2.8",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "textual"
+      }
+    },
+    {
+      "id": "py76-textual-markdown-stream",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"Markdown.get_stream() batches fragments when the widget can't keep up (about 20 appends a second), and anchor() on the scroll container holds the view on the tail until the user scrolls up\" (as of Textual 8.2.8)",
+      "pinned_version": "8.2.8",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "textual"
+      }
+    },
+    {
+      "id": "py76-textual-no-sigterm-handler",
+      "framework": "Textual",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\"Textual installs no SIGTERM handler. On Unix, have the running event loop call exit\" (as of Textual 8.2.8)",
+      "pinned_version": "8.2.8",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "textual"
+      }
+    },
+    {
+      "id": "py76-questionary-kbi-msg",
+      "framework": "questionary",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-python.md",
+      "claim": "\".ask() catches Ctrl-C, prints \\\"Cancelled by user\\\" to stdout, and returns None ... kbi_msg=\\\"\\\" still prints a blank line\" (as of questionary 2.1.1)",
+      "pinned_version": "2.1.1",
+      "granularity": "minor",
+      "registry": {
+        "type": "pypi",
+        "package": "questionary"
+      }
+    },
+    {
+      "id": "ts76-ink-content-offset-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#contentoffsety"
+    },
+    {
+      "id": "ts76-ink-use-focus-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#usefocusoptions"
+    },
+    {
+      "id": "ts76-ink-exit-on-ctrl-c-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#exitonctrlc"
+    },
+    {
+      "id": "ts76-ink-alternate-screen-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#alternatescreen"
+    },
+    {
+      "id": "ts76-ink-text-wrap-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#wrap"
+    },
+    {
+      "id": "ts76-commander-parse-async-source",
+      "framework": "Ink",
+      "kind": "source_link",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "url": "https://github.com/tj/commander.js/blob/v15.0.0/Readme.md#parse-and-parseasync"
+    },
+    {
+      "id": "ts76-inkjs-ui-latest",
+      "framework": "Ink",
+      "kind": "pinned_version",
+      "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
+      "claim": "\"@inkjs/ui has had no release since 2.0.0\" (inputs have isDisabled and no useFocus integration, verified in 2.0.0 build output)",
+      "pinned_version": "2.0.0",
+      "granularity": "patch",
+      "registry": {
+        "type": "npm",
+        "package": "@inkjs/ui"
+      }
     }
   ]
 }

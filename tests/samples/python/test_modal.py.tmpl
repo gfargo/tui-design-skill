@@ -5,8 +5,10 @@ from textual.app import App
 
 
 class DeleteApp(App[None]):
-    BINDINGS = [("x", "delete", "Delete")]
+    BINDINGS = [("x", "delete", "Delete"), ("y", "delete_inline", "Delete")]
     action_delete = action_delete
+    after_confirm = after_confirm
+    action_delete_inline = action_delete_inline
     deleted = False
 
     async def do_delete(self) -> None:
@@ -14,13 +16,24 @@ class DeleteApp(App[None]):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("key", ["x", "y"])
 @pytest.mark.parametrize(("button", "deleted"), [("#yes", True), ("#no", False)])
-async def test_confirm_dialog(button, deleted):
+async def test_confirm_dialog(key, button, deleted):
     app = DeleteApp()
     async with app.run_test() as pilot:
-        await pilot.press("x")
+        await pilot.press(key)
         await pilot.pause()
         assert isinstance(app.screen, ConfirmDialog)
         await pilot.click(button)
         await pilot.pause()
         assert app.deleted is deleted
+
+
+@pytest.mark.asyncio
+async def test_callback_form_works_from_a_plain_handler():
+    # push_screen_wait outside a worker raises NoActiveWorker; the callback form does not.
+    app = DeleteApp()
+    async with app.run_test() as pilot:
+        app.action_delete()
+        await pilot.pause()
+        assert isinstance(app.screen, ConfirmDialog)

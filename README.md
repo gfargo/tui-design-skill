@@ -39,7 +39,7 @@ The skill uses progressive disclosure: its 139-line `SKILL.md` carries the workf
 
 **References (loaded as needed):**
 - `ecosystem-go.md` — Bubble Tea, Lipgloss, Bubbles, Huh, tview, gocui, Cobra, Wish, gum
-- `ecosystem-rust.md` — Ratatui, Crossterm, color-eyre panic safety, Cursive, clap, cliclack, async with Tokio
+- `ecosystem-rust.md` — Ratatui, Crossterm, color-eyre, terminal lifecycle and panic safety, Cursive, clap, cliclack, async with Tokio
 - `ecosystem-python.md` — Textual (TCSS, reactive, workers, Pilot testing, `textual serve`), Rich, prompt_toolkit, Typer, questionary
 - `ecosystem-typescript.md` — Ink (used by Claude Code, GitHub Copilot CLI, Gemini CLI), @clack/prompts, @inquirer/prompts, OpenTUI, color-library tradeoffs, argument-parser comparison
 - `cli-basics.md` — `clig.dev` / 12-Factor / POSIX / XDG / `sysexits` synthesis for non-TUI CLIs with decisive defaults (exit-code scheme, SIGINT re-raise, `--json` and its errors, completions contract, atomic writes, Windows notes, testing one-shot CLIs), plus shell integration hooks, shipping/update/telemetry etiquette, and first-run auth flows, and a VHS fallback for demo recordings
@@ -328,6 +328,7 @@ tui-design-skill/
 │   ├── v190-content-evals.json
 │   ├── v190-interaction-evals.json
 │   ├── v190-cli-evals.json
+│   ├── v190-ecosystem-evals.json
 │   ├── trigger-evals.json
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md

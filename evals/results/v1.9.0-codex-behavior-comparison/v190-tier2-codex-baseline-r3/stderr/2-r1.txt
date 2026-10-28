@@ -1,0 +1,126 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6npyf9ls
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f3-c283-7582-acfa-47415ed18c7f
+--------
+user
+My Ratatui app (crossterm backend, tokio) has a rendering bug: after certain resizes, one panel's bottom border overlaps the footer by one row. It's intermittent and I've been println-debugging, which obviously corrupts the screen. What's the right way to (a) debug this properly and (b) write a regression test so it can't come back?
+
+codex
+Treat this as a layout invariant bug: the panel’s rectangle must end at or before the footer’s first row. Make that invariant observable, then test it through the resize sequence that triggers the problem.
+
+**(a) Debug without writing into the terminal**
+
+Use `tracing` with a file writer. Both `println!` and `eprintln!` can corrupt a crossterm screen while the TUI is active.
+
+```rust
+let log = std::fs::File::create("tui-debug.log")?;
+tracing_subscriber::fmt()
+    .with_ansi(false)
+    .with_writer(std::sync::Mutex::new(log))
+    .init();
+```
+
+Inspect the file from another terminal with `tail -f tui-debug.log`. Log the frame area and the actual rectangles used to render:
+
+```rust
+tracing::debug!(
+    ?area, ?panel, ?footer,
+    panel_bottom = panel.bottom(),
+    footer_top = footer.y,
+    "layout"
+);
+```
+
+A `Rect`’s bottom is **exclusive**: its final visible row is `bottom() - 1`. For a panel above a footer, the invariant is:
+
+```rust
+debug_assert!(panel.bottom() <= footer.y);
+```
+
+Compute the rectangles from `frame.area()` on every draw. Prefer one shared layout calculation over manually subtracting footer rows in multiple places:
+
+```rust
+fn regions(area: Rect) -> [Rect; 2] {
+    let [panel, footer] = Layout::vertical([
+        Constraint::Min(0),
+        Constraint::Length(1),
+    ])
+    .areas(area);
+
+    [panel, footer]
+}
+```
+
+Check particularly for:
+
+- Cached rectangles that survive a resize.
+- Mixing dimensions from a resize event with dimensions from the current frame.
+- `height + 1` or inclusive-bottom calculations.
+- Arithmetic that assumes `area.x == 0` and `area.y == 0`.
+- A footer rendered inside a parent rectangle that still includes its row.
+
+With Tokio, keep terminal drawing and layout state updates under one owner. Background tasks should send messages to that owner.
+
+**(b) Test geometry and rendered output**
+
+Extract your layout and render functions so they work with Ratatui’s `TestBackend`. First, test geometry across small and normal sizes, including a nonzero origin:
+
+```rust
+#[test]
+fn panel_never_overlaps_footer() {
+    for width in 0..100 {
+        for height in 0..50 {
+            let area = Rect::new(3, 5, width, height);
+            let [panel, footer] = regions(area);
+
+            assert!(panel.bottom() <= footer.y, "{area:?}");
+            assert!(panel.bottom() <= area.bottom(), "{area:?}");
+            assert!(footer.bottom() <= area.bottom(), "{area:?}");
+        }
+    }
+}
+```
+
+Then test **multiple draws on the same terminal and app state**. Independent fresh-terminal snapshots can miss stale state triggered by resizing.
+
+```rust
+use ratatui::{backend::TestBackend, Terminal};
+
+#[test]
+fn borders_remain_above_footer_after_resizes() -> std::io::Result<()> {
+    let mut terminal = Terminal::new(TestBackend::new(40, 12))?;
+    let mut app = App::default();
+
+    // Replace/add the exact sequence that reproduced the bug.
+    for (width, height) in [
+        (40, 12),
+        (40, 6),
+        (23, 6),
+        (23, 15),
+        (40, 12),
+    ] {
+        terminal.backend_mut().resize(width, height);
+        terminal.resize(Rect::new(0, 0, width, height))?;
+        terminal.draw(|frame| app.render(frame))?;
+
+        // Compare the complete buffer with an expected Buffer,
+        // or take an insta snapshot of terminal.backend().buffer().
+        // Explicitly verify the panel's border row and footer row.
+    }
+
+    Ok(())
+}
+```
+
+Turn that comment into an exact buffer assertion or reviewed snapshot for each size. Assert **both** rows: if the footer draws last, it can hide an overlapping border and make a footer-only assertion pass.
+
+`TestBackend` tests layout and rendering deterministically; it doesn’t exercise crossterm’s actual event delivery. If the rectangles are always correct but the live display still breaks, investigate resize handling, concurrent terminal writes, and any code bypassing Ratatui’s renderer.
+tokens used
+3,491

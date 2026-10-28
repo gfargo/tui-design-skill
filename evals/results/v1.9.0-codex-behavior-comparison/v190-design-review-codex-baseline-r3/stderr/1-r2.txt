@@ -1,0 +1,120 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-sio40yib
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18108-a060-7492-a469-9bd024414ee0
+--------
+user
+I've built a 3-pane Ratatui file-manager layout — Miller columns: parent | current | preview — and it looks great on my 220-column ultrawide. The problem is our users run it over SSH, inside tmux splits, and some on 13-inch laptops. Right now it just renders all three columns at 33% width no matter what. Below about 90 columns the preview pane is unreadable and filenames truncate to mush; at 80x24 it's basically unusable, and I haven't even thought about what happens narrower than that. What do I need to do to make this hold up across terminal sizes — 80x24, tmux splits, even down around 60 columns?
+
+codex
+Treat this as a responsive layout: **give panes minimum usable widths, then remove secondary panes when they no longer fit.** Three equal percentages cannot preserve readability.
+
+For a file manager, the current directory is essential; parent and preview are supporting context. A good starting policy is:
+
+| Available width | Layout | Behavior |
+|---|---|---|
+| 120+ columns | Parent · current · preview | Parent stays relatively narrow; current and preview share remaining space |
+| 90–119 | Current · preview | Put parent context in the breadcrumb |
+| 60–89 | Current only | Preview opens on demand, replacing the listing |
+| Below 60 | Compact current only | Hide metadata; shorten chrome; keep navigation and selection usable |
+
+These are starting thresholds. Tune them against real filenames, borders, padding, and preview content. If your preview needs 50 columns to be useful, use that requirement in the calculation.
+
+### Make layout selection explicit
+
+Separate the decision about which panes exist from rendering them. With Ratatui, a simple policy can look like:
+
+```rust
+use ratatui::layout::{Constraint, Layout, Rect};
+
+enum PaneLayout {
+    Three([Rect; 3]),
+    Two([Rect; 2]),
+    One(Rect),
+}
+
+fn pane_layout(area: Rect) -> PaneLayout {
+    match area.width {
+        120.. => PaneLayout::Three(
+            Layout::horizontal([
+                Constraint::Length(24),
+                Constraint::Min(36),
+                Constraint::Length(50),
+            ])
+            .split(area)
+            .as_ref()
+            .try_into()
+            .unwrap(),
+        ),
+        90..=119 => PaneLayout::Two(
+            Layout::horizontal([
+                Constraint::Percentage(50),
+                Constraint::Percentage(50),
+            ])
+            .areas(area),
+        ),
+        _ => PaneLayout::One(area),
+    }
+}
+```
+
+You can simplify the three-pane branch to `.areas(area)` too; the important part is the **layout policy**, not the specific constraints. Count pane borders and padding when setting minimums: a 36-column outer pane may provide only 32 columns for text.
+
+### Keep the interaction working when panes disappear
+
+Hiding a pane must not hide a capability:
+
+- Keep parent-directory navigation available through keys and breadcrumbs.
+- Provide a preview toggle. In single-pane mode, show the preview in the main content area; `Esc` returns to the listing.
+- If resizing hides the focused pane, move focus to the current-directory pane.
+- Preserve selection, scroll position, and preview state across layout changes. Keep application state independent of pane rectangles.
+
+A popup is useful only if it has enough room. At 60 columns, replacing the listing usually gives the preview more usable space.
+
+### Make the listing itself responsive
+
+A single pane can still waste most of its width on metadata. Allocate space in priority order:
+
+1. Selection indicator and filename.
+2. Size, if space permits.
+3. Modified date, permissions, owner, and other optional fields.
+
+At 60 columns, show mostly filenames. Use a compact directory marker, and avoid deep indentation or generous horizontal padding.
+
+Truncate by **terminal display cells**, not byte count or Rust character count. Unicode characters can occupy different widths; avoid cutting grapheme clusters. For files, preserving the extension is often useful:
+
+```text
+quarterly-financial-repo….xlsx
+```
+
+Breadcrumbs should generally preserve the rightmost, most relevant path components.
+
+### Respond to height as well as width
+
+At **80×24**, a single listing with one breadcrumb row and one status/help row leaves roughly 22 rows before borders. That is much more useful than three cramped framed panes.
+
+On short terminals:
+
+- Collapse multi-line headers and help into one row.
+- Remove blank padding and redundant borders.
+- Scroll the listing to keep the selection visible.
+- Give content priority over persistent help.
+- Handle zero-sized and tiny rectangles without panics or unsigned subtraction underflow.
+
+Compute layout from `frame.area()` on every draw. A resize should also update any viewport calculations and width-dependent preview wrapping. If previews are expensive, debounce their regeneration while continuing to redraw the layout immediately.
+
+### Verify the transitions
+
+Test at **220×50, 120×30, 90×24, 80×24, 60×20, and 40×10**, plus one column either side of each breakpoint. Ratatui’s `TestBackend` is useful for repeatable rendering checks.
+
+Include long filenames, wide Unicode, empty directories, errors, and resizing while the preview is focused. Check that the selection remains visible and every navigation action still works.
+
+The target at **80×24 and 60 columns should be a good single-pane file manager**, with the extra context progressively appearing as space allows.
+tokens used
+1,561

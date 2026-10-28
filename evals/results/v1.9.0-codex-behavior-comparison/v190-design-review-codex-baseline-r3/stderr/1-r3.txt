@@ -1,0 +1,77 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-1dwnx82_
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18109-42e4-7a70-8e2c-a8ea6a227fa9
+--------
+user
+I've built a 3-pane Ratatui file-manager layout — Miller columns: parent | current | preview — and it looks great on my 220-column ultrawide. The problem is our users run it over SSH, inside tmux splits, and some on 13-inch laptops. Right now it just renders all three columns at 33% width no matter what. Below about 90 columns the preview pane is unreadable and filenames truncate to mush; at 80x24 it's basically unusable, and I haven't even thought about what happens narrower than that. What do I need to do to make this hold up across terminal sizes — 80x24, tmux splits, even down around 60 columns?
+
+codex
+Treat terminal space as a budget: **keep the current directory usable first, then add preview and parent panes when they fit.** Equal thirds won’t work across these sizes.
+
+Switch layouts based on the application’s available `Rect`, which already reflects SSH terminal sizes and tmux splits:
+
+| Available width | Layout | Behavior |
+|---|---|---|
+| ≥120 columns | Parent · Current · Preview | Give current and preview more space than parent |
+| 90–119 | Current · Preview | Show parent path in a breadcrumb |
+| 60–89 | Current | Open preview on demand, replacing the list |
+| <60 | Compact current | Hide metadata; retain navigation and selection |
+
+These are starting breakpoints. Derive the final values from minimum **usable content widths**, accounting for borders, padding, and separators. If a preview needs 40 columns and the directory list needs 32, don’t show both unless both fit.
+
+In Ratatui, choose a layout mode before splitting the area:
+
+```rust
+#[derive(Clone, Copy)]
+enum LayoutMode {
+    ThreePane,
+    TwoPane,
+    SinglePane,
+    Compact,
+}
+
+fn layout_mode(area: Rect) -> LayoutMode {
+    match area.width {
+        120.. => LayoutMode::ThreePane,
+        90..=119 => LayoutMode::TwoPane,
+        60..=89 => LayoutMode::SinglePane,
+        _ => LayoutMode::Compact,
+    }
+}
+```
+
+For the wide layout, replace equal thirds with something like:
+
+```rust
+let panes = Layout::horizontal([
+    Constraint::Percentage(20), // parent
+    Constraint::Percentage(40), // current
+    Constraint::Percentage(40), // preview
+])
+.split(body);
+```
+
+Use separate splits for the other modes. Keep this layout decision separate from directory state so resizing doesn’t reset selection, scroll position, or preview state.
+
+**At 80×24, aim for a good single-pane file manager.** Show the current path at the top, filenames in the main area, and one concise status/help line at the bottom. Parent navigation remains a keypress away; preview becomes a dedicated view with a clear Back action. Keep these actions available at every size so shrinking the terminal never removes functionality.
+
+A few details make the difference:
+
+- **Drop metadata before filenames.** Remove owner, timestamps, and size columns progressively. At 60 columns, a filename and selection marker are usually enough.
+- **Truncate intentionally.** Preserve extensions where useful (`long-project-na…toml`), and expose the selected item’s full name through details or a horizontally scrollable field. Measure terminal display width, not bytes or character count; handle wide Unicode and combining characters.
+- **Make height responsive too.** At 24 rows, avoid multi-line headers and help panels. On very short terminals, remove decorative chrome and keep the selected row visible. Give long help and details their own scrollable views.
+- **Handle resize on the next draw.** Recompute from `frame.area()` each frame. When a pane disappears, move focus to a visible pane; clamp scrolling against the new viewport.
+- **Handle tiny rectangles safely.** Don’t subtract borders with unchecked arithmetic or assume a pane has an interior. Skip rendering zero-sized areas, and use a compact “terminal too small” view when basic navigation cannot fit.
+
+Test actual interactions at **220×50, 120×30, 100×24, 80×24, 60×20, and 40×10**, plus widths immediately on either side of each breakpoint. Include long names, Unicode, empty directories, large listings, and resizing while preview has focus. Ratatui’s `TestBackend` is useful for deterministic rendering checks; also try real tmux splits to verify keyboard navigation and resizing.
+
+The key acceptance criterion: at 60 columns, users should still be able to identify files, move around, and open a preview without fighting the layout.
+tokens used
+1,385

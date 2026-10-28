@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+how do i write tests for my textual app? it's a data-entry screen with an Input, a Select and a submit Button — i want to test that a validation error shows when the name field is empty, and that pressing submit posts the right message. already using pytest, python 3.12, latest textual.

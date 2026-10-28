@@ -1,0 +1,36 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-structural-codex-baseline-r3",
+  "created_at": "2026-10-28T05:44:06Z",
+  "run_manifest_sha256": "1b100e58bdd96f0a150b77c8e572fb435c650ea33ff3740ca933a50777d97864",
+  "grades_file": "grades.json",
+  "grades_sha256": "73aa32970d5f6e0d5e4fcaf997ac819a2756a403d2cf50f7f9aaa36527d9b816",
+  "passed": 28,
+  "total": 42,
+  "pass_rate": 0.6666666666666666,
+  "by_case": [
+    {
+      "case_id": "0",
+      "case_name": "bubble-tea-cleanup-after-slimming",
+      "passed": 11,
+      "total": 12,
+      "pass_rate": 0.9166666666666666
+    },
+    {
+      "case_id": "1",
+      "case_name": "kubernetes-browser-clutter-and-floor",
+      "passed": 10,
+      "total": 15,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "2",
+      "case_name": "branch-picker-output-contract",
+      "passed": 7,
+      "total": 15,
+      "pass_rate": 0.4666666666666667
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

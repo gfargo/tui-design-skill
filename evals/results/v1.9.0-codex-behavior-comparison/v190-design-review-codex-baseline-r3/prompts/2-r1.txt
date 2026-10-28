@@ -1,0 +1,5 @@
+Here's the design for a new Kubernetes TUI I'm about to build in Rust with Ratatui, modeled loosely on k9s. I'd love a UX review before I write any code.
+
+It's a 4-panel grid. Top-left is a namespace list, top-right is a pod list. Bottom-left is a pod details panel that shows every field — name, status, pod IP, host IP, node, all labels, all annotations, restart count, age, QoS class, conditions, and the owner reference. Bottom-right is a live log tail. Every panel has a rounded border with a title in it. There's a header bar across the top showing cluster / context / namespace, and a footer bar that lists all 14 keybindings. Color coding: green = running, red = failed/crashloop, yellow = pending. The whole thing is designed for my 160x50 terminal window.
+
+What do you think — anything you'd change before I start?

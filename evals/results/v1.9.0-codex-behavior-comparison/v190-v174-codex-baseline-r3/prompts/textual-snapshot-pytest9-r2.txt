@@ -1,0 +1,1 @@
+After upgrading to pytest 9, my Textual snapshot tests started writing .raw files instead of SVGs and my async Pilot tests error out. What changed?

@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+Review this Bubble Tea shutdown pattern before I ship it: `p := tea.NewProgram(model); defer p.RestoreTerminal(); _, err := p.Run(); return err`. I added the defer to make sure a panic cannot leave the terminal broken. Is this correct, and what should I use instead?

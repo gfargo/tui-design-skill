@@ -1,0 +1,103 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-taukonip
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f5-591c-7200-9fe7-27488d96138d
+--------
+user
+My Ink CLI in TypeScript is misbehaving two ways: (1) when I sprinkle console.log debugging the output sometimes garbles or interleaves weirdly with the UI, and (2) a state update I can see happening (the reducer runs) never shows up on screen. What's the right debugging workflow for Ink apps so I'm not guessing?
+
+codex
+Treat these as two separate problems: **terminal output interference** and **React deciding whether to render**.
+
+**1. Make the debug output trustworthy first**
+
+Ink redraws its terminal region. Ordinary writes to stdout can collide with that process. Ink normally patches console methods to accommodate logging, but direct writes, subprocess output, or disabling `patchConsole` can still interfere.
+
+For a debugging session, enable Ink’s debug mode:
+
+```tsx
+render(<App />, {debug: true});
+```
+
+This keeps successive frames instead of erasing and redrawing them. It’s verbose, but lets you inspect what Ink actually rendered.
+
+For longer investigations, log to a file and watch it in another terminal:
+
+```ts
+import {appendFileSync} from 'node:fs';
+import {inspect} from 'node:util';
+
+export function trace(label: string, value: unknown) {
+  appendFileSync(
+    'ink-debug.log',
+    `${label}: ${inspect(value, {depth: 5})}\n`,
+  );
+}
+```
+
+```sh
+tail -f ink-debug.log
+```
+
+Don’t assume `console.error` or `process.stderr.write` solves the problem: stderr usually reaches the same terminal. File logging avoids that interference entirely.
+
+**2. Trace the update through React, not just through the reducer**
+
+A reducer running proves that React processed an action. It does **not** prove that React committed a changed UI. Start by checking for mutation:
+
+```tsx
+// Wrong: returns the same state object.
+state.count += 1;
+return state;
+
+// Right: creates a new state object.
+return {...state, count: state.count + 1};
+```
+
+React compares the returned state with the previous state using `Object.is`. Returning the same object can cause React to skip updating the screen. Nested objects and arrays also need new references wherever they change, particularly when passed to memoized components.
+
+Trace three points to your file:
+
+```tsx
+function reducer(state: State, action: Action): State {
+  const next = /* compute without mutating state */;
+
+  trace('reducer', {
+    action,
+    sameReference: Object.is(state, next),
+    previous: state,
+    next,
+  });
+
+  return next;
+}
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  trace('render', state);
+
+  useEffect(() => {
+    trace('committed state', state);
+  }, [state]);
+
+  return <Text>{state.count}</Text>;
+}
+```
+
+Follow the evidence:
+
+- **Same state reference:** fix immutable updates.
+- **New state reaches the parent, but not the child:** inspect `React.memo`, custom comparison functions, and unchanged nested references.
+- **Child renders stale values:** check missing `useMemo`/`useCallback` dependencies, stale closures, or props copied into local state.
+- **Committed output changes but the terminal looks wrong:** investigate Ink’s output handling and layout. Also check whether changing content is inside `<Static>`, which is intended for permanent output rather than live updates.
+
+A reliable loop is: **file logs → reducer reference check → render/commit trace → debug-mode frames**. That tells you whether the failure is in state propagation or terminal rendering before you start changing unrelated code.
+tokens used
+1,221

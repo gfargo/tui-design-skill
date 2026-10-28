@@ -1,0 +1,1 @@
+Review this Bubble Tea shutdown pattern before I ship it: `p := tea.NewProgram(model); defer p.RestoreTerminal(); _, err := p.Run(); return err`. I added the defer to make sure a panic cannot leave the terminal broken. Is this correct, and what should I use instead?

@@ -1,0 +1,92 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-v174-codex-baseline-r3",
+  "created_at": "2026-10-28T05:33:05Z",
+  "run_manifest_sha256": "faa98c68a5d02774f1b8d34c33fe292f340127e7c9712270c056d902b9887c1c",
+  "grades_file": "grades.json",
+  "grades_sha256": "b5859f2ef044f43d5b8fcbf453ba7163fe09581b39f7b641960a31c84ba73f42",
+  "passed": 54,
+  "total": 111,
+  "pass_rate": 0.4864864864864865,
+  "by_case": [
+    {
+      "case_id": "huh-v2-embedding",
+      "case_name": "huh-v2-embedding",
+      "passed": 6,
+      "total": 12,
+      "pass_rate": 0.5
+    },
+    {
+      "case_id": "lipgloss-v2-printing",
+      "case_name": "lipgloss-v2-printing",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-textarea-crate",
+      "case_name": "ratatui-textarea-crate",
+      "passed": 1,
+      "total": 9,
+      "pass_rate": 0.1111111111111111
+    },
+    {
+      "case_id": "ratatui-select-reader-ends",
+      "case_name": "ratatui-select-reader-ends",
+      "passed": 6,
+      "total": 12,
+      "pass_rate": 0.5
+    },
+    {
+      "case_id": "ratatui-ctrl-c-raw-mode",
+      "case_name": "ratatui-ctrl-c-raw-mode",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink8-new-project",
+      "case_name": "ink8-new-project",
+      "passed": 7,
+      "total": 12,
+      "pass_rate": 0.5833333333333334
+    },
+    {
+      "case_id": "cjs-require-esm",
+      "case_name": "cjs-require-esm",
+      "passed": 8,
+      "total": 9,
+      "pass_rate": 0.8888888888888888
+    },
+    {
+      "case_id": "typer-vendored-click",
+      "case_name": "typer-vendored-click",
+      "passed": 0,
+      "total": 9,
+      "pass_rate": 0.0
+    },
+    {
+      "case_id": "ai-chat-rendering-tradeoff",
+      "case_name": "ai-chat-rendering-tradeoff",
+      "passed": 0,
+      "total": 12,
+      "pass_rate": 0.0
+    },
+    {
+      "case_id": "gocui-new-app",
+      "case_name": "gocui-new-app",
+      "passed": 4,
+      "total": 9,
+      "pass_rate": 0.4444444444444444
+    },
+    {
+      "case_id": "textual-snapshot-pytest9",
+      "case_name": "textual-snapshot-pytest9",
+      "passed": 4,
+      "total": 9,
+      "pass_rate": 0.4444444444444444
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

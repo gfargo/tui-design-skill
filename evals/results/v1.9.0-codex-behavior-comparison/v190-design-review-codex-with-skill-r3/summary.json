@@ -1,0 +1,36 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-design-review-codex-with-skill-r3",
+  "created_at": "2026-10-28T13:05:48Z",
+  "run_manifest_sha256": "a2f90e21201e137651e82c7218c0b4b42145bc0e715f3c88fa8f217d9a053915",
+  "grades_file": "grades.json",
+  "grades_sha256": "c39ead1a8f78d99742098f4c0d5f17a570377efc954b48748b1052ff9dd08537",
+  "passed": 39,
+  "total": 39,
+  "pass_rate": 1.0,
+  "by_case": [
+    {
+      "case_id": "0",
+      "case_name": "cluttered-ci-dashboard-review",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "1",
+      "case_name": "responsive-miller-columns",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "2",
+      "case_name": "open-ended-k8s-tui-review",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

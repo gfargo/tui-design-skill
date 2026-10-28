@@ -1,0 +1,43 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-tier3-codex-baseline-r3",
+  "created_at": "2026-10-28T05:39:17Z",
+  "run_manifest_sha256": "bafa20e559e9d2b95ee0148e4cfd3b4178f5f8b519ec22dcdefd23dd6beddfe5",
+  "grades_file": "grades.json",
+  "grades_sha256": "ee566b0d932255407f8f1ad017da24d707442401bd33f2a74cb73f6cb5bd9fa1",
+  "passed": 42,
+  "total": 60,
+  "pass_rate": 0.7,
+  "by_case": [
+    {
+      "case_id": "0",
+      "case_name": "shell-integration-cd-on-exit",
+      "passed": 10,
+      "total": 15,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "1",
+      "case_name": "forms-first-run-apikey",
+      "passed": 10,
+      "total": 15,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "2",
+      "case_name": "nerdfont-and-timeout-ux",
+      "passed": 12,
+      "total": 15,
+      "pass_rate": 0.8
+    },
+    {
+      "case_id": "3",
+      "case_name": "profiling-textual-and-ink",
+      "passed": 10,
+      "total": 15,
+      "pass_rate": 0.6666666666666666
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

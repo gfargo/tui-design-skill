@@ -1,0 +1,270 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-design-review-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer counts the boxes inside boxes: pipeline rows sit inside 3 borders, and it says the inner boxes separate nothing."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The redesign has no boxes at all; one divider line and whitespace separate the table from the log."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer flags the doubled \u2705 around PASSED, counting 4 ways build-api shows passed, and says v2.1 in the header isn't useful."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer adds 80\u00d724 and 60-column layouts, height fallbacks, and a 'terminal too small' message, none of which the question asked for."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's audit opens with 'Border nesting is 3 deep. Aim for 1.' It names the outer frame, panel and inner box layers, and says 8 of 17 rows are pure border."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The proposed layout drops the outer frame and leaves the header and footer as plain unbordered rows. The 60-column view also says the list 'needs no border' and uses blank lines for separation."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer flags `\u2705 PASSED \u2705` as two checkmarks plus a word for one fact. It also notes the header's most prominent spot is wasted on a version number."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "An 'At smaller sizes' section covers 80\u00d724, a 60-column tmux split and a too-small fallback below about 40\u00d78. It also says to recompute pane widths on every WindowSizeMsg."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer calls out 3-deep border nesting (outer frame, panel, unlabeled inner box) as the first clutter source and says to delete the redundant boxes."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer removes the outer frame, leaves the header and footer borderless, and uses a borderless single pane with blank-line spacing at 60 columns, so whitespace and the terminal edge replace borders in those regions."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer flags `\u2705 PASSED \u2705` as saying status 3\u20134 times and says the header's version number would be better replaced with useful info."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer gives a full 'At smaller sizes' section covering 80\u00d724 stacking, a 60-column single pane and a too-small message, plus golden tests at several sizes."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives named breakpoints in a ladder table: \u2265100, 80\u201399, 32\u201379, and <32\u00d78."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "At 32\u201379 columns the answer collapses to the current column only, with a breadcrumb standing in for the parent."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says to hide the preview first, then the parent, and to always keep the current column."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer defines MIN_W/MIN_H of 32\u00d78 and a 'terminal too small: need 32x8' message, with q still quitting."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer replaces equal thirds with Length/Fill constraints, clamped minimum widths, and 1:4:3 ratios."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives named breakpoints of 110+, 80\u2013109, 40\u201379 and under 40\u00d78 columns, and uses them in code."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "At 40\u201379 columns it shows only the current pane, with Tab opening the preview full-screen."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Sets an explicit hiding order (parent first, then preview) with reasoning, and says to swap it if users rely on siblings."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Defines MIN_W=40 and MIN_H=8 and shows a 'terminal too small' message that names the required size and keeps q working."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces 33% with Fill(1):Fill(4):Fill(3) constraints and a minimum pane width of about 30 columns."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's breakpoint table names concrete thresholds: \u2265100, 80\u201399, 40\u201379 and <40\u00d78 columns/rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "At 40\u201379 columns it collapses to the current pane only, with the preview opened full-width on demand via `p`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It sets an explicit pane priority: the parent is dropped first, the preview becomes on-demand next, and the current pane always stays; it also explains this choice and suggests making it a setting."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It defines MIN_W=40 and MIN_H=8, and below that renders a 'terminal too small: need 40\u00d78 (now 34\u00d76)' message with q/Ctrl+C still working."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It replaces fixed 33% with constraint-based sizing: a parent clamped to 14\u201328 columns via Constraint::Length, and weighted Constraint::Fill(4)/Fill(3) for the other panes."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Issue 3 says the panel can't hold every field, recommends a curated summary with collapsed labels and annotations, and puts full YAML behind `d`/`y`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Issue 5 says 14 hints won't fit, recommends 5\u20137 context-sensitive hints ending in `? help`, and moves the full list into a `?` modal."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It raises 80\u00d724, tmux splits, and 60-column layouts, adds a drill-down breakpoint below 120 columns, and specifies a too-small message."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It flags red-green color blindness and NO_COLOR and requires the status word as text to carry the meaning, with color only as backup."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 2 says 'every field' will overflow and recommends a fixed summary with labels/annotations as counts and full values one key away; Enter opens a full detail view."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Section 5 says 14 keys won't fit and recommends showing the 5\u20136 most-used keys with `?` last, and putting all 14 behind `?`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 1 proactively walks through the grid at 80\u00d724 and 60 columns and proposes wide, standard, narrow and too-small layouts."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Section 3 says color can't be the only signal, citing color blindness and NO_COLOR, and recommends keeping the STATUS text word alongside the color."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Change #2 says not to show every field, since annotations like last-applied-configuration flood the panel. It recommends a short summary, with labels, annotations and YAML behind `d`/`y`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Change #5 calculates that 14 hints overflow even 160 columns. It recommends 4\u20136 focused hints with `?` last, and `?` opening the full grouped list."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Change #1 and the proposed layouts cover 80\u00d724, 60-column splits and a minimum-size fallback message. It also suggests snapshot tests at each size."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It raises the need for states to stay readable without color (NO_COLOR) and names the status word as the non-color signal. It recommends color plus text, though it advises against adding icons."
+        }
+      ]
+    }
+  ]
+}

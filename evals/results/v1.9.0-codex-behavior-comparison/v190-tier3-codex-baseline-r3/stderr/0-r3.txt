@@ -1,0 +1,56 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-a0g0ps9r
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180ff-e9e1-7de3-a397-04431374761e
+--------
+user
+I'm building a Rust TUI file picker (like a specialized yazi) — when the user selects a directory and quits, I want their actual shell to `cd` into it, not just print the path. Is that possible, and if not, what's the real pattern people use for this?
+
+codex
+Yes—but **the shell has to perform the `cd`**. Your Rust TUI cannot change its parent shell’s working directory. `std::env::set_current_dir()` changes only the TUI process’s directory, which disappears when it exits.
+
+The usual pattern, used by tools such as yazi, is:
+
+1. A shell function launches the TUI.
+2. The TUI writes the chosen directory to a file.
+3. After the TUI exits, the function reads that file and runs `cd` inside the current shell.
+
+For example, design your picker with a `--cwd-file` option. Here’s a Bash/Zsh wrapper, assuming your picker writes a **NUL-terminated absolute path** on successful selection:
+
+```sh
+pickdir() {
+    local tmp selected
+    tmp=$(mktemp) || return 1
+
+    if command mypicker --cwd-file "$tmp" "$@"; then
+        if IFS= read -r -d '' selected < "$tmp"; then
+            builtin cd -- "$selected"
+        fi
+    fi
+
+    rm -f -- "$tmp"
+}
+```
+
+On the Rust side, when the user confirms a directory:
+
+```rust
+use std::io::Write;
+use std::os::unix::ffi::OsStrExt;
+
+let mut file = std::fs::File::create(cwd_file)?;
+file.write_all(selected_dir.as_os_str().as_bytes())?;
+file.write_all(b"\0")?;
+```
+
+Use an absolute path, and leave the file empty on cancellation. NUL termination preserves spaces, newlines, and non-UTF-8 Unix filenames.
+
+You can also capture a path from stdout, but a dedicated output file keeps the result separate from terminal rendering and diagnostics. **The wrapper must be a shell function or be sourced**; an executable shell script is another child process and has the same limitation.
+tokens used
+3,089

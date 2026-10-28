@@ -1,0 +1,1 @@
+My Ratatui app quits on `q`. Users report that Ctrl+C does nothing. Why, and what should the key handling be?

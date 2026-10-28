@@ -1,0 +1,1 @@
+I want to add Trogon (or another Click plug-in) to my Typer app so users get a TUI for the CLI. How do I wire it up?

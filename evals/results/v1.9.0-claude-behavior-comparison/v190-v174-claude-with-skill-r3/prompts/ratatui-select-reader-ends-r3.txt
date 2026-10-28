@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Ratatui app's Tokio loop is `loop { tokio::select! { Some(event) = rx.recv() => app.handle(event), _ = tick.tick() => app.on_tick() } if app.quit { break } }`, with a separate task reading crossterm events into the channel. What happens if that reader task exits?

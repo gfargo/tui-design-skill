@@ -1,0 +1,38 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-gjariago
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f7-4312-7b82-9e13-47edad81304b
+--------
+user
+I'm building a small 'pick one of your recent git branches' helper in Go — like fzf but specialized. Two design questions before I start: should it take over the whole screen the way lazygit does, and what should the terminal look like after it exits? I want the command a user ran and the branch they picked to still be visible in scrollback afterwards.
+
+codex
+For a small “pick a branch” helper, I’d default to a **compact picker below the prompt**, perhaps 8–12 rows tall. Keep it on the normal terminal screen so the user retains context. A full-screen interface makes more sense when there’s enough navigation and detail to justify it.
+
+After selection, remove the transient picker and leave a short, durable result:
+
+```text
+$ branch-pick
+Selected branch: feature/login
+$
+```
+
+On cancellation, clean up the picker and return to the prompt without printing a selection. Always restore cursor visibility, terminal input mode, and any styling.
+
+If you choose full-screen mode, use the terminal’s **alternate screen buffer**. On exit, restore the original screen **first**, then print the selected branch. Anything printed inside the alternate screen usually disappears when you leave it, so it won’t reliably become scrollback. The original command remains on the restored screen.
+
+One useful Go CLI convention: render the interactive UI to **stderr** and emit only the branch name to **stdout**. That supports:
+
+```sh
+git switch "$(branch-pick)"
+```
+
+For that usage, print a readable confirmation to stderr after cleanup if you still want the choice visible—the captured stdout won’t appear in scrollback.
+tokens used
+772

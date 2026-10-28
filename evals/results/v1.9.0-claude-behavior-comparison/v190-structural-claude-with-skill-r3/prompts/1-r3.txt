@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+Review my Kubernetes resource browser layout. At 140 columns it has a double-line outer frame around the whole terminal, then three bordered panes: namespaces, resources, and YAML. Every resource row begins with a bullet and ends with a green `[READY]` plus a checkmark. The bottom two rows list 18 keyboard shortcuts. There is no responsive behavior yet because most of us use wide monitors. What would you change before release?

@@ -1,0 +1,1 @@
+My Textual app feels sluggish when the DataTable has 50k rows — how do I find out what's actually slow? And separately, for a different project, I have an Ink CLI where I want to profile render performance — can I just use the React DevTools I already have hooked up for debugging?

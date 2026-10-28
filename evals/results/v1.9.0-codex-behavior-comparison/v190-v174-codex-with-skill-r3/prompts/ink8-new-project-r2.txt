@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+We're starting a new Ink CLI today. Which Ink, React, and Node versions should we target, and can I still read the terminal width from useStdout().stdout.columns?

@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+Our CLI is still CommonJS on Node 22. Do we have to pin chalk 4 and an old Ink to keep using require()?

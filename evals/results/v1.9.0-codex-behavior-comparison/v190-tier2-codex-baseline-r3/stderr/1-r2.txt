@@ -1,0 +1,141 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8zcgt1fr
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f2-cc5e-7403-a512-991808a95edb
+--------
+user
+how do i write tests for my textual app? it's a data-entry screen with an Input, a Select and a submit Button — i want to test that a validation error shows when the name field is empty, and that pressing submit posts the right message. already using pytest, python 3.12, latest textual.
+
+codex
+I’ll check Textual’s current testing APIs, then show a pytest example for both cases.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc "python -c 'import urllib.request; print(urllib.request.urlopen(\"https://textual.textualize.io/guide/testing/\").read().decode()[:1000])'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8zcgt1fr
+ exited 127 in 74ms:
+zsh:1: command not found: python
+
+codex
+Use Textual’s `App.run_test()` to run your app headlessly, and its `Pilot` to click buttons and type. Add `pytest-asyncio` to your existing pytest setup:
+
+```bash
+pip install pytest-asyncio
+```
+
+Here’s a small example you can adapt. The form shows an error for an empty name and posts a custom message for valid input.
+
+```python
+# app.py
+from textual import on
+from textual.app import App, ComposeResult
+from textual.containers import Vertical
+from textual.message import Message
+from textual.widgets import Button, Input, Label, Select
+
+
+class EntryForm(Vertical):
+    class Submitted(Message):
+        def __init__(self, name: str, role: str) -> None:
+            super().__init__()
+            self.name = name
+            self.role = role
+
+    def compose(self) -> ComposeResult:
+        yield Input(placeholder="Name", id="name")
+        yield Select(
+            [("Reader", "reader"), ("Editor", "editor")],
+            value="reader",
+            allow_blank=False,
+            id="role",
+        )
+        yield Label("Name is required", id="name-error")
+        yield Button("Submit", id="submit")
+
+    def on_mount(self) -> None:
+        self.query_one("#name-error").display = False
+
+    @on(Button.Pressed, "#submit")
+    def submit(self) -> None:
+        name = self.query_one("#name", Input).value.strip()
+        error = self.query_one("#name-error")
+        error.display = not bool(name)
+
+        if not name:
+            return
+
+        role = self.query_one("#role", Select).value
+        assert isinstance(role, str)
+        self.post_message(self.Submitted(name, role))
+
+
+class EntryApp(App):
+    def compose(self) -> ComposeResult:
+        yield EntryForm()
+```
+
+Capture the message in a test app subclass. This checks that it actually reaches a parent through Textual’s message system.
+
+```python
+# test_app.py
+import pytest
+from textual import on
+from textual.widgets import Input, Select
+
+from app import EntryApp, EntryForm
+
+
+class RecordingApp(EntryApp):
+    def __init__(self) -> None:
+        super().__init__()
+        self.submissions: list[EntryForm.Submitted] = []
+
+    @on(EntryForm.Submitted)
+    def record_submission(self, message: EntryForm.Submitted) -> None:
+        self.submissions.append(message)
+
+
+@pytest.mark.asyncio
+async def test_empty_name_shows_error():
+    app = RecordingApp()
+
+    async with app.run_test() as pilot:
+        error = app.query_one("#name-error")
+        assert not error.display
+
+        await pilot.click("#submit")
+        await pilot.pause()
+
+        assert error.display
+        assert app.submissions == []
+
+
+@pytest.mark.asyncio
+async def test_submit_posts_expected_message():
+    app = RecordingApp()
+
+    async with app.run_test() as pilot:
+        await pilot.click("#name")
+        await pilot.press("A", "d", "a")
+        app.query_one("#role", Select).value = "editor"
+        await pilot.pause()
+
+        await pilot.click("#submit")
+        await pilot.pause()
+
+        assert not app.query_one("#name-error").display
+        assert len(app.submissions) == 1
+        message = app.submissions[0]
+        assert (message.name, message.role) == ("Ada", "editor")
+```
+
+Setting `Select.value` directly keeps the test focused on your submission logic. Use Pilot keyboard interactions with the dropdown if you also want to test that interaction. `pilot.pause()` gives queued messages and UI updates time to finish; avoid arbitrary sleeps.
+
+Run with `pytest -q`. I couldn’t verify the live documentation here, so this example hasn’t been checked against your installed Textual version.
+tokens used
+9,589

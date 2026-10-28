@@ -1,0 +1,89 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-p09kaqmi
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f1-d819-7c62-b505-af481bf446a1
+--------
+user
+I've got a Bubble Tea app in Go — a small kanban TUI, ~1500 lines — that my team relies on daily. Every refactor breaks something: last week Tab-cycling between columns silently stopped working and nobody noticed for two days. I want automated tests running in CI so this stops happening, but honestly I don't even know how you test a TUI. Where do I start?
+
+codex
+Start with the behavior that broke: **send a Tab key message to your Bubble Tea model and assert that the selected column changes.** Most TUI behavior can be tested without opening a terminal.
+
+Bubble Tea’s structure gives you three useful layers:
+
+| Layer | What to test | How |
+|---|---|---|
+| Model transitions | Tab cycling, card movement, navigation, modal state | Call `Update` with messages and inspect the returned model |
+| Rendering | Selected-column styling, empty states, help text | Call `View` and check text or compare a saved snapshot |
+| Whole program | Startup, keyboard input, quitting | Run a few integration tests with Charm’s `teatest` package |
+
+For your app, start with model tests. They’re fast, precise, and usually require very little refactoring.
+
+Suppose your model has `columns` and `activeColumn` fields. A regression test could look like this—adapt the names and constructor to your app:
+
+```go
+func TestTabCyclesColumns(t *testing.T) {
+    m := newModel() // Fixture with three columns.
+    m.activeColumn = 0
+
+    for step, want := range []int{1, 2, 0} {
+        next, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
+        m = next.(model) // Use *model if that's your implementation.
+
+        if m.activeColumn != want {
+            t.Fatalf(
+                "Tab press %d: active column = %d, want %d",
+                step+1, m.activeColumn, want,
+            )
+        }
+    }
+}
+```
+
+This tests the same key message Bubble Tea delivers, including wraparound. It would have caught last week’s regression.
+
+**Cover your team’s daily workflow before chasing coverage percentages.** I’d add these next:
+
+- Tab and Shift+Tab cycle correctly, including wraparound.
+- Moving a card changes its column and preserves its contents.
+- Navigation behaves correctly in empty columns.
+- Opening and closing a dialog restores the expected focus.
+- Typing in a text field doesn’t trigger board shortcuts.
+- Saving and loading preserve the board, using a temporary directory.
+
+A couple of Bubble Tea details matter:
+
+**`Update` returns the new model and a command.** Always inspect the returned model. Calling `Update` doesn’t execute its command. For asynchronous work, test the message that reports completion separately—for example, send a `saveFinishedMsg` and check that the saving indicator clears. Keep tests away from real network services and your actual board files.
+
+**Set a fixed terminal size for rendering tests.** Send a `tea.WindowSizeMsg` before calling `View`. Use a small number of snapshots for important layouts; asserting every screen byte everywhere makes harmless spacing changes expensive.
+
+Once those tests are useful locally, CI can be very small:
+
+```yaml
+# .github/workflows/test.yml
+name: Go tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+```
+
+Then add one or two `teatest` integration tests that launch the program, send keys, and verify visible output. Those check that the pieces are wired together; model tests explain exactly which behavior broke.
+
+For a 1,500-line app, you probably don’t need a major architectural rewrite. Your first milestone is **a passing Tab regression test, a few critical workflow tests, and CI required on pull requests**. That’s already meaningful protection.
+tokens used
+3,334

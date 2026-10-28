@@ -1,0 +1,1 @@
+My Go CLI needs an API key before it can do anything. What should happen the very first time someone runs it with no key configured — and once I have huh set up for the prompt, where should I store the key?

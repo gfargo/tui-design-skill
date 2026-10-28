@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Go CLI needs an API key before it can do anything. What should happen the very first time someone runs it with no key configured — and once I have huh set up for the prompt, where should I store the key?

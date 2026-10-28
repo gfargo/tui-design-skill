@@ -1,0 +1,21 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building a TUI for monitoring our CI/CD pipelines in Go (Bubble Tea + Lipgloss). Here's my current layout at about 120 columns. Honestly it feels noisy and cramped and I can't put my finger on why. Can you review it and tell me what's making it feel busy and what you'd change?
+
+┌─ CI MONITOR v2.1 ──────────────────────────────────────────────────────────┐
+│ ┌─ Pipelines ───────────────┐ ┌─ Details ───────────────────────────────┐ │
+│ │ ┌───────────────────────┐ │ │ ┌─────────────────────────────────────┐ │ │
+│ │ │ ▶ build-api    [PASS]  │ │ │ │ Job:      build-api                 │ │ │
+│ │ │ ▶ build-web    [PASS]  │ │ │ │ Status:   ✅ PASSED ✅              │ │ │
+│ │ │ ▶ test-unit    [FAIL]  │ │ │ │ Duration: 3m 42s                    │ │ │
+│ │ │ ▶ test-e2e     [....]  │ │ │ │ Branch:   main                      │ │ │
+│ │ │ ▶ deploy-stg   [WAIT]  │ │ │ │ Commit:   a3f9c2b                   │ │ │
+│ │ └───────────────────────┘ │ │ └─────────────────────────────────────┘ │ │
+│ └───────────────────────────┘ └─────────────────────────────────────────┘ │
+│ ┌─ Logs ──────────────────────────────────────────────────────────────────┐ │
+│ │ [INFO] 2026-05-31 14:22:01 :: Starting build-api ::                     │ │
+│ │ [INFO] 2026-05-31 14:22:03 :: Compiling sources ...                    │ │
+│ │ [INFO] 2026-05-31 14:22:09 :: Running vet + lint ...                   │ │
+│ └─────────────────────────────────────────────────────────────────────────┘ │
+│ [q] Quit  [r] Refresh  [↑/↓] Navigate  [Enter] Select  [Tab] Switch Pane    │
+└─────────────────────────────────────────────────────────────────────────────┘

@@ -1,0 +1,1 @@
+I'm embedding a huh v2 form inside my Bubble Tea v2 model. My model has a `form *huh.Form` field. What should my Update and View look like so the form receives messages?

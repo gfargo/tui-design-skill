@@ -1,0 +1,285 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-structural-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with \"Remove the defer\" and explains why calling RestoreTerminal after shutdown is wrong."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says RestoreTerminal pairs with ReleaseTerminal for temporary handoffs and re-enables TUI modes rather than restoring the shell."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states that Run() handles terminal cleanup on normal exit, on errors, and on the default recovered-panic paths."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends plain Run() with no extra cleanup and says custom cleanup is only needed if WithoutCatchPanics is deliberately used."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens with 'Remove the defer' and explains it can re-enable terminal modes after cleanup."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States RestoreTerminal resumes Bubble Tea's modes after ReleaseTerminal and does not restore the user's shell."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says Run() manages cleanup on normal exit, errors, and panics caught by default recovery."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends plain Run with no extra cleanup and only mentions taking responsibility for cleanup when using WithoutCatchPanics."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with \"Remove the defer\" and says calling it after Run() can undo shutdown cleanup."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It states RestoreTerminal resumes Bubble Tea's terminal modes after ReleaseTerminal and does not restore the user's shell."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says Run() owns terminal cleanup on normal exit, errors, and panics handled by Bubble Tea's default recovery."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends plain Run() with no extra cleanup, says to keep the default recovery enabled, and proposes no custom outer cleanup."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Identifies nesting depth of 2 (outer frame plus pane borders) and recommends removing the outer double-line frame in favor of shared thin separators."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Counts three readiness signals ([READY], green, checkmark) and notes the bullet on 100% of rows marks nothing, reserving markers for exceptions."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Replaces the 18-key footer with about five contextual hints plus ? Help, with all bindings in searchable or grouped help."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Raises responsive behavior unprompted and gives a table with concrete behavior at 120+, 80\u00d724, 60 columns, and a proposed 60\u00d712 minimum with a too-small message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "At 80\u00d724 and 60 columns, resources fill the view, namespace becomes a picker, and Enter opens YAML with Esc returning, which is a drill-down flow."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Counts border-nesting depth as 2 (outer frame plus pane borders) and says to remove the double-line outer frame, keeping single-line pane borders only where they separate views or show focus."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Counts three readiness signals ([READY], green, checkmark) and cuts them to one; notes the bullet appears on 100% of rows and removes it."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Replaces the 18 permanent shortcuts with about five contextual actions for the focused pane plus '? Help' that opens a full, searchable keymap."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Makes responsive behavior a release blocker and specifies layouts for 120+ columns, 80\u00d724, 60 columns, and a 60\u00d712 minimum with a 'Requires 60\u00d712' message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "At 60 columns it specifies a single-pane drill-down where Enter opens YAML and Esc returns; at 80\u00d724 it shows full-width resources with the other panes opened on demand."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It counts border nesting depth as 2, calls the double-line outer frame useless for separation, recommends removing it, and quantifies its cost at 324 cells (about 9.6%)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It identifies three readiness signals ([READY], green, checkmark), says a bullet on every row distinguishes nothing, and proposes a compact READY/STATUS column instead."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It keeps about five to eight contextual actions visible and moves the full keymap behind a visible '? help' entry."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It leads with responsiveness as a release requirement and gives a table with concrete behavior at 120+, 80x24, 60 columns, and a provisional tested minimum of 60x12 with a size message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "At 60 columns it specifies a single-pane drill-down (Enter opens YAML, Esc returns), and at 80x24 it opens the other panes on demand rather than shrinking three columns."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends inline bounded list (6\u201310 rows) rather than full-screen alt buffer, noting the shell line and receipt stay visible."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Contract table puts only the branch name plus newline on stdout and UI/errors/receipt on stderr or the controlling terminal, with /dev/tty for UI."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says to leave View.AltScreen false with Bubble Tea v2 and uses tea.WithInput/WithOutput, recommending no removed v1 options."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Runs Git via exec.CommandContext outside update/render and returns loading/results/errors through commands and messages."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Tests selection transitions, pinned frames including 60-column and minimum sizes, and binary-level stdout/status checks including cancellation (130) and failures with no stdout."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens by rejecting full-screen mode in favor of a bounded inline UI in the normal screen buffer, so the shell context stays visible."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Stdout carries only the branch name plus a newline; the picker renders to /dev/tty or stderr so command substitution is not polluted."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Uses Bubble Tea v2 with `View.AltScreen` kept false and WithInput/WithOutput options, and mentions no removed v1-only API."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Git runs via exec.CommandContext inside a tea.Cmd, explicitly outside Update and View."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Covers unit tests of selection/cancel transitions, golden frames at 80\u00d724, 60 columns and the minimum size, and black-box/PTY tests of stdout-only output and exit codes (130 cancel, 1, 2)."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by recommending a bounded inline picker in the normal screen buffer so the invoking command and selection stay in scrollback."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The output contract puts only the branch name and newline on stdout, and sends the picker, hints and diagnostics to stderr or the controlling terminal."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names Bubble Tea v2, says to set AltScreen to false, and recommends no removed v1-only options."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says Git reads happen in tea.Cmd while Update handles only state changes."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It unit-tests transitions with synthetic KeyPressMsg events and snapshots frames at 60-column and minimum sizes. It also golden-tests exact stdout bytes, empty stdout on failure, and distinct nonzero exit statuses."
+        }
+      ]
+    }
+  ]
+}

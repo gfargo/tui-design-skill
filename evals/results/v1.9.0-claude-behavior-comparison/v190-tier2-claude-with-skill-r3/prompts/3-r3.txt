@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Ink CLI in TypeScript is misbehaving two ways: (1) when I sprinkle console.log debugging the output sometimes garbles or interleaves weirdly with the UI, and (2) a state update I can see happening (the reducer runs) never shows up on screen. What's the right debugging workflow for Ink apps so I'm not guessing?

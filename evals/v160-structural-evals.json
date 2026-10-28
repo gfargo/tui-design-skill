@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused forward-test set for the v1.6.0 structural refactor. These prompts verify that progressive disclosure preserves a framework-specific lifecycle correction, the two proactive UX review reflexes, and the output contract for a bounded picker. Assertions define the grading rubric; comparative results require a recorded harness run with provider/model metadata. Status (2026-10-13): rubric-only. No harness run of this set is recorded under evals/results/ and none is scheduled, so treat it as a rubric, not as evidence of model behavior.",
+  "notes": "Focused forward-test set for the v1.6.0 structural refactor. These prompts verify that progressive disclosure preserves a framework-specific lifecycle correction, the two proactive UX review reflexes, and the output contract for a bounded picker. Assertions define the grading rubric; comparative results require a recorded harness run with provider/model metadata. Status (2026-10-28): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-behavior-comparison/ and evals/results/v1.9.0-codex-behavior-comparison/ against skill tree 164c1aefd956.",
   "evals": [
     {
       "id": 0,

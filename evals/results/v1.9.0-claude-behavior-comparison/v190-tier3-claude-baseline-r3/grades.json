@@ -1,0 +1,390 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-tier3-claude-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens with a plain \"No\": a process can't change its parent's cwd, and set_current_dir only affects the child. It mentions ptrace and TIOCSTI hacks but rejects them as fragile and says not to use them."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Option A has the binary write the selected dir to a --cwd-file path, and a shell function reads it and runs cd after the program exits."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Cites yazi's --cwd-file and its recommended `y` function, plus ranger, lf, broot (`br`), nnn and zoxide as precedents."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Has the user add `eval \"$(fp init zsh)\"` to their own rc file, following the zoxide and starship pattern. Nothing is installed silently, though it prefers this over copying the full snippet."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Gives correct bash/zsh and fish wrappers: mktemp scratch file, run `command fp --cwd-file=$tmp`, read it back, check it is non-empty and differs from $PWD, `builtin cd --`, then `rm -f`."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens by saying the program can't change its parent shell's directory because each process has its own cwd, calls this an OS rule, and treats TIOCSTI and debugger attachment only as hacks to avoid."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Option A describes the binary writing the selected directory to a `--cwd-file` path and a shell function reading that file and running `cd` after the program exits."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explicitly names yazi's `--cwd-file` as the precedent and mentions ranger, lf, nnn, broot and zoxide."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends an `fp init zsh` subcommand that prints the function, with the user adding the `eval` line to their own rc file rather than having anything installed automatically."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Gives bash/zsh and fish functions that create a scratch file with `mktemp`, run `command fp --cwd-file=$tmp`, read the file back, check it is non-empty, `builtin cd` into it, and `rm` the file."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says each process has its own cwd, `set_current_dir` is lost on exit, and there is no supported way for a child to change its parent's cwd; it dismisses ptrace/TIOCSTI as hacky or unavailable."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Option A has the binary write the chosen dir to a `--cwd-file` path, and a shell function reads that file and cd's after the program exits."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Names yazi's `--cwd-file` as the precedent and lists ranger, lf, nnn, broot and zoxide as using the same idea."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Has users add an `eval \"$(fp init zsh)\"` line to their own rc file, so the binary only prints the wrapper and never auto-installs it."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Gives working zsh/bash and fish functions that use mktemp, run `command fp --cwd-file=$tmp`, read the file, check it is non-empty, `builtin cd`, then `rm -f`."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The code checks `term.IsTerminal` on both stdin and stdout before prompting. If either check fails it returns an actionable error, and the `MYCLI_API_KEY` env var and `--api-key` flag short-circuit the flow before that check."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It names and uses `github.com/zalando/go-keyring`, covering macOS Keychain, Windows Credential Manager and Linux Secret Service."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It notes that a keyring is often unavailable on headless Linux, in containers and over SSH. It gives an explicit file fallback and tells the user where the key was saved, so the fallback is not silent, though it doesn't name the D-Bus daemon as the cause."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The fallback explicitly creates the directory with 0o700 and writes the file with 0o600, and the text tells the reader to set these permissions."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions `--no-input` and doesn't invent an asterisk convention. The huh prompt uses only real API calls (Title, Description, EchoMode, Validate, Value)."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer checks only stdin with term.IsTerminal(os.Stdin.Fd()) and never checks stdout, though it does let the env var and flag short-circuit the prompt."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends the OS keychain via github.com/zalando/go-keyring and names the platforms that library covers."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says keyring calls fail on headless Linux and in containers without D-Bus or Secret Service, and falls back to a credentials file with a printed warning."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The fallback writes the file with os.WriteFile(path, ..., 0o600) and creates the directory with 0o700, and it says to warn when an existing file has looser permissions."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions --no-input or a required-field asterisk, and it uses only real huh calls such as EchoMode, Validate and Value."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer checks term.IsTerminal on both stdin and stdout before prompting, and the MYAPP_API_KEY env var or --api-key flag skips the prompt entirely for CI and scripts."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It names github.com/zalando/go-keyring as the first-choice store, backed by macOS Keychain, Windows Credential Manager, and Linux Secret Service."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says headless Linux boxes, containers and SSH sessions often have no Secret Service, so a file fallback is needed, and it reports the save location to the user rather than failing silently."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The fallback creates the directory with 0o700 and writes the file with os.WriteFile(..., 0o600), so permissions are set explicitly."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions a --no-input flag and uses only real huh API calls (EchoModePassword, Validate, ErrUserAborted, WithAccessible), with no invented asterisk convention."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says plainly that a terminal app can't tell which font is in use, that no escape sequence reports it, and that the choice should be a user setting rather than detection."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It proposes an opt-in flag/env/config pattern but never cites a real precedent such as lazygit's nerdFontsVersion or eza's --icons."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It defines Unicode and ASCII icon sets, makes Unicode the default, and suggests falling back to ASCII on limited terminals."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Its numbers (5s timeout, '>3 failures or >60s') are framed as examples, not as an established TUI convention for when to give up."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It keeps the last good data on screen unchanged or dimmed and shows elapsed time ('updated 2s ago', 'last data 3m old') with an 'r' retry."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says no terminal escape sequence reports which glyphs a font has, that cursor-position checks don't work, and that icons must be a user choice."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Cites eza's `--icons` and lazygit's `gui.nerdFontsVersion` as opt-in precedents and proposes a CLI flag, env var and config setting."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Provides Unicode and ASCII icon tiers, with Unicode as the default and ASCII for the Linux console/dumb terminals."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Gives no universal give-up cutoff; its thresholds are soft examples ('e.g. > 1 min', '~3\u00d7 the poll interval') and it keeps retrying rather than giving up."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Says a timeout must never blank the screen, keeps last data visible but dimmed, shows its age ('Last data 2m ago'), and offers 'r to retry now'."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says outright that the app cannot detect a Nerd Font, that no env var exists for it, and that users should opt in through a flag, env var or config."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It recommends an opt-in `--icons nerd` flag and config but names no real-world precedent such as lazygit or eza."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It provides Unicode and ASCII icon tiers and makes Unicode the default fallback."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It gives no universal give-up timeout; the backoff cap and ~3-failure threshold are presented as example tuning values, not TUI convention."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says to keep the last good data visible, show 'updated 47s ago' and a retry countdown, and offer `r` for a manual retry."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends py-spy record/top as the way to get a real profile, and pyinstrument as an alternative."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The table recommends calling `add_rows(rows)` once instead of calling add_row 50k times to fix slow initial load, which implies add_rows is the faster path."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer says the React DevTools Profiler tab works with Ink and recommends it for finding wasted re-renders."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer recommends `node --cpu-prof dist/cli.js` and `node --inspect` to profile the whole pipeline."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer names `<Static>` for append-only output, throttling high-frequency state updates, and keeping the dynamic region small."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends py-spy record/top as the first step to find what's slow, beyond the dev console."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Says calling add_row in a loop does per-row bookkeeping and to call add_rows once instead, implying add_rows is a faster path."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Says the Profiler tab works with Ink and recommends using it to find re-renders, rather than saying it doesn't work with Ink's renderer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends node --cpu-prof and node --inspect-brk to profile the whole pipeline."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Names Ink-specific costs: <Static> for append-only output, throttling progress ticks, and memoizing subtrees."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer leads with py-spy top/record as the primary way to find hot functions, and mentions pyinstrument and cProfile as alternatives."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer claims each add_row call does its own bookkeeping and can trigger a refresh, and tells the user to use a single add_rows call instead, which is a speed claim."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer says the React DevTools Profiler tab works with Ink and recommends using it to find re-renders."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer recommends node --cpu-prof, with node --inspect as a live alternative, to see the whole frame."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer names a spinner or timer state high in the tree re-rendering everything, and recommends using <Static> for append-only output."
+        }
+      ]
+    }
+  ]
+}

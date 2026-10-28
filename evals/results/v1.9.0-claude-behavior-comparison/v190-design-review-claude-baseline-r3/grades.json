@@ -1,0 +1,270 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-design-review-claude-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 1 identifies borders nested three deep (app frame, pane frame, inner box) as the main source of clutter and cramping."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends dropping the outer frame and boxes in favor of whitespace and one vertical divider, saying whitespace can do most of what borders do."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It flags `\u2705 PASSED \u2705` as showing the same fact three times and says the version number in the header should be replaced with a useful summary."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It only mentions computing log height so the layout fills the screen at any size; it never covers collapsing or reflowing panes at narrower terminal widths."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Point 1 calls out 'Three levels of nested boxes' (outer frame, pane frame, inner box) and says they eat columns and rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to 'Use one level of borders and let whitespace do the rest', and the redesign drops the inner boxes, putting details as an unboxed line separated by a blank row."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It flags '\u2705 PASSED \u2705' as showing the status three times and calls out 'v2.1' in the title as chrome that doesn't earn its space."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It mentions sizing from tea.WindowSizeMsg with a fixed ~30-column list, but never says what should happen on narrower terminals, such as stacking panes or hiding columns."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 1 identifies three levels of nested boxes (app frame, pane frames, inner boxes) as the main source of clutter."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The redesign drops the boxes and uses whitespace plus a single horizontal rule to separate regions."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It calls out that '\u2705 PASSED \u2705' says the same thing three times, and suggests moving the version number out of the header."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It mentions sizing panes from tea.WindowSizeMsg and notes the mockup uses only about 80 of 120 columns, but never says how the layout should adapt to narrower terminals (stacking, collapsing panes, truncation)."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a breakpoint table with named widths: 120, 90\u2013119, 60\u201389, 40\u201359, and below 40 columns or 10 rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends a single-column mode at 40\u201359 columns that shows only the current directory, with preview available as a full-screen toggle."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Sets an explicit pane priority: drop the parent first, then the preview, and never squeeze the current column. This is a different order from the example but is still a clear priority."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sets a minimum of 40\u00d710 and renders a 'terminal too small (need 40\u00d710)' message instead of a broken layout."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces the fixed 33% split with Length/Min/Max/Fill constraints and explains why Percentage turns the preview to mush."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a tier table with named thresholds (\u2265120, 90\u2013119, 60\u201389, 40\u201359, <40 or <10 rows) and matches them in the code."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The 40\u201359 tier is a single pane showing only the current list, with a key to swap it for a full-width preview."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explicitly ranks the panes current > preview > parent and drops them in that order; it drops parent before preview, but the priority ordering is clear."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sets a 40\u00d710 minimum and shows a 'Terminal too small (need 40\u00d710, have 34\u00d78)' message instead of crashing."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces fixed 33% with Min(30), Length(18), Fill weights and Max constraints chosen per tier."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Names explicit breakpoints at 120, 90, 60 and 40 columns, plus a 10-row height threshold, in the `layout_mode` match."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Defines a `Single` mode for 40\u201359 columns that shows the current pane only, with the preview opened full-screen on a key."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Ranks panes current > preview > parent and drops the parent first; the priority differs from the example, but it is explicit."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sets a 40x10 minimum and draws a centered 'Terminal too small (52x8) \u2014 need 40x10' message below it."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces `Percentage(33)` with `Fill`, `Length`, `Min` and `max` constraints, and sizes the current column to its content."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 2 says every field won't fit, prioritizes triage fields, folds labels/annotations, and puts full describe behind a key."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Section 4 recommends a context-sensitive footer showing 5\u20137 keys plus a `?` overlay listing all bindings."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 6 warns against designing only for 160x50, proposes breakpoints below ~120 cols, and a too-small message below 80x24."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Section 5 warns against relying on red vs. green and says to pair color with text and optionally glyphs like \u25cf \u2717 \u25d0."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 2 says 'show every field' won't fit and recommends a summary panel with full describe/YAML on demand via d/y."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Section 4 recommends showing 5\u20136 context-relevant keys plus '? help', with the full list in a help overlay."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 3 warns against designing for one size and recommends a minimum size, a breakpoint below ~120 cols, and a zoom toggle."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Section 5 flags red/green color blindness and recommends status text plus glyphs like \u25cf/\u2717/\u25cc."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 3 says not to show every field, recommends a summary-first view, collapsed labels and annotations, and a full-screen describe view on Enter."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Section 5 calls 14 keys a hard-to-scan wall of hints and recommends showing 4\u20136 context-dependent keys plus `? help`, with the full list in an overlay."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 1 warns against building for one window size, covers split panes, laptops and phone SSH, and recommends responsive constraints, an 80x24 minimum and a 'too small' message."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Section 6 raises red/green colorblindness and says to always pair color with text or a symbol so color is never the only signal."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-lny9mujd
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18101-c753-7f83-808a-7e4a035f4b37
+--------
+user
+I want nice icons in my Ratatui app (Nerd Font glyphs) but I'm worried about users who don't have one installed — what's the right way to handle this, and separately: my app polls a remote API every few seconds and sometimes it times out — what should the UI do?
+
+codex
+Treat these as two independent concerns: configurable icon rendering and resilient data loading.
+
+For **Nerd Font icons**, provide a readable fallback:
+
+- Offer an explicit setting such as `icons = "nerd" | "unicode" | "ascii"`. Default to a broadly compatible mode; let users opt into Nerd Fonts.
+- Keep text labels alongside icons for important actions and statuses. A missing glyph should never make the app unusable.
+- Document a recommended font and how to enable it in the terminal. The terminal controls the font; Ratatui cannot reliably detect whether a particular Nerd Font glyph is available.
+- Check alignment in your supported terminals. Private-use glyphs can render with unexpected widths, so keep icons in a consistent column and test the fallback modes too.
+
+Avoid inferring font support from `$TERM`, locale, or Unicode support: none tells you whether the selected font contains those glyphs.
+
+For **API timeouts**, keep the last successful data visible and communicate its freshness:
+
+- On initial load, show a loading state. If it fails with no cached data, show an inline error with a retry action.
+- During subsequent polls, retain existing data. A small status such as `Update timed out · last updated 32s ago · retrying…` is usually enough.
+- Distinguish a failed refresh from a successful empty response. A timeout should not clear the table or imply that no results exist.
+- Poll asynchronously so input and rendering remain responsive. Prevent overlapping requests, set a request timeout, and use capped exponential backoff with jitter after repeated failures.
+- Offer manual retry, then clear the error automatically after a successful refresh. Avoid a modal or toast on every failed poll.
+
+A compact footer can carry both freshness and connection status:
+
+```text
+Updated 8s ago
+Refresh timed out · showing data from 42s ago · retry in 10s
+```
+
+If stale data affects decisions, make its age prominent and disable actions that require current information when appropriate. Otherwise, preserve the user’s selection, scroll position, and workflow while retries happen in the background.
+tokens used
+2,957

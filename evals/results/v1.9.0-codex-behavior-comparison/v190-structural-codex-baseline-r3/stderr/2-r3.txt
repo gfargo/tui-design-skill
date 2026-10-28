@@ -1,0 +1,64 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i59ekoke
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18108-63d1-7982-9624-5ee90575129b
+--------
+user
+I need a small Go tool that lets someone pick one of their recent git branches with fuzzy search, then use it in `git checkout $(branchpick)`. I want the invoking command and chosen branch to remain visible in scrollback. Should this be a full-screen Bubble Tea app? Describe the output contract, terminal mode, and the most important implementation and test choices.
+
+codex
+Use a small **inline TUI**, not a full-screen app. Bubble Tea is suitable, but leave the alternate screen disabled so the invoking command stays visible in the terminal’s normal scrollback.
+
+**Output contract**
+
+Treat stdout as a machine-readable interface:
+
+- Success: write exactly one local branch name plus `\n` to stdout, then exit `0`.
+- Cancel: write nothing to stdout and exit nonzero, conventionally `130`.
+- Failure: write nothing to stdout, explain the error on stderr, and exit nonzero.
+- Send the interactive UI and a final persistent summary, such as `Selected branch: feature/login`, to stderr.
+
+Prefer the quoted invocation:
+
+```sh
+git checkout "$(branchpick)"
+```
+
+Command substitution captures stdout, so the selected branch needs that separate stderr summary to remain visible. Note that cancellation does **not** stop the outer shell command from running; a safer form is:
+
+```sh
+branch=$(branchpick) && git checkout "$branch"
+```
+
+**Terminal mode**
+
+Run in the normal screen buffer with a compact, bounded list. Use raw terminal input while interacting, but restore terminal settings and the cursor on every exit path.
+
+With Bubble Tea, explicitly send rendering to stderr and read keys from the controlling terminal (`/dev/tty` on Unix). Stdout is a pipe during command substitution; do not let terminal detection or rendering depend on it. If no usable terminal exists, fail clearly rather than hanging.
+
+After the TUI exits and its renderer has cleaned up, print the selected-branch summary to stderr. Avoid screen-clearing sequences that erase the invoking command or existing scrollback.
+
+**Implementation choices**
+
+- Define “recent” explicitly. For a small first version, list local branches by descending tip commit date using `git for-each-ref --sort=-committerdate refs/heads/`. That means recent commits, not recent checkouts; checkout recency requires reflog processing.
+- Invoke Git directly with `os/exec`, without a shell. Keep branch names as data and separate display labels from returned values.
+- Fetch candidates once, then fuzzy-filter in memory. Keep ordering deterministic, with original recency as a tie-breaker.
+- Support typing, backspace, arrow keys, Enter, Escape, and Ctrl-C. Handle zero matches and narrow terminals without panics.
+- Separate candidate loading, filtering, UI state, and result emission. Emit stdout only after successful selection and terminal cleanup.
+
+**Most important tests**
+
+- Contract tests: exact stdout bytes on success; empty stdout on cancellation and errors; all UI text on stderr.
+- Model tests: filtering, navigation bounds, empty results, selection, and cancellation.
+- Temporary-repository tests: local-only enumeration, ordering, unusual valid branch names, and non-repository errors.
+- A PTY integration test: run under command substitution, send keystrokes, and verify terminal restoration, no alternate-screen switching, preservation of prior output, and a persistent final selection summary.
+
+The PTY test is the key check: ordinary unit tests cannot establish that the scrollback behavior actually works.
+tokens used
+1,204

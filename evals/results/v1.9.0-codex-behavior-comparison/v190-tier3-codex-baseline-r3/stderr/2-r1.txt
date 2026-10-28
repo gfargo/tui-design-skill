@@ -1,0 +1,41 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6xpiujg0
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18101-124e-7d93-ad44-aeac53ab6a25
+--------
+user
+I want nice icons in my Ratatui app (Nerd Font glyphs) but I'm worried about users who don't have one installed — what's the right way to handle this, and separately: my app polls a remote API every few seconds and sometimes it times out — what should the UI do?
+
+codex
+Treat icons as optional decoration, and API failures as a recoverable state.
+
+For Nerd Font icons:
+
+- Offer an icon setting: `auto | nerd | unicode | ascii`, with a CLI or config override.
+- Make `auto` conservative. There’s no reliable, portable way to detect whether the terminal’s font contains Nerd Font glyphs. Terminal names and environment variables aren’t proof.
+- Keep labels alongside icons so a missing glyph never hides meaning: `Downloads`, not just a download symbol.
+- Provide a plain fallback and test its layout. Nerd Font glyphs can render with unexpected widths, so keep icon spacing centralized and avoid relying on them for borders or alignment.
+
+A good default is ordinary Unicode or ASCII, with Nerd Font icons as an explicit opt-in. If you expose an interactive preference, a small preview lets users judge rendering themselves.
+
+For polling timeouts, keep the last successful data visible and clearly show its freshness:
+
+| Situation | UI behavior |
+|---|---|
+| First load | Show a loading state; keep navigation and quitting responsive. |
+| Refresh underway | Keep existing data visible; show a subtle refresh indicator. |
+| Refresh times out | Keep existing data; show “Refresh failed · last updated 42s ago · retrying…” |
+| No successful data yet | Show an inline error with a retry action. |
+| Connection recovers | Update the data and clear the error automatically. |
+
+Run network requests outside the drawing/input loop, set a request timeout, and prevent overlapping polls. Back off repeated failures with a cap and jitter; honor server retry guidance when available. Offer a manual retry, but avoid a new modal or toast every few seconds.
+
+Track **data, last successful update, request in progress, and latest error separately**. That lets the UI represent “useful cached data, currently stale, refresh failed” without replacing the whole screen with an error.
+tokens used
+2,343

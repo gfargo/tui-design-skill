@@ -1,0 +1,1 @@
+I'm building a lazygit-style multi-panel Go TUI. Should I use gocui like lazygit does?

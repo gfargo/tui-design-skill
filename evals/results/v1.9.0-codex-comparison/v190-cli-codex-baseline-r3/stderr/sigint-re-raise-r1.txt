@@ -1,0 +1,34 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-l93t2xzl
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0f-24c7-7211-921b-bef8ace70fc0
+--------
+user
+My Go CLI catches SIGINT, cleans up, and calls os.Exit(130). Users report that Ctrl+C in a shell loop doesn't stop the loop. What's wrong?
+
+codex
+`os.Exit(130)` is a **normal exit with status 130**, not termination by SIGINT. The convention `128 + signal number` doesn’t make the two equivalent.
+
+Shells such as Bash distinguish them. When handling Ctrl+C during a loop, Bash checks whether the foreground command actually died from SIGINT. A normal exit of 130 can let the loop continue.
+
+After cleanup, restore SIGINT’s default behavior and signal yourself again. On Unix:
+
+```go
+cleanup()
+
+signal.Reset(os.Interrupt)
+if err := syscall.Kill(syscall.Getpid(), syscall.SIGINT); err != nil {
+    os.Exit(130) // fallback
+}
+select {} // wait for signal termination
+```
+
+This preserves the signal termination status the shell needs to recognize the interrupt.
+tokens used
+708

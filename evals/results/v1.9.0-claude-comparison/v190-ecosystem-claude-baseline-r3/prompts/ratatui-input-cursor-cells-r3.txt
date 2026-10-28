@@ -1,0 +1,1 @@
+In my Ratatui search box the blinking cursor is in the wrong place after I type Japanese text, and there is no cursor at all when I just render a Paragraph. How should I position the real terminal cursor?

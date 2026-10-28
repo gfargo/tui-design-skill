@@ -1,0 +1,53 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-jxf02zg8
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0f-092e-7450-9d4f-5e3fcde12af5
+--------
+user
+My commander 15 CLI has `.action(async () => { const app = render(<App />); await app.waitUntilExit(); })` and I call program.parse() at the bottom. Errors thrown in the action crash with an unhandled rejection and post-run code sometimes runs too early. What is wrong?
+
+codex
+Your action is async, but `program.parse()` doesn’t await async action handlers. That means their rejected promises can become unhandled rejections, and code after `parse()` can run before the action finishes.
+
+Use **`parseAsync()` and await it**, with error handling around the whole operation:
+
+```tsx
+program.action(async () => {
+  const app = render(<App />);
+  await app.waitUntilExit();
+});
+
+try {
+  await program.parseAsync(process.argv);
+
+  // Runs after the action and waitUntilExit() complete.
+  await postRun();
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+}
+```
+
+If your module doesn’t support top-level `await`, put this in an async `main()` and handle its rejection:
+
+```tsx
+async function main() {
+  await program.parseAsync(process.argv);
+  await postRun();
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
+```
+
+Simply switching to `parseAsync()` without awaiting or catching its promise won’t fix the ordering or error handling.
+tokens used
+2,761

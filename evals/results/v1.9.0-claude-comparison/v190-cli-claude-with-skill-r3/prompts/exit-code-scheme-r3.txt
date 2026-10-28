@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+What exit codes should my CLI use? I want 0 for success and something for usage errors, plus a few of my own.

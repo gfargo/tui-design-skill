@@ -1,0 +1,43 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-5d53nxng
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0f-33db-77a2-b665-f368ce3c53d0
+--------
+user
+My commander 15 CLI has `.action(async () => { const app = render(<App />); await app.waitUntilExit(); })` and I call program.parse() at the bottom. Errors thrown in the action crash with an unhandled rejection and post-run code sometimes runs too early. What is wrong?
+
+codex
+Your action is async, but `program.parse()` does **not await async action handlers**. That lets post-run code execute early and leaves rejected action promises unhandled.
+
+Use `parseAsync()` and await it:
+
+```tsx
+program.action(async () => {
+  const app = render(<App />);
+  await app.waitUntilExit();
+});
+
+async function main() {
+  await program.parseAsync(process.argv);
+
+  // Runs after the action finishes.
+  console.log('Done');
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
+```
+
+If you use ESM with top-level await, you can instead wrap `await program.parseAsync(process.argv)` in `try/catch`.
+
+This catches errors that reject the action’s promise. Errors in detached callbacks or background tasks still need their own handling.
+tokens used
+658

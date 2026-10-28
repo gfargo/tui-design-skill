@@ -1,0 +1,47 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-iei3ey3y
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e00-ec1d-7d32-8d8a-a41481c74af8
+--------
+user
+What keys and behaviors should a tree view in my TUI have?
+
+codex
+A good TUI tree should work predictably with arrow keys, with Vim bindings as optional aliases.
+
+| Key | Behavior |
+|---|---|
+| `↑` / `↓` | Move to the previous / next visible node |
+| `→` | Expand a collapsed branch; if expanded, move to its first child |
+| `←` | Collapse an expanded branch; otherwise move to its parent |
+| `Enter` | Open or activate the focused node |
+| `Home` / `End` | Move to the first / last visible node |
+| `Page Up` / `Page Down` | Move roughly one viewport |
+| Type text | Jump to a matching visible node |
+| `/` | Start search, if richer search is needed |
+| `Esc` | Dismiss search or another temporary mode |
+| `?` | Show keyboard help |
+
+If your TUI uses Vim bindings, add `j`/`k` for movement and `h`/`l` for collapse/expand. Decide how these interact with typing to jump; both cannot own the same keys simultaneously.
+
+For a selectable tree, distinguish **focus** from **selection**: arrows move focus, `Space` toggles selection, and `Enter` activates. Add range selection only if the application needs it.
+
+The behaviors matter as much as the bindings:
+
+- Navigate only visible nodes; expanding a branch keeps focus on that branch.
+- When collapsing a branch containing the focused node, move focus to the branch.
+- Keep focus visible while scrolling, and preserve expansion state across refreshes.
+- Preserve focus by stable node identity when data changes. If that node disappears, choose the nearest surviving parent or neighbor.
+- Clearly distinguish branches, leaves, focus, and selection. Don’t rely on color alone.
+- Show loading, empty, and error states for asynchronous children; provide an obvious retry action.
+- Keep destructive actions off ordinary navigation keys.
+
+Use `Tab` and `Shift+Tab` to move between panes or controls, rather than between tree rows. This keeps large trees quick to traverse and easy to leave.
+tokens used
+2,884

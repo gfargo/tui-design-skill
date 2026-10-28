@@ -1,0 +1,1 @@
+My nested TUI uses Esc for five different things and q quits from anywhere. What order should Esc, q, and Ctrl+C follow?

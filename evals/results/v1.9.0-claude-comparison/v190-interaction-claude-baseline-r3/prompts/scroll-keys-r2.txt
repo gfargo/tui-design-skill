@@ -1,0 +1,1 @@
+Which scrolling keys and position indicator should my list view have?

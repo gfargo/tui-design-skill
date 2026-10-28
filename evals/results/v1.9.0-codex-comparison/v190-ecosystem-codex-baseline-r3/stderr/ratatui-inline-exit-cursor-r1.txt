@@ -1,0 +1,57 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-jek6t80d
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e01-d3ef-7823-94f6-888a766055aa
+--------
+user
+I built a Ratatui file picker that runs inline under the shell prompt. I start it with `ratatui::run(...)` but it takes over the whole screen, and when I switched to a hand-built terminal the shell prompt printed on the last line of my UI after I quit. How do I run it inline and exit cleanly?
+
+codex
+Use an **inline viewport** with a fixed height. `ratatui::run(...)` uses the default full-screen setup; for inline rendering, use `run_with_options`:
+
+```rust
+use ratatui::{TerminalOptions, Viewport};
+
+fn main() -> std::io::Result<()> {
+    ratatui::run_with_options(
+        TerminalOptions {
+            viewport: Viewport::Inline(10),
+        },
+        |terminal| {
+            // Run your event/render loop here.
+            // terminal.draw(|frame| { ... })?;
+            Ok(())
+        },
+    )
+}
+```
+
+When building the terminal yourself, set the same viewport:
+
+```rust
+let mut terminal = ratatui::init_with_options(TerminalOptions {
+    viewport: Viewport::Inline(10),
+});
+
+// Run the UI, preserving its result so cleanup always happens.
+let result = run_app(&mut terminal);
+
+ratatui::restore();
+
+// Move below the inline UI before returning control to the shell.
+println!();
+
+result
+```
+
+The newline prevents the next shell prompt from sharing the UI’s final line. Restore the terminal **before** printing it, so raw mode is disabled.
+
+If your installed Ratatui version lacks `run_with_options`, use the second pattern.
+tokens used
+725

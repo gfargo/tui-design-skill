@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Go CLI catches SIGINT, cleans up, and calls os.Exit(130). Users report that Ctrl+C in a shell loop doesn't stop the loop. What's wrong?

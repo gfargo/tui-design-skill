@@ -1,0 +1,74 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-jy_wcjiz
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfd-3e2a-7bd0-9846-e941f87b113c
+--------
+user
+My Bubble Tea v2 app embeds a bubbles list and a viewport. On startup the list renders as a garbled fragment and the viewport is empty until I resize the terminal. How should I handle sizing?
+
+codex
+I’ll check the Bubble Tea v2 sizing API so the example uses the right calls.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls -la' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-jy_wcjiz
+ succeeded in 323ms:
+total 0
+drwx------@    2 gfargo  staff      64 Oct 27 11:31 .
+drwx------@ 5925 gfargo  staff  189600 Oct 27 11:32 ..
+
+exec
+/bin/zsh -lc 'curl -L --max-time 15 -s https://raw.githubusercontent.com/charmbracelet/bubbles/main/viewport/viewport.go | head -n 140' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-jy_wcjiz
+ succeeded in 0ms:
+codex
+Size both components explicitly in the parent model’s `Update`, using **`tea.WindowSizeMsg` on startup and every resize**. Bubble Tea sends an initial size message automatically; embedded Bubbles don’t lay themselves out to fill the parent.
+
+For example, with a list and viewport side by side:
+
+```go
+case tea.WindowSizeMsg:
+    // Subtract your outer borders, padding, header, and footer.
+    width := max(0, msg.Width-horizontalChrome)
+    height := max(0, msg.Height-verticalChrome)
+
+    listWidth := width / 3
+    viewportWidth := width - listWidth
+
+    m.list.SetSize(listWidth, height)
+    m.viewport.SetWidth(viewportWidth)
+    m.viewport.SetHeight(height)
+    m.ready = true
+
+    return m, nil
+```
+
+Use the v2 viewport setters, `SetWidth` and `SetHeight`. Account for any gap or individual pane borders in the allocated sizes too.
+
+Before the first size message, render a placeholder instead of components constructed with zero dimensions:
+
+```go
+func (m model) View() tea.View {
+    if !m.ready {
+        return tea.NewView("Loading…")
+    }
+    return tea.NewView(
+        lipgloss.JoinHorizontal(
+            lipgloss.Top,
+            m.list.View(),
+            m.viewport.View(),
+        ),
+    )
+}
+```
+
+Set viewport content with `SetContent` when it becomes available. If you manually wrap content to the viewport width, recalculate that wrapping after sizing.
+
+If resizing fixes startup, check that your initial `WindowSizeMsg` reaches this same layout code—especially if you create or replace child models after the initial message. Cache the terminal dimensions and apply them whenever a child is created. **Keep sizing out of `View`; `View` should only render.**
+tokens used
+9,784

@@ -1,0 +1,1 @@
+Which mouse reporting modes should my full-screen TUI enable, and should my inline picker use the mouse?

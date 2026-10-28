@@ -1,0 +1,1 @@
+Which editing, history, and completion behaviors should the text field in my agent TUI have, and how do I handle Tab?

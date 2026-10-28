@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+Design the footer hint bar for my file-manager TUI. It has about eight actions. Show what it looks like at 80 columns and at 40.

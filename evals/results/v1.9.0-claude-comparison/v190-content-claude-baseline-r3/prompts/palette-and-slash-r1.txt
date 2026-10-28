@@ -1,0 +1,1 @@
+My log viewer has about 35 actions across several screens. Should I add a command palette, and what should `/` do?

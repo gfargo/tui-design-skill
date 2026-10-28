@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Textual 8 chat app streams an LLM reply into a Markdown widget by calling `markdown.update(full_text)` for every token, which is slow, and the view does not follow the new text. Separately, `kill <pid>` (SIGTERM) leaves my terminal in a broken state. How do I fix both?

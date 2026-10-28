@@ -1,0 +1,119 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-ou7w30j0
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e14-bc2d-78c1-92c7-079a426aab6e
+--------
+user
+How should I ship shell completions for my Rust CLI, including dynamic completion of argument values?
+
+codex
+I’ll check which CLI framework you’re using so the recommendation can fit your code.
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-ou7w30j0
+ succeeded in 0ms:
+.
+..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+For a typical Rust CLI using `clap`, I’d ship **static completion files by default**, and offer **runtime completion for values that change**, such as project names, profiles, or resource IDs.
+
+### Static completions
+
+Use `clap_complete` to generate Bash, Zsh, Fish, PowerShell, and Elvish completions from the same `clap::Command` that defines your CLI.
+
+Expose a command such as:
+
+```console
+mycli completions bash
+mycli completions zsh
+mycli completions fish
+```
+
+Its implementation can use:
+
+```rust
+use clap::CommandFactory;
+use clap_complete::{generate, Shell};
+
+fn print_completions(shell: Shell) {
+    let mut command = Cli::command();
+    generate(shell, &mut command, "mycli", &mut std::io::stdout());
+}
+```
+
+Generate these files during release packaging and let package managers install them in the appropriate completion directories. For manual installs, document the destination or shell configuration. Avoid silently modifying users’ shell startup files.
+
+Encode fixed choices and file semantics in your argument definitions:
+
+- `ValueEnum` for known values.
+- `ValueHint::FilePath` or `DirPath` for paths.
+- Accurate argument names, help text, and positional structure.
+
+Those definitions improve both parsing and completion.
+
+### Dynamic argument values
+
+A generated static script cannot discover your current projects or profiles by itself. It needs a shell integration that invokes your executable when the user presses Tab.
+
+`clap_complete` provides a runtime completion engine through its `unstable-dynamic` feature. The general setup is:
+
+```toml
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_complete = { version = "4", features = ["unstable-dynamic"] }
+```
+
+Handle completion **before normal argument parsing or application initialization**:
+
+```rust
+use clap::CommandFactory;
+
+fn main() {
+    clap_complete::CompleteEnv::with_factory(Cli::command)
+        .complete();
+
+    let cli = <Cli as clap::Parser>::parse();
+    // Run the application.
+}
+```
+
+Attach `clap_complete::engine::ArgValueCompleter` to arguments whose candidates come from runtime state. Its callback receives the current value prefix and returns `CompletionCandidate` values.
+
+For example, a `--profile` completer could read profile names from a local config file and return matching names. The shell integration is typically activated with:
+
+```sh
+# Bash
+source <(COMPLETE=bash mycli)
+
+# Zsh
+source <(COMPLETE=zsh mycli)
+
+# Fish
+COMPLETE=fish mycli | source
+```
+
+**Check these APIs and supported shells against the version you pin:** the dynamic interface is explicitly unstable. Static and runtime completion use different integrations; shipping a static file alone does not activate runtime callbacks.
+
+### Keep completion fast and safe
+
+Treat completion as a separate, lightweight execution path:
+
+- Prefer local state or a cache; avoid a network request on every Tab.
+- Bound any remote lookup with a short timeout.
+- Return no candidates gracefully when configuration or credentials are missing.
+- Never prompt, mutate state, or print logs to stdout.
+- Preserve argument boundaries and shell escaping; test spaces, quotes, Unicode, and `--option=value`.
+
+If you need a stable integration contract across versions, implement a hidden completion endpoint and small shell-specific adapters. That gives you control, but you own cursor handling, quoting, and shell compatibility.
+
+My recommendation: **use `clap_complete` static generation for release packages, then adopt its dynamic engine for live values if its instability and shell coverage fit your support policy.**
+tokens used
+2,553

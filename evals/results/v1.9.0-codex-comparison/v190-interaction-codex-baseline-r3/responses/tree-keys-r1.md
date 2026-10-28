@@ -1,0 +1,31 @@
+A good TUI tree view should support arrow keys first, with optional Vim bindings.
+
+| Key | Behavior |
+|---|---|
+| `↑` / `↓` | Move to the previous / next visible node |
+| `→` | Expand a collapsed branch; if already expanded, move to its first child |
+| `←` | Collapse an expanded branch; otherwise move to its parent |
+| `Enter` | Activate the node: open a file, show details, or perform its primary action |
+| `Home` / `End` | Jump to the first / last visible node |
+| `Page Up` / `Page Down` | Move roughly one viewport |
+| Typing | Jump to the next matching visible label |
+| `/` | Start search, if you support a dedicated search mode |
+| `Esc` | Clear search or cancel the current interaction |
+| `Tab` / `Shift+Tab` | Move focus between panes or controls |
+| `?` | Show keyboard help |
+
+Optional aliases: `j`/`k` for down/up and `h`/`l` for left/right. If you support these, use `/` for search so typing letters doesn’t conflict with navigation.
+
+For a selectable tree, add `Space` to toggle the current node’s selection. Keep **focus, selection, and activation distinct**: moving the cursor should not silently change a checkbox or open a file. If selecting a parent also selects descendants, show a mixed state when only some descendants are selected.
+
+A few behaviors make the tree feel predictable:
+
+- Navigate only visible nodes and scroll just enough to keep the focused node in view.
+- Preserve expansion and focus across refreshes using stable node IDs.
+- When a focused node disappears, move focus to its nearest surviving ancestor or neighbor.
+- Show clear branch indicators, a distinct focus marker, and loading/error states for lazy children. Don’t rely on color alone.
+- Keep the parent focused while loading children; expanding should not unexpectedly jump the cursor.
+- If search includes collapsed descendants, reveal the path to the match and restore prior expansion when search ends.
+- For mouse support, clicking the disclosure indicator toggles expansion; clicking the label focuses it. Make activation consistent with your app’s other lists.
+
+The core rule: **arrows navigate and expand; Enter acts; Space selects.**

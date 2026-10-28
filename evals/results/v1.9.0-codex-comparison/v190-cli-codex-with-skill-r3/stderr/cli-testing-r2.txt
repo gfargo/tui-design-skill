@@ -1,0 +1,1427 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i6_mq9a0
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e14-28f3-7a41-a191-c4a48d70d3f7
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+How should I test a one-shot CLI written in Go? I mostly care about output and exit codes.
+
+codex
+I’ll read the tui-design skill and use it to shape a testing approach focused on output and exit codes.
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i6_mq9a0
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, `--json` and errors, completions, paging, config, Windows, CLI testing, automation | `references/cli-basics.md` |
+| Layouts and wireframes, inline vs alternate screen, borders, hierarchy, color, density, responsive behavior and the floor size, states (empty, loading, partial, error, stale), tables, diff views, modals, status bars and messages, progress and spinners, themes, icons and Nerd Fonts, localization and Unicode width, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, the Esc/q/Ctrl+C quit order, keys that tmux or the key encoding steal, focus, navigation, search and filter, multi-select, help and the command palette, scrolling, live-data selection, log follow mode, trees, text input, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
+| Flicker or tearing, escape sequences and terminal modes (bracketed paste, keyboard protocol and a Shift+Enter that doesn't arrive, mouse, focus, synchronized output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color depth and theme detection | `references/terminal-protocols.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small (`visual-patterns.md` → *States*). In a design answer, include an ASCII sketch of the layout at the floor size (60 columns) next to the wide one.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Which other keys are reserved, and why raw mode frees `Ctrl+S`, is in `interaction-patterns.md` → *Reserved keys*.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+- for one-shot CLIs, stdout, stderr, and the exit code in golden tests, with no TTY and under `NO_COLOR` (`cli-basics.md` → *Testing one-shot CLIs*).
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-go.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i6_mq9a0
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i6_mq9a0
+ succeeded in 23ms:
+# Simple CLI design — non-TUI command-line tools
+
+For programs that don't have a full-screen UI: read args, do work, print output, exit. This document synthesizes [clig.dev](https://clig.dev), the [12-Factor CLI](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) principles, POSIX.1-2024 utility conventions, GNU coding standards, the XDG Base Directory Specification, BSD `sysexits.h`, and the design of widely admired CLIs (`gh`, `rg`, `fd`, `bat`, `jq`, `httpie`, `kubectl`, `docker`, `starship`).
+
+The bar for a CLI to feel professional is lower than a TUI, but the principles are settled. Most "this CLI is bad" reactions trace to violating items on this checklist.
+
+**Contents:**
+- [Foundational principles](#foundational-principles)
+- [Input and arguments](#input-and-arguments)
+- [Output design](#output-design)
+- [Exit codes](#exit-codes)
+- [Error messages](#error-messages)
+- [Help and discoverability](#help-and-discoverability) (includes [shell completions](#shell-completions) and [demo recordings](#demo-recordings))
+- [Subcommands](#subcommands)
+- [Shell integration](#shell-integration)
+- [Configuration and state](#configuration-and-state)
+- [Performance and signals](#performance-and-signals) (includes Windows)
+- [Testing one-shot CLIs](#testing-one-shot-clis)
+- [Future-proofing](#future-proofing)
+- [Shipping, updates, and telemetry](#shipping-updates-and-telemetry)
+- [Naming](#naming)
+- [Concrete exemplars to study](#concrete-exemplars-to-study)
+- [Final checklist](#final-checklist)
+
+---
+
+## Foundational principles
+
+**Human-first, machine-friendly.** Default output is readable; machine output is opt-in (`--json`, `--plain`, `-o yaml`). **Composable:** honor stdin/stdout/stderr, exit codes, signals, and line-based text. **Discoverable:** help text, examples, "did you mean…?" suggestions, and shell completions. **Consistent and robust:** the same flag names mean the same things across tools; validate input early, fail fast, never lie about state.
+
+**Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
+
+---
+
+## Input and arguments
+
+### Argument syntax
+
+POSIX utility argument syntax:
+- Lowercase 2–9 char names.
+- Options begin with `-` and a single alphanumeric character.
+- `-abc` ≡ `-a -b -c` (combined boolean flags).
+- `-o file` or `-ofile` (optionally combined with arg).
+- `--` ends option parsing (rest are positional).
+- Bare `-` means stdin/stdout.
+
+GNU extensions (now near-universal):
+- Long options (`--verbose`, `--output=foo.txt`).
+- Every short option has a long counterpart.
+
+**Reserve single letters for the most common flags only.** `-f`/`--file`, `-o`/`--output`, `-v`/`--verbose`, `-q`/`--quiet`, `-h`/`--help`. If users will type it daily, give it a short form. If they'll type it monthly, long-only is fine. Beware `-f`: real-world tools split between `--file` (tar, make) and `--force` (rm, git push) — pick one meaning per tool and never use it for both.
+
+### Flags vs positional args
+
+Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. Jeff Dickey's [12 Factor CLI Apps](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) rule of thumb, which clig.dev cites: one type of argument is fine, two types are suspect, three are never good.
+
+### Stdin / stdout / stderr discipline
+
+- **stdout** = primary output (the result; machine-readable when piped).
+- **stderr** = secondary channel (logs, progress, prompts, errors).
+- Support `-` for stdin/stdout where it makes sense.
+- If stdin is a TTY but your program expects piped input, **show help instead of hanging** (avoid `cat` UX).
+
+### Interactivity
+
+Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+
+**Cancelling a prompt (Ctrl-C, or Esc where the prompt library maps it) is an abort, not success: restore the terminal and exit 130**, the same code a shell reports for SIGINT (128 + 2). Exit 0 would let `mytool init && mytool deploy` carry on with no answer. A real SIGINT is different; see *Signals*.
+
+Never accept a secret as a flag value; see *Secrets — what NOT to do*.
+
+---
+
+## Output design
+
+### Tables for humans
+
+- One record per line.
+- **No ASCII borders** — they break `wc -l` and `grep` pipelines.
+- Headers by default, with `--no-headers` toggle.
+- Truncate to terminal width with `--no-truncate` toggle.
+- Allow `--columns col1,col2`, `--sort col`, `--filter`.
+- Recommend `--csv` or `--json` for machines.
+
+### JSON / NDJSON
+
+`--json` for structured output.
+
+- **Bounded results: one document. Unbounded or streaming results: NDJSON** (one compact object per line, nothing else on stdout), so downstream tools can `jq` line by line. Pretty-print only on a TTY.
+- **The schema is additive.** Add fields; never remove, rename, retype, or repurpose one, and have consumers ignore unknown fields (Terraform's JSON format states this rule). Times are RFC 3339 UTC with a `Z` (`2026-04-29T15:25:16Z`). Numbers are JSON numbers, never `"1.2 MB"` or `"1,234"`.
+- **Errors under `--json`.** No convention is settled (npm prints `{"error":{…}}` on stdout, the AWS CLI's `--cli-error-format json` writes to stderr, and gh, cargo, and kubectl emit no structured errors). Pick stderr so stdout stays result-only: one compact line, empty stdout, the same non-zero exit as the human error, and a stable `code` that scripts branch on:
+
+```
+{"schema_version":1,"error":{"code":"permission_denied","message":"cannot write out.txt: permission denied","hint":"chmod +w out.txt"}}
+```
+
+  Version the error object with the success schema, and keep stack traces out of it unless `--debug` is on.
+
+`kubectl`'s `-o {wide,json,yaml,name,jsonpath=…,go-template=…,custom-columns=…}` is the gold standard projection system. Adopt it for tools with structured data.
+
+### Verbosity
+
+- `-q` / `--quiet` — suppress non-essential output (errors still print).
+- `-v` / `--verbose` — chatty mode.
+- `-vv` / `-vvv` — progressive debug levels.
+- `--debug` (or `MYTOOL_DEBUG=1`) for stack traces — never appear by default. Don't read plain `DEBUG`: Node's `debug` package owns it, so `DEBUG=*` set for another tool would flood yours, and `DEBUG=1` matches nothing there.
+
+### Progress
+
+Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Start showing progress once work has run for roughly 100–200ms: an indicator that flashes for near-instant work feels twitchy, and silence past a few hundred milliseconds feels frozen. The same delayed-spinner rule is spelled out in `references/visual-patterns.md` → *Spinners*.
+
+For multi-step work, hide noisy logs behind a progress indicator while things succeed and print them if something fails (the Docker Compose pattern).
+
+### Color
+
+**Decide per stream.** Color stdout by whether stdout is a TTY and stderr by whether stderr is, so `mytool | less` keeps colored errors and `mytool 2>err.log` stays plain ([clig.dev](https://clig.dev/#output)).
+
+**Disable color when:**
+- that stream is not a TTY, or
+- `NO_COLOR` env var is set to a non-empty value ([no-color.org](https://no-color.org)), or
+- `TERM=dumb`, or
+- `--no-color` / `--color=never` is passed.
+
+**Force color** when `FORCE_COLOR` is set (in the chalk/supports-color convention, `FORCE_COLOR=0` instead forces color *off*) or `--color=always` is passed. Treat `CLICOLOR_FORCE` ([bixense.com/clicolors](https://bixense.com/clicolors/)) as another force signal, still subordinate to `NO_COLOR`; some older tools read `CLICOLOR=0` as off.
+
+Provide `--color={auto,always,never}` (auto is default) plus tool-specific overrides like `MYAPP_NO_COLOR` / `MYAPP_FORCE_COLOR`. Define precedence instead of leaving conflicts accidental:
+
+- Order: explicit CLI flag → tool-specific env → general env → automatic TTY/capability detection.
+- At the same level a disable signal wins: with both `NO_COLOR` and `FORCE_COLOR` set, disable color unless an explicit `--color=always` overrides them.
+- Runtimes split here: Python 3.13 lets `NO_COLOR` win, while Node.js and [force-color.org](https://force-color.org/) let `FORCE_COLOR` win (force-color.org treats any non-empty value, even `0`, as on). Document your order and test both variables together.
+
+Use color sparingly: red for errors, dim for secondary text, bold for headings, cyan/blue for paths. **Never color-only** signaling — pair with a word or symbol.
+
+### Unicode and emoji
+
+Glyphs like ✅, ❌, ⚠ clarify state, but detect locale and `TERM`, fall back to ASCII (`[ok]`, `[!]`, `[X]`) when piped or unsupported, and never use emoji as the only signal.
+
+### Paging
+
+Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**, and never page `--json` or other machine output. Set `LESS=FRX` only when `LESS` is unset, as git does (its `FRX` default is applied only if the variable is unset): `F` exits immediately if content fits one screen, `R` passes ANSI color through, `X` leaves content in scrollback on exit. Never override a `LESS` the user set. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
+
+### Pagination for API-backed lists
+
+Give list commands a documented `--limit N` with a finite default and a way to see the rest (`--paginate`, or a cursor in the output). When the limit cut results off, say so on **stderr** with the flag that fixes it, and exit 0, since truncating on request is not an error:
+
+```
+$ mytool list --limit 30 > items.txt
+note: showing 30 of 1040 items; pass --limit N or --paginate for more
+```
+
+gh bounds by default (`--limit` 30) and truncates silently when piped; the AWS CLI fetches every page by default and `--max-items` adds a `NextToken`. Pick one design per tool. Under `--json`, put the cursor in the document (`{"items":[…],"next_cursor":"…"}`) or, for NDJSON, use only the stderr note.
+
+---
+
+## Exit codes
+
+### Default scheme
+
+| Code | Use |
+|---|---|
+| 0 | Success |
+| 1 | Failure with no more specific code |
+| 2 | Usage error (bad flag or argument). Not universal, but bash builtins, argparse, clap, and Go's `flag` use it |
+| 3–123 | Your documented domain codes. The status is 8 bits, so `exit(256)` is success: clamp computed codes |
+| 124–128 | Not yours: `timeout` uses 124 and 125, the shell uses 126 (not executable), 127 (not found), and 128 |
+| 129–255 | Not yours: 128 + N means killed by signal N (130 SIGINT, 137 SIGKILL, 143 SIGTERM), and 255 makes `xargs` stop |
+
+Document your codes in `--help`.
+
+### BSD `sysexits.h` (legacy, nonportable richer signaling; codes 64–78 fit the scheme above)
+
+| Code | Constant | Meaning |
+|---|---|---|
+| 64 | EX_USAGE | Bad command-line usage |
+| 65 | EX_DATAERR | Bad input data |
+| 66 | EX_NOINPUT | Cannot open input file |
+| 69 | EX_UNAVAILABLE | Service unavailable |
+| 70 | EX_SOFTWARE | Internal software error |
+| 73 | EX_CANTCREAT | Cannot create output |
+| 74 | EX_IOERR | I/O error |
+| 75 | EX_TEMPFAIL | Temporary failure (retryable) |
+| 77 | EX_NOPERM | Permission denied |
+| 78 | EX_CONFIG | Configuration error |
+
+Tool-specific overloads are common: `grep`/`rg` use `0` = match found, `1` = no match, `2` = error.
+
+Treat `sysexits.h` as a legacy compatibility vocabulary, not a cross-platform recommendation. Many modern tools use a smaller documented scheme instead. Adopt it whole or not at all: if you do, `EX_TEMPFAIL` (75) is your retryable-failure code; if you don't, document which of your own codes callers may retry.
+
+---
+
+## Error messages
+
+The 12-Factor anatomy:
+
+1. **State what was attempted.**
+2. **State what failed and why.**
+3. **Link to docs** when there is more to read (before the hint).
+4. **Suggest how to fix it** — give a command if possible, as the last line.
+
+Example, with a bad version for contrast:
+
+```
+good:  error: cannot write out.txt: permission denied
+       hint: chmod +w out.txt
+bad:   ERROR [2026-10-27T05:10:18Z] Failed!!
+```
+
+Say what and why in one lowercase line with no trailing period, name the object, and end with the fix. `hint:` is git's spelling and `help:` is cargo's; pick one. A program-name prefix (`mytool: error: …`, as argparse prints) is fine when your stderr is interleaved with other tools, but then use it on every line.
+
+**One format rule.** Start the message that is itself the failure with a plain-word `error:` (and a warning with `warning:`), so a reader, a screen reader, or `grep` can tell what the line is. Do not print log-style `ERR`/`WARN`/`[ERROR]` labels, timestamps, or any prefix on ordinary output unless `--verbose` or `--debug` is on ([clig.dev](https://clig.dev/#output) rules out log-level labels, not a plain-word failure marker). Other references defer to this rule.
+
+**Catch expected errors and rewrite** — never expose raw stack traces by default. Stack traces only on `--debug` or `MYTOOL_DEBUG=1`.
+
+**Put the most important info last** ([clig.dev](https://clig.dev/#errors)). The eye lands at the bottom of the output. The fix command is the last line; when there is no fix command, the docs link is.
+
+**Group repeated errors.** If 100 files fail to parse, summarize: "100 files failed to parse — first three: …; pass `--show-all-errors` to list all."
+
+**"Did you mean…?"** suggestions on typos. Brew, Heroku, Cargo, Git, npm all do this. Suggest, don't auto-execute.
+
+---
+
+## Help and discoverability
+
+### What must show help
+
+All of these must show help:
+- `mycli` (no args, when there's no sensible default action)
+- `mycli -h`
+- `mycli --help`
+- `mycli help`
+- `mycli sub -h`, `mycli help sub`
+
+`-h` / `--help` is reserved. Don't use it for anything else.
+
+### Concise help by default
+
+When run with no args (and no sensible default action), show:
+- One-sentence description.
+- 1–2 examples.
+- Top-level flags / subcommands list.
+- "Run `mycli --help` for more."
+
+`jq`'s no-arg behavior is canonical.
+
+### Full help (`--help`)
+
+- **Synopsis** with POSIX notation: `mycli [-v] [--output FILE] FILE...`.
+- **Description** — 1–3 paragraphs.
+- **Commands and flags grouped by purpose.** `gh --help` groups commands (Core, GitHub Actions, Additional) while its per-command flags stay one flat list; for a long flag list, add headings such as Output, Filtering, Auth. Grouping scales much better than one alphabetical list.
+- **Examples first, right after the description**, building from simple to complex. [clig.dev](https://clig.dev/#help) says users read examples before any other documentation, so show them first and move a long set to `help <topic>` or the docs. `gh` puts its examples last, which only works while the flag list is short enough to keep them on screen.
+- Link to docs, man page, or `mycli help <topic>`.
+
+A literal template (stdout, exit 0, for `-h` and `--help`):
+
+```
+Sync local files to a bucket.
+
+Usage: mytool [OPTIONS] <COMMAND>
+
+Examples:
+  mytool push ./dist s3://site     Upload a directory
+  mytool pull s3://site --dry-run  Preview a download
+
+Commands:  push, pull, status
+Options:   -o, --output <text|json>  -q, --quiet  -h, --help
+Docs: https://example.com/mytool
+```
+
+### Man pages
+
+Power users love them. Generate them from the same command tree as `--help`, in the release build, and ship them in the package: Cobra's `doc.GenManTree`, `clap_mangen`, `click-man`, or `argparse-manpage` (Typer has no generator; feed `typer.main.get_command(app)` to `click-man` and re-test on upgrade). Otherwise write Markdown and convert with `ronn` or `pandoc`. Route `git help foo` and `npm help foo` to the corresponding man page.
+
+### Versioning
+
+Support `--version`, `-V`, and `version` subcommand. The first line is `mytool 1.2.3` on stdout with exit 0, and it makes no network call. Detail lines may follow:
+- Git commit (short SHA).
+- Build date.
+- Runtime info (Go/Node/Python version).
+
+These end up in bug reports — make them easy to copy. If your tool talks to a server, send the version in the `User-Agent` header.
+
+### Shell completions
+
+Generate for bash, zsh, fish, pwsh where the parser allows. Cobra, Click (PowerShell from 8.5), and Typer generate all four from the command definition; yargs documents bash, zsh, and fish but not PowerShell, and picocli's `AutoComplete` targets only bash and zsh. clap needs the `clap_complete` crate and oclif needs `@oclif/plugin-autocomplete`; commander has no built-in support ([commander.js#2008](https://github.com/tj/commander.js/issues/2008)), so add a completion package or write the scripts. Wire them up.
+
+Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
+
+- **Contract:** `mytool completion <bash|zsh|fish|pwsh>` prints the script to stdout and writes nothing. Document where each shell loads it from: bash `~/.local/share/bash-completion/completions/mytool` (`/etc/bash_completion.d` is the legacy eager directory), zsh a file named `_mytool` in a directory on `$fpath` before `compinit`, fish `~/.config/fish/completions/mytool.fish`.
+- **Dynamic values** go through the framework's hook, which runs your binary on every Tab press: Cobra's hidden `__complete` ([docs](https://github.com/spf13/cobra/blob/v1.10.2/site/content/completions/_index.md)); Click `_MYTOOL_COMPLETE=<shell>_source` ([docs](https://github.com/pallets/click/blob/8.5.0/docs/shell-completion.md)) and Typer `source_<shell>`, with a Click PowerShell script only from 8.5; clap's `COMPLETE=<shell>`, which `clap_complete` still gates behind `unstable-dynamic` (static `generate()` is stable).
+- **Keep the hook fast and pure:** no prompts, no file writes, nothing on stdout but candidates; time-box and cache network lookups, and return no candidates on failure.
+
+### Demo recordings
+
+For screenshots and demo GIFs of a CLI or TUI, use the `vhs-cli-demos` skill when it is installed. Otherwise record with [VHS](https://github.com/charmbracelet/vhs), which needs `ttyd` and `ffmpeg` on `PATH`:
+
+- Script the scene in a `.tape` file and render it with `vhs demo.tape`. `vhs new demo.tape` writes a starter tape; `vhs record > demo.tape` captures a live session to edit.
+- Pin everything that changes the frame: `Set Columns` and `Set Rows` (VHS 0.12+; older releases take pixel `Width`/`Height`) at a size whose layout you have tested, `Set FontSize`, `Set Theme`, and `Env` for other inputs such as `TZ` or `LANG`.
+- Put setup and cleanup between `Hide` and `Show`, wait for slow output with `Wait+Screen /regex/` instead of a guessed `Sleep`, and declare each program the tape needs with `Require` so a missing one fails before recording.
+- `Screenshot demo.png` captures a still and `Output demo.gif` records motion. Shrink GIFs losslessly with `gifsicle -O3` before publishing; `charmbracelet/vhs-action` regenerates them in CI.
+
+---
+
+## Subcommands
+
+Single-command tools (`grep`, `cp`, `rg`) are simple; multi-command tools (`git`, `gh`, `docker`) fit many objects. For multi-command tools, **noun-verb** is the more common order (clig.dev says either order works, but noun-verb "seems to be more common"):
+- `docker container create` (noun-verb), not `docker create container`.
+- `gh pr list`, `gh issue close`, `gh repo clone`.
+
+Noun-verb scales: adding `pr review` doesn't conflict with `issue review`. Verb-first runs out of namespace.
+
+**Same flag = same meaning across subcommands.** `-o` should always mean output file (or always output format), never both.
+
+**No catch-all default subcommand.** Don't make `mycli foo` silently mean `mycli run foo` — it's a footgun when you add a future `foo` subcommand.
+
+**No prefix-matching.** `mycli ins` → `install` becomes a breaking change when you add a future `instance` command. Define explicit aliases instead.
+
+**Avoid near-synonyms.** `update` vs `upgrade` confuses users. Pick one.
+
+---
+
+## Shell integration
+
+A child process cannot change its parent shell's working directory or environment variables — only the shell itself can do that. There's no IPC trick around this; two patterns cover everything real tools need.
+
+### cd-on-exit: the cwd-file wrapper function
+
+If your tool navigates directories and should `cd` the user's shell on exit (a file picker, a directory jumper), ship a flag that writes the final directory to a caller-specified file, and document a shell wrapper function that reads it and `cd`s after your program exits. yazi and ranger converge on the identical shape:
+
+```bash
+function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+    command yazi "$@" --cwd-file="$tmp"
+    IFS= read -r -d '' cwd < "$tmp"
+    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+    command rm -f -- "$tmp"
+}
+```
+
+ranger's `--choosedir` does the same thing under a different flag name. This is the pattern, not an implementation detail — there's no other way to get a "cd on exit" TUI.
+
+### The `eval "$(tool init shell)"` pattern
+
+For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need:
+
+- **starship:** a `precmd` prompt-regeneration hook plus a `preexec` hook.
+- **zoxide:** `z`/`zi` functions plus a `chpwd` hook that tracks visited directories.
+- **atuin:** keybindings (Ctrl-R and the Up arrow by default; `--disable-up-arrow` opts out) plus history-capture hooks.
+- **mise:** a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd`. It can't set the parent shell's env, so it has the *shell itself* recompute it.
+- **fzf:** `--zsh`/`--bash` (since v0.48, replacing an older `install.sh`) emit keybindings and completions from one embedded call.
+
+### Never silently edit rc files
+
+Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+
+---
+
+## Configuration and state
+
+### Precedence (highest wins)
+
+1. Command-line flags.
+2. Environment variables.
+3. Project-local config (`./mytool.toml`, `./.mytoolrc`).
+4. User config (`$XDG_CONFIG_HOME/mytool/`).
+5. System config (`/etc/mytool/`).
+6. Built-in defaults.
+
+This is the [clig.dev](https://clig.dev/#configuration) order (flags, env, project, user, system), with built-in defaults as the floor. Predictable.
+
+### XDG Base Directory Specification
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `XDG_CONFIG_HOME` | `~/.config` | User config |
+| `XDG_DATA_HOME` | `~/.local/share` | Persistent user data |
+| `XDG_STATE_HOME` | `~/.local/state` | History, logs, recent files — state that persists between restarts |
+| `XDG_CACHE_HOME` | `~/.cache` | Regenerable cache |
+| `XDG_RUNTIME_DIR` | (no default) | Sockets, pipes, mode 0700 |
+
+**Use `~/.config/mytool/`, not `~/.mytool/`.** Older "dotfile in $HOME" pollution is being phased out — adopt XDG for new tools.
+
+On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On macOS, prefer XDG (`~/.config/mytool/`) for developer CLIs — it keeps dotfiles portable across machines; reserve `~/Library/Application Support/` for GUI-style apps. The "native" helpers return that folder and, except `platformdirs` 4.6+, ignore `XDG_CONFIG_HOME`: Go's `os.UserConfigDir`, Rust's `dirs` and `directories`, and `platformdirs` when the variable is unset. Check an absolute `XDG_CONFIG_HOME`, then fall back to `~/.config`, by hand (or use `etcetera` or `xdg`, which already do).
+
+### Explaining where a value came from
+
+Accept `--config PATH` and `MYTOOL_CONFIG` (flag beats env), and give users a command that prints each effective value with its source, redacting secrets, as `git config --show-origin`, `npm config list -l`, and `aws configure list` do:
+
+```
+$ mytool config list --show-origin
+user   /home/ann/.config/mytool/config.toml   format = "json"
+env    MYTOOL_FORMAT                          format = "text"   (wins)
+default                                       color  = "auto"
+```
+
+### Environment variables
+
+Prefix tool-specific variables `TOOL_FOO_BAR` (uppercase, underscores, single-line values) and honor the general-purpose ones that apply: `NO_COLOR`, `FORCE_COLOR`, and `CLICOLOR_FORCE` (see *Color*), `DO_NOT_TRACK` (see *Telemetry*), `EDITOR`/`VISUAL`, `PAGER`, `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`, `TMPDIR`, `TERM`, `LINES`/`COLUMNS`, and `LANG`/`LC_*`.
+
+### Secrets — what NOT to do
+
+Never accept secrets via `--password=`, `--token=`, etc. on the command line. They leak through `ps`, shell history, `docker inspect` and `systemctl show`, crash dumps and debug logs, and process accounting.
+
+**Use instead:**
+- Credential files with restrictive permissions (`--password-file path/to/secret`).
+- Stdin (`--password-stdin`).
+- AF_UNIX sockets.
+- OS keychains (gh uses macOS Keychain / libsecret / Windows Credential Manager).
+- `git-credential-*`-style helper protocols.
+
+### First-run authentication
+
+Two patterns dominate, and both are legitimate:
+
+1. **Browser + OAuth device-code flow**, token written to the OS keychain (`gh auth login`, `vercel login`): open a browser tab, or show a URL and one-time code, and poll until the user approves. Support a non-browser fallback (`--with-token`, a PAT from stdin) for headless use.
+2. **Direct prompt for long-lived credentials**, written to a plaintext config file — still standard for access-key-style cloud CLIs (`aws configure`), though AWS is moving federated auth to device flow (`aws configure sso`).
+
+**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`, and `GH_PROMPT_DISABLED` (any value turns gh's prompts off)—not a flag. There is no settled `--no-input`-style flag name (Django uses `--no-input`, Terraform `-input=false`, git `GIT_TERMINAL_PROMPT=0`, npm and gh none)—don't present one as a standard; fit your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+
+**Keychain libraries for OS-native storage:**
+- Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; more backends, including an encrypted-file fallback for headless hosts).
+- Rust — the `keyring` crate. Python — `keyring` (`PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` disables it).
+- Node — **not `keytar`, archived and unmaintained since December 2022**; VS Code moved to Electron's `safeStorage`, and a plain Node CLI should fall back to a config file.
+- On Linux, keychain backends need a running Secret Service daemon (GNOME Keyring/KWallet) that headless containers often lack, so ship an explicit plaintext fallback (gh's opt-in `--insecure-storage`) rather than failing silently.
+
+**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped this bug (CVE-2026-13769): under a default umask, three subcommands wrote credential files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
+
+---
+
+## Performance and signals
+
+### Startup time
+
+- **<100ms** — feels instant. `starship` is obsessive about this — it has to be (runs on every prompt) — and bounds each module with `scan_timeout` (30ms) and `command_timeout` (500ms).
+- **100–500ms** — fast.
+- **500ms–2s** — annoying.
+- **2s+** — users avoid the tool.
+
+Tactics: lazy-load subcommand modules (oclif's architecture), run update checks at most daily in the background, cache parsed config, and prefer Go or Rust over Python or Node for prompt-tier speed.
+
+### Streaming
+
+Stream line-by-line where possible (`grep`, `jq`, `rg`). Don't read whole input before outputting. Flush stdout on newlines so piped consumers see data immediately.
+
+### Signals
+
+| Signal | Convention |
+|---|---|
+| **SIGINT** (Ctrl-C) | Acknowledge immediately, bound cleanup with a timeout, then **re-raise** (below). **A second Ctrl-C should force-exit.** |
+| **SIGTERM** (exit 143) | Graceful shutdown. |
+| **SIGPIPE** | When piping into `head` and the consumer closes early. **Exit silently with code 0 or 141; never emit a stack trace.** |
+| **SIGHUP** | Long-running daemons reload config; one-shot tools exit. |
+
+**Re-raise SIGINT; don't `exit(130)`.** After cleanup, restore the default handler and send SIGINT to yourself, so the parent sees death-by-signal ([Cracauer](https://www.cons.org/cracauer/sigint.html)). Bash aborts a script or `for` loop only when its child died of SIGINT; a child that catches it and exits 130 reads as "handled", and the loop carries on. Verified for Go, Python, Node, and Rust.
+- **Go:** `signal.Reset(os.Interrupt)`, then `syscall.Kill(syscall.Getpid(), syscall.SIGINT)` (POSIX only; delivery is asynchronous).
+- **Python 3.8+:** let `KeyboardInterrupt` propagate (`finally:` for cleanup, or `except KeyboardInterrupt: cleanup(); raise`); never `sys.exit(130)`.
+- **Rust:** `signal_hook::low_level::emulate_default_handler(SIGINT)`. **Node:** remove the listeners, then `process.kill(process.pid, 'SIGINT')`.
+- A program that never catches SIGINT already does this (Go without `signal.Notify`, Node without a listener, uncaught Python).
+
+**SIGPIPE handling per language:**
+- **Python**: `signal.signal(signal.SIGPIPE, signal.SIG_DFL)` at startup.
+- **Rust**: handle `ErrorKind::BrokenPipe` explicitly.
+- **Go**: nothing by default. A broken-pipe write to fd 1 or 2 already kills the program with SIGPIPE unless it calls `signal.Notify` for SIGPIPE, in which case the write returns `EPIPE` and you exit quietly on it ([os/signal](https://pkg.go.dev/os/signal#hdr-SIGPIPE)).
+- **Node**: handle `EPIPE` on `process.stdout`.
+
+### Windows
+
+- No SIGPIPE, SIGHUP, or 128 + N codes (console close arrives as an event, [`CTRL_CLOSE_EVENT`](https://learn.microsoft.com/en-us/windows/console/handlerroutine)). A write to a closed pipe is a plain write error: exit quietly. Keep your own codes small (0–123), and don't map an unhandled Ctrl+C (status `0xC000013A`) to 130.
+- Enable `ENABLE_VIRTUAL_TERMINAL_PROCESSING` before emitting ANSI: Go and Rust do it themselves (`golang.org/x/sys/windows`, `anstyle-query`), Python via `colorama.just_fix_windows_console()`, and Node's tty layer already does.
+- The shell doesn't expand globs, so expand them yourself, and emit `\n` only. Windows Terminal sets no `TERM` or `COLORTERM`.
+
+### Atomicity and idempotency
+
+- **Atomic writes:** write a temp file in the *same directory* as the target (a cross-filesystem rename fails), `fsync` it, set the final mode (temp files are 0600), then rename it over the target. Readers and crashes see the old file or the whole new one; the file `fsync` is for durability, and a directory `fsync` makes the entry itself durable. On Windows the replace is best effort, not guaranteed atomic (Go's `os.Rename` isn't atomic there; use Python's `os.replace`, not `os.rename`).
+- **Partial results:** never leave a truncated file at the final path. Write atomically, or keep it under an explicit partial name (`.part`, `--partial`) and say so on stderr, and exit non-zero on any incomplete result.
+- `--dry-run` for destructive operations (`rsync`, `terraform plan`, `git add -n`).
+- Re-running should converge ("crash-only" design). The user shouldn't fear running the command twice.
+- Configurable timeouts, exponential backoff, and retries limited to transient failures (`EX_TEMPFAIL` (75) if you use sysexits).
+
+---
+
+## Testing one-shot CLIs
+
+Test the built binary as a black box on three channels: **stdout, stderr, and the exit code**. Add cases for no TTY (the default under a test runner) and for `NO_COLOR`, and keep golden files for text only, not color escapes.
+
+| Stack | Tool |
+|---|---|
+| Go | [`testscript`](https://github.com/rogpeppe/go-internal/blob/v1.16.0/testscript/doc.go). `! exec` asserts only non-zero, so add a small custom command to check an exact code |
+| Rust | `trycmd` (`.toml` and `.trycmd` cases), `snapbox`, or `assert_cmd` |
+| Click | `click.testing.CliRunner`: `result.stdout`, `result.stderr`, and `result.output` (interleaved) since Click 8.2 |
+| Typer | `typer.testing.CliRunner` (Typer 0.26+ vendors Click) |
+
+```
+# testdata/basic.txtar  (testscript)
+exec mytool ann
+stdout '^hello ann\n$'
+! stderr .
+! exec mytool bad
+! stdout .
+stderr '^error: cannot read bad: no such file\n$'
+env NO_COLOR=1
+exec mytool ann
+! stdout '\x1b'
+```
+
+```python
+r = CliRunner().invoke(cli, ["bad"])
+assert (r.exit_code, r.stdout, r.stderr) == (1, "", "error: cannot read bad: no such file\n")
+```
+
+---
+
+## Future-proofing
+
+Once shipped, your CLI is an API. Users script around it.
+
+- **Additive changes only** when possible.
+- **Deprecation runway**: warn for at least one release cycle before removing.
+- **Output for humans is iterable**; **machine output (`--json`, `--plain`) must be stable** — that's the contract scripts depend on.
+- Document deprecations clearly. Print a notice to stderr: "`--old-flag` is deprecated; use `--new-flag` instead. Will be removed in v2.0."
+
+---
+
+## Shipping, updates, and telemetry
+
+### Distribution shape constrains your options
+
+- **Compiled binary (Go/Rust) + Homebrew tap**: zero runtime dependency, the dominant pattern for performance-sensitive CLIs (ripgrep, starship, zoxide, atuin). goreleaser's `brews` publisher is deprecated (hard-deprecated in v2.16) in favor of `homebrew_casks`.
+- **npm with per-platform `optionalDependencies`** (esbuild, `@swc/core`): each platform gets its own scoped package and the package manager installs only the matching one. It superseded the `postinstall`-downloads-a-binary approach, which breaks under offline installs, custom registries, and `--ignore-scripts`.
+- **Pure npm / pipx**: needs the language runtime present, but is the cheapest to publish and update.
+
+### Update-check etiquette
+
+If you check for updates: check async, cache the result (once a day is the norm — both gh and the widely-used `update-notifier` npm package default to a 24-hour interval), and print the notice to stderr *after* your normal output, not interleaved with it. Auto-skip in CI and gate on stdout being a TTY. Provide an opt-out env var (gh's is `GH_NO_UPDATE_NOTIFIER`; the npm package's is `NO_UPDATE_NOTIFIER`).
+
+**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh compiles its update checker in only under the `updateable` build tag, which the Homebrew formula sets ([update_enabled.go](https://github.com/cli/cli/blob/v2.103.2/internal/ghcmd/update_enabled.go)), and the notice it prints for Homebrew installs says `brew upgrade gh`.
+
+### Telemetry, if you collect it
+
+`DO_NOT_TRACK=1` is a named convention with thin adoption: netdata, tilt, and the GitHub CLI honor it, while Homebrew and Gatsby kept their own variables (`HOMEBREW_NO_ANALYTICS`, `GATSBY_TELEMETRY_DISABLED`) and the .NET SDK has not adopted it (`DOTNET_CLI_TELEMETRY_OPTOUT`; [dotnet/sdk#3917](https://github.com/dotnet/sdk/issues/3917) is still open). So:
+- Ship your own opt-out: an env var plus a `tool telemetry disable` subcommand. gh uses `GH_TELEMETRY` and a `telemetry` config key, and `GH_TELEMETRY` overrides `DO_NOT_TRACK`.
+- Skip telemetry in CI, and honor `DO_NOT_TRACK=1` as a courtesy; it costs one env lookup.
+- Disclose before sending anything. Homebrew shows its analytics notice before the first event, so users can opt out first.
+- Treat the opt-out as an absolute veto, checked first, before any event is built.
+
+---
+
+## Naming
+
+Lowercase, short, easy to type with both hands, memorable but not generic, hyphens between words (`gh-actions-helper`), no mixed case (`curl` ✅, `DownloadURL` ❌), and no collision with an existing tool (`git` is taken).
+
+---
+
+## Concrete exemplars to study
+
+- **gh** — noun-verb subcommands; `--json field1,field2` + `--jq` + `--template`; OS-keychain credentials.
+- **rg** — smart defaults (`gitignore`, skip binary, recurse); `--json` emits NDJSON; `RIPGREP_CONFIG_PATH`; exit 0/1/2 for found/not-found/error.
+- **jq** — tiny startup; `-r`, `-c`, `-s`; help on empty invocation.
+- **bat** and **httpie/xh** — pretty on a TTY, plain on a pipe (`--plain`, `$BAT_PAGER`).
+- **docker** — multi-level subcommands, per-layer progress bars, backward-compatible aliases (`docker ps` ≡ `docker container ls`).
+
+---
+
+## Final checklist
+
+Answer each before shipping; a "no" points to the section that owns the rule.
+
+- **Streams and signals:** Does the result go to stdout and everything else to stderr, with `-` and `--` honored, and do SIGPIPE and a second Ctrl-C end cleanly? → *Stdin / stdout / stderr discipline*, *Signals*
+- **Exit codes:** Does each failure class have a documented code, and does a cancelled prompt exit 130? → *Exit codes*, *Interactivity*
+- **Help:** Does every entry point show help, with examples near the top and completions for each shell your parser supports? → *Help and discoverability*
+- **Flags and subcommands:** Do flags use standard names with one meaning everywhere, and does the tool avoid catch-all defaults and prefix-matching? → *Argument syntax*, *Subcommands*
+- **Output:** Can a script rely on stable machine output while the human default degrades cleanly without a TTY, under `NO_COLOR`, and on `TERM=dumb`? → *Output design*, *Color*
+- **Errors:** Does each failure say what, why, and how to fix it, fix last, under a plain `error:` and without a stack trace? → *Error messages*
+- **Interactivity and secrets:** Does it prompt only on a TTY, offer a documented non-interactive path, and never take a secret as a flag? → *Interactivity*, *Secrets — what NOT to do*
+- **Configuration:** Do precedence, XDG paths, and `MYTOOL_` env names follow the conventions? → *Configuration and state*
+- **Performance and safety:** Is cold start within budget, output streamed, destructive work behind `--dry-run`, and writes atomic and idempotent? → *Performance and signals*
+- **Tests and platforms:** Do tests pin stdout, stderr, and the exit code with no TTY and under `NO_COLOR`, and does the tool work on Windows? → *Testing one-shot CLIs*, *Windows*
+- **Future-proofing:** Will existing scripts survive the next release? → *Future-proofing*
+
+---
+
+If the tool grows to need a full-screen UI later, that's a TUI — return to the main `SKILL.md` and pick an ecosystem reference. Many great tools (`atuin`, `glow`) ship both a CLI and a TUI from the same core, with the CLI handling scripts and the TUI handling exploration.
+
+ succeeded in 26ms:
+# Go ecosystem — Bubble Tea, tview, gocui, Cobra
+
+Go TUIs split into two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for widget-rich apps. **gocui** is a third, legacy lineage behind lazygit (now an in-tree fork) and lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker), `urfave/cli` or Kong.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Bubble Tea](#bubble-tea-charmbraceletbubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbraceletlipgloss) · [Bubbles](#bubbles-charmbraceletbubbles) · [Huh](#huh-charmbracelethuh)
+- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+- [tview](#tview-rivotview) · [gocui](#gocui-awesome-gocuigocui) · [tcell](#lower-level-tcell)
+- [CLI framing and output: Cobra, urfave/cli, pretty output](#cli-framing-cobra-and-urfavecli)
+- [Testing](#testing) · [Debugging](#debugging) · [Cross-platform notes](#cross-platform-notes)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI with clean architecture and Charm aesthetic | **Bubble Tea + Lipgloss + Bubbles** |
+| Multi-pane vim-keybinding "lazy*"-style app | **Bubble Tea + Lipgloss** (compose the panes yourself); **gocui** (`awesome-gocui/gocui`) only for its exact views-as-buffers model |
+| Heavy data exploration with tables, trees, forms | **tview** (callback-style, retained-mode) |
+| One-shot fancy CLI prompts only | **Huh** (Go form library) or **gum** (shell wrapper) |
+| TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
+
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** (`gh` is a Cobra CLI, not a full-screen TUI: Lipgloss and Glamour for output, Charm v2 Bubble Tea, Bubbles, and Huh for prompts.)
+
+---
+
+## Bubble Tea (charmbracelet/bubbletea)
+
+The Elm Architecture in Go, and the most widely used Go TUI framework: `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
+
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.1.x, and Go 1.26+ is required since v2.0.10). v2.1.0 (October 2026) is additive: `View.ProgramStatus` reports idle/working/blocked/done/error to terminals that support OSC 7501 program-status reporting. The status is not cleared on exit, so report Done, Error, or Idle before quitting rather than leaving working or blocked behind ([`tea.go`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go)). What changed and why it matters:
+- **New renderer** — Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
+- **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback: `tea.KeyboardEnhancementsMsg` arrives only if the terminal answers (possibly after the first frame), so accept `shift+enter` and a fallback such as `ctrl+j` always, but show the `shift+enter` hint only once `msg.SupportsKeyDisambiguation()` is true.
+- **Import path moved** to `charm.land/bubbletea/v2`. All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish, glamour, log, fang — keep them on the same major. Lower-level pieces (`colorprofile`, `ultraviolet`, `x/*`) stay on `github.com/charmbracelet/...` paths.
+
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched, so start new projects on v2. What breaks layouts and compiles ([Bubbles upgrade guide](https://github.com/charmbracelet/bubbles/blob/v2.2.1/UPGRADE_GUIDE_V2.md)):
+
+| Area | v1 | v2 |
+|---|---|---|
+| Bubble Tea | `View() string`, `tea.KeyMsg`, `tea.WithAltScreen()` | `View() tea.View`, `tea.KeyPressMsg`, `v.AltScreen = true` |
+| Lipgloss sizing | `Width`/`Height` exclude the border | they include border and padding (see Lipgloss) |
+| Lipgloss color | `AdaptiveColor`, `SetColorProfile` | `LightDark`; print with `lipgloss.Println` |
+| Bubbles sizing | `m.Width = n`; `viewport.New(w, h)` | `m.SetWidth(n)` / `m.Width()`; `viewport.New(viewport.WithWidth(w), viewport.WithHeight(h))` |
+| Bubbles keymaps | `textinput.DefaultKeyMap` (var) | `DefaultKeyMap()` (func; also `paginator`, `textarea`) |
+| Bubbles styles | `list.DefaultStyles()`, auto-adapting colors | `help.DefaultStyles(isDark)`, `list.DefaultStyles(isDark)`, `list.NewDefaultItemStyles(isDark)` |
+| Bubbles constructors | `NewModel()` | `New()` |
+
+The setter change covers `filepicker`, `help`, `progress`, `table`, `textinput`, and `viewport`; `list` already used `SetSize`.
+
+**The mental model:** one `Model` struct holds all state and `Init` returns the first Cmd (or `nil`). `Update(msg)` is the only place state changes. `View()` returns the whole frame as a `tea.View` (content plus alt screen, mouse mode, cursor), which Bubble Tea diffs into minimal ANSI. Side effects live in `tea.Cmd`s whose messages return through `Update`.
+
+```go check=go/counter
+type model struct {
+    count int
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyPressMsg:  // KeyMsg is an interface in v2; msg.Code/msg.Text replace Type/Runes
+        switch msg.String() {
+        case "q", "ctrl+c":
+            return m, tea.Quit
+        case "+", "right", "l":
+            m.count++
+        case "-", "left", "h":
+            m.count--
+        }
+    }
+    return m, nil
+}
+
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
+}
+
+func main() {
+    p := tea.NewProgram(model{})
+    if _, err := p.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+### Lifecycle and terminal handoff
+
+Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+
+| Boundary | Bubble Tea v2 contract |
+|---|---|
+| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler turns external SIGINT/SIGTERM into managed termination. Do not call `os.Exit` from `Update`. |
+| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error (or, after child success, a restoration error) through the callback message. In that callback, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+| Foreground suspend | Bubble Tea never binds Ctrl+Z for you: return `tea.Suspend` from your own `"ctrl+z"` key-press case (see the key-routing sample under Bubbles). After the Unix job resumes, handle `tea.ResumeMsg` to reload state that changed while away. Suspend is unsupported on Windows, so never require it. |
+
+`Program.ReleaseTerminal()` / `RestoreTerminal()` is a temporary handoff escape hatch. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
+
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`. Inline is the default, and because these fields are read every frame, an app can switch between inline and the alternate screen at runtime. **Important options:** `tea.WithInput(reader)` / `tea.WithOutput(writer)` (testing, Wish) and `tea.WithColorProfile(p)` (force a color profile, e.g. golden-file tests).
+
+**Async via Cmds:**
+```go check=go/fetch-cmd
+func fetchData() tea.Msg {
+    resp, err := http.Get(url)
+    if err != nil { return errMsg{err} }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body) // *http.Response is not the data
+    if err != nil { return errMsg{err} }
+    return dataMsg{body}
+}
+
+// In Update, when you want to fetch:
+return m, fetchData
+```
+
+`tea.Cmd` is `func() tea.Msg`. The runtime calls them in goroutines and routes the returned `Msg` back through `Update`. **Never block in `Update`** — anything I/O goes in a Cmd. Use `tea.Batch(cmds...)` for parallel commands and `tea.Sequence(cmds...)` for ordered ones.
+
+**Pitfalls:**
+- `len(string)` ≠ display width. Use `lipgloss.Width()`, which handles CJK/emoji via `charmbracelet/x/ansi` grapheme clustering.
+- Goroutines never call `View()` directly — send via `program.Send(msg)`.
+- Don't `fmt.Println` while the program runs. For permanent lines above an inline UI, return `tea.Println(...)`/`tea.Printf(...)` (no-ops on the alt screen); for diagnostics, see **Debugging**.
+
+---
+
+## Lipgloss (charmbracelet/lipgloss)
+
+CSS-in-Go declarative styling — immutable `Style` values rendered to ANSI strings. The companion to Bubble Tea, but usable standalone.
+
+```go check=go/lipgloss-style
+var titleStyle = lipgloss.NewStyle().
+    Bold(true).
+    Foreground(lipgloss.Color("#FAFAFA")).
+    Background(lipgloss.Color("#7D56F4")).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder()).
+    BorderForeground(lipgloss.Color("63"))
+
+lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the terminal; fmt.Println would not
+```
+
+**Layout helpers:** `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` (side-by-side), `lipgloss.JoinVertical(lipgloss.Left, a, b, c)` (stacked), `lipgloss.Place(width, height, hPos, vPos, content)` (center/anchor in a box), and `lipgloss.Width(s)` / `lipgloss.Height(s)` (measure rendered output, skipping ANSI and counting wide graphemes).
+
+**Sizing:** in v2, `Width`/`Height` are the total block size, border and padding included (`// Include borders in block size` in [`style.go`](https://github.com/charmbracelet/lipgloss/blob/v2.0.6/style.go)). In v1 the border sat outside ([v1.1.0](https://github.com/charmbracelet/lipgloss/blob/v1.1.0/style.go)), so carried-over math such as `Width(w - 2)` for a bordered pane now comes out 2 cells too narrow. Margins stay outside. Text wraps at `Width` minus border and padding.
+
+```go check=go/lipgloss-block-size
+box := lipgloss.NewStyle().
+    Width(20).Height(5).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder())
+
+out := box.Render("hello") // lipgloss.Width(out) == 20, lipgloss.Height(out) == 5; v1 gave 22x7
+inner := 20 - box.GetHorizontalBorderSize() - box.GetHorizontalPadding() // 16 text columns
+```
+
+**No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
+
+```go check=go/window-size
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.leftPaneWidth = msg.Width / 3
+    m.rightPaneWidth = msg.Width - m.leftPaneWidth
+```
+
+**Overlays and hit-testing.** Draw layers: `lipgloss.NewLayer(s).ID("dialog").X(x).Y(y).Z(1)`, then `lipgloss.NewCompositor(layers...).Render()` is the frame. `Compositor.Hit(x, y)` returns the top-most layer *with an ID* at a cell, so ID every layer a click can land on. `Z` is compared as written, not added to the parent's (despite the doc comment), and ties have no defined order, so use distinct values. Size the base layer to the window; an overhanging layer grows the frame. `v.OnMouse` runs against the last drawn frame, so its closure can query the compositor built in that `View`; `Update` still gets the raw `MouseClickMsg`, so handle each click in one place.
+
+```go check=go/overlay
+func (m model) View() tea.View {
+    base := lipgloss.NewStyle().Width(m.width).Height(m.height).Render(m.body)
+    layers := []*lipgloss.Layer{lipgloss.NewLayer(base).ID("base")}
+    if m.dialog != "" {
+        box := dialogStyle.Render(m.dialog)
+        x, y := (m.width-lipgloss.Width(box))/2, (m.height-lipgloss.Height(box))/2
+        layers = append(layers, lipgloss.NewLayer(box).ID("dialog").X(x).Y(y).Z(1))
+    }
+    comp := lipgloss.NewCompositor(layers...)
+    v := tea.NewView(comp.Render())
+    v.MouseMode = tea.MouseModeCellMotion
+    v.OnMouse = func(msg tea.MouseMsg) tea.Cmd {
+        if c, ok := msg.(tea.MouseClickMsg); ok {
+            id := comp.Hit(c.X, c.Y).ID() // "" when no layer with an ID is there
+            return func() tea.Msg { return hitMsg(id) }
+        }
+        return nil
+    }
+    return v
+}
+```
+
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants. Standalone (no Bubble Tea running):
+```go check=go/light-dark
+hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+lightDark := lipgloss.LightDark(hasDark)
+fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
+```
+Inside a running Bubble Tea program, don't call `HasDarkBackground`: its terminal query competes with Bubble Tea for input. Return `tea.RequestBackgroundColor` from `Init`, then handle `case tea.BackgroundColorMsg:` with `lipgloss.LightDark(msg.IsDark())` and rebuild your styles. Render a default palette first and treat the reply as an upgrade: it may never arrive (since v2.0.10 `tea.WithInput(nil)` skips all terminal queries, and some terminals don't answer OSC 11).
+The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
+
+**Sub-packages:** `lipgloss/table` (bordered tables with column alignment), `lipgloss/list` (bullet/numbered lists with custom enumerators), `lipgloss/tree` (hierarchical trees).
+
+---
+
+## Bubbles (charmbracelet/bubbles)
+
+The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you embed and forward messages to.
+
+**Components shipped:**
+- **`textinput`** — single-line input with placeholder, suggestions, validation. **`textarea`** — multi-line input with optional line numbers; v2.2+ adds text selection, copy/cut and word motion.
+- **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering. **`table`** — virtualized table with row selection (no built-in sorting; sort the rows yourself).
+- **`tree`** — navigable hierarchical tree, rendered with `lipgloss/tree`. **`viewport`** — scrollable region for long content.
+- **`spinner`** — prebuilt sets (`Line`, `Dot`/`MiniDot` braille, `Pulse`, …) or custom frames. **`progress`** — gradient bar with percent. **`paginator`**, **`filepicker`**, **`cursor`**, **`stopwatch`**, **`timer`**.
+- **`help`** — auto-rendered footer hint bar from a `key.KeyMap`. **`key`** — declarative key bindings.
+
+```go check=go/bubbles-embedding
+type model struct {
+    list list.Model
+    keys keyMap
+    help help.Model
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg)  // forward to child
+    return m, cmd
+}
+
+func (m model) View() tea.View {
+    // Bubbles still return strings; the parent wraps them in a tea.View.
+    return tea.NewView(m.list.View() + "\n" + m.help.View(m.keys))
+}
+```
+
+**Declarative keys with `key.Binding`:**
+
+```go check=go/key-bindings
+type keyMap struct {
+    Up   key.Binding
+    Down key.Binding
+    Quit key.Binding
+}
+
+var keys = keyMap{
+    Up:   key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
+    Down: key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
+    Quit: key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+}
+
+// In Update (tea.KeyMsg is an interface in v2 that also matches releases; switch on presses):
+case tea.KeyPressMsg:
+    switch {
+    case key.Matches(msg, keys.Quit):
+        return m, tea.Quit
+    case key.Matches(msg, keys.Up):
+        // ...
+    }
+```
+
+**v2 sizing and styles.** Exported `Width`/`Height` fields became getter/setter pairs, and style constructors take the background. `help.New()` and `list.NewDefaultDelegate()` assume a dark background, so apply the real one when `tea.BackgroundColorMsg` arrives (see **Light/dark theming**):
+
+```go check=go/bubbles-v2-api
+m.viewport = viewport.New(viewport.WithWidth(80), viewport.WithHeight(24)) // v1: viewport.New(80, 24)
+m.input = textinput.New()
+m.input.SetWidth(40)                                                       // v1: m.input.Width = 40
+m.input.KeyMap = textinput.DefaultKeyMap()                                 // v1: a package var
+
+// In Update
+switch msg := msg.(type) {
+case tea.WindowSizeMsg:
+    m.help.SetWidth(msg.Width)                   // v1: m.help.Width = msg.Width
+    m.viewport.SetWidth(msg.Width)               // Width() and Height() are getters now
+    m.viewport.SetHeight(msg.Height - 2)
+    m.list.SetSize(msg.Width, msg.Height-2)
+case tea.BackgroundColorMsg: // Init returned tea.RequestBackgroundColor
+    isDark := msg.IsDark()
+    m.help.Styles = help.DefaultStyles(isDark)
+    m.list.Styles = list.DefaultStyles(isDark)
+    d := list.NewDefaultDelegate()
+    d.Styles = list.NewDefaultItemStyles(isDark)
+    m.list.SetDelegate(d)
+}
+```
+
+**First frame and spinners.** The program starts with no size and Bubbles never read `WindowSizeMsg` themselves: a zero-sized `list` renders a broken fragment, a zero-sized `viewport` nothing. Forward the size to every child and return a placeholder from `View` until it arrives. `spinner` has no `Init`: your `Init` must return `m.spinner.Tick` (the method value is the Cmd), and it keeps moving only while its `spinner.TickMsg` reaches `spinner.Update` and the returned Cmd is kept. `timer` and `stopwatch` have an `Init()` that starts them.
+
+```go check=go/first-frame
+func (m model) Init() tea.Cmd { return tea.Batch(m.spinner.Tick, m.timer.Init()) }
+
+// In Update
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.list.SetSize(msg.Width, msg.Height-1)
+case spinner.TickMsg:
+    m.spinner, cmd = m.spinner.Update(msg) // drop this Cmd and the spinner stops
+
+func (m model) View() tea.View {
+    if m.width == 0 { // no WindowSizeMsg yet: every child is zero-sized
+        return tea.NewView("loading…")
+    }
+    return tea.NewView(m.spinner.View() + "\n" + m.list.View())
+}
+```
+
+**Route keys to the focused child.** A global `q` handler quits while the user is typing "q" into a list's filter. Check `FilterState() == list.Filtering` before single-character global keys; modified keys (Ctrl+C, Ctrl+Z) stay global. The list also quits on `q` itself while browsing (it disables that while filtering); call `DisableQuitKeybindings()` if the parent owns quitting.
+
+```go check=go/list-filter-keys
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if k, ok := msg.(tea.KeyPressMsg); ok {
+        switch k.String() {
+        case "ctrl+c":
+            return m, tea.Quit
+        case "ctrl+z":
+            return m, tea.Suspend // Bubble Tea does not bind this for you
+        case "q":
+            if m.list.FilterState() != list.Filtering { // otherwise "q" is filter text
+                return m, tea.Quit
+            }
+        }
+    }
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg) // everything else goes to the focused child
+    return m, cmd
+}
+```
+
+The `help` Bubble renders the footer from these bindings: `help.View(m.keys)` needs `keyMap` to implement `help.KeyMap`:
+
+```go check=go/help-keymap
+func (k keyMap) ShortHelp() []key.Binding  { return []key.Binding{k.Up, k.Down, k.Quit} }
+func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Down}, {k.Quit}} }
+```
+
+**Real cursor.** `textinput` and `textarea` draw a virtual cursor (a styled cell) and leave the terminal's cursor hidden, but IME composition windows and screen readers follow the terminal cursor. For text entry call `SetVirtualCursor(false)` and set `v.Cursor = m.input.Cursor()`, adding the input's offset in the frame (`Cursor()` is relative to the input). It is nil while blurred, so blur the input when an overlay covers it. `textinput.Cursor()` counts runes, not cells (v2.2.1): each wide CJK or emoji rune leaves the caret a cell short; `textarea` counts cells.
+
+```go check=go/real-cursor
+m.input = textinput.New()
+m.input.SetVirtualCursor(false) // the terminal cursor is the caret now
+m.input.Focus()                 // Cursor() is nil while blurred
+
+// In View
+v := tea.NewView("Search\n" + m.input.View())
+if c := m.input.Cursor(); c != nil {
+    c.Y++ // one title line above the input
+    v.Cursor = c
+}
+```
+
+---
+
+## Huh (charmbracelet/huh)
+
+Forms on top of Bubble Tea, for one-shot prompts (wizards) and embeddable form panes. Huh v2 (`charm.land/huh/v2`) is built on Bubble Tea v2 — built-in themes are now `func(isDark bool) *Styles`; wrap one as a `huh.Theme` with `form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))`. Huh takes `isDark` from the `tea.BackgroundColorMsg` it receives but v2.0.3 never requests one, so an embedding parent must return `tea.RequestBackgroundColor` from its own `Init` and forward the reply. A standalone `form.Run()` has no parent to ask and always renders the light variant ([huh#834](https://github.com/charmbracelet/huh/issues/834)); detect the background first (`lipgloss.HasDarkBackground(os.Stdin, os.Stdout)` is safe before any Bubble Tea program runs) and pin it with `huh.ThemeFunc(func(bool) *huh.Styles { return huh.ThemeCharm(isDark) })`. `.WithTheme(huh.ThemeCharm(isDark))`, as shown in Huh's upgrade guide, does not compile against v2.0.3.
+
+```go check=go/huh-form
+form := huh.NewForm(
+    huh.NewGroup(
+        huh.NewSelect[string]().
+            Title("Choose your country").
+            Options(huh.NewOptions("USA", "Germany", "Japan")...).
+            Value(&country),
+        huh.NewInput().
+            Title("What's your name?").
+            Value(&name).
+            Validate(func(s string) error {
+                if len(s) == 0 { return errors.New("required") }
+                return nil
+            }),
+        huh.NewConfirm().
+            Title("Submit?").
+            Value(&confirm),
+    ),
+)
+err := form.Run()
+```
+
+Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect[T]`, `NewConfirm`, `NewFilePicker`, `NewNote` (display-only).
+
+**Dynamic forms:** huh's real mechanism is **`Group.WithHideFunc(func() bool)`**, which hides or shows a whole group (a step's worth of fields) from a predicate re-evaluated as form state changes. Per-field hiding is not shipped (open feature requests only), so don't present it as available. To recompute one field from another's value, use `OptionsFunc`/`TitleFunc`/`DescriptionFunc`: a callback plus the fields it depends on, re-run automatically:
+
+```go check=go/huh-options-func
+huh.NewSelect[string]().
+    OptionsFunc(func() []huh.Option[string] {
+        return huh.NewOptions(statesForCountry(country)...)
+    }, &country) // recomputed whenever `country` changes
+```
+
+**Accessibility:** `form.WithAccessible(true)` bypasses Bubble Tea and asks each field as a plain line-by-line prompt: a numbered list for `Select` (the user types the number), numbers toggled one at a time and `0` to finish for `MultiSelect`, `y`/`n` for `Confirm`, with validation errors printed before the prompt repeats. Huh turns it on by itself only for `TERM=dumb`, so expose your own switch (the README reads `ACCESSIBLE`; gh's `GH_ACCESSIBLE_PROMPTER` drives this mode). Bubble Tea and Bubbles have nothing comparable, so the rest of the app needs its own linear mode; see `visual-patterns.md` → *Accessibility*.
+
+**Full-screen:** `tea.WithAltScreen()` is gone in v2 — declare it on the view instead: `form.WithViewHook(func(v tea.View) tea.View { v.AltScreen = true; return v })`.
+
+**Embedding in Bubble Tea:** `(*huh.Form).Update` returns `(huh.Model, tea.Cmd)`, so assert back: `f, cmd := m.form.Update(msg); if ff, ok := f.(*huh.Form); ok { m.form = ff }`. The parent wraps `Form.View()`'s string in its own `tea.NewView` and checks `m.form.State` (`huh.StateCompleted`/`huh.StateAborted`) to leave the form.
+
+---
+
+## Other Charm libraries worth knowing
+
+- **Glamour** (`charm.land/glamour/v2`) — render Markdown to ANSI. v2 is pure: `WithAutoStyle` and `WithColorProfile` are gone, the default style is `"dark"` (pass `"light"` yourself after detecting the background), and output is downsampled only when printed via `lipgloss.Print`. `gh` renders PR and issue Markdown with it (moved to Glamour v2 in [cli/cli#14148](https://github.com/cli/cli/pull/14148), shipped in v2.103.2).
+- **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH. Build each program with `bubbletea.MakeOptions(sess)` (the `bubbletea.Middleware` handler applies it for you) so input, output, and color-profile detection follow the *client's* PTY, not the server's (the v1 `MakeRenderer` helper is gone because Lipgloss v2 no longer owns terminal I/O). `MakeOptions` also installs its own `tea.WithFilter` (ctrl+z suspend becomes resume), and the default `Middleware` appends it after your options, overwriting any filter you set; to keep yours, use `MiddlewareWithProgramHandler` and chain them.
+- **gum** — Bubble Tea components for shell scripts (`gum choose|input|confirm|spin`): huh-quality prompts without writing Go. **VHS** records `.tape` scripts to GIFs for documentation.
+
+---
+
+## tview (rivo/tview)
+
+Retained-mode and callback-based, ncurses-style. Built on **tcell v2**. Tags are rare (last v0.42.0, August 2025) and the README installs with `go get github.com/rivo/tview@master`. Powers **k9s** (via derailed's forks).
+
+**Widgets:** `TextView`, `TextArea`, `InputField`, `Table`, `TreeView`, `List`, `Form`, `Image`, `Modal`, `DropDown`, `Button`, `Checkbox`. **Layout:** `Flex` (one-dimensional), `Grid` (two-dimensional), `Pages` (modal/swap views).
+
+```go check=go/tview-hello
+app := tview.NewApplication()
+list := tview.NewList().
+    AddItem("First", "First item", 'a', nil).
+    AddItem("Quit", "Quit app", 'q', func() { app.Stop() })
+if err := app.SetRoot(list, true).Run(); err != nil {
+    panic(err)
+}
+```
+
+**Threading rule:** any modification to a primitive from a goroutine must go through `app.QueueUpdate(func)` or `app.QueueUpdateDraw(func)`, which run `func` on the main loop. A bare `app.Draw()` from a goroutine is safe (it only schedules a repaint) but does not synchronize your data. The #1 tview pitfall is the opposite direction: calling `Draw()`, `QueueUpdate()`, or `QueueUpdateDraw()` from *inside* an event handler already running on the main goroutine (a key handler, `SetSelectedFunc`) blocks forever, per the tview Concurrency wiki.
+
+**When to choose tview over Bubble Tea:** many widgets must coexist (a "form with 12 fields, table, sidebar"), the team prefers callbacks to message-passing, or you're already on tcell. Bubble Tea suits state-heavy apps but you assemble layout yourself; tview gives more widgets with less code.
+
+---
+
+## gocui (awesome-gocui/gocui)
+
+Minimalist views-as-buffers, each `View` an `io.Writer`: the aesthetic of **lazygit** and **lazydocker**.
+
+**Mental model:** a `Manager` function lays out the views on every redraw (you compute coordinates from `g.Size()`); each view has a name, a position, a buffer you write to, and its own keybindings.
+
+```go check=go/gocui-hello
+g, _ := gocui.NewGui(gocui.OutputNormal, true)
+defer g.Close()
+
+g.SetManagerFunc(func(g *gocui.Gui) error {
+    maxX, maxY := g.Size()
+    if v, err := g.SetView("hello", maxX/2-7, maxY/2, maxX/2+7, maxY/2+2, 0); err != nil {
+        if !errors.Is(err, gocui.ErrUnknownView) { return err }
+        fmt.Fprintln(v, "Hello, World!")
+    }
+    return nil
+})
+
+g.SetKeybinding("", 'q', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+    return gocui.ErrQuit
+})
+
+g.MainLoop()
+```
+
+**When to choose gocui:** rarely, to maintain an existing app or for its views-as-buffers API. Use `awesome-gocui/gocui` (v1.1.0, 2022; tcell v2). `jesseduffield/gocui` is effectively retired: in April 2026 lazygit copied its fork into `lazygit/pkg/gocui` and moved to tcell v3. For a new lazy-style app (persistent panes, numeric pane keys, single-letter context actions), use Bubble Tea and borrow lazygit's interaction design, not its library.
+
+---
+
+## Lower-level: tcell
+
+`gdamore/tcell` is the long-standing low-level Go terminal library: pure Go, cross-platform, mouse and SGR support. v3 (December 2025) removed terminfo and the termbox compatibility layer and changed the key and cell APIs; tview still uses `tcell/v2`, while lazygit has moved to v3. Use it directly only when building a framework or a custom rendering pipeline; most apps should use Bubble Tea or tview. **Ultraviolet** (`charmbracelet/ultraviolet`), the untagged renderer under Bubble Tea v2, is the same tier; its README warns the API may change.
+
+---
+
+## CLI framing: Cobra and urfave/cli
+
+**Cobra** (`spf13/cobra`) — the dominant subcommand framework for Go. Powers kubectl, gh, hugo, helm, docker. Struct-literal command tree:
+
+```go check=go/cobra-commands
+var rootCmd = &cobra.Command{
+    Use:   "myapp",
+    Short: "A short description",
+}
+
+var listCmd = &cobra.Command{
+    Use:   "list",
+    Short: "List items",
+    Run:   func(cmd *cobra.Command, args []string) { /* ... */ },
+}
+
+func init() {
+    rootCmd.AddCommand(listCmd)
+}
+```
+
+**Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. `PreRun` output is hidden behind the alt screen and reappears at exit; writing to stdout while `Run` is active is what corrupts the frame. Gate the TUI on **stdout** being a terminal (`isatty.IsTerminal(os.Stdout.Fd())`): under `$(myapp)` or `myapp | less` the frame would become data, so print plain output, or draw the UI on stderr with `tea.WithOutput(os.Stderr)` and print only the answer to stdout, as gum does. Piped stdin doesn't stop the TUI (Bubble Tea v2 opens `/dev/tty` for keys); decide separately whether piped input means non-interactive mode.
+
+Since v1.2 Cobra adds a working `completion` subcommand to every root command (hidden when there are no other subcommands). Do not scaffold your own; it would shadow the built-in. Users run `myapp completion bash|zsh|fish|powershell`; customize or disable the default via `rootCmd.CompletionOptions`. `cobra-cli completion ...` completes the generator tool, not your application.
+
+**Fang** (`charm.land/fang/v2`) — an experimental starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation.
+
+**urfave/cli** (`github.com/urfave/cli/v3`; v3 has been the stable line since 2025, v2 is maintenance-only) — alternative subcommand framework with a simpler API. **Kong** (`alecthomas/kong`, struct-tag driven) is a third choice; for one-shot flag parsing the stdlib `flag` package is fine.
+
+**Pretty output without a TUI:** when the user wants pretty CLI output (no full-screen UI), use **lipgloss** standalone with `lipgloss.Println(style.Render(...))`, not `fmt.Println`: in v2 `Render` always emits truecolor, and only `Print*`/`Sprint*`/`Fprint*` downsample and honor `NO_COLOR`, as most Charm CLI tools do. **pterm** bundles color, tables, spinners, progress bars, and prompts; **fatih/color** is plain ANSI color (`color.Red("hello")`).
+
+---
+
+## Testing
+
+**Test in layers, bottom-heavy.** Charm's flagship v2 app (crush) uses zero teatest: it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base; the harness is the thin top.
+
+**Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
+
+```go check=go/update-test
+func TestQuitKey(t *testing.T) {
+    m := newModel()
+    updated, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"}) // v2 rune key
+    m = updated.(model)
+    if cmd == nil { t.Fatal("expected quit cmd") }
+}
+```
+
+v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials are `tea.KeyPressMsg{Code: tea.KeyEnter}`, modifiers use `Mod: tea.ModCtrl`. To test a returned Cmd, call it and assert on the message (`tea.QuitMsg` for quit; `tea.BatchMsg` is an exported `[]Cmd` you can unpack and run).
+
+**Layer 2 — teatest** runs the real program against in-memory buffers (no PTY, works in bare CI containers). For Bubble Tea v2 import `github.com/charmbracelet/x/exp/teatest/v2` — teatest did **not** move to charm.land; plain `x/exp/teatest` is the v1 line. Both are pseudo-versioned; teatest/v2 is the official harness.
+
+```go check=go/teatest
+tm := teatest.NewTestModel(t, newModel(),
+    teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
+    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.ASCII)), // v2 only
+)
+teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+    return bytes.Contains(b, []byte("ready"))
+}, teatest.WithDuration(5*time.Second)) // defaults (1s timeout, 50ms poll) are tight for CI
+tm.Type("hello")                        // v2: emits one KeyPressMsg per rune
+tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+out, _ := io.ReadAll(tm.FinalOutput(t))
+teatest.RequireEqualOutput(t, out) // golden file: testdata/<TestName>.golden
+```
+
+Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` block forever without it. Goldens hold raw bytes, escape sequences included. Refresh with `go test ./... -update` and add `*.golden -text` to `.gitattributes` so git never rewrites them.
+
+**Test at the contract sizes:** golden-test 80×24, 60 columns, and your declared minimum (one golden per size, e.g. `TestView/60x24`), and send `tea.WindowSizeMsg{Width: 60, Height: 24}` to `Update` (or `tm.Send(...)` mid-run) to assert the layout reflows rather than keeping the startup width. **Determinism in CI:** the #1 golden-file flake is color-profile detection: v2 wraps output in a `colorprofile.Writer`, so escapes vary with `TERM`/`COLORTERM`/`NO_COLOR`. Pin the profile (`tea.WithColorProfile(colorprofile.ASCII)`, v2-only; on v1 `lipgloss.SetColorProfile(termenv.Ascii)`) and the term size, or goldens will flap.
+
+**E2E:** teatest deliberately avoids PTYs and Go PTY/expect practice is thin. For real-terminal visual regression, use VHS golden output (`Output golden.ascii` in a tape), which needs `ttyd` and `ffmpeg` (`charmbracelet/vhs-action` for CI).
+
+---
+
+## Debugging
+
+**stdout is off-limits while the program runs**: Bubble Tea holds the terminal in raw mode, so `fmt.Println` output is swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
+
+```go check=go/log-to-file
+if len(os.Getenv("DEBUG")) > 0 {
+    f, err := tea.LogToFile("debug.log", "debug")
+    if err != nil {
+        fmt.Fprintln(os.Stderr, "fatal:", err) // otherwise logs land in the TUI
+        os.Exit(1)
+    }
+    defer f.Close()
+}
+```
+
+Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another; `log.Println` anywhere lands in the file, and `tea.LogToFileWith` takes a custom logger. **Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless (`dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`) and `dlv connect 127.0.0.1:43000` from a second terminal.
+
+**Profiling a sluggish TUI:** serve `net/http/pprof` on a loopback port rather than file-based `pprof.StartCPUProfile`: a background goroutine on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there is no SIGINT/flush ceremony. Gate it behind an env var:
+
+```go check=go/pprof
+import (
+    "net/http"
+    _ "net/http/pprof"
+)
+if os.Getenv("MYAPP_PROFILE") != "" {
+    go func() { http.ListenAndServe("localhost:6060", nil) }()
+}
+```
+
+Then `go tool pprof -http=:8080 http://localhost:6060/debug/pprof/profile` from a second terminal. The usual cost sink is uncached work in `View()` (recomputed `lipgloss.Width()` calls, string rebuilds).
+
+---
+
+## Cross-platform notes
+
+Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows. Target Windows Terminal (Windows 10+; older `cmd.exe` lacks some ANSI) and test mouse events there if Windows is supported. Signals, `WT_SESSION`, Unicode output, multiplexer keys: `terminal-protocols.md` → *Terminal environments*.
+
+---
+
+exec
+/bin/zsh -lc "sed -n '/"'^## Testing one-shot CLIs/,/''^## Future-proofing/p'"' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i6_mq9a0
+ succeeded in 0ms:
+## Testing one-shot CLIs
+
+Test the built binary as a black box on three channels: **stdout, stderr, and the exit code**. Add cases for no TTY (the default under a test runner) and for `NO_COLOR`, and keep golden files for text only, not color escapes.
+
+| Stack | Tool |
+|---|---|
+| Go | [`testscript`](https://github.com/rogpeppe/go-internal/blob/v1.16.0/testscript/doc.go). `! exec` asserts only non-zero, so add a small custom command to check an exact code |
+| Rust | `trycmd` (`.toml` and `.trycmd` cases), `snapbox`, or `assert_cmd` |
+| Click | `click.testing.CliRunner`: `result.stdout`, `result.stderr`, and `result.output` (interleaved) since Click 8.2 |
+| Typer | `typer.testing.CliRunner` (Typer 0.26+ vendors Click) |
+
+```
+# testdata/basic.txtar  (testscript)
+exec mytool ann
+stdout '^hello ann\n$'
+! stderr .
+! exec mytool bad
+! stdout .
+stderr '^error: cannot read bad: no such file\n$'
+env NO_COLOR=1
+exec mytool ann
+! stdout '\x1b'
+```
+
+```python
+r = CliRunner().invoke(cli, ["bad"])
+assert (r.exit_code, r.stdout, r.stderr) == (1, "", "error: cannot read bad: no such file\n")
+```
+
+---
+
+## Future-proofing
+
+codex
+Test the **built binary as a black box**, checking **stdout, stderr, and the exact exit code separately**. For a one-shot CLI, ordinary subprocess tests are usually enough; add PTY tests only if behavior depends on a real terminal.
+
+In Go, start with `testing` and `os/exec`. Build once for the suite, then run table-driven cases against that executable. Avoid `go run`: it adds build overhead and can obscure the program’s exit status.
+
+A small helper makes the contract explicit:
+
+```go
+func runCLI(t *testing.T, binary string, args ...string) (string, string, int) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, binary, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if ctx.Err() != nil {
+		t.Fatalf("CLI timed out: %v", ctx.Err())
+	}
+
+	code := 0
+	if err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			t.Fatalf("could not run CLI: %v", err)
+		}
+		code = exitErr.ExitCode()
+	}
+	return stdout.String(), stderr.String(), code
+}
+```
+
+Use cases like these, adjusted to your documented behavior:
+
+| Case | stdout | stderr | Exit |
+|---|---|---|---|
+| Success | Expected result | Empty | `0` |
+| `--help` | Help text | Empty | `0` |
+| Invalid flag or missing argument | Empty | Usage diagnostic | `2` |
+| Operational failure | Empty* | Useful error | `1` |
+| `--json` | Valid JSON with expected fields | No diagnostic on success | `0` |
+| Redirected output | Plain results, no escape sequences | Plain diagnostics | As appropriate |
+| `NO_COLOR=1` | No color escapes | No color escapes | As appropriate |
+
+\*If partial results are supported, test that contract explicitly.
+
+For assertions:
+
+- **Small output:** compare exact strings, including trailing newlines and empty streams.
+- **Long help or reports:** use separate `.stdout.golden` and `.stderr.golden` files, plus an exact exit-code assertion.
+- **JSON:** decode and compare values; avoid depending on whitespace or object-key order.
+- **Changing values:** control clocks, fixtures, environment, configuration directories, and working directory. Normalize only unavoidable differences.
+
+Run both a normal non-TTY case and an explicit `NO_COLOR=1` case. Don’t strip ANSI before checking plain output—that could hide a regression.
+
+If the suite grows into many filesystem scenarios, use [`testscript`](https://pkg.go.dev/github.com/rogpeppe/go-internal/testscript). It provides readable scripts and isolated fixtures. One important detail: **`! exec` checks only that the command failed**, so add a custom assertion for exact exit codes.
+
+Keep most logic tests fast by extracting a function such as `run(args, stdin, stdout, stderr) int`, with `os.Exit` confined to `main`. Retain binary tests to verify the actual stream wiring and process exit behavior.
+tokens used
+18,471

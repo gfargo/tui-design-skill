@@ -1,0 +1,300 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-routing-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "tmux-flicker-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Step 3 wraps each frame in ESC[?2026h \u2026 ESC[?2026l so the terminal shows it all at once, and detects support by sending the CSI ? 2026 $ p query (DECRQM) with a timeout."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States tmux support starts at 3.7, and separately recommends one write per frame, writing only changed cells, and hiding the cursor while drawing."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Explicitly says to always send the closing `l`, including on error paths, or the screen freezes until the terminal times out."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Lowering maxFps appears only as a minor Ink tip; the main fixes are diffing, single writes, synchronized output and redrawing only on change."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-flicker-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Step 4 recommends wrapping each frame in CSI ? 2026 h/l and says support can be checked with DECRQM (CSI ? 2026 $ p)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It states tmux supports mode 2026 from 3.7, and its steps cover writing each frame in a single write, sending only changed cells, and hiding the cursor while drawing, all as things that must work without sync."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explicitly says to always send the end marker, including on error paths, and explains the freeze that happens otherwise."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Rendering less often is step 6 of six, after the diffing, single-write and sync fixes, so it is not the only fix."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-flicker-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer wraps each frame in `CSI ? 2026 h` / `CSI ? 2026 l` and checks support with `CSI ? 2026 $ p`, which is the DECRQM query, though it doesn't name it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says synchronized output passes through only in tmux 3.7+, and recommends sending only changed cells, writing each frame in one write, and hiding the cursor while drawing."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explicitly says to always send the end sequence, including on error paths, and warns the screen otherwise stays frozen until the terminal's timeout."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer mentions capping bursts at about 30 fps only as a secondary step; its main fixes are diffing, single writes and synchronized output."
+        }
+      ]
+    },
+    {
+      "trial_id": "shift-enter-missing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that legacy encoding sends `\\r` for both keys. It says Shift+Enter is distinct only under the kitty protocol or modifyOtherKeys, when the terminal supports it and the app enables it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states that tmux's `extended-keys` option is off by default and gives the config to turn it on."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends Ctrl+J as the main fallback and Alt+Enter as a secondary one. It also says to show the newline key in the footer or placeholder hint."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer frames Shift+Enter as a bonus that is accepted alongside Ctrl+J, which works in legacy encoding. It says the app should still work without the enhanced protocol."
+        }
+      ]
+    },
+    {
+      "trial_id": "shift-enter-missing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says legacy encoding sends `\\r` for both keys, that Shift+Enter arrives only after the terminal enables an enhanced protocol, and it names the kitty protocol (with support detection) and modifyOtherKeys."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states tmux's `extended-keys` option is off by default and gives `set -s extended-keys on` plus the terminal-features configuration."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends Ctrl+J and Alt+Enter as newline keys and says to show the key in a placeholder or footer, e.g. `Enter send \u00b7 Ctrl+J newline`."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to accept Shift+Enter only as a shortcut on top of the others and to keep the Ctrl+J path, which works in the legacy encoding."
+        }
+      ]
+    },
+    {
+      "trial_id": "shift-enter-missing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says both keys send `\\r` in the legacy encoding. It says Shift+Enter is distinct only once the kitty protocol is on (with a list of supporting terminals) and that tmux uses modifyOtherKeys/CSI u."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says tmux's `extended-keys` option is off by default and gives the `set -s extended-keys on` config."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer binds Ctrl+J and Alt+Enter as fallbacks and says to show the key in the placeholder or footer, e.g. `Enter send \u00b7 Ctrl+J newline`."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer makes Shift+Enter an extra where supported and calls the legacy-safe fallbacks (Ctrl+J, Alt+Enter, backslash) the real fix."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-and-unicode-routing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer points to the progress and status-line sections and covers a delayed spinner, a static 'Working...' line in plain mode, and status messages that lead with a symbol or word."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says CJK takes 2 cells and emoji widths vary, and it recommends measuring display cells by grapheme cluster."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It covers ambiguous-width characters and suggests narrow alternatives like \u25b8 \u2713 \u2717, plus an ASCII fallback behind one switch."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-and-unicode-routing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The spinner section covers a 100\u2013200ms delay, a single static line in plain/reduced-motion mode, and status messages that start with a symbol or label such as `\u2713 Saved`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains that CJK characters take 2 cells and that emoji come in wide-base and VS16/ZWJ kinds, and it recommends measuring with a grapheme-aware library."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It has a dedicated ambiguous-width rule listing affected glyphs, recommends narrow markers like `\u25b8 \u2713 \u2717`, and says to keep ASCII borders one switch away."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-and-unicode-routing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer covers a 100\u2013200ms spinner delay, a static 'Working...' line in plain or reduced-motion mode, and status messages that start with a symbol such as '\u2713 Saved'."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says CJK is 2 cells and emoji are 1 or 2, says to measure cells rather than bytes, and recommends a grapheme-aware library (lipgloss.Width, string-width)."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It has a full ambiguous-width section, lists narrow alternatives like \u25b8\u25be\u25b4\u25c9\u22c5, and suggests keeping ASCII borders and an ASCII progress bar as a fallback."
+        }
+      ]
+    },
+    {
+      "trial_id": "search-and-multiselect-routing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says `/` filters in a list and searches in a document or log, with `n`/`N` jumping between matches."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Space marks a row when the list has focus, and Tab marks when the filter box has the keyboard, as fzf does."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The header in the layout shows a `12/340` match count, and the answer says Esc clears the filter and returns to the list."
+        }
+      ]
+    },
+    {
+      "trial_id": "search-and-multiselect-routing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says that in a list `/` filters, and that in documents and logs `/` searches with n/N moving between matches."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Space toggles the mark when the list has focus, and Tab/Shift+Tab mark rows while the filter box owns input, including in an fzf-style picker."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It shows a match count such as `12/4,381` and says Esc clears the filter."
+        }
+      ]
+    },
+    {
+      "trial_id": "search-and-multiselect-routing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says documents and logs search with `/` and lists filter with it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The table assigns Tab to marking while the filter box has focus and Space to toggling when the list has focus."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer shows a match count (`23/1,204`) and says Esc clears the filter."
+        }
+      ]
+    }
+  ]
+}

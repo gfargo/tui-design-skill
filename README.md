@@ -240,6 +240,19 @@ The v1.8.0 evidence round ran the v1.7.1 and v1.7.3 correction sets and the thre
 
 On both hosts, every paired repetition favored the with-skill condition. The reports in [`evals/results/v1.8.0-claude-comparison/`](evals/results/v1.8.0-claude-comparison/comparison.md) and [`evals/results/v1.8.0-codex-comparison/`](evals/results/v1.8.0-codex-comparison/comparison.md) give case-level results, variance, and limitations: Claude graded its own family's answers, most with-skill scores sit near the ceiling, and one rubric (`lazygit-config-format`) conflicted with its prompt and has since been corrected. Every with-skill prompt named the skill, so these numbers measure what the skill adds once loaded, not whether it triggers on its own. Eval sets without a recorded run are labelled rubric-only in their `notes`.
 
+The v1.9.0 evidence round ran five new rubric sets (47 cases) written for that release's content on both hosts, three repetitions per case and condition, at one commit and one skill hash. The sets check the facts and defaults the release added, so a baseline that has not seen them scores low; they say nothing about design or build quality in general ([#79](https://github.com/gfargo/tui-design-skill/issues/79) tracks that).
+
+| Eval set | Claude Code, `claude-opus-5-5`: baseline → with skill | Codex CLI, `gpt-6.1-sol` at low effort: baseline → with skill |
+|---|---|---|
+| v1.9.0 layouts, states, and defaults | 53.6% → 95.2% | 40.5% → 91.7% |
+| v1.9.0 interaction guidance | 61.2% → 96.6% | 57.1% → 90.5% |
+| v1.9.0 CLI defaults | 66.7% → 98.4% | 44.7% → 87.0% |
+| v1.9.0 ecosystem gaps | 79.6% → 100.0% | 75.8% → 94.1% |
+| v1.9.0 routing | 59.5% → 100.0% | 19.0% → 92.9% |
+| **All 47 cases** | **67.0% → 98.1%** | **55.3% → 91.2%** |
+
+No case scored lower with the skill, and every paired repetition favored it on both hosts. The reports in [`evals/results/v1.9.0-claude-comparison/`](evals/results/v1.9.0-claude-comparison/comparison.md) and [`evals/results/v1.9.0-codex-comparison/`](evals/results/v1.9.0-codex-comparison/comparison.md) list every assertion the skill still missed. The Codex runs used CLI 0.164.0-alpha.11.1; three of its jobs were rerun in full after a usage limit and the failed attempts were not committed.
+
 ## Reference freshness
 
 The framework references (`plugins/tui-design/skills/tui-design/references/ecosystem-*.md`) carry version-sensitive guidance for Bubble Tea, Ratatui, Textual, and Ink — pinned "current version" claims and tag-pinned source-code citations that can age even though the surrounding design guidance stays correct. `scripts/reference-inventory.json` is the explicit, hand-maintained list of those claims and links; `scripts/check-reference-freshness.py` audits it:

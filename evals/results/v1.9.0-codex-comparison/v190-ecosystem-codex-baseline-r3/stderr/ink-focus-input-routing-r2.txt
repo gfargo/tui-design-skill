@@ -1,0 +1,65 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cgshu0cv
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0d-0ae6-7033-a77c-9dd0514282d4
+--------
+user
+In my Ink 8 app a file list and a search box (@inkjs/ui TextInput) share the screen. I used useFocus in both so Tab switches between them, but typing in the search box also moves the list selection and arrow keys in the list edit the search text. Why, and how do I fix it?
+
+codex
+I’ll check how Ink focus interacts with `useInput` and `@inkjs/ui`’s `TextInput` props.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+`useFocus()` tracks **which component is focused**; it doesn’t automatically restrict keyboard input to that component. `useInput()` listeners remain active unless you explicitly gate them.
+
+Gate the list’s handler with `isActive`, and disable the `TextInput` when its wrapper isn’t focused:
+
+```tsx
+import {useFocus, useInput} from 'ink';
+import {TextInput} from '@inkjs/ui';
+
+function FileList() {
+  const {isFocused} = useFocus({autoFocus: true});
+
+  useInput((input, key) => {
+    if (key.upArrow) {
+      // Move selection up.
+    } else if (key.downArrow) {
+      // Move selection down.
+    }
+  }, {isActive: isFocused});
+
+  return /* your list */;
+}
+
+function SearchBox() {
+  const {isFocused} = useFocus();
+
+  return (
+    <TextInput
+      isDisabled={!isFocused}
+      onChange={query => {
+        // Update search results.
+      }}
+    />
+  );
+}
+```
+
+The two controls use different switches:
+
+- Ink’s `useInput`: **`isActive: isFocused`**
+- `@inkjs/ui`’s `TextInput`: **`isDisabled={!isFocused}`**
+
+Keep both wrappers registered with `useFocus()` so Tab can reach them. Don’t set `useFocus({isActive: isFocused})`: that controls participation in focus navigation and can make an unfocused control unreachable.
+
+Apply the same gating to any other keyboard handlers that should only run while their component is focused.
+tokens used
+3,850

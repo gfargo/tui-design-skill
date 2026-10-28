@@ -1,0 +1,540 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-content-codex-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "floor-sketch-layout-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with 'Use three panes' (sidebar, pod list, details/logs), an IDE-style shape, before explaining sizing and behavior."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Only the wide layout is sketched; there is no sketch at 60 columns or 80x24."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "In prose, it says namespaces collapse into a header selector on narrow terminals, and very small terminals fall back to one pane at a time with a breadcrumb."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "No minimum size or 'terminal too small' state with required dimensions is mentioned."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "The sketch uses Unicode box-drawing characters and glyphs like \u25b6, \u25be, \u2193, with no ASCII fallback named."
+        }
+      ]
+    },
+    {
+      "trial_id": "floor-sketch-layout-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by recommending a three-pane layout (namespaces left, pods center, details and logs right) and explains it afterward."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Only the wide layout is sketched; the narrow sizes are described in prose with no ASCII sketch at 60 or 80 columns."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says namespaces move into a drawer below about 110 columns, and below 80 columns the app switches between the pod list and full-width details as a single pane."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "No minimum size is named, and there is no 'terminal too small' state."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "The sketch uses box-drawing and ambiguous-width glyphs (\u2500, \u2502, \u25cf, \u21b3, \u25be) and names no ASCII fallback."
+        }
+      ]
+    },
+    {
+      "trial_id": "floor-sketch-layout-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by recommending a three-pane layout (namespaces left, pods middle, details right) and explains it afterward."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It sketches only the wide layout; the narrow drawer/switch behavior is described in prose and never drawn at 60 or 80x24."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says namespaces become a drawer and the list and details are toggled below about 110 columns, but there is no sketch of what folds away and no explicit single-pane fallback."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It lists per-pane minimum widths but never names a minimum terminal size or a 'terminal too small' state that reports the needed dimensions."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "The sketch uses Unicode box-drawing and symbols (\u2502, \u2500, \u25cf, \u203a, \u25be, \u2193), and no ASCII fallback is mentioned."
+        }
+      ]
+    },
+    {
+      "trial_id": "state-coverage-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table covers initial load ('Connecting\u2026'), partial load, empty results, server-unavailable errors, stale data, and an explicit minimum-size message for small terminals."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says one unreachable server shouldn't hide the other four, has results appear per server, and shows inline errors with a retry for the affected source; it gives no '4 of 5' count, but the behavior is there."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Stale data keeps the last-known status with 'Last updated 8m ago', but the answer never says to dim or visually de-emphasize it."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Retry and next steps are given for errors, empty results and initial load, but refreshing, partial load and stale data have no action."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It explicitly calls for different treatments 'using text or symbols as well as color.'"
+        }
+      ]
+    },
+    {
+      "trial_id": "state-coverage-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table covers initial loading, refreshing, no builds (empty), partial availability, connection/auth errors, stale results, and a 'terminal too small' fallback."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Partial availability keeps working servers visible, marks errors on the affected rows, and summarizes '4/5 reachable'; the connection-error row adds a manual retry."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Stale results keep cached data with a 'last checked 12m ago' label, but the answer never says to dim that data or otherwise set it apart visually."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Several states have no next action: initial loading has no cancel, stale results has no refresh, and no builds has no option to change the filter or scope."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It calls for 'status symbols that work without color.'"
+        }
+      ]
+    },
+    {
+      "trial_id": "state-coverage-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Covers initial loading, no results (empty), partial results, all unavailable (error), unreachable and stale data, and narrow terminals (too small)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Shows coverage like '3/5 servers current', names each affected server and its cached results, and pairs each with a recovery action instead of blanking the screen."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Keeps last-known results visible and labels them with their age, but never says to dim them or otherwise de-emphasize them visually."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Mentions an 'appropriate recovery action' only at the server level; empty, loading, and other states get no explicit next action such as retry, cancel, or change scope."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Says to pair colors with text or symbols and notes that 'Green' alone cannot express build health, freshness, and readiness."
+        }
+      ]
+    },
+    {
+      "trial_id": "clutter-audit-counts-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer gives fixes but never counts the offenders, such as two border levels or three status signals per row."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It collapses `[PASS] (ok)` into one cue but never says color is a third encoding or states the one-color-plus-one-non-color rule."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to show `>` only on the selected row, or to use a subtle background for selection instead."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says to remove both borders and keep at most one only if the panel needs separation."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It never discusses how many cells go to chrome versus data."
+        }
+      ]
+    },
+    {
+      "trial_id": "clutter-audit-counts-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says to remove both nested borders and replace the tags, but it never counts the offenders: no border depth, no number of signals per status, and no note that the `>` marker appears on every row."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It replaces `[PASS] (ok)` with a single `\u2713` or `PASS` and reserves color for failures, which leaves one non-color glyph plus one color cue."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to show `\u203a` only on the selected row or to use a subtle background highlight."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says to remove both nested borders and to keep at most one border if the panel needs separation."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It never discusses the share of cells spent on chrome versus data."
+        }
+      ]
+    },
+    {
+      "trial_id": "clutter-audit-counts-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer never counts the offenders: it gives no border-nesting depth, no number of status signals per row, and does not call out the `>` as appearing on every row."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It says `[PASS]` and `(ok)` repeat each other but never names color as a third encoding, so it reports only part of the triple encoding."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It gives `>` the single job of marking selection, and the mockup shows `\u203a` only on the selected row, with a subtle background as an alternative."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends removing both borders, or keeping just one if it separates the list from other panels, and suggests dropping the inner border first."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It never discusses what share of cells goes to chrome versus data."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-message-timing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Sets a 4-second default for routine messages and gives 3\u20135 seconds for routine success messages before the normal status line returns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says warnings stay until addressed or dismissed, errors stay until acknowledged or resolved, and errors shouldn't disappear on a timer."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says dismissing an error clears the banner but keeps the record in a message history or log."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Never recommends leading with a symbol or label word, and never mentions NO_COLOR or keeping the message kind readable without color."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-message-timing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says routine success clears after 3 seconds and info messages show for 5 seconds, matching the 3\u20135 second guidance."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The table keeps errors until dismissed, corrected, or superseded, and keeps decision-requiring warnings until resolved or dismissed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to preserve errors in a scrollback, log, or message history so dismissal doesn't lose details, and that all messages remain recoverable."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says to use a label or icon as well as color, so the message kind does not depend on color, though it doesn't say the label goes first or name NO_COLOR."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-message-timing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "Success messages last 3\u20135 seconds, but informational notices are given 5\u20138 seconds, so info does not fall in the stated range."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Errors are never auto-dismissed and stay until acknowledged or resolved; warnings stay until resolved or dismissed when the user needs to act."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to keep errors in a discoverable message history after the user dismisses them."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "There is no mention of leading messages with a symbol or label word, or of NO_COLOR."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-hint-collapse-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The 80-column version is a single line, but the 40-column version wraps onto two rows instead of being one shorter line."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Hints follow F1\u2013F8 numbering with Help first, not frequency of use."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Help (F1) is placed first at both widths, not last, and it uses F1 rather than `?`."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Nothing is dropped as width shrinks; the answer explicitly wraps all eight hints to preserve them."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Hints are separated by plain double spaces, so no ambiguous-width middle dot is used, though the risk is never mentioned."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-hint-collapse-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The 80-column view is one line, but the 40-column view wraps to two rows rather than showing a single shorter line."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Hints follow F-key number order (F1 Help through F8 Delete), not frequency of use."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Help is bound to F1 and placed first at both widths; there is no `?` hint at the end."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer keeps all eight actions visible at both widths and drops nothing as width shrinks."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "Cells are separated only by padding; the answer uses no narrow separator and never mentions ambiguous-width character risk."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-hint-collapse-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The 80-column version is one line, but the 40-column version wraps into two rows instead of showing a single shorter line."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Hints follow F-key number order (F1 to F8), not frequency of use."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Help is bound to F1 and placed first at both widths, not `?` placed last."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "All eight actions stay visible at 40 columns; nothing is dropped as width shrinks."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "Hints are separated only by spaces, with no separator glyph chosen and no mention of ambiguous-width characters."
+        }
+      ]
+    },
+    {
+      "trial_id": "palette-and-slash-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends a palette because 35 actions across several screens justifies one, which ties the recommendation to both action count and multiple contexts."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says to show each action's shortcut in the palette, but never says every keybound action should also be a palette command."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer covers `/` for log search and n/N to cycle matches, but omits Enter jumping to the first match and does not say `/` filters in lists."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer assigns Ctrl+P to the palette without warning that Zellij or readline can capture it, and offers no `:` or leader-key alternative."
+        }
+      ]
+    },
+    {
+      "trial_id": "palette-and-slash-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends a palette because 35 actions across several screens is enough to justify one, which ties the advice to both action count and multiple contexts."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says the palette should show shortcuts, but it never says every keybound action must also be a palette command."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer covers `/` searching logs, Enter to commit and n/N to cycle, but it never says `/` should filter in lists."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer suggests Ctrl+K with `:` as an alias, but it never warns that Ctrl+P can be captured by Zellij or readline."
+        }
+      ]
+    },
+    {
+      "trial_id": "palette-and-slash-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends a palette because the app has 35 actions across several screens, but it never gives a threshold such as roughly 20 actions."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to include all available actions in the palette and to show each action's keyboard shortcut."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It covers `/` for log search and n/N for cycling, but it never says Enter jumps to the first match, and it moves filtering to a separate control instead of having `/` filter in lists."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It proposes Ctrl+K and never warns that Ctrl+P can be captured by Zellij or readline, nor offers `:` or a leader key as an alternative."
+        }
+      ]
+    }
+  ]
+}

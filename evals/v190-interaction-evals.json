@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.9.0 interaction-guidance regressions for #74: the Esc/q/Ctrl+C quit ladder, scrolling and position, selection stability under live data, log follow mode, text input and multi-line submit, tree views, modal geometry, emoji width in columns, the mouse default, and diff views. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-26): rubric-only; the 1.9.0 evidence round records baseline and with-skill runs on Claude Code and Codex after the content issues land.",
+  "notes": "Focused v1.9.0 interaction-guidance regressions for #74: the Esc/q/Ctrl+C quit ladder, scrolling and position, selection stability under live data, log follow mode, text input and multi-line submit, tree views, modal geometry, emoji width in columns, the mouse default, and diff views. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956.",
   "evals": [
     {
       "id": "quit-ladder",

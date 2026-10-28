@@ -1,0 +1,1 @@
+I'm using Go's os.UserConfigDir for my CLI's config and a macOS user set XDG_CONFIG_HOME but my tool ignores it. Why?

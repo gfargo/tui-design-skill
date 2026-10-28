@@ -1,0 +1,795 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-cli-claude-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "sigint-re-raise-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to restore the default disposition with signal.Reset after cleanup and re-raise the signal so the parent sees WIFSIGNALED with SIGINT."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that a normal exit makes bash assume the child handled Ctrl+C itself, so the loop keeps going."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code calls signal.Reset(sig) and then syscall.Kill(syscall.Getpid(), sig.(syscall.Signal)), and the answer notes Windows has no equivalent and should keep os.Exit(130) behind a build tag."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer states explicitly that os.Exit(130) is a normal exit with code 130, not termination by signal 2."
+        }
+      ]
+    },
+    {
+      "trial_id": "sigint-re-raise-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to restore the default SIGINT behavior after cleanup and send SIGINT to the process itself, so the parent sees WIFSIGNALED instead of a normal exit."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that a normal exit, even with status 130, makes the shell assume the child handled Ctrl+C on purpose, so the loop keeps running."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code calls signal.Reset(sig) and then syscall.Kill(syscall.Getpid(), s), and the notes say syscall.Kill doesn't exist on Windows."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer states directly that exit(130) is not the same as being killed by SIGINT and contrasts WIFEXITED with WIFSIGNALED."
+        }
+      ]
+    },
+    {
+      "trial_id": "sigint-re-raise-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to restore the default SIGINT behavior after cleanup and send the signal to the process itself so the parent sees WIFSIGNALED."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer explains that a normal exit, even with code 130, makes the shell assume the child handled SIGINT on purpose and continue to the next iteration."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code calls signal.Reset(sig) and then syscall.Kill(os.Getpid(), s), which is equivalent to syscall.Getpid(), and notes that syscall.Kill doesn't exist on Windows and needs a build tag."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer states that exiting with 130 'only imitates death by signal' and distinguishes WIFEXITED from WIFSIGNALED."
+        }
+      ]
+    },
+    {
+      "trial_id": "json-errors-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer puts the error object on stdout and calls stderr free-form, which contradicts writing the error to stderr with stdout left empty."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It defines a stable snake_case `code` for scripts to branch on, separate from a human `message` that may change."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It mentions an optional `schema_version` only in general terms and never says the error object is versioned together with the success schema."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It lists adding fields as non-breaking, and removing, renaming or retyping as breaking, and documents that consumers must ignore unknown fields."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It only says to decide between one document and NDJSON; it never prescribes one document for bounded results and NDJSON for unbounded or streaming ones."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "It says 'ISO-8601 UTC timestamps' but never specifies RFC 3339 or the Z suffix."
+        }
+      ]
+    },
+    {
+      "trial_id": "json-errors-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer explicitly says to write the structured error object to stdout, which contradicts the stderr-only approach with stdout left empty."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It defines a stable snake_case `error.code` as part of the contract, separate from a human `message` that may change."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It puts `schema_version` in the envelope, and the same envelope carries both `ok: true` results and `ok: false` errors, so errors are versioned with the success schema."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It lists adding fields as safe, removing, renaming or retyping as breaking, and tells consumers to tolerate unknown fields."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It specifies exactly one JSON document on success and NDJSON when emitting multiple or streaming records."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "It mentions RFC 3339 UTC timestamps but never specifies the Z suffix."
+        }
+      ]
+    },
+    {
+      "trial_id": "json-errors-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer puts the error JSON on stdout and reserves stderr for free-form diagnostics, which contradicts stderr with an empty stdout."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The error envelope has a stable machine-readable `code` that callers can branch on, separate from a human `message` whose wording may change."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It offers general schema versioning (semver, optional `schema_version`) but never says the error object is versioned together with the success schema."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It lists adding fields as safe and removing, renaming or retyping as breaking, and says consumers must ignore fields they don't recognize."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It uses one JSON document per invocation for normal commands and NDJSON for streaming or long-running commands."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "It specifies RFC 3339 / ISO 8601 timestamps in UTC but never mentions the Z suffix."
+        }
+      ]
+    },
+    {
+      "trial_id": "cli-testing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Its testscript suite runs the tool as a separate process and asserts on stdout, stderr, and success or non-zero exit, though it says most cases should be in-process tests on `run`."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It recommends testscript and says `!` asserts a non-zero exit, but never says that checking an exact exit code needs a custom command."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It does not mention the no-TTY case or NO_COLOR anywhere."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It recommends golden files with an `-update` flag but says nothing about keeping color escapes out of them."
+        }
+      ]
+    },
+    {
+      "trial_id": "cli-testing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The testscript layer runs the tool as a separate process and asserts on stdout, stderr, and exit status, which the answer calls checking 'the real binary'."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It recommends testscript and says `!` asserts a non-zero exit, but never says an exact exit code needs a custom command; it even claims this layer catches 'actual exit codes'."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "There is no mention of the no-TTY case or NO_COLOR."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Golden files are recommended for large text output, but nothing says to keep color escape sequences out of them."
+        }
+      ]
+    },
+    {
+      "trial_id": "cli-testing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The testscript section runs the real `mytool` command and checks stdout (`stdout '^ok$'`), stderr (`! stderr .`, `stderr 'no such file'`) and exit status, so the binary is tested as a black box."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends rogpeppe/go-internal/testscript and labels `! exec` as only checking for a non-zero code; for an exact code it adds a separate workaround (`sh -c '...; echo code=$?'`)."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It only mentions checking NO_COLOR or TTY status in passing to keep output deterministic, and includes no test cases for the no-TTY or NO_COLOR scenarios."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It recommends golden files with an -update flag but never says to keep color escape sequences out of them or to test color separately."
+        }
+      ]
+    },
+    {
+      "trial_id": "exit-code-scheme-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table assigns 0 to success, 1 to general or unexpected error, and 2 to usage errors."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Custom codes go in 3\u201363, which sits inside 3\u2013123, and the answer says to list them in --help or the man page."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It flags 126/127 and 128+N as shell meanings but never mentions 124 (timeout) or 125 (xargs/timeout)."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It warns that codes above 255 wrap around and that 256 becomes 0, which looks like success."
+        }
+      ]
+    },
+    {
+      "trial_id": "exit-code-scheme-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The first table maps 0 to success, 1 to general/runtime error, and 2 to usage error."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Custom codes go in 3\u201363, which lies inside 3\u2013123, and the answer says to list them in `--help` or the man page under EXIT STATUS."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It warns about 126, 127 and 128+N from the shell, but never mentions 124 from timeout or the 123\u2013125 codes from xargs."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says codes above 255 wrap modulo 256, so 256 becomes 0, and to never use them; this covers the 8-bit limit, though it does not explicitly say to clamp computed codes."
+        }
+      ]
+    },
+    {
+      "trial_id": "exit-code-scheme-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The standard table assigns 0 to success, 1 to general errors and 2 to usage errors, and the answer explicitly recommends 2 for usage errors."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends custom codes in 3\u201363, which sits inside 3\u2013123, and says to list the codes in --help or the man page."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It warns off 126, 127 and 128+N for shell reasons but never mentions 124 from timeout or the xargs codes, so it doesn't fully cover the 124+ range."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says exit codes are taken mod 256, so 256 becomes 0, which covers the 8-bit wraparound that makes clamping necessary."
+        }
+      ]
+    },
+    {
+      "trial_id": "windows-one-shot-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer mentions missing SIGWINCH/SIGTERM but never says Windows lacks SIGPIPE, SIGHUP, or 128+N exit codes, and never says a closed pipe surfaces as a write error."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It says older conhost needs ENABLE_VIRTUAL_TERMINAL_PROCESSING and lists libraries including colorama, but it does not tie this to Go and Rust or say that Node handles it natively."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states that cmd and PowerShell don't expand `*.txt`, so the CLI has to do it."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It notes Ctrl+C shows up as 0xC000013A rather than 130, but then advises 'map it yourself if scripts depend on it', which recommends mapping to 130."
+        }
+      ]
+    },
+    {
+      "trial_id": "windows-one-shot-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer notes SIGTERM/SIGHUP mostly don't exist and warns against 128+signal codes, but never mentions SIGPIPE or treating a closed pipe as a write error."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer gives a general note on enabling VT processing and a list of libraries, but doesn't say Go/Rust must enable it, Python needs colorama, and Node handles it automatically."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer states that cmd and PowerShell don't expand `*.txt`, so the CLI has to glob arguments itself."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer never maps Ctrl+C to exit code 130; it advises explicit exit codes instead of 128+signal conventions."
+        }
+      ]
+    },
+    {
+      "trial_id": "windows-one-shot-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says Windows lacks SIGPIPE and treats broken-pipe writes as a quiet exit, but it never mentions SIGHUP or the absence of 128+N exit codes."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It covers SetConsoleMode, Go/Rust libraries and colorama, but for Node it only names the chalk library and never says Node itself enables VT processing."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states that cmd and PowerShell pass `*.txt` literally, so the CLI must expand globs itself."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer never maps Ctrl+C to exit code 130; it only says to run cleanup on console control events."
+        }
+      ]
+    },
+    {
+      "trial_id": "atomic-writes-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Steps 1\u20133 and the code write a temp file in the target's directory, fsync it, then rename or replace it over the target."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says the temp file must be in the same directory (same filesystem) or the rename won't be atomic."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The Node code opens the temp file with mode 0o644, and the answer advises copying the original file's mode if permissions matter."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says never to touch the final path and to delete the temp file on error, and it exits with process.exit(130) after SIGINT."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It only says a Windows rename can fail if the file is open, and the Python comment calls os.replace 'atomic, also works on Windows', which contradicts best-effort semantics."
+        }
+      ]
+    },
+    {
+      "trial_id": "atomic-writes-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Creates the temp file in the target's directory, flushes and fsyncs it, then renames it over the target with os.replace or fs.rename."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says the temp file must be on the same filesystem because a cross-filesystem rename isn't atomic and usually fails, so /tmp should not be used."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Notes that mkstemp creates the file with mode 0600 and says to set the existing mode with chmod before renaming."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Never renames on interrupt, so the final path keeps the old or the complete report, and the SIGINT handler exits with code 130."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "Calls os.replace 'atomic, also works on Windows' and only warns that the rename may fail on locks, never saying Windows replace is best effort rather than guaranteed atomic."
+        }
+      ]
+    },
+    {
+      "trial_id": "atomic-writes-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Creates the temp file in the target's directory, flushes and fsyncs it, then renames it over the target."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States the temp file must be on the same filesystem, otherwise rename isn't atomic and may fail."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Notes that mkstemp creates files with mode 0600 and says to chmod the temp file before renaming."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says to catch SIGINT/SIGTERM, delete the temp file and exit with code 130, and states the final path never holds a truncated report."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "A code comment calls os.replace 'atomic on POSIX and Windows', and the Windows note only mentions failures from open handles, so it never says Windows replace is best effort."
+        }
+      ]
+    },
+    {
+      "trial_id": "completions-contract-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Defines a `Completions { shell }` subcommand that calls `generate(...)` into `std::io::stdout()`, so the script goes to stdout and no files are written."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Gives install paths for all three shells: `share/bash-completion/completions/mycli`, zsh `_mycli` in `share/zsh/site-functions`, and fish `vendor_completions.d/mycli.fish`; these are package-prefix paths and fpath is not named explicitly."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends clap_complete, shows `COMPLETE=bash mycli` and the like, requires the `unstable-dynamic` feature, and warns that the API may change while it is unstable."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Says completers run on every Tab press and must be fast and side-effect free, but never says the binary must print nothing except candidates; running `complete()` before logging setup only hints at this."
+        }
+      ]
+    },
+    {
+      "trial_id": "completions-contract-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Option B defines a hidden `Completions { shell }` subcommand that calls `clap_complete::generate` with `std::io::stdout()`, so it prints the script rather than writing files."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It lists only system-wide paths (/usr/share/bash-completion/completions, /usr/share/zsh/site-functions/_mycli, /usr/share/fish/vendor_completions.d) and never names a per-user bash completions directory or mentions putting `_mycli` on fpath."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends clap_complete's `CompleteEnv` with `COMPLETE=bash/zsh/fish mycli` and says the feature is still gated as `unstable-dynamic`."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says the shell calls the binary on every Tab press, that completers must be cheap, and that they must never print to stdout or stderr, but it never says completers must be free of side effects."
+        }
+      ]
+    },
+    {
+      "trial_id": "completions-contract-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "A `mycli completions <shell>` subcommand appears only as an optional static fallback, and the answer never says it prints to stdout without writing files."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Gives per-shell install paths: bash-completion completions dir, zsh `_mycli` in site-functions with a note about fpath loading, and fish vendor_completions.d. These are system-wide rather than user dirs."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Uses clap_complete's CompleteEnv with `COMPLETE=<shell>` and says it sits behind the `unstable-dynamic` feature, so the API may change."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Says the binary runs on every Tab, should be fast, and must not print to stdout, but never says completers must be side-effect free (it even suggests writing a cache file)."
+        }
+      ]
+    },
+    {
+      "trial_id": "pagination-config-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `--limit N` with a modest default of 30 to 100 and an explicit `--all` flag, plus an optional `--cursor` for scripts."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The truncation hint ('Use --limit N or --all to see more') goes on stderr so stdout stays clean for pipes and `wc -l`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer proposes `tool config list --show-origin`, which prints each value with its source (env, file:line, default), and cites `git config --show-origin`."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer lists config precedence and env vars for individual settings like TOOL_LIMIT, but never mentions a `--config` flag or a `MYTOOL_CONFIG` env var for choosing the config file."
+        }
+      ]
+    },
+    {
+      "trial_id": "pagination-config-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends --limit with a finite default of 30\u2013100, plus --all for fetching everything and an optional --cursor."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Puts the truncation hint on stderr, names --limit N / --all as the fix, and explicitly keeps stdout clean for jq and redirects."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Proposes `mycli config list --show-origin` that shows each resolved value with its source, and cites git config --show-origin."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Mentions env vars like MYCLI_LIMIT for individual values but never proposes a --config flag or a MYCLI_CONFIG env var for choosing the config file."
+        }
+      ]
+    },
+    {
+      "trial_id": "pagination-config-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends a finite default `--limit 30`, with `--all`/`--limit 0` to fetch everything and `--cursor` to resume."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Sends the truncation notice to stderr naming `--limit N or --all`, so pipes like `wc -l` stay clean."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Proposes `mycli config list --show-origin` listing each value with its source and file:line, explicitly modeled on `git config --show-origin`."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Covers a precedence order and env vars like MYCLI_LIMIT, but never mentions a `--config` flag or a MYCLI_CONFIG variable for choosing the config file."
+        }
+      ]
+    },
+    {
+      "trial_id": "macos-config-dir-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table and text state that on darwin it always returns $HOME/Library/Application Support and never reads XDG_CONFIG_HOME."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Option 1's code checks for an absolute XDG_CONFIG_HOME first, and Option 2 says to then fall back to $HOME/.config instead of Library/Application Support."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer mentions adrg/xdg's macOS defaults but never says Rust's dirs/directories crates behave the same way."
+        }
+      ]
+    },
+    {
+      "trial_id": "macos-config-dir-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table and explanation state that darwin returns $HOME/Library/Application Support and never checks XDG_CONFIG_HOME."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The code checks XDG_CONFIG_HOME first and requires an absolute path. It then shows an optional darwin branch that builds ~/.config by hand from UserHomeDir."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer mentions only the Go library adrg/xdg and never says that Rust's dirs/directories crates behave the same way."
+        }
+      ]
+    },
+    {
+      "trial_id": "macos-config-dir-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's table shows darwin always returns $HOME/Library/Application Support, and it says the stdlib ignores XDG_CONFIG_HOME completely on macOS."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The first snippet uses XDG_CONFIG_HOME only when it is set and filepath.IsAbs passes; the optional darwin snippet builds ~/.config/mytool by hand from os.UserHomeDir, though that fallback is presented as optional rather than the default."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The only library it mentions is Go's adrg/xdg; it never says Rust's dirs or directories crates behave the same way."
+        }
+      ]
+    },
+    {
+      "trial_id": "debug-env-var-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer advises against plain DEBUG and recommends a namespaced `MYCLI_DEBUG=1`, citing NODE_DEBUG, GIT_TRACE and RUST_BACKTRACE as precedent."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer names the `debug` npm package's use of DEBUG and warns that a DEBUG value set for another tool (e.g. `DEBUG=express:*`) would make your CLI print unrequested stack traces."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer lists the `--debug` flag first, presents the variable as a fallback for CI, and says the flag should override the variable."
+        }
+      ]
+    },
+    {
+      "trial_id": "debug-env-var-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends a prefixed variable such as `MYCLI_DEBUG=1` in place of plain `DEBUG`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says the npm `debug` package uses `DEBUG`, often as `DEBUG=*`, so debugging another tool in the same shell would turn on stack traces in this one."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer makes the `--debug` flag the main way to turn debugging on and says the flag beats the env var."
+        }
+      ]
+    },
+    {
+      "trial_id": "debug-env-var-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer makes a namespaced `MYCLI_DEBUG=1` one of the main switches and honors plain `DEBUG` only when it names the tool."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says the Node `debug` package reads `DEBUG` as name patterns like `DEBUG=*`, so someone debugging another tool would suddenly get this tool's stack traces; its own code still enables on `*`, but the explanation is there."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer lists 'Flag first: `--debug`' and says a command-line flag should take precedence over environment variables."
+        }
+      ]
+    }
+  ]
+}

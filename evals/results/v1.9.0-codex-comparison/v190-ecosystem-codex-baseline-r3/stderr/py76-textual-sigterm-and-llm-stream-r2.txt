@@ -1,0 +1,96 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-_aw636nk
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0a-1fc6-7932-b78d-a6db05142c28
+--------
+user
+My Textual 8 chat app streams an LLM reply into a Markdown widget by calling `markdown.update(full_text)` for every token, which is slow, and the view does not follow the new text. Separately, `kill <pid>` (SIGTERM) leaves my terminal in a broken state. How do I fix both?
+
+codex
+I’ll check the Textual APIs for streaming Markdown, scrolling, and shutdown so the fixes fit Textual 8.
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-_aw636nk
+ succeeded in 0ms:
+.
+..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc "curl -L -s https://raw.githubusercontent.com/Textualize/textual/v8.0.0/src/textual/widgets/_markdown.py | rg -n -A 65 -B 10 'get_stream|class MarkdownStream|async def append|async def stream'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-_aw636nk
+ exited 1 in 175ms:
+exec
+/bin/zsh -lc 'curl -IL https://textual.textualize.io/widgets/markdown/' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-_aw636nk
+ exited 6 in 25ms:
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: textual.textualize.io
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc "python -c 'import textual; print(textual.__version__); from textual.widgets import Markdown; import inspect; print(inspect.getsource(Markdown.get_stream))'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-_aw636nk
+ exited 127 in 172ms:
+zsh:1: command not found: python
+
+codex
+Use Textual’s Markdown streaming API, anchor the scrolling container, and route SIGTERM through `App.exit()` so Textual can restore the terminal.
+
+```python
+import asyncio
+import signal
+
+from textual import work
+from textual.app import App, ComposeResult
+from textual.containers import VerticalScroll
+from textual.widgets import Markdown
+
+
+class ChatApp(App):
+    CSS = """
+    #conversation { height: 1fr; }
+    Markdown { height: auto; }
+    """
+
+    def compose(self) -> ComposeResult:
+        with VerticalScroll(id="conversation"):
+            yield Markdown("", id="reply")
+
+    def on_mount(self) -> None:
+        # Follow growing content; scrolling up releases the anchor.
+        self.query_one("#conversation", VerticalScroll).anchor()
+
+        # Unix: schedule a normal Textual shutdown on SIGTERM.
+        asyncio.get_running_loop().add_signal_handler(
+            signal.SIGTERM, self.exit
+        )
+
+    @work
+    async def stream_reply(self) -> None:
+        markdown = self.query_one("#reply", Markdown)
+
+        async with markdown.get_stream() as stream:
+            async for delta in your_llm_token_iterator():
+                await stream.write(delta)  # Only the new text.
+
+
+if __name__ == "__main__":
+    ChatApp().run()
+```
+
+- **Streaming:** `get_stream()` buffers incoming chunks and manages incremental Markdown updates. Pass each delta once; repeatedly passing the accumulated reply duplicates work. Exiting the context flushes the remaining text.
+- **Following:** anchor the `VerticalScroll` that owns the scrollbar. Its Markdown child must be allowed to grow.
+- **Shutdown:** `self.exit()` lets Textual unwind normally and restore terminal settings. Avoid `os._exit()` or raising `SystemExit` in the signal handler. `SIGKILL` (`kill -9`) cannot be handled.
+
+If the terminal is already broken, run `reset` or `stty sane`.
+
+I couldn’t access the live Textual documentation from this environment to independently verify the exact 8.x API signatures.
+tokens used
+10,845

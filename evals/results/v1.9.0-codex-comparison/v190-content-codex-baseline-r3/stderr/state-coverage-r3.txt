@@ -1,0 +1,56 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-70kl4_zb
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e19-bb5b-7903-9cbc-89bffcb11cef
+--------
+user
+Review the screens of my release-dashboard TUI. It fetches build status from five CI servers, and I only designed the happy path. What states does it need?
+
+codex
+I’ll look for the screen designs, then map the missing states around fetching, partial failures, and release actions.
+exec
+/bin/zsh -lc "pwd; rg --files -g '"'!node_modules'"' -g '"'!vendor'"'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-70kl4_zb
+ exited 1 in 357ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-70kl4_zb
+
+codex
+I don’t see any screen files in the workspace, so I can’t review the layouts yet. For a dashboard fetching from five CI servers, the key missing state is **partial success**: some results are current while others are stale, loading, or unavailable.
+
+Design states at three levels:
+
+| Level | States to cover | What the screen should communicate |
+|---|---|---|
+| **Whole dashboard** | Initial loading; all current; partial results; all unavailable; refreshing | Overall coverage, such as “3/5 servers current,” and when data was last fetched |
+| **Each CI server** | Connecting; current; refreshing; slow; timed out; unreachable; authentication expired; permission denied; malformed response | Which server is affected, whether cached results exist, and the appropriate recovery action |
+| **Each build** | Queued; running; passed; failed; canceled; skipped; unknown | Build status separately from the health of the connection |
+
+Also cover these easily missed cases:
+
+- **No results:** distinguish “no builds exist,” “no builds match these filters,” and “builds couldn’t be fetched.”
+- **Stale data:** keep the last known results visible, clearly labeled with their age. A failed refresh must not make an old green build look current.
+- **Mixed revisions:** servers may report successful builds for different commits or branches. Show whether results actually belong to the same release candidate.
+- **Changing results:** a build disappears, a newer run replaces it, or a selected row changes during refresh. Preserve selection by identity and avoid unexpected focus jumps.
+- **Interrupted work:** quitting during a fetch, canceling a retry, or losing connectivity while viewing build details.
+- **TUI constraints:** narrow terminals, long server names, unavailable color, and keyboard focus while results update. Pair colors with text or symbols.
+
+If the dashboard can trigger releases, add **not eligible, checking eligibility, ready, awaiting confirmation, submitting, succeeded, failed, and outcome unknown**. A submission timeout needs reconciliation before offering a retry, because the release may already have started.
+
+The most useful screens to design next are:
+
+1. **First load with servers completing at different times.**
+2. **Mixed health:** two current, one refreshing, one stale after timeout, one with expired credentials.
+3. **All servers unreachable, with cached results available.**
+4. **All servers unreachable on first launch, with no cached results.**
+5. **All builds green, but revisions don’t match.**
+
+Keep **build health**, **data freshness**, and **release readiness** visually distinct. “Green” alone cannot express all three.
+
+Attach the screens and I can map these states onto your actual layout.
+tokens used
+1,280

@@ -1,0 +1,85 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-kuwpeskw
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e09-4951-74e2-9b12-8b6008f33cfb
+--------
+user
+My Textual 8 chat app streams an LLM reply into a Markdown widget by calling `markdown.update(full_text)` for every token, which is slow, and the view does not follow the new text. Separately, `kill <pid>` (SIGTERM) leaves my terminal in a broken state. How do I fix both?
+
+codex
+I’ll check the available context for Textual’s streaming Markdown and shutdown APIs, then give you a concrete pattern for both fixes.
+
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-kuwpeskw
+ succeeded in 478ms:
+.
+..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://textual.textualize.io/widgets/markdown/' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-kuwpeskw
+ exited 6 in 81ms:
+exec
+/bin/zsh -lc 'python -c "import textual; print(textual.__version__); import inspect; from textual.widgets import Markdown; print(inspect.signature(Markdown.get_stream)); print(inspect.getsource(Markdown.get_stream))"' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-kuwpeskw
+ exited 127 in 15ms:
+zsh:1: command not found: python
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+The fixes are to feed Markdown incremental chunks, anchor the scrolling container to its bottom edge, and route SIGTERM through Textual’s normal exit path. I couldn’t retrieve the live documentation here, so I’m keeping the example focused on those APIs.
+
+codex
+Use a Markdown stream for incremental rendering, anchor the **scrolling container**, and handle SIGTERM by calling `App.exit()`.
+
+```python
+import asyncio
+import signal
+
+from textual import work
+from textual.app import App, ComposeResult
+from textual.containers import VerticalScroll
+from textual.widgets import Markdown
+
+
+class ChatApp(App):
+    def compose(self) -> ComposeResult:
+        with VerticalScroll(id="transcript"):
+            yield Markdown("", id="reply")
+
+    def on_mount(self) -> None:
+        # Follow content as its height grows.
+        self.query_one("#transcript", VerticalScroll).anchor()
+
+        # POSIX: let Textual shut down and restore the terminal.
+        asyncio.get_running_loop().add_signal_handler(
+            signal.SIGTERM, self.exit
+        )
+
+    @work
+    async def stream_reply(self) -> None:
+        markdown = self.query_one("#reply", Markdown)
+
+        async with markdown.get_stream() as stream:
+            async for chunk in your_llm_stream():
+                await stream.write(chunk)
+```
+
+Call `self.stream_reply()` when you start a reply, replacing `your_llm_stream()` with your async token/chunk iterator.
+
+- **Rendering:** send only the new chunk to `stream.write()`. `get_stream()` batches incremental updates; leaving its async context flushes the remaining text. Don’t also call `update(full_text)`.
+- **Scrolling:** `anchor()` keeps the `VerticalScroll` following growing content. Anchoring the Markdown itself won’t control its parent’s viewport.
+- **Shutdown:** the SIGTERM callback requests normal Textual shutdown, which restores terminal modes. Avoid `os._exit()` or raising `SystemExit` from the signal handler. SIGKILL (`kill -9`) cannot be handled.
+
+If your terminal is already broken, run `reset` in the shell.
+
+I couldn’t verify the live Textual documentation from this environment; the example assumes Textual 8’s `Markdown.get_stream()` and scrolling `anchor()` APIs.
+tokens used
+6,021

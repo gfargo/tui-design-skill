@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Ink 8 app lists 20,000 log entries. I wrapped them all in a Box with overflow="hidden" and contentOffsetY to scroll, but every arrow press is sluggish. What should I change?

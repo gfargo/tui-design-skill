@@ -1,0 +1,1 @@
+My chat TUI's input field should send on Enter but let users add newlines. Shift+Enter doesn't seem to work in some terminals. What should I do?

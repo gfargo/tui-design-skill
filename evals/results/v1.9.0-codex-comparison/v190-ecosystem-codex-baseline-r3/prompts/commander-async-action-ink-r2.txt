@@ -1,0 +1,1 @@
+My commander 15 CLI has `.action(async () => { const app = render(<App />); await app.waitUntilExit(); })` and I call program.parse() at the bottom. Errors thrown in the action crash with an unhandled rejection and post-run code sometimes runs too early. What is wrong?

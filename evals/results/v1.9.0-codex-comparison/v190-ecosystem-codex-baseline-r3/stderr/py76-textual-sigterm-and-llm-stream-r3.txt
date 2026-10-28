@@ -1,0 +1,95 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-9w1mxwxs
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0b-071d-77f3-9572-3aafec4ef15a
+--------
+user
+My Textual 8 chat app streams an LLM reply into a Markdown widget by calling `markdown.update(full_text)` for every token, which is slow, and the view does not follow the new text. Separately, `kill <pid>` (SIGTERM) leaves my terminal in a broken state. How do I fix both?
+
+codex
+I’ll check Textual 8’s streaming Markdown and signal-handling APIs so the fixes match your version.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/Textualize/textual/v8.0.0/src/textual/widgets/_markdown.py' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-9w1mxwxs
+ exited 6 in 0ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-9w1mxwxs
+ succeeded in 0ms:
+.
+..
+
+exec
+/bin/zsh -lc "python -c 'import textual; print(textual.__version__); print(textual.__file__)'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-9w1mxwxs
+ exited 127 in 0ms:
+zsh:1: command not found: python
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+Textual provides a buffered Markdown stream and a container anchor for following growing content. I’m checking the SIGTERM path separately, since it needs to let Textual finish its terminal cleanup.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+Use **`Markdown.get_stream()` for token deltas**, **`anchor()` on the scrolling container**, and route **SIGTERM to `App.exit()`**.
+
+For streaming, adapt this method to your app:
+
+```python
+from textual import work
+from textual.containers import VerticalScroll
+from textual.widgets import Markdown
+
+@work
+async def stream_reply(self):
+    markdown = self.query_one("#reply", Markdown)
+    container = self.query_one("#chat", VerticalScroll)
+
+    await markdown.update("")  # Once, when starting this reply
+    container.anchor()
+
+    stream = Markdown.get_stream(markdown)
+    try:
+        async for delta in self.llm_chunks():  # Your async token source
+            await stream.write(delta)         # Only the new text
+    finally:
+        await stream.stop()                   # Drain buffered updates
+```
+
+`update(full_text)` replaces the document repeatedly. `append(delta)` supports incremental updates; `get_stream()` additionally combines incoming chunks when rendering falls behind. Run the network loop in an async worker so the UI remains responsive. [Markdown documentation](https://textual.textualize.io/widgets/markdown/#textual.widgets.Markdown.get_stream)
+
+Anchor the **container that actually scrolls**, rather than the Markdown child. It follows growing content until the user scrolls away; call `container.anchor()` again for a “follow latest” action. [Anchor documentation](https://textual.textualize.io/api/widget/#textual.widget.Widget.anchor)
+
+For SIGTERM on macOS/Linux, register an event-loop handler inside your app:
+
+```python
+import asyncio
+import signal
+
+# Methods on your App subclass:
+def on_mount(self) -> None:
+    asyncio.get_running_loop().add_signal_handler(
+        signal.SIGTERM, self.exit
+    )
+
+def on_unmount(self) -> None:
+    asyncio.get_running_loop().remove_signal_handler(signal.SIGTERM)
+```
+
+This schedules normal Textual shutdown, allowing terminal cleanup to run. `self.exit()` is synchronous; don’t await it or replace it with `os._exit()`. Textual 8’s `exit()` posts its normal exit message. [Textual 8 source](https://raw.githubusercontent.com/Textualize/textual/v8.0.0/src/textual/app.py)
+
+`SIGKILL` (`kill -9`) cannot be handled. To recover an already broken terminal, run `reset`.
+tokens used
+49,747

@@ -1,0 +1,92 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-interaction-claude-with-skill-r3",
+  "created_at": "2026-10-27T16:06:34Z",
+  "run_manifest_sha256": "69cd93165d604d198f2afa5133ada5dcf39b467cb35a2f715dcf729691a799ea",
+  "grades_file": "grades.json",
+  "grades_sha256": "1603b99d38134a791de4cca08489e84de7e7cccd20feeebba1c4e6a6974c269a",
+  "passed": 142,
+  "total": 147,
+  "pass_rate": 0.9659863945578231,
+  "by_case": [
+    {
+      "case_id": "quit-ladder",
+      "case_name": "quit-ladder",
+      "passed": 18,
+      "total": 18,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "follow-mode",
+      "case_name": "follow-mode",
+      "passed": 18,
+      "total": 18,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "selection-stability",
+      "case_name": "selection-stability",
+      "passed": 13,
+      "total": 15,
+      "pass_rate": 0.8666666666666667
+    },
+    {
+      "case_id": "multiline-submit",
+      "case_name": "multiline-submit",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "text-input-keys",
+      "case_name": "text-input-keys",
+      "passed": 13,
+      "total": 15,
+      "pass_rate": 0.8666666666666667
+    },
+    {
+      "case_id": "scroll-keys",
+      "case_name": "scroll-keys",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "tree-keys",
+      "case_name": "tree-keys",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "modal-geometry",
+      "case_name": "modal-geometry",
+      "passed": 11,
+      "total": 12,
+      "pass_rate": 0.9166666666666666
+    },
+    {
+      "case_id": "emoji-columns",
+      "case_name": "emoji-columns",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "mouse-default",
+      "case_name": "mouse-default",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "diff-view-choice",
+      "case_name": "diff-view-choice",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

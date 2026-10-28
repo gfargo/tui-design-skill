@@ -1,0 +1,67 @@
+Test it as a subprocess: build the binary once, run it with representative arguments and stdin, then assert **stdout, stderr, and exit code separately**. This catches behavior that calling Go functions directly misses, especially `os.Exit`.
+
+A small helper works well:
+
+```go
+func runCLI(t *testing.T, bin string, args ...string) (string, string, int) {
+	t.Helper()
+
+	cmd := exec.Command(bin, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err == nil {
+		return stdout.String(), stderr.String(), 0
+	}
+
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return stdout.String(), stderr.String(), exitErr.ExitCode()
+	}
+
+	t.Fatalf("could not run CLI: %v", err)
+	return "", "", -1
+}
+```
+
+Use table-driven cases for your public contract:
+
+```go
+func TestCLI(t *testing.T) {
+	// Build bin once in TestMain or a shared setup helper.
+	tests := []struct {
+		name       string
+		args       []string
+		wantOut    string
+		wantErr    string
+		wantCode   int
+	}{
+		{"success", []string{"greet", "Ada"}, "Hello, Ada!\n", "", 0},
+		{"bad flag", []string{"--unknown"}, "", "unknown flag: --unknown\n", 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, stderr, code := runCLI(t, bin, tt.args...)
+			if out != tt.wantOut || stderr != tt.wantErr || code != tt.wantCode {
+				t.Errorf(
+					"got stdout=%q stderr=%q exit=%d; want stdout=%q stderr=%q exit=%d",
+					out, stderr, code, tt.wantOut, tt.wantErr, tt.wantCode,
+				)
+			}
+		})
+	}
+}
+```
+
+A few practical rules:
+
+- **Build and run the actual binary**, rather than `go run`, which can obscure the program’s exit status.
+- Cover success, invalid arguments, missing input, and expected operational failures.
+- Use exact comparisons for short output; use golden files for larger output.
+- Control environment variables and working directory; disable color and other terminal-dependent formatting.
+- Add a timeout with `exec.CommandContext` so a broken command cannot hang your tests.
+
+If you accumulate many cases, [`rogpeppe/go-internal/testscript`](https://pkg.go.dev/github.com/rogpeppe/go-internal/testscript) is a good fit for script-based CLI tests. For a small CLI, standard-library subprocess tests are usually enough.

@@ -1,0 +1,713 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfe-7d36-7fe0-8911-e842bf078a7c
+--------
+user
+In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?
+
+codex
+I’ll check the Bubble Tea v2 and Lip Gloss v2 APIs so the example uses the current rendering and mouse handling model.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/charmbracelet/lipgloss/main/compositor.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ exited 6 in 69ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ succeeded in 0ms:
+.
+..
+
+exec
+/bin/zsh -lc 'ls /Users/gfargo/go/pkg/mod/github.com/charmbracelet /Users/gfargo/go/pkg/mod/charm.land' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ succeeded in 0ms:
+/Users/gfargo/go/pkg/mod/charm.land:
+bubbles
+bubbletea
+huh
+lipgloss
+
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet:
+colorprofile@v0.4.3
+ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4
+x
+
+exec
+/bin/zsh -lc "rg -n 'func .*|type .*struct' /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2*/{compositor,layer,canvas}.go" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ exited 1 in 54ms:
+zsh:1: no matches found: /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2*/compositor.go
+
+exec
+/bin/zsh -lc "rg -n 'type Mouse|MouseMode|func NewView|type View struct' /Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2*" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ succeeded in 117ms:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:53:    v.MouseMode = tea.MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:93:| `MouseMode` | `MouseModeNone`, `MouseModeCellMotion`, or `MouseModeAllMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:281:    v.MouseMode = tea.MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:293:| `tea.WithMouseCellMotion()` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:294:| `tea.WithMouseAllMotion()` | `view.MouseMode = tea.MouseModeAllMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:308:| `tea.EnableMouseCellMotion` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:309:| `tea.EnableMouseAllMotion` | `view.MouseMode = tea.MouseModeAllMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:310:| `tea.DisableMouse` | `view.MouseMode = tea.MouseModeNone` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:329:| `p.EnableMouseCellMotion()` | `view.MouseMode` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:330:| `p.DisableMouseCellMotion()` | `view.MouseMode = tea.MouseModeNone` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:331:| `p.EnableMouseAllMotion()` | `view.MouseMode` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:332:| `p.DisableMouseAllMotion()` | `view.MouseMode = tea.MouseModeNone` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:445:    v.MouseMode = tea.MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:507:| `tea.WithMouseCellMotion()` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:508:| `tea.WithMouseAllMotion()` | `view.MouseMode = tea.MouseModeAllMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:517:| `tea.EnableMouseCellMotion` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:518:| `tea.EnableMouseAllMotion` | `view.MouseMode = tea.MouseModeAllMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:519:| `tea.DisableMouse` | `view.MouseMode = tea.MouseModeNone` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:540:| `p.EnableMouseCellMotion()` | `view.MouseMode` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:541:| `p.DisableMouseCellMotion()` | `view.MouseMode = tea.MouseModeNone` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:542:| `p.EnableMouseAllMotion()` | `view.MouseMode` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:543:| `p.DisableMouseAllMotion()` | `view.MouseMode = tea.MouseModeNone` in `View()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:10:type MouseButton = uv.MouseButton
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:46:type MouseMsg interface {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:71:type Mouse struct {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:83:type MouseClickMsg Mouse
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:98:type MouseReleaseMsg Mouse
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:113:type MouseWheelMsg Mouse
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:128:type MouseMotionMsg Mouse
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:146:	switch s.lastView.MouseMode {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:147:	case MouseModeNone:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:148:	case MouseModeCellMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:150:	case MouseModeAllMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:217:		switch lv.MouseMode {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:218:		case MouseModeNone:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:219:		case MouseModeCellMotion, MouseModeAllMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:390:	if s.lastView == nil || view.MouseMode != s.lastView.MouseMode {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:391:		switch view.MouseMode {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:392:		case MouseModeNone:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:393:			if s.lastView != nil && s.lastView.MouseMode != MouseModeNone {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:398:		case MouseModeCellMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:399:			if s.lastView != nil && s.lastView.MouseMode == MouseModeAllMotion {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:403:		case MouseModeAllMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:404:			if s.lastView != nil && s.lastView.MouseMode == MouseModeCellMotion {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:899:		a.MouseMode != b.MouseMode ||
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:14:	mouseMode   MouseMode
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:51:	v.MouseMode = m.opts.mouseMode
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:82:				{mouseMode: MouseModeCellMotion},
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:88:				{mouseMode: MouseModeAllMotion},
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:94:				{mouseMode: MouseModeAllMotion},
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:95:				{mouseMode: MouseModeNone},
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer_test.go:31:		MouseMode: MouseModeCellMotion,
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:76:func NewView(s string) View {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:84:type View struct {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:189:	// MouseMode sets the mouse mode for this view. It can be one of
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:190:	// [MouseModeNone], [MouseModeCellMotion], or [MouseModeAllMotion].
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:191:	MouseMode MouseMode
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:297:// MouseMode represents the mouse mode of a view.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:298:type MouseMode int
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:301:	// MouseModeNone disables mouse events.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:302:	MouseModeNone MouseMode = iota
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:304:	// MouseModeCellMotion enables mouse click, release, and wheel events.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:311:	MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:313:	// MouseModeAllMotion enables all mouse events, including click, release,
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:319:	MouseModeAllMotion
+
+exec
+/bin/zsh -lc 'rg --files /Users/gfargo/go/pkg/mod/charm.land/lipgloss | head -40' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ succeeded in 344ms:
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/join.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/Taskfile.yaml
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/size_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/LICENSE
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/unset.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/align_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/style.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/color.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/align.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/terminal.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/runes_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/writer.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/README.md
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ansi_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/borders.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/wrap_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/borders_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/join_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/color_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ranges_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/canvas_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/query.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/size.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/blending.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/whitespace_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ansi_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/wrap.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/style_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/set.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/blending_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/get.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/lipgloss.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/canvas.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/whitespace.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ranges.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/compat/doc.go
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/canvas.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-j_yc587_
+ succeeded in 256ms:
+package lipgloss
+
+import (
+	"fmt"
+	"image"
+	"slices"
+
+	uv "github.com/charmbracelet/ultraviolet"
+)
+
+// Layer represents a visual layer with content and positioning. It's a pure
+// data structure that defines the layer hierarchy without any computation.
+type Layer struct {
+	id            string
+	content       string
+	width, height int
+	x, y, z       int
+	layers        []*Layer
+}
+
+// NewLayer creates a new [Layer] with the given content and optional child layers.
+func NewLayer(content string, layers ...*Layer) *Layer {
+	l := &Layer{
+		content: content,
+	}
+	l.AddLayers(layers...)
+	return l
+}
+
+// GetContent returns the content of the Layer.
+func (l *Layer) GetContent() string {
+	return l.content
+}
+
+// Width returns the width of the Layer.
+func (l *Layer) Width() int {
+	return l.width
+}
+
+// Height returns the height of the Layer.
+func (l *Layer) Height() int {
+	return l.height
+}
+
+// GetID returns the ID of the Layer.
+func (l *Layer) GetID() string {
+	return l.id
+}
+
+// ID sets the ID of the Layer.
+func (l *Layer) ID(id string) *Layer {
+	l.id = id
+	return l
+}
+
+// X sets the x-coordinate of the Layer relative to its parent.
+func (l *Layer) X(x int) *Layer {
+	l.x = x
+	return l
+}
+
+// Y sets the y-coordinate of the Layer relative to its parent.
+func (l *Layer) Y(y int) *Layer {
+	l.y = y
+	return l
+}
+
+// Z sets the z-index of the Layer relative to its parent.
+func (l *Layer) Z(z int) *Layer {
+	l.z = z
+	return l
+}
+
+// GetX returns the x-coordinate of the Layer relative to its parent.
+func (l *Layer) GetX() int {
+	return l.x
+}
+
+// GetY returns the y-coordinate of the Layer relative to its parent.
+func (l *Layer) GetY() int {
+	return l.y
+}
+
+// GetZ returns the z-index of the Layer relative to its parent.
+func (l *Layer) GetZ() int {
+	return l.z
+}
+
+// AddLayers adds child layers to the Layer.
+func (l *Layer) AddLayers(layers ...*Layer) *Layer {
+	for i, layer := range layers {
+		if layer == nil {
+			panic(fmt.Sprintf("layer at index %d is nil", i))
+		}
+		l.layers = append(l.layers, layer)
+	}
+	area := l.boundsWithOffset(0, 0)
+	l.width = area.Dx()
+	l.height = area.Dy()
+	return l
+}
+
+// GetLayer returns a descendant layer by its ID, or nil if not found.
+// Layers with empty IDs are skipped.
+func (l *Layer) GetLayer(id string) *Layer {
+	if id == "" {
+		return nil
+	}
+	if l.id == id {
+		return l
+	}
+	for _, child := range l.layers {
+		if found := child.GetLayer(id); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+// MaxZ returns the maximum z-index among this layer and all its descendants.
+func (l *Layer) MaxZ() int {
+	maxZ := l.z
+	for _, child := range l.layers {
+		childMaxZ := child.MaxZ()
+		if childMaxZ > maxZ {
+			maxZ = childMaxZ
+		}
+	}
+	return maxZ
+}
+
+// boundsWithOffset calculates bounds with parent offset applied.
+func (l *Layer) boundsWithOffset(parentX, parentY int) image.Rectangle {
+	absX := l.x + parentX
+	absY := l.y + parentY
+
+	width, height := Width(l.content), Height(l.content)
+	bounds := image.Rectangle{
+		Min: image.Pt(absX, absY),
+		Max: image.Pt(absX+width, absY+height),
+	}
+
+	for _, child := range l.layers {
+		bounds = bounds.Union(child.boundsWithOffset(absX, absY))
+	}
+
+	return bounds
+}
+
+var _ uv.Drawable = (*Layer)(nil)
+
+// Draw draws the content of the layer on the screen at the specified area.
+func (l *Layer) Draw(scr uv.Screen, area uv.Rectangle) {
+	content := uv.NewStyledString(l.content)
+	content.Draw(scr, area)
+}
+
+// LayerHit represents the result of a hit test on a [Layer].
+type LayerHit struct {
+	id     string
+	layer  *Layer
+	bounds image.Rectangle
+}
+
+// Empty returns true if the LayerHit represents no hit.
+func (lh LayerHit) Empty() bool {
+	return lh.layer == nil
+}
+
+// ID returns the ID of the hit Layer.
+func (lh LayerHit) ID() string {
+	return lh.id
+}
+
+// Layer returns the layer that was hit.
+func (lh LayerHit) Layer() *Layer {
+	return lh.layer
+}
+
+// Bounds returns the bounds of the LayerHit.
+func (lh LayerHit) Bounds() image.Rectangle {
+	return lh.bounds
+}
+
+// Compositor manages the composition of layers. It flattens a layer hierarchy
+// once and provides efficient drawing and hit testing operations. All computation
+// related to layers happens in the Compositor.
+type Compositor struct {
+	root   *Layer
+	layers []compositeLayer
+	index  map[string]*Layer
+	bounds image.Rectangle
+}
+
+// compositeLayer holds a flattened layer with its calculated absolute position and bounds.
+type compositeLayer struct {
+	layer  *Layer
+	absX   int
+	absY   int
+	bounds image.Rectangle
+}
+
+// NewCompositor creates a new Compositor with an internal root layer. Optional
+// layers can be provided which will be added as children of the root. The layer
+// hierarchy is flattened and sorted by z-index for efficient rendering and hit testing.
+func NewCompositor(layers ...*Layer) *Compositor {
+	root := NewLayer("")
+	root.AddLayers(layers...)
+	c := &Compositor{
+		root:  root,
+		index: make(map[string]*Layer),
+	}
+	c.flatten()
+	return c
+}
+
+// AddLayers adds layers to the compositor's root and refreshes the internal state.
+func (c *Compositor) AddLayers(layers ...*Layer) *Compositor {
+	c.root.AddLayers(layers...)
+	c.flatten()
+	return c
+}
+
+// flatten builds the internal flattened layer list and calculates overall bounds.
+func (c *Compositor) flatten() {
+	c.layers = nil
+	c.index = make(map[string]*Layer)
+	c.flattenRecursive(c.root, 0, 0)
+
+	// Sort by absolute z-index (lowest to highest for drawing)
+	slices.SortFunc(c.layers, func(a, b compositeLayer) int {
+		return a.layer.z - b.layer.z
+	})
+
+	// Calculate overall bounds
+	if len(c.layers) > 0 {
+		c.bounds = c.layers[0].bounds
+		for i := 1; i < len(c.layers); i++ {
+			c.bounds = c.bounds.Union(c.layers[i].bounds)
+		}
+	}
+}
+
+// flattenRecursive recursively collects all layers with their absolute positions.
+func (c *Compositor) flattenRecursive(layer *Layer, parentX, parentY int) {
+	absX := layer.x + parentX
+	absY := layer.y + parentY
+
+	width, height := Width(layer.content), Height(layer.content)
+	bounds := image.Rectangle{
+		Min: image.Pt(absX, absY),
+		Max: image.Pt(absX+width, absY+height),
+	}
+
+	c.layers = append(c.layers, compositeLayer{
+		layer:  layer,
+		absX:   absX,
+		absY:   absY,
+		bounds: bounds,
+	})
+
+	// Index layer by ID if it has one
+	if layer.id != "" {
+		c.index[layer.id] = layer
+	}
+
+	for _, child := range layer.layers {
+		c.flattenRecursive(child, absX, absY)
+	}
+}
+
+// Bounds returns the overall bounds of all layers in the compositor.
+func (c *Compositor) Bounds() image.Rectangle {
+	return c.bounds
+}
+
+// Draw draws all layers onto the given [uv.Screen] in z-index order.
+func (c *Compositor) Draw(scr uv.Screen, area image.Rectangle) {
+	for _, cl := range c.layers {
+		if cl.bounds.Overlaps(area) {
+			cl.layer.Draw(scr, cl.bounds)
+		}
+	}
+}
+
+// Hit performs a hit test at the given (x, y) coordinates. If a layer is hit,
+// it returns the ID of the top-most layer at that point. Layers with empty IDs
+// are ignored. If no layer is hit, it returns an empty [LayerHit].
+func (c *Compositor) Hit(x, y int) LayerHit {
+	var hit LayerHit
+	pt := image.Pt(x, y)
+	// Check from highest z to lowest (reverse order)
+	for i := len(c.layers) - 1; i >= 0; i-- {
+		cl := c.layers[i]
+		if cl.layer.id != "" && pt.In(cl.bounds) {
+			hit.id = cl.layer.id
+			hit.layer = cl.layer
+			hit.bounds = cl.bounds
+			return hit
+		}
+	}
+	return hit
+}
+
+// GetLayer returns a layer by its ID, or nil if not found.
+// Layers with empty IDs are not indexed and cannot be retrieved.
+func (c *Compositor) GetLayer(id string) *Layer {
+	if id == "" {
+		return nil
+	}
+	return c.index[id]
+}
+
+// Refresh re-flattens the layer hierarchy. Call this after modifying the layer
+// tree structure or positions to update the compositor's internal state.
+func (c *Compositor) Refresh() {
+	c.flatten()
+}
+
+// Render renders the compositor into a styled string. This is a helper
+// function that creates a temporary canvas, draws the compositor onto it, and
+// returns the resulting string.
+func (c *Compositor) Render() string {
+	width, height := c.bounds.Dx(), c.bounds.Dy()
+	canvas := NewCanvas(width, height)
+	return canvas.Compose(c).Render()
+}
+package lipgloss
+
+import (
+	uv "github.com/charmbracelet/ultraviolet"
+	"github.com/charmbracelet/x/ansi"
+)
+
+// Canvas is a cell-buffer that can be used to compose and draw [uv.Drawable]s
+// like [Layer]s.
+//
+// Composed drawables are drawn onto the canvas in the order they were
+// composed, meaning later drawables will appear "on top" of earlier ones.
+//
+// A canvas can read, modify, and render its cell contents.
+//
+// It implements [uv.Screen] and [uv.Drawable].
+type Canvas struct {
+	scr uv.ScreenBuffer
+}
+
+var _ uv.Screen = (*Canvas)(nil)
+
+// NewCanvas creates a new [Canvas] with the given size.
+func NewCanvas(width, height int) *Canvas {
+	c := new(Canvas)
+	c.scr = uv.NewScreenBuffer(width, height)
+	c.scr.Method = ansi.GraphemeWidth
+	return c
+}
+
+// Resize resizes the canvas to the given width and height.
+func (c *Canvas) Resize(width, height int) {
+	c.scr.Resize(width, height)
+}
+
+// Clear clears the canvas.
+func (c *Canvas) Clear() {
+	c.scr.Clear()
+}
+
+// Bounds implements [uv.Screen].
+func (c *Canvas) Bounds() uv.Rectangle {
+	return c.scr.Bounds()
+}
+
+// Width returns the width of the canvas.
+func (c *Canvas) Width() int {
+	return c.scr.Width()
+}
+
+// Height returns the height of the canvas.
+func (c *Canvas) Height() int {
+	return c.scr.Height()
+}
+
+// CellAt implements [uv.Screen].
+func (c *Canvas) CellAt(x int, y int) *uv.Cell {
+	return c.scr.CellAt(x, y)
+}
+
+// SetCell implements [uv.Screen].
+func (c *Canvas) SetCell(x int, y int, cell *uv.Cell) {
+	c.scr.SetCell(x, y, cell)
+}
+
+// WidthMethod implements [uv.Screen].
+func (c *Canvas) WidthMethod() uv.WidthMethod {
+	return c.scr.WidthMethod()
+}
+
+// Compose composes a [Layer] or any [uv.Drawable] onto the [Canvas].
+func (c *Canvas) Compose(drawer uv.Drawable) *Canvas {
+	drawer.Draw(c, c.Bounds())
+	return c
+}
+
+// Draw draws the [Canvas] onto the given [uv.Screen] within the specified
+// area.
+//
+// It implements [uv.Drawable].
+func (c *Canvas) Draw(scr uv.Screen, area uv.Rectangle) {
+	c.scr.Draw(scr, area)
+}
+
+// Render renders the canvas into a styled string. Any trailing spaces are
+// trimmed.
+func (c *Canvas) Render() string {
+	return uv.TrimSpace(c.scr.Render())
+}
+
+codex
+Use Lip Gloss v2’s **layers and compositor**: render your screen as the bottom layer and the dialog as a higher layer. Give each an ID, then call `Compositor.Hit(x, y)` to identify the topmost layer under a click.
+
+These imports use the stable v2 module paths:
+
+```go
+import (
+    tea "charm.land/bubbletea/v2"
+    "charm.land/lipgloss/v2"
+)
+```
+
+Add a shared layout method to your model so rendering and hit testing use identical positions. Here, `m.screen()` represents your existing screen renderer:
+
+```go
+type model struct {
+    width, height int
+    confirming    bool
+    status        string
+}
+
+func (m model) layout() *lipgloss.Compositor {
+    // Fill the viewport so blank background cells are also clickable.
+    background := lipgloss.NewStyle().
+        Width(m.width).
+        Height(m.height).
+        Render(m.screen())
+
+    layers := []*lipgloss.Layer{
+        lipgloss.NewLayer(background).ID("background").Z(0),
+    }
+
+    if m.confirming {
+        dialog := lipgloss.NewStyle().
+            Border(lipgloss.RoundedBorder()).
+            Padding(1, 3).
+            Background(lipgloss.Color("#252535")).
+            Foreground(lipgloss.Color("#FFFFFF")).
+            Render("Proceed with this action?\n\n[y] Confirm    [n / Esc] Cancel")
+
+        // Measure the rendered string: borders and padding count.
+        w, h := lipgloss.Size(dialog)
+        x := max(0, (m.width-w)/2)
+        y := max(0, (m.height-h)/2)
+
+        layers = append(layers,
+            lipgloss.NewLayer(dialog).
+                ID("dialog").
+                X(x).Y(y).Z(1),
+        )
+    }
+
+    return lipgloss.NewCompositor(layers...)
+}
+
+func (m model) View() tea.View {
+    // A fixed canvas clips content to the terminal dimensions.
+    content := lipgloss.NewCanvas(m.width, m.height).
+        Compose(m.layout()).
+        Render()
+
+    v := tea.NewView(content)
+    v.AltScreen = true
+    v.MouseMode = tea.MouseModeCellMotion
+    return v
+}
+```
+
+Handle clicks in `Update`:
+
+```go
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        m.width, m.height = msg.Width, msg.Height
+
+    case tea.MouseClickMsg:
+        if msg.Button != tea.MouseLeft {
+            return m, nil
+        }
+
+        hit := m.layout().Hit(msg.X, msg.Y)
+
+        if m.confirming {
+            switch hit.ID() {
+            case "dialog":
+                m.status = "Clicked inside the dialog"
+            case "background":
+                m.status = "Clicked outside; canceled"
+                m.confirming = false
+            }
+
+            // Consume modal clicks here; don't forward them to
+            // the underlying screen's controls.
+            return m, nil
+        }
+
+        // Handle ordinary screen clicks here.
+
+    case tea.KeyPressMsg:
+        if m.confirming {
+            switch msg.String() {
+            case "y":
+                m.confirming = false
+                m.status = "Confirmed"
+                // Return your action's command here.
+            case "n", "esc":
+                m.confirming = false
+                m.status = "Canceled"
+            }
+            return m, nil
+        }
+
+        if msg.String() == "c" {
+            m.confirming = true
+        }
+    }
+
+    return m, nil
+}
+```
+
+A few details matter:
+
+- `Hit` returns a `LayerHit`; use `.ID()` or `.Empty()`.
+- Hit testing uses **rectangular terminal-cell bounds**, including borders, padding, and spaces. Layers with empty IDs are ignored.
+- `AltScreen` keeps this example’s view origin aligned with the mouse’s terminal coordinates.
+- If you retain a compositor and later move its layers, call `Refresh()` before rendering or hit testing. The example rebuilds it instead.
+
+I checked these APIs against the locally installed Bubble Tea **v2.1.0** and Lip Gloss **v2.0.6** sources.
+tokens used
+12,623

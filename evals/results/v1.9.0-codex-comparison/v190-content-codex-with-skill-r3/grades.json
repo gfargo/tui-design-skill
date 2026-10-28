@@ -1,0 +1,540 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-content-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "floor-sketch-layout-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by recommending a full-screen three-pane browser (namespaces \u2192 pods \u2192 detail) and only then explains it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It gives a 140\u00d736 wide-layout sketch and a 60\u00d724 narrow-layout sketch."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The responsive table shows the sidebar collapsing to a namespace picker and the detail pane moving below the pods at 80\u2013119 columns, then one pane at a time at 60\u201379 columns, with the 60-column sketch showing that single pane."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Below 60 columns or 12 rows it shows `Terminal too small: need 60\u00d712; current W\u00d7H` with a quit hint."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The sketches use box-drawing characters, but the answer explicitly says to support ASCII separators as a fallback."
+        }
+      ]
+    },
+    {
+      "trial_id": "floor-sketch-layout-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by recommending a three-column browser that collapses to drill-down views, then explains it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It includes an ASCII sketch of the 120+ column layout and two 60-column fallback sketches showing the pod list and opened logs."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The responsive table shows the namespace sidebar hiding at 100\u2013119 columns, then a single pane at 80\u00d724 and 60\u201379 columns, which is the single-pane fallback."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Below 60\u00d712 the app shows `Terminal too small: need 60x12` along with the current dimensions."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The sketches use plain ASCII characters (-, |, +), and the answer also mentions support for ASCII separators."
+        }
+      ]
+    },
+    {
+      "trial_id": "floor-sketch-layout-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The opening sentence recommends a persistent three-pane layout on wide terminals with a single-pane drill-down on smaller ones, before any explanation."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Provides an ASCII sketch at 140\u00d732 and a second sketch at 60 columns."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The size table shows the namespace sidebar and detail pane folding away below 120 columns, age and restart columns hiding first at 60\u201379, and a single-pane fallback at 60 columns."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that below 60\u00d712 the app shows 'Terminal too small \u2014 need 60 columns \u00d7 12 rows' along with the current dimensions."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Both sketches use only plain ASCII characters, with '|' as pane separators and no box-drawing glyphs."
+        }
+      ]
+    },
+    {
+      "trial_id": "state-coverage-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table covers initial/unconfigured, first load, empty, partial results, several error states (all unavailable, auth, rate limit), stale/disconnected, and terminal too small."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Partial shows '4/5 current; ci-east timed out', keeps healthy results usable, marks the failed server's row inline, and offers a per-server retry."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Stale keeps cached results with 'Last known: PASSED \u00b7 updated 8m ago' and a STALE 8m marker, but the answer never says to dim or de-emphasize the stale data."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Most states name a concrete action (setup, retry, credential route, change-release or clear-filter, quit), and the layout shows persistent retry, refresh, and quit keys."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says status uses text with optional color and spells out states as PASSED, FAILED, STALE, and UNKNOWN."
+        }
+      ]
+    },
+    {
+      "trial_id": "state-coverage-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table covers initial/unconfigured, first load, partial load, empty source and empty filter, fetch failures, disconnected/stale, and too small."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Completed results appear immediately with counts like '3/5 servers responded' and 'Fresh sources 3/5'; every server stays represented with failures named inline, and only the affected servers are retried."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Last successful data is kept with a 'STALE 4m' marker and a 'last known result' asterisk, but dimming is never mentioned; staleness is shown only through text markers."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Every row in the state table has a recovery or next-action column (cancel, retry affected, clear filter, change release, update credentials, resize/quit)."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "States use text labels (UNVERIFIED, STALE 4m, access denied, reconnecting, passed*), with 'one textual status per meaning'; nothing depends on color."
+        }
+      ]
+    },
+    {
+      "trial_id": "state-coverage-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table covers first launch, initial loading, empty source, partial results and partial failure, auth/server errors, stale/disconnected, and terminal too small."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Partial failure keeps successful servers visible, names each unavailable source with its reason ('3/5 responded'), and offers 'Retry selected server'."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Stale rows keep last-known results with a `STALE` label and last-fetch age, but the answer never says to dim them."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Every row has a Recovery column entry such as retry, cancel, change release/branch, clear filter, or resize."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "States use textual labels like `STALE`, `Unavailable`, and `Unknown`, and the answer says 'Color can reinforce the words.'"
+        }
+      ]
+    },
+    {
+      "trial_id": "clutter-audit-counts-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer quantifies each offender: border depth 2 \u2192 0, success shown twice by `[PASS]` and `(ok)`, and the `>` on every row marking nothing."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It flags `[PASS]` and `(ok)` as duplicate signals and keeps the PASS word plus optional green, explicitly saying that is enough with no extra icon."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It removes the always-on `>` and reserves reverse video for the selected row only."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It drops both borders to zero and keeps one only when it separates this list from another pane."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It states that `> [PASS] (ok)` takes 13 of the row's 24 characters, about 54%, before borders are counted."
+        }
+      ]
+    },
+    {
+      "trial_id": "clutter-audit-counts-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Counts each offender: border depth 2 \u2192 0, duplicate status 2 \u2192 1, and the `>` marker on every row \u2192 none."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says `[PASS]` and `(ok)` duplicate each other, keeps only the word, and allows optional red only on FAIL alongside the word."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Removes `>` and reserves reverse video for the selected row if the list is interactive."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Removes both the outer frame and the inner list border, leaving zero borders."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Notes that `> [PASS] (ok) ` takes 14 of the row's 24 characters before the task name, which quantifies chrome versus data."
+        }
+      ]
+    },
+    {
+      "trial_id": "clutter-audit-counts-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives concrete counts: border depth 2 \u2192 0, duplicate status 2 \u2192 1, and the `>` marker on every row \u2192 none."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It flags `[PASS]` and `(ok)` as saying the same thing, keeps plain `PASS`, and allows optional red on `FAIL`, which leaves one color cue plus one text cue."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It removes `>` and reserves reverse video for the selected row only."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It deletes both the outer frame and the inner list border, leaving zero borders."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says the prefix takes 14 of 23 cells before the test name, which quantifies chrome versus data (the full row is actually 24 cells, a minor miscount)."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-message-timing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says success and info messages show for 3\u20135 seconds and then the idle status line returns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says warnings and errors stay visible until the user explicitly dismisses them."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says dismissing an error removes it from the status line but keeps it in a reopenable history such as :messages."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer leads messages with a text label like 'Error:' so the meaning survives NO_COLOR."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-message-timing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Answer states 3\u20135 seconds for success and informational messages before returning to idle."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Answer says errors and warnings should stay until explicitly dismissed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Answer keeps every message in a reopenable history (`:messages` or a key), including after dismissal."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Answer recommends a severity word or symbol like `Error:` so meaning survives without color."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-message-timing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says success and informational messages show for 3\u20135 seconds, then return to idle."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says warnings and errors stay visible until explicitly dismissed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says all messages, errors included, go to a reopenable log, and a dismissed error stays available through `:messages` or a documented key."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer leads errors with the text label `Error:` and treats color as optional, so the label alone carries severity without color."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-hint-collapse-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It shows a full single-line footer at 80 columns and a shorter one at 40 columns, plus an extra 60-column example."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to put frequent actions first, and the 80-column line starts with Enter open, Space select and / filter."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "`? help` is the last hint at 80, 60 and 40 columns, and the answer says `?` opens the complete action list."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "At 40 columns it drops `Space select`, the second hint, but keeps `/ filter` and `q quit`, which rank lower, so it does not drop the least frequent hints first."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It separates hints with plain double spaces, which are narrow, and uses no ambiguous-width middle dot."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-hint-collapse-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a rendered footer line at 80 columns (79 cells) and a shorter one at 40 columns (37 cells), plus a 60-column variant."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States that frequent actions come first, and the 80-column line leads with Enter open, Space mark and / find."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "`? help` is the final hint at 80, 60 and 40 columns, and the answer says `?` lists every action."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It claims to drop hints by priority, but the 40-column line drops Space mark (2nd) and keeps q quit (7th), which q quit itself was dropped at 60, so the least-frequent-first order is contradicted."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Uses the narrow ASCII `|` separator throughout, avoiding the ambiguous-width middle dot."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-hint-collapse-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The line labeled 80 columns is 83 cells wide, so it overflows the stated width; the 40-column line (39 cells) does fit."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says 'frequent actions first' and leads with Enter open, Space select and / filter."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "`? help` ends the 80-, 60- and 40-column lines, and the answer says `?` opens the complete list."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer says to hide lower-priority hints, but at 40 columns it drops Space select (position 2) while keeping q quit (position 7), which contradicts its own frequency order."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer uses the narrow ASCII `|` separator throughout."
+        }
+      ]
+    },
+    {
+      "trial_id": "palette-and-slash-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends a palette because about 35 actions across several screens justify searchable commands, though it never names a ~20-action threshold."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says every bound action should also appear in the palette with its shortcut beside it."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its table makes `/` find text in log content and filter in lists; Enter accepts the search and n/N move between matches."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It offers `:` as an alternative because terminal multiplexers can capture Ctrl bindings, though it doesn't name Zellij or readline specifically."
+        }
+      ]
+    },
+    {
+      "trial_id": "palette-and-slash-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It recommends a palette because of the 35 actions spread across several screens, though it never states a ~20-action threshold."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says the palette should include every action with a keybinding and display that binding."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "`/` searches log text with Enter jumping to the first match and n/N cycling, and it filters items when focus is on a source/session list."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It warns that multiplexers can capture Ctrl chords like Ctrl+P and keeps `:` as the alternative, without naming Zellij or readline."
+        }
+      ]
+    },
+    {
+      "trial_id": "palette-and-slash-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It opens by saying 35 actions across several screens warrants a palette, citing both the action count and the multiple contexts, though it names no ~20 threshold."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to include every action with a keybinding, with its shortcut shown beside the name."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "`/` searches logs with Enter jumping to the first match and n/N for next/previous, and filters a focused source/session list."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It notes that a multiplexer can capture Ctrl+P and offers `:` as an alternative that opens the same palette, though it doesn't name Zellij or readline."
+        }
+      ]
+    }
+  ]
+}

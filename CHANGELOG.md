@@ -52,6 +52,10 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - **CLI basics:** the environment-variable table is one sentence, and the final checklist is ten review questions that point to the owning sections.
   - **Ecosystems:** TypeScript has one runtime-floors table, its stack recommendations are a table, and its two "Pitfalls" headings are renamed *Ink pitfalls* and *Cross-library pitfalls*. Framework subsections in the Python and TypeScript references moved from `##` to `###`. Go and Rust drop release history, production-user lists, and repeated companion-crate text.
 
+### Evaluation
+- **v1.9.0 evidence round:** `evals/results/v1.9.0-claude-comparison/` and `v1.9.0-codex-comparison/` record baseline and with-skill runs of the five `v190` rubric sets (47 cases) on Claude Code (`claude-opus-5-5`) and the Codex CLI (`gpt-6.1-sol`, low effort), three repetitions per case and condition, all at one commit and one skill hash, with a report for each host. With the skill, Claude Code went from 67.0% to 98.1% of assertions and Codex from 55.3% to 91.2%. No case scored lower with the skill, and every paired repetition favored it on both hosts. The sets check what the release added, so the gap measures that content, not design or build quality (tracked in #79); each report lists the assertions the skill still missed. Three Codex jobs were rerun in full after a usage limit and the failed attempts were not committed.
+- The five `v190` sets' status notes now point at these runs.
+
 ## [1.8.2] — 2026-10-26
 
 Correctness patch for the 1.8 line from the October 2026 reference audit (#68–#71): wrong or missing facts in the ecosystem, CLI, and pattern references, and guidance that contradicted itself.

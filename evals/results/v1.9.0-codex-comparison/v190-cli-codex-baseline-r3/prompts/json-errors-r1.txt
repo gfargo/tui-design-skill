@@ -1,0 +1,1 @@
+I'm adding --json to my CLI. How should failures look when the flag is set, and what are the compatibility rules for the output?

@@ -1,0 +1,48 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-4jf7hthk
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfd-1c73-7091-a4bd-8631dd8d3b6d
+--------
+user
+The process list in my TUI refreshes every second and the cursor keeps jumping to different rows. How do I fix it?
+
+codex
+I’ll check how the process list tracks selection across refreshes.
+exec
+/bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '*.*' | head -60" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-4jf7hthk
+ succeeded in 43ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-4jf7hthk
+
+codex
+Track selection by **process identity, not row number**. On refresh, sorting or new processes can move rows, so keeping “row 7” selected can highlight a different process.
+
+For each refresh:
+
+1. Save the selected process’s identity—ideally `(PID, start_time)`, since PIDs can be reused.
+2. Fetch and sort the new process list.
+3. Find that identity in the new list and update the selected row.
+4. If it exited, select the nearest valid row.
+5. Preserve the scroll offset, adjusting only enough to keep the selection visible.
+
+```text
+selected_id = identity(rows[selected_index])
+old_index = selected_index
+
+rows = fetch_and_sort_processes()
+
+selected_index = find_index(rows, selected_id)
+if selected_index is missing:
+    selected_index = clamp(old_index, rows)
+```
+
+Use a deterministic tie-breaker such as PID when sorting. If you sort by CPU usage, rows will still move every second; a fixed sort or temporarily freezing sorting during navigation can make browsing easier.
+
+Also avoid recreating the table’s selection and scroll state on every render. Your workspace appears empty, so I couldn’t inspect the implementation; share the refresh and selection code for a precise patch.
+tokens used
+3,392

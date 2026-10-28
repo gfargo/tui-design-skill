@@ -1,0 +1,1 @@
+My Ink 8 app lists 20,000 log entries. I wrapped them all in a Box with overflow="hidden" and contentOffsetY to scroll, but every arrow press is sluggish. What should I change?

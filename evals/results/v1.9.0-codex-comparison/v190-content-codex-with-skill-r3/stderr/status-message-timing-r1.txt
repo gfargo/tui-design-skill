@@ -1,0 +1,559 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yb0t26l9
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17f8a-71f8-7460-8cd0-0b5920ae6948
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+How long should status-line messages stay on screen in my TUI, and what should happen to errors?
+
+codex
+I’ll read the tui-design skill and use its guidance for message timing and error handling.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yb0t26l9
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, `--json` and errors, completions, paging, config, Windows, CLI testing, automation | `references/cli-basics.md` |
+| Layouts and wireframes, inline vs alternate screen, borders, hierarchy, color, density, responsive behavior and the floor size, states (empty, loading, partial, error, stale), tables, diff views, modals, status bars and messages, progress and spinners, themes, icons and Nerd Fonts, localization and Unicode width, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, the Esc/q/Ctrl+C quit order, keys that tmux or the key encoding steal, focus, navigation, search and filter, multi-select, help and the command palette, scrolling, live-data selection, log follow mode, trees, text input, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
+| Flicker or tearing, escape sequences and terminal modes (bracketed paste, keyboard protocol and a Shift+Enter that doesn't arrive, mouse, focus, synchronized output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color depth and theme detection | `references/terminal-protocols.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small (`visual-patterns.md` → *States*). In a design answer, include an ASCII sketch of the layout at the floor size (60 columns) next to the wide one.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Which other keys are reserved, and why raw mode frees `Ctrl+S`, is in `interaction-patterns.md` → *Reserved keys*.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+- for one-shot CLIs, stdout, stderr, and the exit code in golden tests, with no TTY and under `NO_COLOR` (`cli-basics.md` → *Testing one-shot CLIs*).
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "rg -n -A 32 -B 8 'Status|status message|seconds|persistent|notification' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yb0t26l9
+ succeeded in 0ms:
+7-- [Inline, alt-screen, or overlay — where the UI lives](#inline-alt-screen-or-overlay--where-the-ui-lives)
+8-- [Borders — when, what, and why](#borders--when-what-and-why)
+9-- [Color in depth](#color-in-depth)
+10-- [Typography in monospace](#typography-in-monospace) (includes visual hierarchy)
+11-- [Density: pack vs pad](#density-pack-vs-pad) (includes the clutter audit)
+12-- [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor) (includes one app at three widths)
+13-- [Tables and lists](#tables-and-lists) (includes emoji width in columns and diff views)
+14-- [Localization](#localization) (translation growth, right-to-left text, ambiguous-width characters, locale formatting)
+15:- [Status bars, headers, footers](#status-bars-headers-footers)
+16-- [Modals and dialogs](#modals-and-dialogs)
+17-- [Progress indicators](#progress-indicators)
+18-- [States](#states) (initial, loading, empty, partial, success, error, stale, too small)
+19-- [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
+20-- [Accessibility](#accessibility) (screen readers, the plain-mode contract, framework support, motion)
+21-- [Common visual pitfalls](#common-visual-pitfalls)
+22-
+23----
+24-
+25-## The seven canonical layouts in detail
+26-
+27-Pick the layout from the user's loop, then sketch it at the floor size before writing code. The table is the decision; the thumbnails show each layout wide (left) and at its 60-column fallback (right), drawn in ASCII so they survive any terminal.
+28-
+29-| Layout | Use when | Avoid when | 60-column fallback | Exemplars |
+30-|---|---|---|---|---|
+31-| **Persistent multi-panel** | Users watch several related views at once; data is read at a glance; numeric jumps (`1`–`5`) make sense | Each pane needs full attention, or the total would overwhelm a small terminal | Show the focused panel only, with the others as tabs or `1`–`5` jumps | lazygit (5 left panels plus one right), btop, htop (header, list, F-key footer) |
+32-| **Miller columns** | Hierarchical data (filesystems, JSON, K8s trees) where parent context and a preview matter | Non-hierarchical data, or terminals under 80 columns | One pane (the middle column); the preview opens on demand | yazi (`[1, 4, 3]`), ranger, nnn, lf, broot |
+33-| **Drill-down stack** | Many resource types to pivot between; each detail view deserves the full screen; command-mode navigation fits | Users must compare two things side by side, or the stack would pass three levels | Unchanged: one view at a time is the native shape | k9s, lazydocker, gh dash |
+34-| **Widget dashboard** | Monitoring where users compose their own view and each widget updates on its own cadence | Static data, or users who want one curated experience | One widget at a time with a next-widget key | btop, bottom, glances, gtop |
+35-| **IDE three-panel** | Compose, execute, inspect workflows with a navigator beside the work | Pure browsing with no composition step | The main panel only; the sidebar and output become toggles | Posting, Harlequin |
+36-| **Overlay / popup** | Summon, choose, output, exit; shell-pipeline tools; replacing a built-in such as Ctrl+R | Long-running interactions, or anything that keeps state between runs | Unchanged: shrink the preview first | fzf, atuin, zoxide with fzf, gum |
+37-| **Tabbed within a panel** | One panel needs several related views of the selected object | Unrelated tabs (use panels) or more than 5–6 tabs | Collapse the tab row to the active tab with a count and `[`/`]` | lazygit's branch tabs, lazydocker's right pane |
+38-
+39-**Persistent multi-panel**
+40-
+41-```
+42-+---------+----------------+    +--------------------------+
+43-| 1 Files |                |    | [1 Files] 2 Branch 3 Log |
+44-+---------+ 4 Diff         |    |                          |
+45-| 2 Branch|                |    |   focused panel only     |
+46-+---------+----------------+    +--------------------------+
+47-| space stage  c commit  ? |    | space stage  c commit  ? |
+--
+110-```
+111-
+112-### Notes by layout
+113-
+114-- **Multi-panel:** the focus cue must survive `NO_COLOR` (ranking in `interaction-patterns.md` → *Focus indicators*). Make the footer hint bar panel-aware (`c` does different things in lazygit's Files and Commits panels), and let numeric jumps work from any panel.
+115-- **Miller columns:** the middle column is the widest because it is where the user works. The preview follows the selection live; debounce it when it is expensive.
+116-- **Drill-down stack:** show the current address in the status bar (`cluster/namespace/pods/my-pod-7d9f`). `Esc` always backs up one level, so the user never feels trapped. Keep a stack of view-state objects: push saves the current view, pop restores it.
+117-- **Widget dashboard:** define the config schema (TOML or YAML) early, because users will customize. bottom sets rows and column ratios in TOML, btop toggles boxes in `btop.conf`, glances reads INI, and gtop has no layout config. Make each widget independently scrollable or expandable. Drag-resize is rare (btop offers click-to-focus and scrolling, no drag-resize).
+118:- **IDE three-panel:** make the sidebar collapsible, but `Ctrl+B` is tmux's default prefix, so keep an alternative. Cycle main-panel tabs with `[`/`]`, since `Ctrl+Tab` needs an enhanced keyboard protocol. helix is the counterexample: its file explorer is a picker, not a persistent sidebar.
+119-- **Overlay:** buffer choice and the exit contract are in *Inline, alt-screen, or overlay* below. Startup time is part of the design because users summon these dozens of times a day; budgets are in `cli-basics.md` → *Startup time*.
+120-- **Tabs:** mark the active tab with underline or reverse video, with the accent color as reinforcement. Label tabs with their jump keys (`Logs [1]`, `Stats [2]`), and cycle them in reading order.
+121-
+122----
+123-
+124-## Inline, alt-screen, or overlay — where the UI lives
+125-
+126-Before choosing a layout, choose a screen buffer. The **alternate screen** is a separate buffer with no scrollback; on exit the terminal restores whatever was there before. **Inline** rendering paints in the normal buffer, below the shell prompt, and scrolls with everything else.
+127-
+128-**Default heuristic: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, and dashboards — long-lived, navigational, full-screen — usually belong on the alt screen so they do not pollute scrollback. Prefer inline for bounded pickers, prompts, confirmations, and progress when preserving shell context matters. A picker with a large preview or unusually deep workflow may still earn a full-screen buffer; choose from the working set and exit contract, not the label alone.
+129-
+130-All four frameworks support both modes. How each enters the alternate screen or stays inline, and how it prints permanent lines above an inline UI, is in its ecosystem reference: `ecosystem-go.md`, `ecosystem-rust.md` → *Inline viewport*, and `ecosystem-python.md` and `ecosystem-typescript.md` → *Lifecycle and terminal handoff*.
+131-
+132-### The fzf model — bounded inline viewport
+133-
+134-fzf itself defaults to full-screen mode. Its explicit `--height 40%` mode renders the finder below the cursor so previous commands remain visible; fzf's shell keybindings commonly opt into this bounded mode. The UI paints on `/dev/tty` (stderr as fallback) so stdout stays clean — that's why `vim $(fzf)` works. Treat height-capped inline rendering as a strong option for fzf-like tools, not as a fact about every picker or fzf's default.
+135-
+136-### The exit contract — the receipt pattern
+137-
+138-Inside `$(...)` or a pipe, stdout is not a TTY; anything the UI paints to stdout becomes part of the captured "result." So: **chrome to stderr or `/dev/tty`, answer to stdout.** gum runs its Bubble Tea UI with `tea.WithOutput(os.Stderr)` and prints the chosen value to stdout, stripping ANSI when stdout isn't a TTY — which is exactly why `CHOICE=$(gum choose a b c)` composes.
+139-
+140-On exit, do one of two respectable things: erase the transient UI completely (fzf's default), or replace it with a one-line receipt that stays in scrollback — `✓ deployed api-server in 12s`. Textual's `inline_no_clear` and fzf's `--no-clear` are the deliberate leave-the-last-frame escape hatches. What you must not do is leave a dead, half-drawn UI behind.
+141-
+142-### Choose by workflow
+143-
+144-One-shot pick, confirm, or progress: prefer inline, erasing cleanly or leaving a concise receipt. Explore, monitor, or edit sessions: alt screen, restored on exit. Hybrids (fzf-like pickers; logs plus live status): inline with a height cap (`--height 40%`, `Viewport::Inline`).
+145-
+146----
+147-
+148-## Borders — when, what, and why
+149-
+150-### The Unicode block
+--
+312-| | > [FAIL] (!!)  test         4.5s | |
+313-| +----------------------------------+ |
+314-+--------------------------------------+
+315-```
+316-
+317-The audit reports: border-nesting depth 2; three signals for one status (tag, `(ok)` or `(!!)`, color); a `>` marker on 3 of 3 rows; and 189 of 226 non-blank cells (84%) spent on chrome. After (FAIL in red):
+318-
+319-```
+320: Task    Status  Time
+321- build   PASS    2.1s
+322- lint    PASS    0.8s
+323- test    FAIL    4.5s
+324-```
+325-
+326-Depth 0, two signals on the failure (the word and red) and none on passes, no always-on marker, and 14 of 51 non-blank cells (27%) on the header labels. The selected row gets reverse video alone.
+327-
+328----
+329-
+330-## Responsive design — breakpoints and the floor
+331-
+332-A terminal layout is not designed for one size. The same app runs on a 220-column ultrawide, an 80×24 SSH session, a 60-column tmux split, and a 13-inch laptop. **A layout that only works at the author's window size is unfinished** — and the author rarely notices, because they only ever see their own terminal. Pressure-test every layout at the floor, and raise it in any review even when the user only asked about something else: it's the most-missed issue in TUI design.
+333-
+334-### The breakpoint ladder
+335-
+336-Decide behavior per width band, widest to narrowest. Exact thresholds depend on content, but the shape is universal:
+337-
+338-- **Wide (120+ cols)** — the full multi-panel layout; you can afford a side panel or preview alongside the primary view.
+339-- **Standard (80–119)** — the baseline most users see. Often: one primary view full-width, with details/logs on drill-in (Enter / a key) rather than permanently side-by-side.
+340-- **Narrow (60–79)** — collapse to a single column. Stack panels vertically or hide all but the primary. Multi-column layouts (Miller columns, 2×N grids) **must** fold to one pane here. (lazygit's `--screen-mode full` is a related single-panel mode — but it's a user-selectable escape hatch, not automatic responsive behavior.)
+341-- **Below the application-specific minimum** — don't render garbage or panic. Show the too-small state (see *States*), naming the dimensions the app actually requires, until the user resizes. Do not claim an 80-column requirement if the single-pane layout intentionally supports 60 columns.
+342-
+343-### One app at three widths
+344-
+345-A sidebar, a list, and a detail pane, drawn at half scale. Defaults: the sidebar takes 20–30% of the width, clamped to 20–40 columns; the list never goes under 30 columns; the detail pane takes the rest and needs at least 30. A pane below its minimum folds away instead of shrinking: detail first, then the sidebar.
+346-
+347-```
+348-120 columns: sidebar 30, list 40, detail 50
+349-+---------------+--------------------+-------------------------+
+350-| sidebar       | list               | detail                  |
+351-+---------------+--------------------+-------------------------+
+352-
+--
+379-
+380-## Tables and lists
+381-
+382-### Alignment rules
+383-
+384-- **Numerics: right-aligned.** Easy to scan magnitudes.
+385-- **Text: left-aligned.** Standard.
+386-- **Dates: fixed-width ISO-8601** (`2026-04-28 14:30`). Sortable; doesn't shift on locale.
+387:- **Status / categorical: left-aligned**, like text.
+388-
+389-### Truncation
+390-
+391-When content exceeds column width:
+392-
+393-- **Start truncation** (`…/share/file.txt`) — for paths, so the filename you're looking at survives.
+394-- **Middle truncation** (`/usr/…/file.txt`) — for paths when the root is also useful context.
+395-- **Tail truncation** (`Connection refused whi…`) — for prose, names, and IDs, where the beginning carries the meaning.
+396-- **Wrap** — only for prose. Never wrap in cells of dense tables.
+397-
+398-Reserve a cell for the ellipsis `…`, which is ambiguous-width (see *Localization*), or three for the ASCII `...`. Don't truncate so aggressively that nothing remains: `... ` is useless.
+399-
+400-### Sort indicators
+401-
+402-Show which column is currently sorted: `▴` ascending, `▾` descending. Place after the column header: `Size ▾`. The larger `▲▼` are ambiguous-width. Click (or key) to toggle and cycle.
+403-
+404-Filter behavior (response time, match count, highlighting, smart case) is defined in `interaction-patterns.md` → *Search and filter*.
+405-
+406-### Wide tables on narrow terminals
+407-
+408-Three approaches:
+409-
+410-1. **Hide low-priority columns.** Define column priority; drop them as width shrinks.
+411-2. **Horizontal scroll.** htop scrolls the process table left and right with the arrow keys when columns overflow.
+412-3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The highest-leverage option: show fewer columns, and the user is one keypress from full detail.
+413-
+414-### Virtualization
+415-
+416-**Always virtualize** lists that might exceed a few hundred items.
+417-
+418-- **k9s** (thousands of pods) and **Toolong** (multi-GB logs) virtualize.
+419-- **Textual `DataTable`**, **Ratatui `List` + `ListState`**, and **Bubbles `list`** virtualize or offset efficiently.
+--
+440-- **Test with a pseudo-locale.** Before any translation exists, run the UI with every string lengthened by about half and wrapped in markers, as Windows' `qps-ploc`, Android's `en-XA`, and ICU's `en_XA` do, then pressure-test the floor from *Responsive design*. A 60-column split with long labels is where layouts fail. General catalog tools such as gettext's `en@boldquot` and Translate Toolkit's `podebug` produce the strings.
+441-- **Right-to-left text.** Most terminals don't implement bidi. kitty, Alacritty, Ghostty, and Windows Terminal show Arabic and Hebrew in logical order, left to right; VTE (GNOME Terminal) and Konsole reorder lines by default, and WezTerm and iTerm2 only experimentally. The [terminal-wg recommendation](https://terminal-wg.pages.freedesktop.org/bidi/recommendation/basic-modes.html) has full-screen apps turn off the terminal's reordering (`CSI 8 l` on entry, `CSI 8 h` on exit), which leaves visual order to the app. Either way, keep right-to-left strings in their own field or line, never mix directions inside one cell, and don't promise correct shaping.
+442-- **Ambiguous-width characters.** Unicode's East Asian Ambiguous class ([UAX #11](https://www.unicode.org/reports/tr11/tr11-46.html)) is narrow by default and wide only in East Asian legacy contexts, and terminals expose the choice as a setting: iTerm2, VTE, and Windows Terminal 1.25+. Nearly all box drawing, including the rounded corners, is ambiguous, and so are the block elements (`▀` through `▏`, plus `▒ ▓ ▔ ▕`, so every progress-bar block), the triangles `▲ ▶ ▼ ◀`, the shapes `● ○ ■ □ ◆ ★`, `…`, `·`, `•`, and the arrows `←↑→↓`. When the app and the terminal disagree, borders and markers misalign. go-runewidth switches to wide under any `ja`, `ko`, or `zh` locale, while most other width libraries default to narrow. Test with the terminal's ambiguous-wide setting on, prefer narrow-class markers where they fit (`▸ ▾ ▴ ◉ ◦ ⋅ ✓ ✗ ⋯` and the Braille spinner frames), and keep the ASCII border set from *ASCII fallback* and the ASCII bar from *Determinate progress bars* one switch away. Check a glyph against [EastAsianWidth.txt](https://www.unicode.org/Public/18.0.0/ucd/EastAsianWidth.txt); class `A` is ambiguous, `N` or `Na` is not.
+443-- **Numbers, dates, and units.** Format human output with the user's locale, because separators, grouping, and even digits differ: 1234567.891 is `1 234 567,891` in French and `12,34,567.891` in Indian English. Use the platform's locale library (`Intl`, Babel, `golang.org/x/text/message`, ICU4X) rather than hand-built strings. Keep machine output (`--json`, `--plain`) locale-independent: under a comma-decimal locale, POSIX `printf` both prints and parses numbers with commas, so pin `LC_NUMERIC=C` for anything a script will read. Fixed-width ISO-8601 dates remain the right choice inside tables.
+444-- **Locale detection.** Read `LC_ALL`, then the category variable (`LC_CTYPE` for encoding, `LC_NUMERIC` and `LC_TIME` for formats), then `LANG`, skipping empty values ([POSIX](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap08.html)). `C.UTF-8` is a glibc name rather than a POSIX one, and CI may run in either the C locale or a full one (GitHub's macOS runners set `LC_ALL=en_US.UTF-8`), so tests should pin the locale they expect.
+445-
+446----
+447-
+448:## Status bars, headers, footers
+449-
+450-### A common full-screen four-section layout
+451-
+452:Header (persistent context: app, dataset, mode), then the main area (the panels), then a status/mode line (ephemeral feedback), then a footer hint bar (contextual shortcuts). Some apps merge status and footer into one line, and some skip the header. Complex full-screen apps benefit from persistent context around the work area; bounded inline tools often need neither a header nor a dedicated footer.
+453-
+454-### Header content
+455-
+456-- App name, plus the current dataset or context: branch name (lazygit), cluster + namespace (k9s), file path (bat/glow).
+457-- Mode indicator (NORMAL / INSERT in editors).
+458-- Right-aligned: time, host, version, sparingly and only if meaningful.
+459-
+460:### Status / mode line
+461-
+462-- Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
+463:- Success and info messages fade after 3–5 seconds or give way to the idle state. Keep errors and warnings until the user dismisses them, then move them to a message log the user can reopen (a `:messages` command or a key): a message that vanishes unread can't be acted on.
+464-- **Toasts and the message log.** Show a transient message in the status line, or as a toast at the bottom-right just above the footer so it never covers the row being acted on, with at most two visible. Every message, errors included, is also written to a log the user can reopen (`:messages` or a key): newest last, with a timestamp and kind, capped around 200 entries for the session.
+465-- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Keybinding philosophies and modal vs modeless*).
+466-- Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
+467-
+468-### Footer hint bar
+469-
+470-Lay hints out as `key action ⋅ key action ⋅ key action`, with `⋅` (U+22C5; the middle dot `·` is ambiguous-width) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Put the most frequent action first and `?` last, and show one rendered line per width:
+471-
+472-```
+473-80 columns:  q quit ⋅ / filter ⋅ enter open ⋅ space select ⋅ d delete ⋅ ? help
+474-40 columns:  q quit ⋅ / filter ⋅ ? help
+475-```
+476-
+477-Drop hints from the right of the least frequent until the line fits, keeping `?` so the full list stays one key away. Which shortcuts to show and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+478-
+479----
+480-
+481-## Modals and dialogs
+482-
+483-- **Width:** 60–80% of the terminal, at most about 80 columns for prose, at least 30. Center it horizontally and place it slightly above vertical center.
+484-- **One modal at a time.** A second request replaces the first or queues behind it; `Esc` closes one modal per press (`interaction-patterns.md` → *Esc, q, and Ctrl+C*). The modal traps focus.
+485-- **Clear the cells behind it** (draw a blank background) so underlying text doesn't bleed through, and give it its own border and a title.
+486-- **Modality must not rest on dimming.** Dim the background with the faint attribute where supported, but dimming is an attribute, not a color, and some terminals ignore it. The border, the title, and the changed footer hints say "you are in a dialog" under `NO_COLOR` and without faint.
+487-
+488----
+489-
+490-## Progress indicators
+491-
+492-### Spinners
+493-
+494-The de facto modern default for indeterminate work: **Braille spinners**.
+495-
+--
+523-Show: percent, current/total counts where meaningful, ETA for long operations.
+524-
+525-### Multi-progress
+526-
+527-Parallel tasks each get their own bar (`package-b [████████▎           ]  41%`, with `100% ✓` on finished rows). indicatif `MultiProgress`, rich `Progress` (multiple tasks), and listr2 `concurrent` mode support this out of the box; Bubbles ships only a single `progress` component — compose multiple bars by hand.
+528-
+529-### Pulse / fade
+530-
+531:Ambient indication of background work without commanding attention: lazygit's auto-fetch shows only a small spinner and status message instead of a blocking dialog.
+532-
+533----
+534-
+535-## States
+536-
+537-Every screen passes through the same states, and each one needs a design before the happy path is done: initial, loading, empty, partial, success, error, disconnected or stale, and too small. Every state names what happened, offers the next action, and keeps its meaning under `NO_COLOR` (a symbol or label word, never color alone).
+538-
+539-```
+540-Initial      Welcome to myapp.
+541-             n new request   i import   ? help
+542-
+543-Loading      Pods (staging)                    loading... 3s   Esc cancel
+544-             api-7d  1/1  4d                   <- old rows stay visible
+545-
+546-Empty        No pods in namespace "staging".
+547-             n change namespace   c create one
+548-
+549-Partial      Pods (2 of 3 clusters)            ! prod-eu unreachable   r retry
+550-             api-7d  1/1  4d
+551-
+552-Success      ✓ Saved notes.txt                 fades after 3-5 s
+553-
+554-Error        ✗ Cannot connect to 10.0.0.4:6443 (connection refused)
+555-             r retry   l view log   Esc dismiss
+556-
+557-Stale        Pods (staging)          STALE 2m   reconnecting (3)   r retry now
+558-             api-7d  1/1  4d         <- dimmed, last known good
+559-
+560-Too small    terminal too small: need 48x12
+561-             resize the window, or press q to quit
+562-```
+563-
+564-- **Initial.** The first launch, before the user has done anything. Render the frame at once and show where to start; a blank screen reads as a hang.
+565-- **Loading.** Draw the layout immediately and show the delayed spinner from *Progress indicators* inside the content area. Add elapsed time once a wait passes a second or two, and let `Esc` cancel the request. There is no TUI convention for an automatic give-up time, so prefer elapsed time and cancel over picking one. When refreshing, keep the last rows visible.
+566-- **Empty.** Never just "No data." Name the scope that is empty and the next action: Posting's empty collection reads "Collection is empty. Press ctrl+s to save the current request."
+567-- **Partial.** Show what loaded and mark each source that failed, inline, with a count (`2 of 3`) and a retry key. Do not blank the screen for one failed source or hide the failure.
+568:- **Success.** Confirm in the status line (3–5 seconds, per *Status bars*); a long operation also leaves a receipt in scrollback or the message log.
+569-- **Error.** Say what failed and how to recover, with the retry or escape key beside it. It stays until dismissed, then moves to the message log.
+570:- **Disconnected or stale.** Keep the last-known-good view visible, dimmed, with a `STALE` or `reconnecting` marker and the age instead of blanking the screen. k9s's retry and backoff settings (`apiServerTimeout`, `maxConnRetry`) treat connection loss as a designed-for case. Never let a transient failure rewrite persistent config: btop has an open bug where a temporarily unavailable GPU permanently rewrites the user's saved widget layout instead of hiding the metric until it returns.
+571-- **Too small.** Name the dimensions the layout needs, and keep `q` and `Ctrl+C` working. Don't render a broken frame; the threshold comes from *Responsive design*.
+572-
+573----
+574-
+575-## Theming systems
+576-
+577-Most production TUIs support themes: define semantic tokens (`status.error`, `text.muted`), map them to palette colors in one file per theme (TOML/YAML/CSS), and allow selection via config, env var, or runtime command.
+578-
+579-### Configuration formats
+580-
+581-No format is the TUI standard. Common ones: TOML (bottom, helix, starship, alacritty 0.13+), YAML (lazygit, lazydocker, k9s), TCSS (Textual, live-reloads), and flag files or git config (bat's config is a list of CLI flags; fzf reads `FZF_DEFAULT_OPTS` or `FZF_DEFAULT_OPTS_FILE`; delta lives under `[delta]` in `.gitconfig`). Matching the tool your users already configure, as when mirroring lazygit, is a good reason to use its format; otherwise choose the one that suits your own settings.
+582-
+583-### Community palettes for themeable, broadly distributed apps
+584-
+585-If theming is part of the product, ship popular palettes (Catppuccin, Dracula, Nord, Gruvbox, Tokyo Night, Rose Pine, Solarized) or document how to import them; the base16 spec underlies many. Users of highly themeable apps expect plug-and-play. Small single-purpose tools still need semantic colors and light/dark safety, but do not need to bundle every palette.
+586-
+587-### Icons and Nerd Fonts — there is no detection, only opt-in
+588-
+589-No terminal emulator exposes "a Nerd Font is installed and active" as a queryable signal (not kitty, WezTerm, iTerm2, Alacritty, Windows Terminal, or Ghostty): the protocol has no font capability query, and font-fallback chains can substitute per glyph anyway. Even `has-nerd-font`, which guesses from the terminal's configured font name, still needs a `NERD_FONT=1` override. **Don't invent a detection scheme — gate icons behind an explicit opt-in instead**, the way real tools do:
+590-
+591-- **eza** — `--icons=WHEN` (`always` / `automatic` / `never`); `automatic` gates on stdout being a TTY, not on font presence.
+592-- **lazygit** — `gui.nerdFontsVersion: '2' | '3' | ""`; empty (the default) means no icons at all.
+593-- **yazi** — icons are default-on in the shipped theme; users without a Nerd Font override the icon tables in `theme.toml`.
+594-
+595-**Pin the codepoint generation, not just "Nerd Font on/off."** Nerd Fonts v3 moved Material Design Icons' codepoints (`F500–FD46` → `F0001+`), a documented breaking change, which is why lazygit's config asks for `'2'` or `'3'` explicitly.
+596-
+597-The fallback ladder is Nerd Font glyphs → plain Unicode symbols → ASCII. starship ships all three rungs as named presets (`nerd-font-symbols` / `no-nerd-font` / `plain-text-symbols`), but most tools are binary (icons on or off), so don't imply every icon-capable tool implements all three.
+598-
+599-### Light/dark detection
+600-
+601-- OSC `]11;?` query — many terminals respond with their background color; others never answer, so bound the wait. Mode 2031 reports later theme switches where supported. The query, timeout, and sentinel details are in `terminal-protocols.md` → *Modes and sequences* and *Notes that change a decision*.
+602-- `$COLORFGBG` env var — set by some terminals (rxvt-derivatives).
+--
+627-### The plain-mode contract
+628-
+629-`SKILL.md` requires a `--no-tui`-style mode when automation or accessibility needs linear output. Treat it as part of the product, not a degraded fallback. It must meet these terms:
+630-
+631-- It reaches every action the TUI offers; nothing is TUI-only.
+632-- It follows the rules above and the stream contract in `cli-basics.md` → *Stdin / stdout / stderr discipline*. Results go to stdout; prompts and progress go to stderr.
+633-- Meaning never depends on color, column position, or layout.
+634-- Every prompt has a flag or config equivalent, so the mode can run unattended.
+635:- Users turn it on once, through a flag, an environment variable, or a persistent setting, and it starts automatically when stdout is not a terminal. Don't count on detecting a screen reader. Ink, Gemini CLI, and Claude Code all require an explicit opt-in. gh's `GH_ACCESSIBLE_PROMPTER` and `GH_SPINNER_DISABLED`, with matching config keys, are the model.
+636-
+637-### Framework support
+638-
+639-None of these makes a full-screen app accessible by itself. Check the ecosystem reference before relying on a feature:
+640-
+641-| Stack | What exists | Details |
+642-|---|---|---|
+643-| Huh (Go) | Accessible mode: plain line-by-line prompts with numbered choices and no full-screen redraw. The app switches it on, and Huh does so itself only for `TERM=dumb` | `ecosystem-go.md` → *Huh* |
+644-| Bubble Tea, Bubbles | Nothing screen-reader-specific. Build the linear mode yourself and use Huh's accessible mode for prompts, as gh does | `ecosystem-go.md` → *Huh* |
+645-| Ink | `aria-*` props and an opt-in screen-reader renderer that prints linear text without borders or color; the live region is still rewritten on every change | `ecosystem-typescript.md` → *Strengths and weaknesses* |
+646-| Textual | No screen-reader support, and `textual serve` adds none. Built-in animations honor a reduced-motion level | `ecosystem-python.md` → *Dev tools* |
+647-| Ratatui | Nothing in the library; accessibility is an open tracking issue | `ecosystem-rust.md` → *Pitfalls* |
+648-
+649-### Motion
+650-
+651-- Treat animation as decoration with an off switch, and default it off in plain and screen-reader modes. No cross-tool reduced-motion variable exists, so name yours and document it, as gh (`GH_SPINNER_DISABLED`) and Textual (`TEXTUAL_ANIMATIONS=none`) do.
+652-- With motion off, print one static line (`Working...`) and then the final status, rather than a frozen spinner frame.
+653-- Never blink text (see *Typography in monospace*), and don't animate content the user is reading.
+654-
+655-### Keyboard, focus, and color
+656-
+657-- Every action is keyboard-reachable (`SKILL.md`), and focus shows through at least one cue besides color; the ranking is in `interaction-patterns.md` → *Focus indicators*.
+658-- Color rules live in *Color and accessibility* and *Honor `NO_COLOR`* above. Keep a 16-color theme: those colors follow the user's terminal palette, including high-contrast palettes, while truecolor values override it.
+659-
+660----
+661-
+662-## Common visual pitfalls
+663-
+664-1. **Hardcoded colors** that clash with user themes. Use semantic tokens.
+665-2. **Decorative borders** that don't earn their keep.
+666-3. **Color-only signaling**, or **emoji as the only signal** (some terminals render boxes). Pair with letters or symbols.
+667-4. **Misaligned tables** when text contains CJK or emoji. Use `unicode_width` / `string-width`.
+
+exec
+/bin/zsh -lc "sed -n '450,467p' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yb0t26l9
+ succeeded in 0ms:
+### A common full-screen four-section layout
+
+Header (persistent context: app, dataset, mode), then the main area (the panels), then a status/mode line (ephemeral feedback), then a footer hint bar (contextual shortcuts). Some apps merge status and footer into one line, and some skip the header. Complex full-screen apps benefit from persistent context around the work area; bounded inline tools often need neither a header nor a dedicated footer.
+
+### Header content
+
+- App name, plus the current dataset or context: branch name (lazygit), cluster + namespace (k9s), file path (bat/glow).
+- Mode indicator (NORMAL / INSERT in editors).
+- Right-aligned: time, host, version, sparingly and only if meaningful.
+
+### Status / mode line
+
+- Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
+- Success and info messages fade after 3–5 seconds or give way to the idle state. Keep errors and warnings until the user dismisses them, then move them to a message log the user can reopen (a `:messages` command or a key): a message that vanishes unread can't be acted on.
+- **Toasts and the message log.** Show a transient message in the status line, or as a toast at the bottom-right just above the footer so it never covers the row being acted on, with at most two visible. Every message, errors included, is also written to a log the user can reopen (`:messages` or a key): newest last, with a timestamp and kind, capped around 200 entries for the session.
+- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Keybinding philosophies and modal vs modeless*).
+- Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
+
+
+codex
+Use **3–5 seconds for success and informational messages**. **Errors and warnings should stay until explicitly dismissed**, with a clear recovery action.
+
+| Message kind | Behavior |
+|---|---|
+| Success / info | Show for 3–5 seconds, then restore the idle status line. |
+| Warning / error | Keep visible until dismissed; offer actions such as retry, view details, or dismiss. |
+
+Write **every message** to a reopenable history, such as `:messages`: timestamp, kind, newest last, capped around 200 session entries. Dismissing an error removes it from the status line but preserves it in history.
+
+Use text labels so meaning survives `NO_COLOR`: `Error: Save failed — disk full`. Avoid adding both a label and redundant symbols.
+
+Keep the status line borderless and compact. At both 80×24 and 60 columns, preserve the failure summary and recovery keys; put long details in the message log:
+
+```text
+Wide: Error: Save failed — disk full   r retry   l log   Esc dismiss
+60c:  Error: Disk full | r retry | l log | Esc dismiss
+```
+
+If using toasts instead, show at most two, positioned above the footer without covering the active row.
+tokens used
+15,068

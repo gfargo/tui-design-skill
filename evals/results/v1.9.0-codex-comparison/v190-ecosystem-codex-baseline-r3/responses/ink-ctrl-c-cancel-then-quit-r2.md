@@ -1,0 +1,81 @@
+`execSync()` blocks Node’s event loop, so Ink cannot animate the spinner or handle keyboard input. Change two things:
+
+- Run the build asynchronously with `spawn()`.
+- Set Ink’s `exitOnCtrlC: false` and handle Ctrl+C yourself.
+
+```jsx
+import {spawn} from 'node:child_process';
+import {useEffect, useRef, useState} from 'react';
+import {render, Text, useApp, useInput} from 'ink';
+import Spinner from 'ink-spinner';
+
+function App() {
+  const {exit} = useApp();
+  const child = useRef(null);
+  const cancelled = useRef(false);
+  const [status, setStatus] = useState('building');
+
+  useEffect(() => {
+    const proc = spawn('npm', ['run', 'build'], {
+      // POSIX: put the build and its descendants in their own group.
+      detached: true,
+      // Keep terminal input and output under Ink's control.
+      stdio: 'ignore',
+    });
+
+    child.current = proc;
+
+    proc.on('error', () => {
+      child.current = null;
+      setStatus('failed');
+    });
+
+    proc.on('close', code => {
+      child.current = null;
+      setStatus(
+        cancelled.current ? 'cancelled' : code === 0 ? 'done' : 'failed',
+      );
+    });
+
+    return () => {
+      try {
+        process.kill(-proc.pid, 'SIGTERM');
+      } catch (error) {
+        if (error.code !== 'ESRCH') throw error;
+      }
+    };
+  }, []);
+
+  useInput((input, key) => {
+    if (!key.ctrl || input !== 'c') return;
+
+    if (cancelled.current || !child.current) {
+      exit();
+      return;
+    }
+
+    cancelled.current = true;
+    setStatus('cancelling');
+
+    try {
+      process.kill(-child.current.pid, 'SIGTERM');
+    } catch (error) {
+      if (error.code !== 'ESRCH') throw error;
+    }
+  });
+
+  return (
+    <Text>
+      {status === 'building' || status === 'cancelling'
+        ? <><Spinner /> {status}…</>
+        : `${status}. Press Ctrl+C to quit.`}
+    </Text>
+  );
+}
+
+render(<App />, {exitOnCtrlC: false});
+```
+
+The negative PID signals the **whole build process group**, including processes launched by npm. This group handling is for macOS/Linux; Windows needs a process-tree termination equivalent. If the build ignores `SIGTERM`, add a short timeout that escalates to `SIGKILL`.
+
+Also remove any existing `process.on('SIGINT', () => process.exit())` handler that would bypass this behavior.

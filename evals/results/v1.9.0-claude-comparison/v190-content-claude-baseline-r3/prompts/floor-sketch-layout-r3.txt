@@ -1,0 +1,1 @@
+I'm building a TUI for browsing Kubernetes pods: a namespace sidebar, a pod list, and a detail pane with logs. Design the layout for me.

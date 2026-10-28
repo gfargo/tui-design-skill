@@ -1,0 +1,1 @@
+I'm adding a live log viewer to my TUI. How should auto-scroll behave while the user reads?

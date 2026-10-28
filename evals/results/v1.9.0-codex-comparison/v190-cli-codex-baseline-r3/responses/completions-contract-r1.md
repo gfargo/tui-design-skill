@@ -1,0 +1,96 @@
+If you’re using `clap`, ship **generated completion scripts as a baseline**, and use **`clap_complete`’s runtime completion** for values that depend on local state, such as project names, profiles, or running containers.
+
+Static generation alone won’t discover changing values.
+
+### Define completion metadata in your CLI
+
+Keep flags, subcommands, and value information in the same `clap::Command` definition used for parsing:
+
+- Use `ValueEnum` or possible values for fixed choices.
+- Use `ValueHint` for paths, directories, and executables.
+- Use a dynamic completer for values discovered at runtime.
+
+For example:
+
+```toml
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_complete = { version = "4", features = ["unstable-dynamic"] }
+```
+
+```rust
+use std::ffi::OsStr;
+
+use clap::{CommandFactory, Parser};
+use clap_complete::{
+    engine::{ArgValueCompleter, CompletionCandidate},
+    CompleteEnv,
+};
+
+#[derive(Parser)]
+struct Cli {
+    #[arg(
+        long,
+        add = ArgValueCompleter::new(complete_profile)
+    )]
+    profile: Option<String>,
+}
+
+fn complete_profile(current: &OsStr) -> Vec<CompletionCandidate> {
+    let prefix = current.to_string_lossy();
+
+    // Replace with a cheap, read-only lookup of configured profiles.
+    ["development", "staging", "production"]
+        .into_iter()
+        .filter(|name| name.starts_with(prefix.as_ref()))
+        .map(CompletionCandidate::new)
+        .collect()
+}
+
+fn main() {
+    // Dispatch completion before ordinary parsing or application startup.
+    CompleteEnv::with_factory(Cli::command).complete();
+
+    let cli = Cli::parse();
+    // Run the application.
+}
+```
+
+The dynamic API is feature-gated as unstable; pin the version you test and check its API and supported shells before releasing. I couldn’t verify the latest documentation from this session.
+
+### Ship and install it
+
+Provide two clearly documented installation paths:
+
+| Path | What to ship |
+|---|---|
+| Static completion | Generate scripts with `clap_complete::generate` or `generate_to` from your command definition. |
+| Dynamic completion | Install the shell registration script that invokes your executable when completion is requested. |
+
+With `CompleteEnv`, typical interactive registration looks like:
+
+```sh
+# Bash
+source <(COMPLETE=bash mycli)
+
+# Zsh
+source <(COMPLETE=zsh mycli)
+```
+
+These register completion; subsequent completion requests invoke the CLI to compute candidates. **Generating a static script does not automatically enable your Rust dynamic callbacks.**
+
+For distribution:
+
+- Include completion files in release archives.
+- Let Homebrew, Debian/RPM packages, and other installers place them in their shell-specific completion directories.
+- Document manual setup for `cargo install` users; Cargo installs the executable but doesn’t register shell completions.
+- Avoid editing users’ shell startup files automatically.
+- Test dynamic support for each advertised shell; offer static completion where runtime support is unavailable.
+
+### Treat completion as a lightweight execution mode
+
+Every Tab press can launch your program. Dispatch completion before logging setup, migrations, network connections, or other application initialization.
+
+Keep providers fast and read-only. Prefer local configuration or cached data; put strict timeouts on remote lookups, never prompt for authentication, and return no candidates gracefully when data is unavailable. Test spaces, quoting, Unicode, empty prefixes, and missing configuration through the actual shell integration.
+
+My recommendation: **use `clap_complete` for both paths, make runtime completion the preferred setup for supported shells, and retain static scripts as a portable fallback.**

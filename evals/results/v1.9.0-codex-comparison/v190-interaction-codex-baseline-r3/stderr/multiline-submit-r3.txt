@@ -1,0 +1,31 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-wrlfenq8
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfd-f835-7df2-be46-a630178cc677
+--------
+user
+My chat TUI's input field should send on Enter but let users add newlines. Shift+Enter doesn't seem to work in some terminals. What should I do?
+
+codex
+Use **Enter to send**, with **Ctrl+J to insert a newline** as the reliable fallback. Support **Shift+Enter** where the terminal can distinguish it.
+
+Traditional terminals often send the same bytes for Enter and Shift+Enter, so your TUI can’t reliably tell them apart. Modern keyboard protocols, such as Kitty’s, can distinguish them when supported and enabled.
+
+A practical setup:
+
+- **Enter:** send the message.
+- **Ctrl+J:** insert a newline.
+- **Shift+Enter:** insert a newline when supported.
+- Show a hint: `Enter to send · Ctrl+J for newline`.
+
+Handle multiline paste separately so pasted line breaks stay in the input and don’t trigger sending. Enable **bracketed paste** for this.
+
+One caveat: Ctrl+J sends LF, while Enter usually sends CR. Make sure your input library preserves that distinction; some normalize both into the same Enter event.
+tokens used
+2,665

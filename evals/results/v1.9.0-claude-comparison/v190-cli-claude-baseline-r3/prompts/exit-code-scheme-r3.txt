@@ -1,0 +1,1 @@
+What exit codes should my CLI use? I want 0 for success and something for usage errors, plus a few of my own.

@@ -1,0 +1,769 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e00-05f1-7a72-9c4c-c64a00b8ef4a
+--------
+user
+Users typing Japanese with an IME in my Bubble Tea v2 textinput say the candidate window pops up at the bottom-left of the screen instead of next to the text. How do I fix it?
+
+codex
+I’ll check how Bubble Tea v2 positions the IME cursor and how that applies to `textinput`.
+exec
+/bin/zsh -lc "rg --files -g '"'!node_modules'"' -g '"'!vendor'"' -g '"'!go.sum'"' -g '"'!package-lock.json'"'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+ exited 1 in 0ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/charmbracelet/bubbles/main/textinput/textinput.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+ exited 6 in 0ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls -la /Users/gfargo/go/pkg/mod/github.com/charmbracelet' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+ succeeded in 0ms:
+total 0
+drwxr-xr-x@  5 gfargo  staff   160 Oct 12 17:14 .
+drwxr-xr-x@ 25 gfargo  staff   800 Oct 27 01:11 ..
+dr-xr-xr-x@ 18 gfargo  staff   576 Oct 12 17:14 colorprofile@v0.4.3
+dr-xr-xr-x@ 91 gfargo  staff  2912 Oct 12 17:14 ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4
+drwxr-xr-x@ 10 gfargo  staff   320 Oct 12 17:14 x
+
+exec
+/bin/zsh -lc "rg --files /Users/gfargo/go/pkg/mod/cache/download /Users/gfargo/go/pkg/mod/charm.land /Users/gfargo/go/pkg/mod/github.com/charmbracelet 2>/dev/null | rg '(bubbletea|bubbles|textinput)'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+ succeeded in 0ms:
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbles/v2/@v/v2.2.1.lock
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbles/v2/@v/list
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbles/v2/@v/v2.2.1.mod
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbles/v2/@v/v2.2.1.ziphash
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbles/v2/@v/v2.2.1.info
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbles/v2/@v/v2.2.1.zip
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/help.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/help_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/LICENSE
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/Taskfile.yaml
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/cursor/cursor.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/cursor/cursor_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/progress.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/progress_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/testdata/TestFullHelp/full_help_40_width.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/testdata/TestFullHelp/full_help_30_width.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/testdata/TestFullHelp/full_help_20_width.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/clipboard.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/paste.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/commands.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/programstatus_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mod.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/signals_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/keyboard.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/environ.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/focus.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termcap.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/programstatus.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/signals_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/options_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/input.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_other.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/signals_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/README.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/key.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/logging_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_bsd.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/exec.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/profile.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/commands_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/Taskfile.yaml
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/logging.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/options.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/LICENSE
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/exec_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/xterm.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/color.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty.go
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.ziphash
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.info
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/list
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.lock
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.zip
+/Users/gfargo/go/pkg/mod/cache/download/charm.land/bubbletea/v2/@v/v2.1.0.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/paginator/paginator.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/paginator/paginator_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/raw.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/nil_renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/highlight.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/viewport_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/viewport.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/keymap.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/10w-red-to-green-scaled-50perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/10w-red-to-green-50perc-full-block.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/30w-red-to-green-100perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/30w-colorfunc-rgb-100perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/30w-red-to-green-scaled-100perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/10w-red-to-green-50perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/timer/timer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/runeutil/runeutil_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/runeutil/runeutil.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap-scrolled-plus-1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-at-bottom.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-scrolled-plus-2.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-at-bottom.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-scrolled-plus-1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-at-top.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap-at-bottom.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x100percent.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-content-lines.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap-scrolled-plus-2.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-at-top.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-scrolled-plus-1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-scrolled-plus-2.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/bubbles.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/mouse_allmotion.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/mouse_cellmotion.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/altscreen.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/bg_set_color.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/kitty_stop_startreleases.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/bp_stop_start.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/mouse_disable.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/cursor_hideshow.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/altscreen_autoexit.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/cursor_hide.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/hidden_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/filepicker_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/filepicker.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/hidden_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/styles.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestClearMsg/clear_screen.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestClearMsg/bg_fg_cur_color.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestClearMsg/read_set_clipboard.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/selection.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/selection_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/textarea_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/textarea.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/README.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/stopwatch/stopwatch.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/table.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/memoization/memoization_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/memoization/memoization.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/table_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/spinner/spinner.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/spinner/spinner_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/node.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/tree_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/styles.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/tree.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/key/key.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/key/key_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestTableAlignment/With_border.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestTableAlignment/No_border.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View_CenteredInABox.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/list_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/README.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/keys.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/defaultitem.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/list.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/style.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/testdata/TestTree/default_tree.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Bordered_headers.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Width_greater_than_columns.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/No_padding.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Modified_viewport_height.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Height_greater_than_rows.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Extra_padding.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Empty.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Height_less_than_rows.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Width_less_than_columns.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Single_row_and_column.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Multiple_rows_and_columns.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Bordered_cells.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/testdata/TestTreeAdditionalHelp/additional_help.golden
+/Users/gfargo/go/pkg/mod/cache/download/sumdb/sum.golang.org/lookup/charm.land/bubbles/v2@v2.2.1
+/Users/gfargo/go/pkg/mod/cache/download/sumdb/sum.golang.org/lookup/charm.land/bubbletea/v2@v2.1.0
+
+exec
+/bin/zsh -lc "rg -n -A 32 -B 8 'func .*Cursor|SetVirtualCursor|IME|VirtualCursor' /Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go /Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md /Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+ succeeded in 0ms:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-19-)
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-20-
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-21-// requestCursorPosMsg is a message that requests the cursor position.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-22-type requestCursorPosMsg struct{}
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-23-
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-24-// RequestCursorPosition is a command that requests the cursor position.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-25-// The cursor position will be sent as a [CursorPositionMsg] message.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-26-// Use [WithInput] to enable input, since the reply cannot be read otherwise.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go:27:func RequestCursorPosition() Msg {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-28-	return requestCursorPosMsg{}
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go-29-}
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-348-```go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-349-// Before
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-350-ta.Cursor                           // cursor.Model (virtual cursor)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-351-ta.SetCursor(col)                   // set cursor column
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-352-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-353-// After
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-354-ta.Cursor()                         // func() *tea.Cursor (real cursor)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-355-ta.SetCursorColumn(col)             // renamed for clarity
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md:356:ta.VirtualCursor                    // bool: true = virtual, false = real
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-357-ta.Styles.Cursor                    // CursorStyle for cursor appearance
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-358-```
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-359-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-360-New additions:
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-361-- `Column()` — returns current cursor column (0-indexed)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-362-- `ScrollYOffset()` — returns vertical scroll offset
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-363-- `ScrollPosition()` — returns scroll position
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-364-- `MoveToBeginning()` / `MoveToEnd()` — navigate to start/end
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-365-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-366-### Textinput
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-367-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-368-#### KeyMap
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-369-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-370-```go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-371-// Before
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-372-km := textinput.DefaultKeyMap
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-373-// After
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-374-km := textinput.DefaultKeyMap()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-375-```
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-376-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-377-#### Width
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-378-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-379-```go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-380-// Before
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-381-ti.Width = 40
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-382-// After
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-383-ti.SetWidth(40)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-384-```
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-385-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-386-#### Styles
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-387-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-388-Individual style fields have moved into a `Styles` struct:
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-405-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-406-| v1 Field | v2 Location |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-407-|----------|-------------|
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-408-| `Model.PromptStyle` | `StyleState.Prompt` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-409-| `Model.TextStyle` | `StyleState.Text` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-410-| `Model.PlaceholderStyle` | `StyleState.Placeholder` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-411-| `Model.CompletionStyle` | `StyleState.Suggestion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-412-| `Model.CursorStyle` | `Styles.Cursor` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md:413:| `Model.Cursor` (cursor.Model) | `Model.Cursor()` (func → *tea.Cursor) |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-414-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-415-New:
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-416-- `Model.Styles()` / `Model.SetStyles(Styles)` — get/set styles
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md:417:- `Model.VirtualCursor()` / `Model.SetVirtualCursor(bool)` — toggle cursor mode
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-418-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-419-### Timer
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-420-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-421-```go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-422-// Before
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-423-t := timer.NewWithInterval(30*time.Second, 100*time.Millisecond)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-424-t := timer.New(30 * time.Second)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-425-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-426-// After
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-427-t := timer.New(30*time.Second, timer.WithInterval(100*time.Millisecond))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-428-t := timer.New(30 * time.Second)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-429-```
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-430-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-431-| v1 | v2 |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-432-|----|-----|
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-433-| `NewWithInterval(timeout, interval)` | `New(timeout, WithInterval(interval))` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-434-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-435-### Viewport
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-436-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-437-This component has the most new features alongside its breaking changes.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-438-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-439-#### Constructor
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-440-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-441-```go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-442-// Before
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-443-vp := viewport.New(80, 24)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-444-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-445-// After
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-446-vp := viewport.New(viewport.WithWidth(80), viewport.WithHeight(24))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-447-// or
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-448-vp := viewport.New()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-449-vp.SetWidth(80)
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-589-| `textinput` | `DefaultKeyMap` (var) | `DefaultKeyMap()` (func) |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-590-| `textinput` | `NewModel` | `New()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-591-| `textinput` | `Model.Width` (field) | `Model.SetWidth()` / `Model.Width()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-592-| `textinput` | `Model.PromptStyle` | `StyleState.Prompt` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-593-| `textinput` | `Model.TextStyle` | `StyleState.Text` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-594-| `textinput` | `Model.PlaceholderStyle` | `StyleState.Placeholder` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-595-| `textinput` | `Model.CompletionStyle` | `StyleState.Suggestion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-596-| `textinput` | `Model.CursorStyle` | `Styles.Cursor` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md:597:| `textinput` | `Model.Cursor` (cursor.Model) | `Model.Cursor()` (func → *tea.Cursor) |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-598-| `timer` | `NewWithInterval(t, i)` | `New(t, WithInterval(i))` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-599-| `viewport` | `New(w, h int)` | `New(...Option)` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-600-| `viewport` | `Model.Width` (field) | `Model.SetWidth()` / `Model.Width()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-601-| `viewport` | `Model.Height` (field) | `Model.SetHeight()` / `Model.Height()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-602-| `viewport` | `Model.YOffset` (field) | `Model.SetYOffset()` / `Model.YOffset()` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-603-| `viewport` | `HighPerformanceRendering` | Removed |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-604-| `runeutil` | Entire package | Moved to `internal/runeutil` (not importable) |
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-605-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-606----
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-607-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-608-Part of [Charm](https://charm.land).
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-609-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md-610-<a href="https://charm.land/"><img alt="The Charm logo" src="https://stuff.charm.sh/charm-badge.jpg" width="400"></a>
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-91-	Err error
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-92-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-93-	// General settings.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-94-	Prompt        string
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-95-	Placeholder   string
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-96-	EchoMode      EchoMode
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-97-	EchoCharacter rune
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-98-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:99:	// useVirtualCursor determines whether or not to use the virtual cursor. If
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-100-	// set to false, use [Model.Cursor] to return a real cursor for rendering.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:101:	useVirtualCursor bool
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-102-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-103-	// Virtual cursor manager.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-104-	virtualCursor cursor.Model
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-105-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-106-	// CharLimit is the maximum amount of characters this input element will
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-107-	// accept. If 0 or less, there's no limit.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-108-	CharLimit int
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-109-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-110-	// Styling. FocusedStyle and BlurredStyle are used to style the textarea in
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-111-	// focused and blurred states.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-112-	styles Styles
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-113-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-114-	// Width is the maximum number of characters that can be displayed at once.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-115-	// It essentially treats the text field like a horizontally scrolling
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-116-	// viewport. If 0 or less this setting is ignored.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-117-	width int
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-118-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-119-	// KeyMap encodes the keybindings recognized by the widget.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-120-	KeyMap KeyMap
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-121-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-122-	// Underlying text value.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-123-	value []rune
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-124-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-125-	// focus indicates whether user input focus should be on this input
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-126-	// component. When false, ignore keyboard input and hide the cursor.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-127-	focus bool
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-128-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-129-	// Cursor position.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-130-	pos int
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-131-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-132-	// Used to emulate a viewport when width is set and the content is
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-133-	// overflowing.
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-156-// New creates a new model with default settings.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-157-func New() Model {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-158-	m := Model{
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-159-		Prompt:           "> ",
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-160-		EchoCharacter:    '*',
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-161-		CharLimit:        0,
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-162-		styles:           DefaultDarkStyles(),
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-163-		ShowSuggestions:  false,
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:164:		useVirtualCursor: true,
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-165-		virtualCursor:    cursor.New(),
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-166-		KeyMap:           DefaultKeyMap(),
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-167-		suggestions:      [][]rune{},
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-168-		value:            nil,
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-169-		focus:            false,
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-170-		pos:              0,
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-171-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:172:	m.updateVirtualCursorStyle()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-173-	return m
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-174-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-175-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:176:// VirtualCursor returns whether the model is using a virtual cursor.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:177:func (m Model) VirtualCursor() bool {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:178:	return m.useVirtualCursor
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-179-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-180-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:181:// SetVirtualCursor sets whether the model should use a virtual cursor. If
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-182-// disabled, use [Model.Cursor] to return a real cursor for rendering.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:183:func (m *Model) SetVirtualCursor(v bool) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:184:	m.useVirtualCursor = v
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:185:	m.updateVirtualCursorStyle()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-186-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-187-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-188-// Styles returns the current set of styles.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-189-func (m Model) Styles() Styles {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-190-	return m.styles
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-191-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-192-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-193-// SetStyles sets the styles for the text input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-194-func (m *Model) SetStyles(s Styles) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-195-	m.styles = s
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:196:	m.updateVirtualCursorStyle()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-197-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-198-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-199-// Width returns the width of the text input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-200-func (m Model) Width() int {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-201-	return m.width
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-202-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-203-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-204-// SetWidth sets the width of the text input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-205-func (m *Model) SetWidth(w int) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-206-	m.width = w
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-207-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-208-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-209-// SetValue sets the value of the text input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-210-func (m *Model) SetValue(s string) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-211-	// Clean up any special characters in the input provided by the
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-212-	// caller. This avoids bugs due to e.g. tab characters and whatnot.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-213-	runes := m.san().Sanitize([]rune(s))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-214-	err := m.validate(runes)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-215-	m.setValueInternal(runes, err)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-216-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-217-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-218-func (m *Model) setValueInternal(runes []rune, err error) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-219-	m.Err = err
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-220-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-221-	empty := len(m.value) == 0
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-222-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-223-	if m.CharLimit > 0 && len(runes) > m.CharLimit {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-224-		m.value = runes[:m.CharLimit]
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-225-	} else {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-226-		m.value = runes
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-227-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-228-	if (m.pos == 0 && empty) || m.pos > len(m.value) {
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-238-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-239-// Position returns the cursor position.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-240-func (m Model) Position() int {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-241-	return m.pos
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-242-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-243-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-244-// SetCursor moves the cursor to the given position. If the position is
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-245-// out of bounds the cursor will be moved to the start or end accordingly.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:246:func (m *Model) SetCursor(pos int) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-247-	m.pos = clamp(pos, 0, len(m.value))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-248-	m.handleOverflow()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-249-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-250-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-251-// CursorStart moves the cursor to the start of the input field.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:252:func (m *Model) CursorStart() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-253-	m.SetCursor(0)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-254-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-255-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-256-// CursorEnd moves the cursor to the end of the input field.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:257:func (m *Model) CursorEnd() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-258-	m.SetCursor(len(m.value))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-259-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-260-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-261-// Focused returns the focus state on the model.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-262-func (m Model) Focused() bool {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-263-	return m.focus
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-264-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-265-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-266-// Focus sets the focus state on the model. When the model is in focus it can
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-267-// receive keyboard input and the cursor will be shown.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-268-func (m *Model) Focus() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-269-	m.focus = true
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-270-	return m.virtualCursor.Focus()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-271-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-272-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-273-// Blur removes the focus state on the model.  When the model is blurred it can
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-274-// not receive keyboard input and the cursor will be hidden.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-275-func (m *Model) Blur() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-276-	m.focus = false
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-277-	m.virtualCursor.Blur()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-278-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-279-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-280-// Reset sets the input to its default state with no input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-281-func (m *Model) Reset() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-282-	m.value = nil
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-283-	m.SetCursor(0)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-284-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-285-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-286-// SetSuggestions sets the suggestions for the input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-287-func (m *Model) SetSuggestions(suggestions []string) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-288-	m.suggestions = make([][]rune, len(suggestions))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-289-	for i, s := range suggestions {
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-391-			}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-392-		}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-393-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-394-		m.offset = m.offsetRight - (len(runes) - 1 - i)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-395-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-396-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-397-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-398-// deleteBeforeCursor deletes all text before the cursor.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:399:func (m *Model) deleteBeforeCursor() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-400-	m.value = m.value[m.pos:]
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-401-	m.Err = m.validate(m.value)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-402-	m.offset = 0
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-403-	m.SetCursor(0)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-404-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-405-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-406-// deleteAfterCursor deletes all text after the cursor. If input is masked
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-407-// delete everything after the cursor so as not to reveal word breaks in the
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-408-// masked input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:409:func (m *Model) deleteAfterCursor() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-410-	m.value = m.value[:m.pos]
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-411-	m.Err = m.validate(m.value)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-412-	m.SetCursor(len(m.value))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-413-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-414-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-415-// deleteWordBackward deletes the word left to the cursor.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-416-func (m *Model) deleteWordBackward() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-417-	if m.pos == 0 || len(m.value) == 0 {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-418-		return
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-419-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-420-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-421-	if m.EchoMode != EchoNormal {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-422-		m.deleteBeforeCursor()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-423-		return
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-424-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-425-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-426-	// Linter note: it's critical that we acquire the initial cursor position
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-427-	// here prior to altering it via SetCursor() below. As such, moving this
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-428-	// call into the corresponding if clause does not apply here.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-429-	oldPos := m.pos
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-430-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-431-	m.SetCursor(m.pos - 1)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-432-	for unicode.IsSpace(m.value[m.pos]) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-433-		if m.pos <= 0 {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-434-			break
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-435-		}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-436-		// ignore series of whitespace before cursor
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-437-		m.SetCursor(m.pos - 1)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-438-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-439-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-440-	for m.pos > 0 {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-441-		if !unicode.IsSpace(m.value[m.pos]) {
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-659-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-660-	case pasteErrMsg:
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-661-		m.Err = msg
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-662-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-663-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-664-	var cmds []tea.Cmd
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-665-	var cmd tea.Cmd
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-666-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:667:	if m.useVirtualCursor {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-668-		m.virtualCursor, cmd = m.virtualCursor.Update(msg)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-669-		cmds = append(cmds, cmd)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-670-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-671-		// If the cursor position changed, reset the blink state. This is a
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-672-		// small UX nuance that makes cursor movement obvious and feel snappy.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-673-		if oldPos != m.pos && m.virtualCursor.Mode() == cursor.CursorBlink {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-674-			m.virtualCursor.IsBlinked = false
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-675-			cmds = append(cmds, m.virtualCursor.Blink())
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-676-		}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-677-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-678-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-679-	m.handleOverflow()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-680-	return m, tea.Batch(cmds...)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-681-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-682-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-683-// View renders the textinput in its current state.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-684-func (m Model) View() string {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-685-	// Placeholder text
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-686-	if len(m.value) == 0 && m.Placeholder != "" {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-687-		return m.placeholderView()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-688-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-689-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-690-	styles := m.activeStyle()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-691-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-692-	styleText := styles.Text.Inline(true).Render
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-693-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-694-	value := m.value[m.offset:m.offsetRight]
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-695-	pos := max(0, m.pos-m.offset)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-696-	v := styleText(m.echoTransform(string(value[:pos])))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-697-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-698-	if pos < len(value) { //nolint:nestif
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-699-		char := m.echoTransform(string(value[pos]))
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-896-func (m Model) validate(v []rune) error {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-897-	if m.Validate != nil {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-898-		return m.Validate(string(v))
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-899-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-900-	return nil
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-901-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-902-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-903-// Cursor returns a [tea.Cursor] for rendering a real cursor in a Bubble Tea
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:904:// program. This requires that [Model.VirtualCursor] is set to false.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-905-//
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-906-// Note that you will almost certainly also need to adjust the offset cursor
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-907-// position per the textarea's per the textarea's position in the terminal.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-908-//
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-909-// Example:
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-910-//
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-911-//	// In your top-level View function:
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-912-//	f := tea.NewFrame(m.textarea.View())
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-913-//	f.Cursor = m.textarea.Cursor()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-914-//	f.Cursor.Position.X += offsetX
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-915-//	f.Cursor.Position.Y += offsetY
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:916:func (m Model) Cursor() *tea.Cursor {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:917:	if m.useVirtualCursor || !m.Focused() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-918-		return nil
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-919-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-920-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-921-	w := lipgloss.Width
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-922-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-923-	promptWidth := w(m.promptView())
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-924-	xOffset := m.Position() +
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-925-		promptWidth
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-926-	if m.width > 0 {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-927-		xOffset = min(xOffset, m.width+promptWidth)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-928-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-929-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-930-	style := m.styles.Cursor
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-931-	c := tea.NewCursor(xOffset, 0)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-932-	c.Blink = style.Blink
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-933-	c.Color = style.Color
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-934-	c.Shape = style.Shape
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-935-	return c
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-936-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-937-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:938:// updateVirtualCursorStyle sets styling on the virtual cursor based on the
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-939-// textarea's style settings.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:940:func (m *Model) updateVirtualCursorStyle() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:941:	if !m.useVirtualCursor {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-942-		// Hide the virtual cursor if we're using a real cursor.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-943-		m.virtualCursor.SetMode(cursor.CursorHide)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-944-		return
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-945-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-946-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-947-	m.virtualCursor.Style = lipgloss.NewStyle().Foreground(m.styles.Cursor.Color)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-948-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-949-	// By default, the blink speed of the cursor is set to a default
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-950-	// internally.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-951-	if m.styles.Cursor.Blink {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-952-		if m.styles.Cursor.BlinkSpeed > 0 {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-953-			m.virtualCursor.BlinkSpeed = m.styles.Cursor.BlinkSpeed
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-954-		}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-955-		m.virtualCursor.SetMode(cursor.CursorBlink)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-956-		return
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-957-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-958-	m.virtualCursor.SetMode(cursor.CursorStatic)
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-959-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-960-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-961-// activeStyle returns the appropriate set of styles to use depending on
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-962-// whether the textarea is focused or blurred.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-963-func (m Model) activeStyle() *StyleState {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-964-	if m.focus {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-965-		return &m.styles.Focused
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-966-	}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-967-	return &m.styles.Blurred
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-968-}
+
+exec
+/bin/zsh -lc "rg -n -A 15 'func NewView|type View struct|func .*SetVirtualCursor|func .*Focus\\(' /Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go /Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-q3du0dh6
+ succeeded in 35ms:
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:183:func (m *Model) SetVirtualCursor(v bool) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-184-	m.useVirtualCursor = v
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-185-	m.updateVirtualCursorStyle()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-186-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-187-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-188-// Styles returns the current set of styles.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-189-func (m Model) Styles() Styles {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-190-	return m.styles
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-191-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-192-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-193-// SetStyles sets the styles for the text input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-194-func (m *Model) SetStyles(s Styles) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-195-	m.styles = s
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-196-	m.updateVirtualCursorStyle()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-197-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-198-
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go:268:func (m *Model) Focus() tea.Cmd {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-269-	m.focus = true
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-270-	return m.virtualCursor.Focus()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-271-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-272-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-273-// Blur removes the focus state on the model.  When the model is blurred it can
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-274-// not receive keyboard input and the cursor will be hidden.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-275-func (m *Model) Blur() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-276-	m.focus = false
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-277-	m.virtualCursor.Blur()
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-278-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-279-
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-280-// Reset sets the input to its default state with no input.
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-281-func (m *Model) Reset() {
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-282-	m.value = nil
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go-283-	m.SetCursor(0)
+--
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:76:func NewView(s string) View {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-77-	var view View
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-78-	view.SetContent(s)
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-79-	return view
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-80-}
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-81-
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-82-// View represents a terminal view that can be composed of multiple layers.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-83-// It can also contain a cursor that will be rendered on top of the layers.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:84:type View struct {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-85-	// Content is the screen content of the view. It holds styled strings that
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-86-	// will be rendered to the terminal when the view is rendered.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-87-	//
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-88-	// A styled string represents text with styles and hyperlinks encoded as
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-89-	// ANSI escape codes.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-90-	//
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-91-	// Example:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-92-	//
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-93-	//  ```go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-94-	//  v := tea.NewView("Hello, World!")
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-95-	//  ```
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-96-	Content string
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-97-
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-98-	// OnMouse is an optional mouse message handler that can be used to
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go-99-	// intercept mouse messages that depends on view content from last render.
+
+codex
+Use the **real terminal cursor** and pass its position through your top-level `tea.View`. The IME anchors its candidate window to the terminal cursor; a virtual cursor only paints a cursor into the text.
+
+During initialization:
+
+```go
+ti := textinput.New()
+ti.SetVirtualCursor(false)
+ti.Focus()
+```
+
+Then in your model’s view:
+
+```go
+func (m model) View() tea.View {
+    v := tea.NewView("Name:\n  " + m.input.View())
+
+    v.Cursor = m.input.Cursor()
+    if v.Cursor != nil {
+        v.Cursor.Position.X += 2 // two spaces before the input
+        v.Cursor.Position.Y += 1 // label line above the input
+    }
+
+    return v
+}
+```
+
+Adjust the offsets to match your layout, including padding, borders, and any preceding content. Coordinates use terminal cells, starting at zero. `input.Cursor()` already includes the input’s own prompt offset, so don’t add that again.
+
+Both steps matter: `SetVirtualCursor(false)` enables the real cursor, and assigning `v.Cursor` tells Bubble Tea where to put it. `Cursor()` returns `nil` when the input is unfocused or virtual cursor mode is enabled.
+tokens used
+34,062

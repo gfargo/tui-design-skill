@@ -1,0 +1,1370 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-ob2a42i6
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfd-b9df-7811-b588-3b189d24a37a
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?
+
+codex
+I’ll read the tui-design skill and check its guidance for Bubble Tea v2 dialogs and mouse hit testing.
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-ob2a42i6
+ succeeded in 887ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, `--json` and errors, completions, paging, config, Windows, CLI testing, automation | `references/cli-basics.md` |
+| Layouts and wireframes, inline vs alternate screen, borders, hierarchy, color, density, responsive behavior and the floor size, states (empty, loading, partial, error, stale), tables, diff views, modals, status bars and messages, progress and spinners, themes, icons and Nerd Fonts, localization and Unicode width, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, the Esc/q/Ctrl+C quit order, keys that tmux or the key encoding steal, focus, navigation, search and filter, multi-select, help and the command palette, scrolling, live-data selection, log follow mode, trees, text input, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
+| Flicker or tearing, escape sequences and terminal modes (bracketed paste, keyboard protocol and a Shift+Enter that doesn't arrive, mouse, focus, synchronized output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color depth and theme detection | `references/terminal-protocols.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small (`visual-patterns.md` → *States*). In a design answer, include an ASCII sketch of the layout at the floor size (60 columns) next to the wide one.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Which other keys are reserved, and why raw mode frees `Ctrl+S`, is in `interaction-patterns.md` → *Reserved keys*.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+- for one-shot CLIs, stdout, stderr, and the exit code in golden tests, with no TTY and under `NO_COLOR` (`cli-basics.md` → *Testing one-shot CLIs*).
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-go.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-ob2a42i6
+ succeeded in 348ms:
+# Go ecosystem — Bubble Tea, tview, gocui, Cobra
+
+Go TUIs split into two camps: the **Charm stack** (Bubble Tea + Lipgloss + Bubbles + Huh) for new projects, and **tcell + tview** for widget-rich apps. **gocui** is a third, legacy lineage behind lazygit (now an in-tree fork) and lazydocker. CLI framing comes from **Cobra** (kubectl, gh, hugo, helm, docker), `urfave/cli` or Kong.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Bubble Tea](#bubble-tea-charmbraceletbubbletea) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Lipgloss](#lipgloss-charmbraceletlipgloss) · [Bubbles](#bubbles-charmbraceletbubbles) · [Huh](#huh-charmbracelethuh)
+- [Other Charm libraries](#other-charm-libraries-worth-knowing)
+- [tview](#tview-rivotview) · [gocui](#gocui-awesome-gocuigocui) · [tcell](#lower-level-tcell)
+- [CLI framing and output: Cobra, urfave/cli, pretty output](#cli-framing-cobra-and-urfavecli)
+- [Testing](#testing) · [Debugging](#debugging) · [Cross-platform notes](#cross-platform-notes)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Modern TUI with clean architecture and Charm aesthetic | **Bubble Tea + Lipgloss + Bubbles** |
+| Multi-pane vim-keybinding "lazy*"-style app | **Bubble Tea + Lipgloss** (compose the panes yourself); **gocui** (`awesome-gocui/gocui`) only for its exact views-as-buffers model |
+| Heavy data exploration with tables, trees, forms | **tview** (callback-style, retained-mode) |
+| One-shot fancy CLI prompts only | **Huh** (Go form library) or **gum** (shell wrapper) |
+| TUI served over SSH | **Wish** (wraps Bubble Tea apps as SSH server) |
+
+**Default choice for new projects: Bubble Tea + Lipgloss + Bubbles + Cobra.** (`gh` is a Cobra CLI, not a full-screen TUI: Lipgloss and Glamour for output, Charm v2 Bubble Tea, Bubbles, and Huh for prompts.)
+
+---
+
+## Bubble Tea (charmbracelet/bubbletea)
+
+The Elm Architecture in Go, and the most widely used Go TUI framework: `Model → Update(Msg) → (Model, Cmd) → View() tea.View`.
+
+**v2 is stable** (v2.0.0 shipped February 2026 after betas/RCs through 2025; current is v2.1.x, and Go 1.26+ is required since v2.0.10). v2.1.0 (October 2026) is additive: `View.ProgramStatus` reports idle/working/blocked/done/error to terminals that support OSC 7501 program-status reporting. The status is not cleared on exit, so report Done, Error, or Idle before quitting rather than leaving working or blocked behind ([`tea.go`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go)). What changed and why it matters:
+- **New renderer** — Bubble Tea now owns terminal I/O and Lipgloss became pure (no more I/O fights between the two).
+- **Progressive keyboard enhancements** — with the Kitty protocol you can finally bind `shift+enter`, `ctrl+i` distinct from `tab`, `super+space`, etc. Always keep a legacy fallback: `tea.KeyboardEnhancementsMsg` arrives only if the terminal answers (possibly after the first frame), so accept `shift+enter` and a fallback such as `ctrl+j` always, but show the `shift+enter` hint only once `msg.SupportsKeyDisambiguation()` is true.
+- **Import path moved** to `charm.land/bubbletea/v2`. All Charm v2 libraries import from `charm.land/<name>/v2` — bubbletea, bubbles, lipgloss, huh, wish, glamour, log, fang — keep them on the same major. Lower-level pieces (`colorprofile`, `ultraviolet`, `x/*`) stay on `github.com/charmbracelet/...` paths.
+
+**Migrating v1 → v2:** the MVU shape survives, but every model gets touched, so start new projects on v2. What breaks layouts and compiles ([Bubbles upgrade guide](https://github.com/charmbracelet/bubbles/blob/v2.2.1/UPGRADE_GUIDE_V2.md)):
+
+| Area | v1 | v2 |
+|---|---|---|
+| Bubble Tea | `View() string`, `tea.KeyMsg`, `tea.WithAltScreen()` | `View() tea.View`, `tea.KeyPressMsg`, `v.AltScreen = true` |
+| Lipgloss sizing | `Width`/`Height` exclude the border | they include border and padding (see Lipgloss) |
+| Lipgloss color | `AdaptiveColor`, `SetColorProfile` | `LightDark`; print with `lipgloss.Println` |
+| Bubbles sizing | `m.Width = n`; `viewport.New(w, h)` | `m.SetWidth(n)` / `m.Width()`; `viewport.New(viewport.WithWidth(w), viewport.WithHeight(h))` |
+| Bubbles keymaps | `textinput.DefaultKeyMap` (var) | `DefaultKeyMap()` (func; also `paginator`, `textarea`) |
+| Bubbles styles | `list.DefaultStyles()`, auto-adapting colors | `help.DefaultStyles(isDark)`, `list.DefaultStyles(isDark)`, `list.NewDefaultItemStyles(isDark)` |
+| Bubbles constructors | `NewModel()` | `New()` |
+
+The setter change covers `filepicker`, `help`, `progress`, `table`, `textinput`, and `viewport`; `list` already used `SetSize`.
+
+**The mental model:** one `Model` struct holds all state and `Init` returns the first Cmd (or `nil`). `Update(msg)` is the only place state changes. `View()` returns the whole frame as a `tea.View` (content plus alt screen, mouse mode, cursor), which Bubble Tea diffs into minimal ANSI. Side effects live in `tea.Cmd`s whose messages return through `Update`.
+
+```go check=go/counter
+type model struct {
+    count int
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyPressMsg:  // KeyMsg is an interface in v2; msg.Code/msg.Text replace Type/Runes
+        switch msg.String() {
+        case "q", "ctrl+c":
+            return m, tea.Quit
+        case "+", "right", "l":
+            m.count++
+        case "-", "left", "h":
+            m.count--
+        }
+    }
+    return m, nil
+}
+
+func (m model) View() tea.View {
+    v := tea.NewView(fmt.Sprintf("Count: %d\n\nq quit · ←/→ change", m.count))
+    v.AltScreen = true  // don't pollute scrollback; required for full-screen TUIs
+    return v
+}
+
+func main() {
+    p := tea.NewProgram(model{})
+    if _, err := p.Run(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+`Program.Run()` owns Bubble Tea's normal terminal cleanup and default panic recovery. Do not add `defer p.RestoreTerminal()` as a final-cleanup guard: `RestoreTerminal` is the counterpart to `ReleaseTerminal` and resumes Bubble Tea's terminal modes rather than restoring the user's shell. Add an outer custom cleanup boundary only when deliberately bypassing or disabling the framework-managed path.
+
+### Lifecycle and terminal handoff
+
+Bubble Tea v2 owns the terminal for the whole `Program.Run()` call. Keep resumable work inside that lifecycle rather than tearing the program down and trying to reconstruct it.
+
+| Boundary | Bubble Tea v2 contract |
+|---|---|
+| Normal exit | Return `tea.Quit`. `Program.Run()` performs final restoration on normal, error, and recovered-panic paths. |
+| Interrupt or termination | Raw-mode Ctrl+C arrives as `tea.KeyPressMsg`; return `tea.Interrupt` when the caller should receive `tea.ErrInterrupted`, or `tea.Quit` for an intentional zero-status quit. Bubble Tea's default signal handler turns external SIGINT/SIGTERM into managed termination. Do not call `os.Exit` from `Update`. |
+| Interactive child | Return `tea.ExecProcess(exec.Command(...), callback)`. It pauses the program, releases the terminal, attaches the child's standard streams, waits, restores and repaints, then reports the child error (or, after child success, a restoration error) through the callback message. In that callback, reload data the child could have changed; repainting alone uses the old model. Use an ordinary `tea.Cmd` for non-interactive I/O. |
+| Foreground suspend | Bubble Tea never binds Ctrl+Z for you: return `tea.Suspend` from your own `"ctrl+z"` key-press case (see the key-routing sample under Bubbles). After the Unix job resumes, handle `tea.ResumeMsg` to reload state that changed while away. Suspend is unsupported on Windows, so never require it. |
+
+`Program.ReleaseTerminal()` / `RestoreTerminal()` is a temporary handoff escape hatch. Prefer [`ExecProcess`](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/exec.go) for editors and shells; Bubble Tea's [tagged lifecycle source](https://github.com/charmbracelet/bubbletea/blob/v2.1.0/tea.go) defines signal, interrupt, suspend, and restoration semantics together.
+
+**Frame-level declarations live on the view, not the program.** `tea.WithAltScreen()`, `tea.WithMouseCellMotion()`, and `tea.WithMouseAllMotion()` were removed in v2 — set `v.AltScreen = true` and `v.MouseMode = tea.MouseModeCellMotion` (or `tea.MouseModeAllMotion` for hover) in `View()`. Inline is the default, and because these fields are read every frame, an app can switch between inline and the alternate screen at runtime. **Important options:** `tea.WithInput(reader)` / `tea.WithOutput(writer)` (testing, Wish) and `tea.WithColorProfile(p)` (force a color profile, e.g. golden-file tests).
+
+**Async via Cmds:**
+```go check=go/fetch-cmd
+func fetchData() tea.Msg {
+    resp, err := http.Get(url)
+    if err != nil { return errMsg{err} }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body) // *http.Response is not the data
+    if err != nil { return errMsg{err} }
+    return dataMsg{body}
+}
+
+// In Update, when you want to fetch:
+return m, fetchData
+```
+
+`tea.Cmd` is `func() tea.Msg`. The runtime calls them in goroutines and routes the returned `Msg` back through `Update`. **Never block in `Update`** — anything I/O goes in a Cmd. Use `tea.Batch(cmds...)` for parallel commands and `tea.Sequence(cmds...)` for ordered ones.
+
+**Pitfalls:**
+- `len(string)` ≠ display width. Use `lipgloss.Width()`, which handles CJK/emoji via `charmbracelet/x/ansi` grapheme clustering.
+- Goroutines never call `View()` directly — send via `program.Send(msg)`.
+- Don't `fmt.Println` while the program runs. For permanent lines above an inline UI, return `tea.Println(...)`/`tea.Printf(...)` (no-ops on the alt screen); for diagnostics, see **Debugging**.
+
+---
+
+## Lipgloss (charmbracelet/lipgloss)
+
+CSS-in-Go declarative styling — immutable `Style` values rendered to ANSI strings. The companion to Bubble Tea, but usable standalone.
+
+```go check=go/lipgloss-style
+var titleStyle = lipgloss.NewStyle().
+    Bold(true).
+    Foreground(lipgloss.Color("#FAFAFA")).
+    Background(lipgloss.Color("#7D56F4")).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder()).
+    BorderForeground(lipgloss.Color("63"))
+
+lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the terminal; fmt.Println would not
+```
+
+**Layout helpers:** `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` (side-by-side), `lipgloss.JoinVertical(lipgloss.Left, a, b, c)` (stacked), `lipgloss.Place(width, height, hPos, vPos, content)` (center/anchor in a box), and `lipgloss.Width(s)` / `lipgloss.Height(s)` (measure rendered output, skipping ANSI and counting wide graphemes).
+
+**Sizing:** in v2, `Width`/`Height` are the total block size, border and padding included (`// Include borders in block size` in [`style.go`](https://github.com/charmbracelet/lipgloss/blob/v2.0.6/style.go)). In v1 the border sat outside ([v1.1.0](https://github.com/charmbracelet/lipgloss/blob/v1.1.0/style.go)), so carried-over math such as `Width(w - 2)` for a bordered pane now comes out 2 cells too narrow. Margins stay outside. Text wraps at `Width` minus border and padding.
+
+```go check=go/lipgloss-block-size
+box := lipgloss.NewStyle().
+    Width(20).Height(5).
+    Padding(0, 1).
+    BorderStyle(lipgloss.RoundedBorder())
+
+out := box.Render("hello") // lipgloss.Width(out) == 20, lipgloss.Height(out) == 5; v1 gave 22x7
+inner := 20 - box.GetHorizontalBorderSize() - box.GetHorizontalPadding() // 16 text columns
+```
+
+**No flexbox.** You compute widths from the cached `tea.WindowSizeMsg`:
+
+```go check=go/window-size
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.leftPaneWidth = msg.Width / 3
+    m.rightPaneWidth = msg.Width - m.leftPaneWidth
+```
+
+**Overlays and hit-testing.** Draw layers: `lipgloss.NewLayer(s).ID("dialog").X(x).Y(y).Z(1)`, then `lipgloss.NewCompositor(layers...).Render()` is the frame. `Compositor.Hit(x, y)` returns the top-most layer *with an ID* at a cell, so ID every layer a click can land on. `Z` is compared as written, not added to the parent's (despite the doc comment), and ties have no defined order, so use distinct values. Size the base layer to the window; an overhanging layer grows the frame. `v.OnMouse` runs against the last drawn frame, so its closure can query the compositor built in that `View`; `Update` still gets the raw `MouseClickMsg`, so handle each click in one place.
+
+```go check=go/overlay
+func (m model) View() tea.View {
+    base := lipgloss.NewStyle().Width(m.width).Height(m.height).Render(m.body)
+    layers := []*lipgloss.Layer{lipgloss.NewLayer(base).ID("base")}
+    if m.dialog != "" {
+        box := dialogStyle.Render(m.dialog)
+        x, y := (m.width-lipgloss.Width(box))/2, (m.height-lipgloss.Height(box))/2
+        layers = append(layers, lipgloss.NewLayer(box).ID("dialog").X(x).Y(y).Z(1))
+    }
+    comp := lipgloss.NewCompositor(layers...)
+    v := tea.NewView(comp.Render())
+    v.MouseMode = tea.MouseModeCellMotion
+    v.OnMouse = func(msg tea.MouseMsg) tea.Cmd {
+        if c, ok := msg.(tea.MouseClickMsg); ok {
+            id := comp.Hit(c.X, c.Y).ID() // "" when no layer with an ID is there
+            return func() tea.Msg { return hitMsg(id) }
+        }
+        return nil
+    }
+    return v
+}
+```
+
+**Light/dark theming:** Lipgloss v2 is pure — it never touches the terminal, so *your app* queries the background once and picks variants. Standalone (no Bubble Tea running):
+```go check=go/light-dark
+hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+lightDark := lipgloss.LightDark(hasDark)
+fg := lightDark(lipgloss.Color("#236"), lipgloss.Color("#cef"))
+```
+Inside a running Bubble Tea program, don't call `HasDarkBackground`: its terminal query competes with Bubble Tea for input. Return `tea.RequestBackgroundColor` from `Init`, then handle `case tea.BackgroundColorMsg:` with `lipgloss.LightDark(msg.IsDark())` and rebuild your styles. Render a default palette first and treat the reply as an upgrade: it may never arrive (since v2.0.10 `tea.WithInput(nil)` skips all terminal queries, and some terminals don't answer OSC 11).
+The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for migrations; prefer `LightDark` in new code.
+
+**Sub-packages:** `lipgloss/table` (bordered tables with column alignment), `lipgloss/list` (bullet/numbered lists with custom enumerators), `lipgloss/tree` (hierarchical trees).
+
+---
+
+## Bubbles (charmbracelet/bubbles)
+
+The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you embed and forward messages to.
+
+**Components shipped:**
+- **`textinput`** — single-line input with placeholder, suggestions, validation. **`textarea`** — multi-line input with optional line numbers; v2.2+ adds text selection, copy/cut and word motion.
+- **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering. **`table`** — virtualized table with row selection (no built-in sorting; sort the rows yourself).
+- **`tree`** — navigable hierarchical tree, rendered with `lipgloss/tree`. **`viewport`** — scrollable region for long content.
+- **`spinner`** — prebuilt sets (`Line`, `Dot`/`MiniDot` braille, `Pulse`, …) or custom frames. **`progress`** — gradient bar with percent. **`paginator`**, **`filepicker`**, **`cursor`**, **`stopwatch`**, **`timer`**.
+- **`help`** — auto-rendered footer hint bar from a `key.KeyMap`. **`key`** — declarative key bindings.
+
+```go check=go/bubbles-embedding
+type model struct {
+    list list.Model
+    keys keyMap
+    help help.Model
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg)  // forward to child
+    return m, cmd
+}
+
+func (m model) View() tea.View {
+    // Bubbles still return strings; the parent wraps them in a tea.View.
+    return tea.NewView(m.list.View() + "\n" + m.help.View(m.keys))
+}
+```
+
+**Declarative keys with `key.Binding`:**
+
+```go check=go/key-bindings
+type keyMap struct {
+    Up   key.Binding
+    Down key.Binding
+    Quit key.Binding
+}
+
+var keys = keyMap{
+    Up:   key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "up")),
+    Down: key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "down")),
+    Quit: key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
+}
+
+// In Update (tea.KeyMsg is an interface in v2 that also matches releases; switch on presses):
+case tea.KeyPressMsg:
+    switch {
+    case key.Matches(msg, keys.Quit):
+        return m, tea.Quit
+    case key.Matches(msg, keys.Up):
+        // ...
+    }
+```
+
+**v2 sizing and styles.** Exported `Width`/`Height` fields became getter/setter pairs, and style constructors take the background. `help.New()` and `list.NewDefaultDelegate()` assume a dark background, so apply the real one when `tea.BackgroundColorMsg` arrives (see **Light/dark theming**):
+
+```go check=go/bubbles-v2-api
+m.viewport = viewport.New(viewport.WithWidth(80), viewport.WithHeight(24)) // v1: viewport.New(80, 24)
+m.input = textinput.New()
+m.input.SetWidth(40)                                                       // v1: m.input.Width = 40
+m.input.KeyMap = textinput.DefaultKeyMap()                                 // v1: a package var
+
+// In Update
+switch msg := msg.(type) {
+case tea.WindowSizeMsg:
+    m.help.SetWidth(msg.Width)                   // v1: m.help.Width = msg.Width
+    m.viewport.SetWidth(msg.Width)               // Width() and Height() are getters now
+    m.viewport.SetHeight(msg.Height - 2)
+    m.list.SetSize(msg.Width, msg.Height-2)
+case tea.BackgroundColorMsg: // Init returned tea.RequestBackgroundColor
+    isDark := msg.IsDark()
+    m.help.Styles = help.DefaultStyles(isDark)
+    m.list.Styles = list.DefaultStyles(isDark)
+    d := list.NewDefaultDelegate()
+    d.Styles = list.NewDefaultItemStyles(isDark)
+    m.list.SetDelegate(d)
+}
+```
+
+**First frame and spinners.** The program starts with no size and Bubbles never read `WindowSizeMsg` themselves: a zero-sized `list` renders a broken fragment, a zero-sized `viewport` nothing. Forward the size to every child and return a placeholder from `View` until it arrives. `spinner` has no `Init`: your `Init` must return `m.spinner.Tick` (the method value is the Cmd), and it keeps moving only while its `spinner.TickMsg` reaches `spinner.Update` and the returned Cmd is kept. `timer` and `stopwatch` have an `Init()` that starts them.
+
+```go check=go/first-frame
+func (m model) Init() tea.Cmd { return tea.Batch(m.spinner.Tick, m.timer.Init()) }
+
+// In Update
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+    m.list.SetSize(msg.Width, msg.Height-1)
+case spinner.TickMsg:
+    m.spinner, cmd = m.spinner.Update(msg) // drop this Cmd and the spinner stops
+
+func (m model) View() tea.View {
+    if m.width == 0 { // no WindowSizeMsg yet: every child is zero-sized
+        return tea.NewView("loading…")
+    }
+    return tea.NewView(m.spinner.View() + "\n" + m.list.View())
+}
+```
+
+**Route keys to the focused child.** A global `q` handler quits while the user is typing "q" into a list's filter. Check `FilterState() == list.Filtering` before single-character global keys; modified keys (Ctrl+C, Ctrl+Z) stay global. The list also quits on `q` itself while browsing (it disables that while filtering); call `DisableQuitKeybindings()` if the parent owns quitting.
+
+```go check=go/list-filter-keys
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if k, ok := msg.(tea.KeyPressMsg); ok {
+        switch k.String() {
+        case "ctrl+c":
+            return m, tea.Quit
+        case "ctrl+z":
+            return m, tea.Suspend // Bubble Tea does not bind this for you
+        case "q":
+            if m.list.FilterState() != list.Filtering { // otherwise "q" is filter text
+                return m, tea.Quit
+            }
+        }
+    }
+    var cmd tea.Cmd
+    m.list, cmd = m.list.Update(msg) // everything else goes to the focused child
+    return m, cmd
+}
+```
+
+The `help` Bubble renders the footer from these bindings: `help.View(m.keys)` needs `keyMap` to implement `help.KeyMap`:
+
+```go check=go/help-keymap
+func (k keyMap) ShortHelp() []key.Binding  { return []key.Binding{k.Up, k.Down, k.Quit} }
+func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Down}, {k.Quit}} }
+```
+
+**Real cursor.** `textinput` and `textarea` draw a virtual cursor (a styled cell) and leave the terminal's cursor hidden, but IME composition windows and screen readers follow the terminal cursor. For text entry call `SetVirtualCursor(false)` and set `v.Cursor = m.input.Cursor()`, adding the input's offset in the frame (`Cursor()` is relative to the input). It is nil while blurred, so blur the input when an overlay covers it. `textinput.Cursor()` counts runes, not cells (v2.2.1): each wide CJK or emoji rune leaves the caret a cell short; `textarea` counts cells.
+
+```go check=go/real-cursor
+m.input = textinput.New()
+m.input.SetVirtualCursor(false) // the terminal cursor is the caret now
+m.input.Focus()                 // Cursor() is nil while blurred
+
+// In View
+v := tea.NewView("Search\n" + m.input.View())
+if c := m.input.Cursor(); c != nil {
+    c.Y++ // one title line above the input
+    v.Cursor = c
+}
+```
+
+---
+
+## Huh (charmbracelet/huh)
+
+Forms on top of Bubble Tea, for one-shot prompts (wizards) and embeddable form panes. Huh v2 (`charm.land/huh/v2`) is built on Bubble Tea v2 — built-in themes are now `func(isDark bool) *Styles`; wrap one as a `huh.Theme` with `form.WithTheme(huh.ThemeFunc(huh.ThemeCharm))`. Huh takes `isDark` from the `tea.BackgroundColorMsg` it receives but v2.0.3 never requests one, so an embedding parent must return `tea.RequestBackgroundColor` from its own `Init` and forward the reply. A standalone `form.Run()` has no parent to ask and always renders the light variant ([huh#834](https://github.com/charmbracelet/huh/issues/834)); detect the background first (`lipgloss.HasDarkBackground(os.Stdin, os.Stdout)` is safe before any Bubble Tea program runs) and pin it with `huh.ThemeFunc(func(bool) *huh.Styles { return huh.ThemeCharm(isDark) })`. `.WithTheme(huh.ThemeCharm(isDark))`, as shown in Huh's upgrade guide, does not compile against v2.0.3.
+
+```go check=go/huh-form
+form := huh.NewForm(
+    huh.NewGroup(
+        huh.NewSelect[string]().
+            Title("Choose your country").
+            Options(huh.NewOptions("USA", "Germany", "Japan")...).
+            Value(&country),
+        huh.NewInput().
+            Title("What's your name?").
+            Value(&name).
+            Validate(func(s string) error {
+                if len(s) == 0 { return errors.New("required") }
+                return nil
+            }),
+        huh.NewConfirm().
+            Title("Submit?").
+            Value(&confirm),
+    ),
+)
+err := form.Run()
+```
+
+Field types: `NewInput`, `NewText` (multi-line), `NewSelect[T]`, `NewMultiSelect[T]`, `NewConfirm`, `NewFilePicker`, `NewNote` (display-only).
+
+**Dynamic forms:** huh's real mechanism is **`Group.WithHideFunc(func() bool)`**, which hides or shows a whole group (a step's worth of fields) from a predicate re-evaluated as form state changes. Per-field hiding is not shipped (open feature requests only), so don't present it as available. To recompute one field from another's value, use `OptionsFunc`/`TitleFunc`/`DescriptionFunc`: a callback plus the fields it depends on, re-run automatically:
+
+```go check=go/huh-options-func
+huh.NewSelect[string]().
+    OptionsFunc(func() []huh.Option[string] {
+        return huh.NewOptions(statesForCountry(country)...)
+    }, &country) // recomputed whenever `country` changes
+```
+
+**Accessibility:** `form.WithAccessible(true)` bypasses Bubble Tea and asks each field as a plain line-by-line prompt: a numbered list for `Select` (the user types the number), numbers toggled one at a time and `0` to finish for `MultiSelect`, `y`/`n` for `Confirm`, with validation errors printed before the prompt repeats. Huh turns it on by itself only for `TERM=dumb`, so expose your own switch (the README reads `ACCESSIBLE`; gh's `GH_ACCESSIBLE_PROMPTER` drives this mode). Bubble Tea and Bubbles have nothing comparable, so the rest of the app needs its own linear mode; see `visual-patterns.md` → *Accessibility*.
+
+**Full-screen:** `tea.WithAltScreen()` is gone in v2 — declare it on the view instead: `form.WithViewHook(func(v tea.View) tea.View { v.AltScreen = true; return v })`.
+
+**Embedding in Bubble Tea:** `(*huh.Form).Update` returns `(huh.Model, tea.Cmd)`, so assert back: `f, cmd := m.form.Update(msg); if ff, ok := f.(*huh.Form); ok { m.form = ff }`. The parent wraps `Form.View()`'s string in its own `tea.NewView` and checks `m.form.State` (`huh.StateCompleted`/`huh.StateAborted`) to leave the form.
+
+---
+
+## Other Charm libraries worth knowing
+
+- **Glamour** (`charm.land/glamour/v2`) — render Markdown to ANSI. v2 is pure: `WithAutoStyle` and `WithColorProfile` are gone, the default style is `"dark"` (pass `"light"` yourself after detecting the background), and output is downsampled only when printed via `lipgloss.Print`. `gh` renders PR and issue Markdown with it (moved to Glamour v2 in [cli/cli#14148](https://github.com/cli/cli/pull/14148), shipped in v2.103.2).
+- **Wish** (`charmbracelet/wish`, v2 at `charm.land/wish/v2`) — serve Bubble Tea apps over SSH. Build each program with `bubbletea.MakeOptions(sess)` (the `bubbletea.Middleware` handler applies it for you) so input, output, and color-profile detection follow the *client's* PTY, not the server's (the v1 `MakeRenderer` helper is gone because Lipgloss v2 no longer owns terminal I/O). `MakeOptions` also installs its own `tea.WithFilter` (ctrl+z suspend becomes resume), and the default `Middleware` appends it after your options, overwriting any filter you set; to keep yours, use `MiddlewareWithProgramHandler` and chain them.
+- **gum** — Bubble Tea components for shell scripts (`gum choose|input|confirm|spin`): huh-quality prompts without writing Go. **VHS** records `.tape` scripts to GIFs for documentation.
+
+---
+
+## tview (rivo/tview)
+
+Retained-mode and callback-based, ncurses-style. Built on **tcell v2**. Tags are rare (last v0.42.0, August 2025) and the README installs with `go get github.com/rivo/tview@master`. Powers **k9s** (via derailed's forks).
+
+**Widgets:** `TextView`, `TextArea`, `InputField`, `Table`, `TreeView`, `List`, `Form`, `Image`, `Modal`, `DropDown`, `Button`, `Checkbox`. **Layout:** `Flex` (one-dimensional), `Grid` (two-dimensional), `Pages` (modal/swap views).
+
+```go check=go/tview-hello
+app := tview.NewApplication()
+list := tview.NewList().
+    AddItem("First", "First item", 'a', nil).
+    AddItem("Quit", "Quit app", 'q', func() { app.Stop() })
+if err := app.SetRoot(list, true).Run(); err != nil {
+    panic(err)
+}
+```
+
+**Threading rule:** any modification to a primitive from a goroutine must go through `app.QueueUpdate(func)` or `app.QueueUpdateDraw(func)`, which run `func` on the main loop. A bare `app.Draw()` from a goroutine is safe (it only schedules a repaint) but does not synchronize your data. The #1 tview pitfall is the opposite direction: calling `Draw()`, `QueueUpdate()`, or `QueueUpdateDraw()` from *inside* an event handler already running on the main goroutine (a key handler, `SetSelectedFunc`) blocks forever, per the tview Concurrency wiki.
+
+**When to choose tview over Bubble Tea:** many widgets must coexist (a "form with 12 fields, table, sidebar"), the team prefers callbacks to message-passing, or you're already on tcell. Bubble Tea suits state-heavy apps but you assemble layout yourself; tview gives more widgets with less code.
+
+---
+
+## gocui (awesome-gocui/gocui)
+
+Minimalist views-as-buffers, each `View` an `io.Writer`: the aesthetic of **lazygit** and **lazydocker**.
+
+**Mental model:** a `Manager` function lays out the views on every redraw (you compute coordinates from `g.Size()`); each view has a name, a position, a buffer you write to, and its own keybindings.
+
+```go check=go/gocui-hello
+g, _ := gocui.NewGui(gocui.OutputNormal, true)
+defer g.Close()
+
+g.SetManagerFunc(func(g *gocui.Gui) error {
+    maxX, maxY := g.Size()
+    if v, err := g.SetView("hello", maxX/2-7, maxY/2, maxX/2+7, maxY/2+2, 0); err != nil {
+        if !errors.Is(err, gocui.ErrUnknownView) { return err }
+        fmt.Fprintln(v, "Hello, World!")
+    }
+    return nil
+})
+
+g.SetKeybinding("", 'q', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+    return gocui.ErrQuit
+})
+
+g.MainLoop()
+```
+
+**When to choose gocui:** rarely, to maintain an existing app or for its views-as-buffers API. Use `awesome-gocui/gocui` (v1.1.0, 2022; tcell v2). `jesseduffield/gocui` is effectively retired: in April 2026 lazygit copied its fork into `lazygit/pkg/gocui` and moved to tcell v3. For a new lazy-style app (persistent panes, numeric pane keys, single-letter context actions), use Bubble Tea and borrow lazygit's interaction design, not its library.
+
+---
+
+## Lower-level: tcell
+
+`gdamore/tcell` is the long-standing low-level Go terminal library: pure Go, cross-platform, mouse and SGR support. v3 (December 2025) removed terminfo and the termbox compatibility layer and changed the key and cell APIs; tview still uses `tcell/v2`, while lazygit has moved to v3. Use it directly only when building a framework or a custom rendering pipeline; most apps should use Bubble Tea or tview. **Ultraviolet** (`charmbracelet/ultraviolet`), the untagged renderer under Bubble Tea v2, is the same tier; its README warns the API may change.
+
+---
+
+## CLI framing: Cobra and urfave/cli
+
+**Cobra** (`spf13/cobra`) — the dominant subcommand framework for Go. Powers kubectl, gh, hugo, helm, docker. Struct-literal command tree:
+
+```go check=go/cobra-commands
+var rootCmd = &cobra.Command{
+    Use:   "myapp",
+    Short: "A short description",
+}
+
+var listCmd = &cobra.Command{
+    Use:   "list",
+    Short: "List items",
+    Run:   func(cmd *cobra.Command, args []string) { /* ... */ },
+}
+
+func init() {
+    rootCmd.AddCommand(listCmd)
+}
+```
+
+**Cobra + Bubble Tea integration**: the Cobra `Run` function does `tea.NewProgram(...).Run()`. `PreRun` output is hidden behind the alt screen and reappears at exit; writing to stdout while `Run` is active is what corrupts the frame. Gate the TUI on **stdout** being a terminal (`isatty.IsTerminal(os.Stdout.Fd())`): under `$(myapp)` or `myapp | less` the frame would become data, so print plain output, or draw the UI on stderr with `tea.WithOutput(os.Stderr)` and print only the answer to stdout, as gum does. Piped stdin doesn't stop the TUI (Bubble Tea v2 opens `/dev/tty` for keys); decide separately whether piped input means non-interactive mode.
+
+Since v1.2 Cobra adds a working `completion` subcommand to every root command (hidden when there are no other subcommands). Do not scaffold your own; it would shadow the built-in. Users run `myapp completion bash|zsh|fish|powershell`; customize or disable the default via `rootCmd.CompletionOptions`. `cobra-cli completion ...` completes the generator tool, not your application.
+
+**Fang** (`charm.land/fang/v2`) — an experimental starter kit that wraps Cobra: styled help and error output, automatic `--version`, manpage generation.
+
+**urfave/cli** (`github.com/urfave/cli/v3`; v3 has been the stable line since 2025, v2 is maintenance-only) — alternative subcommand framework with a simpler API. **Kong** (`alecthomas/kong`, struct-tag driven) is a third choice; for one-shot flag parsing the stdlib `flag` package is fine.
+
+**Pretty output without a TUI:** when the user wants pretty CLI output (no full-screen UI), use **lipgloss** standalone with `lipgloss.Println(style.Render(...))`, not `fmt.Println`: in v2 `Render` always emits truecolor, and only `Print*`/`Sprint*`/`Fprint*` downsample and honor `NO_COLOR`, as most Charm CLI tools do. **pterm** bundles color, tables, spinners, progress bars, and prompts; **fatih/color** is plain ANSI color (`color.Red("hello")`).
+
+---
+
+## Testing
+
+**Test in layers, bottom-heavy.** Charm's flagship v2 app (crush) uses zero teatest: it unit-tests handlers with `tea.KeyPressMsg` literals and golden-tests render output via `github.com/charmbracelet/x/exp/golden`. Unit tests on `Update` are the base; the harness is the thin top.
+
+**Layer 1 — `Update` is a pure function.** Construct the model, send a message, assert on state. No harness needed:
+
+```go check=go/update-test
+func TestQuitKey(t *testing.T) {
+    m := newModel()
+    updated, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"}) // v2 rune key
+    m = updated.(model)
+    if cmd == nil { t.Fatal("expected quit cmd") }
+}
+```
+
+v2 key literals: rune keys are `tea.KeyPressMsg{Code: 'a', Text: "a"}`, specials are `tea.KeyPressMsg{Code: tea.KeyEnter}`, modifiers use `Mod: tea.ModCtrl`. To test a returned Cmd, call it and assert on the message (`tea.QuitMsg` for quit; `tea.BatchMsg` is an exported `[]Cmd` you can unpack and run).
+
+**Layer 2 — teatest** runs the real program against in-memory buffers (no PTY, works in bare CI containers). For Bubble Tea v2 import `github.com/charmbracelet/x/exp/teatest/v2` — teatest did **not** move to charm.land; plain `x/exp/teatest` is the v1 line. Both are pseudo-versioned; teatest/v2 is the official harness.
+
+```go check=go/teatest
+tm := teatest.NewTestModel(t, newModel(),
+    teatest.WithInitialTermSize(80, 24), // default is 80×24 — pin it anyway
+    teatest.WithProgramOptions(tea.WithColorProfile(colorprofile.ASCII)), // v2 only
+)
+teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+    return bytes.Contains(b, []byte("ready"))
+}, teatest.WithDuration(5*time.Second)) // defaults (1s timeout, 50ms poll) are tight for CI
+tm.Type("hello")                        // v2: emits one KeyPressMsg per rune
+tm.Send(tea.KeyPressMsg{Code: tea.KeyEnter})
+tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+out, _ := io.ReadAll(tm.FinalOutput(t))
+teatest.RequireEqualOutput(t, out) // golden file: testdata/<TestName>.golden
+```
+
+Always pass `WithFinalTimeout` — `FinalModel`/`FinalOutput`/`WaitFinished` block forever without it. Goldens hold raw bytes, escape sequences included. Refresh with `go test ./... -update` and add `*.golden -text` to `.gitattributes` so git never rewrites them.
+
+**Test at the contract sizes:** golden-test 80×24, 60 columns, and your declared minimum (one golden per size, e.g. `TestView/60x24`), and send `tea.WindowSizeMsg{Width: 60, Height: 24}` to `Update` (or `tm.Send(...)` mid-run) to assert the layout reflows rather than keeping the startup width. **Determinism in CI:** the #1 golden-file flake is color-profile detection: v2 wraps output in a `colorprofile.Writer`, so escapes vary with `TERM`/`COLORTERM`/`NO_COLOR`. Pin the profile (`tea.WithColorProfile(colorprofile.ASCII)`, v2-only; on v1 `lipgloss.SetColorProfile(termenv.Ascii)`) and the term size, or goldens will flap.
+
+**E2E:** teatest deliberately avoids PTYs and Go PTY/expect practice is thin. For real-terminal visual regression, use VHS golden output (`Output golden.ascii` in a tape), which needs `ttyd` and `ffmpeg` (`charmbracelet/vhs-action` for CI).
+
+---
+
+## Debugging
+
+**stdout is off-limits while the program runs**: Bubble Tea holds the terminal in raw mode, so `fmt.Println` output is swallowed or corrupts the frame. Log to a file instead (unchanged in v2):
+
+```go check=go/log-to-file
+if len(os.Getenv("DEBUG")) > 0 {
+    f, err := tea.LogToFile("debug.log", "debug")
+    if err != nil {
+        fmt.Fprintln(os.Stderr, "fatal:", err) // otherwise logs land in the TUI
+        os.Exit(1)
+    }
+    defer f.Close()
+}
+```
+
+Run `DEBUG=1 go run .` in one terminal and `tail -f debug.log` in another; `log.Println` anywhere lands in the file, and `tea.LogToFileWith` takes a custom logger. **Breakpoints:** the TUI and delve fight over stdin/stdout, so run delve headless (`dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 .`) and `dlv connect 127.0.0.1:43000` from a second terminal.
+
+**Profiling a sluggish TUI:** serve `net/http/pprof` on a loopback port rather than file-based `pprof.StartCPUProfile`: a background goroutine on `localhost:6060` never touches stdin/stdout, so it can't collide with raw-mode rendering, and there is no SIGINT/flush ceremony. Gate it behind an env var:
+
+```go check=go/pprof
+import (
+    "net/http"
+    _ "net/http/pprof"
+)
+if os.Getenv("MYAPP_PROFILE") != "" {
+    go func() { http.ListenAndServe("localhost:6060", nil) }()
+}
+```
+
+Then `go tool pprof -http=:8080 http://localhost:6060/debug/pprof/profile` from a second terminal. The usual cost sink is uncached work in `View()` (recomputed `lipgloss.Width()` calls, string rebuilds).
+
+---
+
+## Cross-platform notes
+
+Bubble Tea, tview, and gocui all work on Linux, macOS, and Windows. Target Windows Terminal (Windows 10+; older `cmd.exe` lacks some ANSI) and test mouse events there if Windows is supported. Signals, `WT_SESSION`, Unicode output, multiplexer keys: `terminal-protocols.md` → *Terminal environments*.
+
+---
+
+exec
+/bin/zsh -lc "rg -n -A 24 -B 4 'Modal|modal|confirmation|Mouse|mouse' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/{visual-patterns,interaction-patterns}.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-ob2a42i6
+ succeeded in 595ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-12-- [Responsive design — breakpoints and the floor](#responsive-design--breakpoints-and-the-floor) (includes one app at three widths)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-13-- [Tables and lists](#tables-and-lists) (includes emoji width in columns and diff views)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-14-- [Localization](#localization) (translation growth, right-to-left text, ambiguous-width characters, locale formatting)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-15-- [Status bars, headers, footers](#status-bars-headers-footers)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:16:- [Modals and dialogs](#modals-and-dialogs)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-17-- [Progress indicators](#progress-indicators)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-18-- [States](#states) (initial, loading, empty, partial, success, error, stale, too small)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-19-- [Theming systems](#theming-systems) (includes [icons and Nerd Fonts](#icons-and-nerd-fonts--there-is-no-detection-only-opt-in))
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-20-- [Accessibility](#accessibility) (screen readers, the plain-mode contract, framework support, motion)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-21-- [Common visual pitfalls](#common-visual-pitfalls)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-22-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-23----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-24-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-25-## The seven canonical layouts in detail
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-26-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-27-Pick the layout from the user's loop, then sketch it at the floor size before writing code. The table is the decision; the thumbnails show each layout wide (left) and at its 60-column fallback (right), drawn in ASCII so they survive any terminal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-28-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-29-| Layout | Use when | Avoid when | 60-column fallback | Exemplars |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-30-|---|---|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-31-| **Persistent multi-panel** | Users watch several related views at once; data is read at a glance; numeric jumps (`1`–`5`) make sense | Each pane needs full attention, or the total would overwhelm a small terminal | Show the focused panel only, with the others as tabs or `1`–`5` jumps | lazygit (5 left panels plus one right), btop, htop (header, list, F-key footer) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-32-| **Miller columns** | Hierarchical data (filesystems, JSON, K8s trees) where parent context and a preview matter | Non-hierarchical data, or terminals under 80 columns | One pane (the middle column); the preview opens on demand | yazi (`[1, 4, 3]`), ranger, nnn, lf, broot |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-33-| **Drill-down stack** | Many resource types to pivot between; each detail view deserves the full screen; command-mode navigation fits | Users must compare two things side by side, or the stack would pass three levels | Unchanged: one view at a time is the native shape | k9s, lazydocker, gh dash |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-34-| **Widget dashboard** | Monitoring where users compose their own view and each widget updates on its own cadence | Static data, or users who want one curated experience | One widget at a time with a next-widget key | btop, bottom, glances, gtop |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-35-| **IDE three-panel** | Compose, execute, inspect workflows with a navigator beside the work | Pure browsing with no composition step | The main panel only; the sidebar and output become toggles | Posting, Harlequin |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-36-| **Overlay / popup** | Summon, choose, output, exit; shell-pipeline tools; replacing a built-in such as Ctrl+R | Long-running interactions, or anything that keeps state between runs | Unchanged: shrink the preview first | fzf, atuin, zoxide with fzf, gum |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-37-| **Tabbed within a panel** | One panel needs several related views of the selected object | Unrelated tabs (use panels) or more than 5–6 tabs | Collapse the tab row to the active tab with a count and `[`/`]` | lazygit's branch tabs, lazydocker's right pane |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-38-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-39-**Persistent multi-panel**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-40-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-124-## Inline, alt-screen, or overlay — where the UI lives
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-125-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-126-Before choosing a layout, choose a screen buffer. The **alternate screen** is a separate buffer with no scrollback; on exit the terminal restores whatever was there before. **Inline** rendering paints in the normal buffer, below the shell prompt, and scrolls with everything else.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-127-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:128:**Default heuristic: alt screen for apps you *live in*; inline for tools you *summon*.** Editors, file managers, and dashboards — long-lived, navigational, full-screen — usually belong on the alt screen so they do not pollute scrollback. Prefer inline for bounded pickers, prompts, confirmations, and progress when preserving shell context matters. A picker with a large preview or unusually deep workflow may still earn a full-screen buffer; choose from the working set and exit contract, not the label alone.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-129-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-130-All four frameworks support both modes. How each enters the alternate screen or stays inline, and how it prints permanent lines above an inline UI, is in its ecosystem reference: `ecosystem-go.md`, `ecosystem-rust.md` → *Inline viewport*, and `ecosystem-python.md` and `ecosystem-typescript.md` → *Lifecycle and terminal handoff*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-131-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-132-### The fzf model — bounded inline viewport
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-133-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-134-fzf itself defaults to full-screen mode. Its explicit `--height 40%` mode renders the finder below the cursor so previous commands remain visible; fzf's shell keybindings commonly opt into this bounded mode. The UI paints on `/dev/tty` (stderr as fallback) so stdout stays clean — that's why `vim $(fzf)` works. Treat height-capped inline rendering as a strong option for fzf-like tools, not as a fact about every picker or fzf's default.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-135-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-136-### The exit contract — the receipt pattern
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-137-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-138-Inside `$(...)` or a pipe, stdout is not a TTY; anything the UI paints to stdout becomes part of the captured "result." So: **chrome to stderr or `/dev/tty`, answer to stdout.** gum runs its Bubble Tea UI with `tea.WithOutput(os.Stderr)` and prints the chosen value to stdout, stripping ANSI when stdout isn't a TTY — which is exactly why `CHOICE=$(gum choose a b c)` composes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-139-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-140-On exit, do one of two respectable things: erase the transient UI completely (fzf's default), or replace it with a one-line receipt that stays in scrollback — `✓ deployed api-server in 12s`. Textual's `inline_no_clear` and fzf's `--no-clear` are the deliberate leave-the-last-frame escape hatches. What you must not do is leave a dead, half-drawn UI behind.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-141-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-142-### Choose by workflow
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-143-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-144-One-shot pick, confirm, or progress: prefer inline, erasing cleanly or leaving a concise receipt. Explore, monitor, or edit sessions: alt screen, restored on exit. Hybrids (fzf-like pickers; logs plus live status): inline with a height cap (`--height 40%`, `Viewport::Inline`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-145-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-146----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-147-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-148-## Borders — when, what, and why
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-149-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-150-### The Unicode block
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-151-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-152-The Unicode box-drawing block is U+2500–U+257F:
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-200-text.emphasis     → bold + accent
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-201-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-202-bg.base           → default bg
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-203-bg.surface        → slightly elevated
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:204:bg.overlay        → modal/popup bg
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-205-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-206-accent.primary    → brand color
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-207-accent.secondary  → complementary
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-208-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-209-border.default    → muted
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-210-border.focus      → accent.primary (plus a non-color cue)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-211-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-212-git.staged/added  → green
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-213-git.modified      → yellow
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-214-git.untracked     → red or cyan
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-215-git.deleted       → red (foreground)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-216-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-217-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-218-Then map tokens to palette colors. **Lipgloss v2's `LightDark`** (`AdaptiveColor` in v1/compat), **Textual's CSS variables**, and **Ratatui's palette indirection** all implement this.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-219-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-220-This indirection earns its keep when adding themes (four Catppuccin flavors are one config file, not four code changes) or supporting light/dark modes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-221-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-222-### Conventional meanings
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-223-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-224-- **Green** — success, added, online, OK.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-225-- **Red** — error, deleted, danger, offline.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-226-- **Yellow** — warning, modified, pending, in-progress.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-227-- **Cyan / Blue** — info, paths, links, hints.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-228-- **Magenta** — special, highlights, attention without alarm.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-283-You have a fixed grid. Two strategies:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-284-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-285-**Pack (high density)** — htop, btop, k9s. For data scanned at a glance, updated in real time, and read horizontally across rows. Use tight one-line records, compact dim headers, abbreviations and units (`GiB`, `1.2k`, `99.9%`), and sparklines or mini-bars.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-286-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:287:**Pad (low density)** — gum/huh forms, glow, Posting. For prose, forms, and single decisions. Use generous vertical spacing, one field per line with labels above for narrow terminals, a single column, and lots of margin around modals.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-288-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:289:Use density to communicate hierarchy: dense data tables in the main panel, padded settings/forms in modals, dense status bars at the bottom.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-290-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:291:**Spacing defaults.** One blank row between groups, 1 cell of inner padding inside a bordered panel, a 2-cell gutter between table columns, and modals no wider than 60–80% of the terminal (fixed to content below that, never edge to edge).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-292-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-293-### The clutter audit — making "feels busy" countable
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-294-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-295-"It feels noisy" is a real signal but useless until you convert it into specific offenders. When a layout feels cluttered, **count — don't squint** — and report the count, not a vibe:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-296-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-297-- **Border-nesting depth.** Trace any corner from the terminal edge inward. More than *one* border between the edge and the content is too many. A border wrapping content that's already inside a bordered panel separates nothing and shows no focus — delete it. Boxes-inside-boxes is the single most common cause of "busy," and an outer full-screen frame is almost always redundant (the terminal edge already frames the app).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-298-- **Signals per piece of state.** Count how many things encode the same fact. `[PASS]` + green + `✅` + a `▸` row prefix is *four* signals for one status. **The budget is at most one color cue plus one non-color cue** (green plus a word, letter, or symbol); cut the rest. This is the one rule other sections point to.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-299-- **Always-on markers.** A glyph that appears on 100% of rows (a `▸` on every line) marks nothing — it's texture, not information. Reserve markers for the exception: the selected row, the failed item.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-300-- **Chrome-to-data ratio.** Add up the cells spent on borders, titles, padding, labels, and repeated boilerplate (a full ISO date on every log line when only the time changes) versus cells showing actual data. A high chrome ratio *is* the cluttered feeling.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-301-- **The removal test.** For each decorative element ask: "if I delete this, do I lose information?" If no, delete it. Whitespace is not empty space — it's the cheapest separator you have, and a single blank row routinely out-reads a heavy border.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-302-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-303-Run this pass on any layout, yours or someone else's. "Three concentric borders, status encoded four ways, a marker on every row" tells the user exactly what to cut; "simplify it" tells them nothing.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-304-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-305-A worked example. Before (the PASS and FAIL tags are green and red):
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-306-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-307-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-308-+--------------------------------------+
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-309-| +----------------------------------+ |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-310-| | > [PASS] (ok)  build        2.1s | |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-311-| | > [PASS] (ok)  lint         0.8s | |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-312-| | > [FAIL] (!!)  test         4.5s | |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-313-| +----------------------------------+ |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-314-+--------------------------------------+
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-315-```
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-408-Three approaches:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-409-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-410-1. **Hide low-priority columns.** Define column priority; drop them as width shrinks.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-411-2. **Horizontal scroll.** htop scrolls the process table left and right with the arrow keys when columns overflow.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:412:3. **Detail-on-Enter.** Pressing Enter on a row opens a side panel or modal showing all fields. The highest-leverage option: show fewer columns, and the user is one keypress from full detail.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-413-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-414-### Virtualization
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-415-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-416-**Always virtualize** lists that might exceed a few hundred items.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-417-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-418-- **k9s** (thousands of pods) and **Toolong** (multi-GB logs) virtualize.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-419-- **Textual `DataTable`**, **Ratatui `List` + `ListState`**, and **Bubbles `list`** virtualize or offset efficiently.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-420-- **Ink** needs an explicitly windowed slice or viewport for a changing collection. `<Static>` is only for finalized append-only history; it does not virtualize selectable, filtered, or otherwise mutable rows.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-421-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-422-The naive "render all rows, scroll viewport" approach degrades horribly at 10k+ items.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-423-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-424-### Emoji and aligned columns
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-425-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-426-Emoji whose base character is East Asian Wide (`✅ ❌ ⭐`, plus most pictographs) take 2 cells everywhere. Emoji built from a narrow base plus a variation selector or joiner (`⚠️` is U+26A0 + U+FE0F, `✔️`, `❤️`, ZWJ families) take 1 or 2 depending on the terminal and the width library, so a column that contains them can misalign by a cell per row. For status columns use narrow text symbols (`✓ ✗ !`) or words; if you want emoji, choose Wide-base ones, measure with a grapheme-aware width library, and test on the terminals you support (see *Localization* for the width classes).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-427-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-428-### Diff views
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-429-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-430-Choose by width: **unified** below about 120 columns, **side-by-side** at 120 or more, where each side keeps at least 55 columns plus a 2-cell gutter. Mark lines with a `+` or `-` in the first column (color only reinforces it), keep a line-number gutter, and highlight changed words inside a changed line. Navigate by hunk with `]`/`[` (or `n`/`N`). Don't wrap in side-by-side; truncate and scroll horizontally.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-431-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-432-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-433----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-434-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-435-## Localization
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-436-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-461-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-462-- Ephemeral feedback: "Saved", "3 files changed", "Connecting...".
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-463-- Success and info messages fade after 3–5 seconds or give way to the idle state. Keep errors and warnings until the user dismisses them, then move them to a message log the user can reopen (a `:messages` command or a key): a message that vanishes unread can't be acted on.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-464-- **Toasts and the message log.** Show a transient message in the status line, or as a toast at the bottom-right just above the footer so it never covers the row being acted on, with at most two visible. Every message, errors included, is also written to a log the user can reopen (`:messages` or a key): newest last, with a timestamp and kind, capped around 200 entries for the session.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:465:- The current mode, for modal apps (label and cursor shape: `interaction-patterns.md` → *Keybinding philosophies and modal vs modeless*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-466-- Lead each message with a symbol or label word (`✓ Saved`, `! Low disk space`, `✗ Save failed`) so the kind survives `NO_COLOR`, with green, yellow, or red as the one reinforcement. A message that already starts with a label (`Error:`) needs no symbol too; error wording follows `cli-basics.md` → *Error messages*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-467-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-468-### Footer hint bar
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-469-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-470-Lay hints out as `key action ⋅ key action ⋅ key action`, with `⋅` (U+22C5; the middle dot `·` is ambiguous-width) or `|` as the separator; htop's `F1Help F2Setup F3Search …` strip is the classic form. Put the most frequent action first and `?` last, and show one rendered line per width:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-471-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-472-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-473-80 columns:  q quit ⋅ / filter ⋅ enter open ⋅ space select ⋅ d delete ⋅ ? help
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-474-40 columns:  q quit ⋅ / filter ⋅ ? help
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-475-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-476-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-477-Drop hints from the right of the least frequent until the line fits, keeping `?` so the full list stays one key away. Which shortcuts to show and how to generate them from your keymap: `interaction-patterns.md` → *Layer 1: Always-visible footer hints*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-478-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-479----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-480-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:481:## Modals and dialogs
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-482-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-483-- **Width:** 60–80% of the terminal, at most about 80 columns for prose, at least 30. Center it horizontally and place it slightly above vertical center.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:484:- **One modal at a time.** A second request replaces the first or queues behind it; `Esc` closes one modal per press (`interaction-patterns.md` → *Esc, q, and Ctrl+C*). The modal traps focus.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-485-- **Clear the cells behind it** (draw a blank background) so underlying text doesn't bleed through, and give it its own border and a title.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md:486:- **Modality must not rest on dimming.** Dim the background with the faint attribute where supported, but dimming is an attribute, not a color, and some terminals ignore it. The border, the title, and the changed footer hints say "you are in a dialog" under `NO_COLOR` and without faint.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-487-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-488----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-489-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-490-## Progress indicators
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-491-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-492-### Spinners
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-493-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-494-The de facto modern default for indeterminate work: **Braille spinners**.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-495-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-496-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-497-⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-498-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-499-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-500-Ten frames at ~80ms per frame (cli-spinners' `dots`) give a smooth rotation.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-501-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-502-**Rules:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-503-- Show only after ~100–200ms — instant work shouldn't flash a spinner.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-504-- Stop with a final state symbol: `✓` (success), `✗` (failure), or just disappear.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-505-- Suppress entirely on non-TTY. CI logs shouldn't have spinners.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-506-- In plain, screen-reader, or reduced-motion mode, print one static line instead (see *Accessibility*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-507-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-508-### Determinate progress bars
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-509-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/visual-patterns.md-510-Block characters for sub-cell precision:
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:1:# Interaction patterns — keybindings, focus, navigation, modal vs modeless
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-2-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:3:A deep dive into how users interact with TUIs — keybinding philosophy, focus management, navigation patterns, mouse support, and discoverability. The top-level `SKILL.md` covers the principles; this file goes deeper into the *why* and the trade-offs.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-4-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-5-**Contents:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:6:- [Keybinding philosophies and modal vs modeless](#keybinding-philosophies-and-modal-vs-modeless)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-7-- [Cross-app keybinding conventions](#cross-app-keybinding-conventions)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-8-- [Reserved keys — preserve what users expect](#reserved-keys--preserve-what-users-expect) · [Esc, q, and Ctrl+C — the quit ladder](#esc-q-and-ctrlc--the-quit-ladder) · [Keys the environment steals](#keys-the-environment-steals)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-9-- [Discoverability — the four-layer pattern](#discoverability--the-four-layer-pattern)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-10-- [Focus management](#focus-management)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-11-- [Search and filter](#search-and-filter)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-12-- [Scrolling and position](#scrolling-and-position) · [Live data — keeping the selection steady](#live-data--keeping-the-selection-steady) · [Logs and streams — follow mode](#logs-and-streams--follow-mode)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-13-- [Multi-select](#multi-select) · [Tree views](#tree-views)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:14:- [Mouse support — the real trade-off](#mouse-support--the-real-trade-off)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:15:- [Undo / redo](#undo--redo) · [Confirmation patterns](#confirmation-patterns)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-16-- [Text input — fields, history, completion](#text-input--fields-history-completion) · [Forms and settings screens](#forms-and-settings-screens)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:17:- Named patterns: [fzf](#the-fzf-pattern-in-detail) · [lazygit](#the-lazygit-pattern--multi-pane-with-numeric-tabs) · [k9s](#the-k9s-pattern--command-driven) · [helix](#the-helix-pattern--selection-first-modal-editing)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-18-- [Common interaction pitfalls](#common-interaction-pitfalls)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-19-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:20:Terminal modes, escape sequences (paste, keyboard and mouse protocols, OSC 8/52/9), and multiplexer, SSH, and Windows behavior live in `terminal-protocols.md`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-21-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-22----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-23-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:24:## Keybinding philosophies and modal vs modeless
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-25-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-26-Most apps blend four schools:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-27-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-28-| School | Identity | Examples | Costs |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-29-|---|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:30:| **Modal (vim-style)** | Modes (NORMAL, INSERT, VISUAL, COMMAND); single-letter motions and operators with counts (`5dw`), leader keys for namespaces. Dense and composable, no Ctrl/Alt needed | vim, helix, kakoune, k9s (ex-mode), aerc | Steep learning curve; mode confusion when the indicator is weak; modal text input fights conventional editing (Ctrl+A, Ctrl+E) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:31:| **Chord (Emacs-style)** | Modifier-prefixed bindings (`C-x C-s`, `M-x`), no modes, nested key tables; discoverable with which-key | emacs, readline shells, weechat | Modifier strain; collides with terminal-reserved keys; slower than modal for repetitive editing |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:32:| **Modeless (arrow / GUI-like)** | Arrows, Enter, Tab, Esc, single-letter shortcuts; state changes via widget focus; mouse-friendly; zero learning curve | btop, htop, fzf, gum, Posting, Harlequin, most Textual apps | Fewer keys means fewer commands; Ctrl/Alt for less-common actions; screen space spent on focus indicators |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-33-| **Hybrid** | On navigational surfaces, arrows and compatible `hjkl` aliases together. Vim shortcuts are power-user paths, never requirements, and printable aliases yield while a text field owns input | lazygit, k9s, yazi, gh dash | Slightly more code; risk of inconsistent key meanings |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-34-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:35:**Decision rule.** Default to hybrid for a new navigational, full-screen TUI. A bounded prompt or form can keep a smaller conventional keymap. Go modal only for editor-like tools where keystrokes are the primary interaction and users are likely vim-familiar, never for a general-purpose tool aimed at non-vim users. Choose chords only when inheriting a convention; rarely from scratch.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-36-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:37:- **Modal needs** a persistent mode indicator (status-bar color or label), a distinct cursor shape per mode (block in NORMAL, bar in INSERT, underline in REPLACE) reset on exit (`terminal-protocols.md` → *Modes and sequences*, cursor shape), and a way to learn the modes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-38-- **Modeless needs** clear focus indication (see *Focus indicators*) and modifier bindings for less-common actions.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-39-- **Contextual bindings** let the focused panel decide what a key means: lazygit's `space` stages in Files, checks out in Branches, applies in Stash, and k9s adds panel-specific actions to the global ones. This is context-sensitive modeless; it works when panel-specific actions are rich and a footer hint bar shows what each key does right now.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-40-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-41----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-42-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-43-## Cross-app keybinding conventions
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-44-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-45-These have crystallized across the ecosystem. Use them unless you have a strong reason not to:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-46-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-47-| Key | Action |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-48-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-49-| `q` | back out of a nested view; quit at the root (see *Esc, q, and Ctrl+C*) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-50-| `?` | help |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-51-| `/` | search / filter |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-52-| `n` / `N` | next / prev match |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-53-| `Esc` | one step down the quit ladder: cancel, close overlay, clear filter, back (see *Esc, q, and Ctrl+C*) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-54-| `Enter` / `Return` | confirm / drill in |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-55-| `Space` | toggle / mark for multi-select (`Tab` in type-to-filter pickers; see *Multi-select*) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-56-| `:` | command mode |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-57-| `gg` / `G`, `Home` / `End` | top / bottom |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-58-| `PgUp` / `PgDn`, `Ctrl+U` / `Ctrl+D` | page / half page (see *Scrolling and position*) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-59-| `Tab` / `Shift+Tab` | switch focus |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-60-| `r` | refresh |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-61-| `1`–`9` | jump to panel / numbered tab |
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-94-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-95-| Step | Applies when | Esc does |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-96-|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-97-| 1. Cancel | A request, load, or long action is running | Cancels it and keeps the old data |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:98:| 2. Close | A modal, menu, palette, help screen, or completion popup is open | Closes the top one only |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-99-| 3. Clear | A filter, search, or multi-selection is active | Clears it, and a cancelled search returns to the prior position |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-100-| 4. Go back | A drill-down, detail view, or focus trap is open | Backs up one level |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-101-| 5. Root | Nothing above applies | Nothing: `Esc` never quits |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-102-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-103-- **`q`** goes back one level in a nested view and quits only at the root. While a text field owns input it is a letter. In a single-view app it quits.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-104-- **`Ctrl+C`** cancels a running operation first. With nothing running it quits from anywhere, without walking the ladder. When quitting would lose something, the first press says so on the status line (`Press Ctrl+C again to quit`) and a second press within about two seconds quits.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-105-- **Confirm a quit only when it loses something**: unsaved edits, or running work that cannot resume (`Quit? 2 jobs are still running [y/N]`, default No, per *Confirmation patterns*). An idle quit never asks.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-106-- Every quit path runs the same teardown (`SKILL.md` → *Terminal lifecycle*), including the second `Ctrl+C` and a confirmed `q`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-107-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-108-A lone `Esc` is ambiguous with the start of an Alt sequence, so don't make it latency-critical (see *Keys the environment steals*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-109-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-110----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-111-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-112-## Keys the environment steals
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-113-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-114-Multiplexers, shells, and the legacy key encoding take or merge keys before your app sees them. Design the keymap around that, and read `terminal-protocols.md` → *Terminal environments* before shipping a Ctrl or Alt binding.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-115-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-116-| Key | Who takes it | Design response |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-117-|---|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-118-| **Ctrl+B** | tmux prefix | Never the only path to an action |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-119-| **Ctrl+A** | GNU screen prefix; readline line-start | Same; don't bind it as the leader |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-120-| **Ctrl+G/P/T/N/H/S/O/Q/B**, many Alt keys | Zellij's default mode (the Unlock-First preset frees the Ctrl keys, not Alt) | Keep a non-Ctrl, non-Alt path to every action |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-121-| **Ctrl+P** | readline previous-history; Zellij | Offer `:` or a leader key too (see Layer 4) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-122-| **Ctrl+I / H / M / [** | Legacy encoding: the same byte as Tab, (often) Backspace, Enter, Esc | Don't bind them separately from Tab, Backspace, Enter, Esc |
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-138-Define keys *once*, derive the footer. **Bubble Tea**'s `bubbles/help` reads `key.KeyMap` and **Textual**'s `Footer` renders `BINDINGS`; **Ratatui** and **Ink** don't generate one, so build a helper that reads your keybinding map.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-139-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-140-### Layer 2: `?` help screen
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-141-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:142:Pressing `?` opens a modal or full-screen help with **all** keybindings, grouped by mode, panel, or category (`key  action  context`). Every full-screen app with more than a handful of actions should provide this or an equivalent discoverable help view. A tiny picker whose complete keymap is already visible does not need a separate modal. lazygit's `?` shows a categorized list with sections per panel.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-143-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-144-### Layer 3: Leader-key / which-key
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-145-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-146-After pressing a leader (Space, `,`, `\`), show a popup with the available follow-up keys. The user reads and picks, types the key to dismiss the popup and trigger the action, or presses Esc to cancel. helix's `Space-` menu is the gold standard (`f` file picker, `b` buffer picker, `s` symbols, `a` LSP actions); `which-key.nvim` is near-universal in neovim. Add one when your keymap exceeds ~20 distinct actions; below that, `?` help is enough.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-147-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-148-### Layer 4: Command palette
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-149-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-150-`Ctrl+P` (or similar) opens a fuzzy-matched action list. The user types to filter. Keep an alternative binding: Zellij's default mode captures `Ctrl+P` and readline uses it for previous history. A route that needs no Ctrl chord, such as `:` or a leader key, avoids both collisions.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-151-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-152-Add a palette once the app has more than about 20 actions, or when its actions span multiple contexts or benefit from search; a smaller app can stop at footer hints plus `?`. **Once a palette exists, every action that has a keybinding should also be a palette command.** The keybinding is the shortcut; the palette is the long-form name + searchable description. Show the keybinding next to each command name, so the palette doubles as keybinding documentation.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-153-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-154-Examples: Textual's built-in palette (`Ctrl+P` by default since v0.77; it originally shipped on `Ctrl+\`, which collides with SIGQUIT), VS Code's Ctrl+Shift+P (the conceptual ancestor), and the `:` of helix and k9s (resource-typing, but the same "type to filter actions" model).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-155-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-156----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-157-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-158-## Focus management
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-159-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-160-In a multi-panel TUI, **which panel has focus** determines:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-161-- Which keystrokes the panel responds to.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-162-- Which footer hints show.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-163-- The visual highlight (see *Focus indicators*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-164-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-165-### Focus indicators (in order of strength)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-166-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-180-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-181-| **Tab / Shift+Tab** cycle | Linear panel order; small number of panels |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-182-| **Numeric keys** (`1`–`9`) | Direct jumps; many panels or tabs (lazygit `1`–`5` panels, yazi `1`–`9` tabs) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-183-| **Directional** (`Ctrl+w h/j/k/l` like vim) | Spatial navigation; arbitrary panel arrangement |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:184:| **Mouse click** | Augmentation; not the primary path |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-185-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-186-**Numeric jumps are fastest** when you have 5+ panels. Tab is fine for 2–3.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-187-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-188-### Focus traps
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-189-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:190:Some panels should "trap" focus — Tab inside them cycles through internal widgets, not back to the global panel cycle. Modal dialogs and forms always trap focus. Use Esc to escape.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-191-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-192----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-193-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-194-## Search and filter
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-195-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-196-Two distinct interactions, usually on the same key: `/` filters lists and searches documents and logs, so the focused view decides which one it does.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-197-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-198-### Search (forward through content)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-199-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-200-Bound to `/` in documents and logs. Opens a search prompt; `Enter` jumps to first match; `n` / `N` cycles. Examples: vim's `/`, less's `/`, lazygit's `/`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-201-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-202-- Show match count: `(2/15)`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-203-- Highlight all matches; focus the current one with reverse video or accent.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-204-- `Esc` cancels and returns to original position.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-205-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-206-### Filter (narrow what's shown)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-207-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-208-Bound to `/` in lists. Filters the list to matching items. Examples: fzf's whole identity, k9s's `/`, Textual's `Input` widget on a list.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-209-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-210-- Sub-100ms response — anything slower feels broken.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-211-- Show count: `123/45678`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-212-- Highlight matched substring within results.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-213-- `Esc` clears filter.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-214-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-223-| `↑`/`↓`, `k`/`j` | One row |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-224-| `PgUp` / `PgDn` | One page, minus one row of overlap |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-225-| `Ctrl+U` / `Ctrl+D` | Half a page |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-226-| `Home` / `End`, `g` / `G` | Top / bottom |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:227:| Mouse wheel | The viewport under the pointer, not the selection |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-228-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-229-Keep the cursor at least 3 rows from the viewport edge while it moves (1 row in viewports under 12 rows tall), so the next rows are visible before the user reaches them. Show where the user is: `42/1,203` right-aligned in the panel title or footer for lists, a percentage for documents. A scrollbar is optional decoration; the count carries the meaning, survives screen readers, and costs no width.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-230-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-231----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-232-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-233-## Live data — keeping the selection steady
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-234-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-235-Lists that refresh (processes, pods, builds) move under the user's cursor unless you prevent it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-236-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-237-- **Track the selection by a stable ID** (pod UID, file path, row key), never by row index, and re-resolve it after every refresh, sort, and filter.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-238-- **If the selected ID disappears,** select its nearest surviving neighbor (the next row, else the previous), not the first row.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-239-- **Don't scroll under the cursor.** When rows insert or vanish above the selection, keep the selected row at the same screen position; move the viewport only when the selection would leave it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-240-- **Don't re-sort on refresh** unless the user changed the sort. A list sorted by a volatile key (CPU%) reorders constantly by design.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-241-- **Offer a freeze key** shown in the footer (htop's `Z` pauses updates). While frozen, stop reorders and appends, mark the header `PAUSED`, show the count of pending changes, and apply them on resume.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-242-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-243----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-244-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-245-## Logs and streams — follow mode
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-246-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-247-A viewer for output that keeps arriving (logs, build output, chat transcripts) has two states, and the user must always know which one it is in.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-248-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-249-- **Following:** pinned to the bottom; new lines scroll in. This is the default on open.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-250-- **Paused:** any upward movement (`k`, `PgUp`, wheel up, `g`) stops following and holds the viewport still. Show the backlog in the corner: `▾ 37 new`. `G` (jump to the end) or `F` (toggle follow, as in `less`) re-pins.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-251-- **Wrap toggle** (`w`): wrapped by default for prose, unwrapped (truncate with `…` and scroll sideways) for columnar or JSON logs.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-281-- **Keep expansion state by node ID** across refreshes and filters. When a filter is active, keep the ancestors of every match visible and expanded.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-282-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-283----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-284-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:285:## Mouse support — the real trade-off
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-286-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:287:Textual treats the mouse as first-class (`:hover`, click, wheel), btop makes every highlighted key clickable, and lazygit selects on click, range-selects by dragging, and reorders commits by dragging (v0.64+). Keyboard-first users resist it, and capture has a cost: it takes over click-and-drag text selection, so users must hold a bypass modifier (Shift in most terminals, Option in iTerm2, Fn in Terminal.app). helix and fzf turn the mouse on by default but never require it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-288-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:289:**Default for full-screen apps with click targets:** enable modes 1000 + 1002 + 1006 (press and release, drags, SGR coordinates), and 1003 only for hover effects, since it reports every pointer move (`terminal-protocols.md` → *Modes and sequences*). Provide an off switch (`--no-mouse` or a config key). Inline tools leave the mouse off, so selection and scrollback keep working.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-290-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:291:**Mouse augments keyboard, never replaces required actions.** Every mouse-reachable target needs a keyboard equivalent. Implement mouse for focusing a panel, switching tabs, scrolling lists and viewports, and clicking form buttons. Don't require it for the critical path, power-user actions, or anything that should work over a serial console or restricted SSH.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-292-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:293:**Document the selection bypass** for your users' terminals, since the modifier isn't always Shift, and offer a way to turn mouse capture off. Inside tmux 3.8+, the bypass is needed even for apps that never enable the mouse (`terminal-protocols.md` → *Terminal environments*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-294-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-295----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-296-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-297-## Undo / redo
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-298-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-299-Hard for non-editor apps, but lazygit offers `z` (undo) / `Z` (redo) for git actions recorded in the reflog: commits, checkouts, resets, even a botched rebase. It states its limits: working-tree and stash changes, pushes, and branch creation can't be undone, and undo is unavailable mid-rebase. Even bounded, this is a large comfort for destructive tools.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-300-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:301:Implement it as an **action stack** (each action a reversible operation; pop and reverse) or **state snapshots** (cheaper, coarser). For destructive actions without undo, use confirmation. **Never silently destroy.**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-302-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-303----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-304-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-305-## Confirmation patterns
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-306-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-307-Match friction to consequence, in three levels:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-308-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-309-- **Light, y/n prompt:** `Delete 3 files? [y/N]`. Default to **No**, so pressing Enter doesn't delete.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-310-- **Medium, typed name:** `Type the database name to confirm: prod-main` (Heroku's app deletion). Forces the user to think about what they're deleting.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:311:- **Heavy, dual confirmation:** type `delete`, then answer `Are you sure? [y/N]`. For nuclear actions; used rarely.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-312-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:313:Y/n suits "stage all files"; a typed name suits "delete production." Don't make every confirmation typed-name: users learn to type fast and lose the safety.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-314-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-315----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-316-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-317-## Text input — fields, history, completion
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-318-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-319-Free-text fields matter most in chat and agent TUIs, where the field is the product.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-320-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-321-- **Editing keys.** Arrows, `Home`/`End`, `Backspace`/`Delete`, and `Ctrl+W` (delete word), `Ctrl+U` (delete to line start), `Ctrl+K` (delete to line end), and `Ctrl+A`/`Ctrl+E` as aliases, never the only route: `Ctrl+A` is GNU screen's prefix (see *Keys the environment steals*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-322-- **History.** `↑`/`↓` recall previous entries when the cursor is on the first or last line of the field (any press in a single-line field). Keep history across sessions and skip consecutive duplicates.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-323-- **Completion and ghost text.** Show the suggestion dimmed after the cursor; `→` or `End` accepts it, as fish does. `Tab` completes when a completion exists (the first press lists candidates when several match); otherwise it moves focus. A field that completes owns `Tab`, so move focus with `Esc` then `Tab`, or with a dedicated key.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-324-- **Multi-line submit.** In chat-style fields `Enter` sends and a modifier inserts a newline. `Shift+Enter` is distinct from `Enter` only with the kitty keyboard protocol, so fall back to `Alt+Enter` or `Ctrl+J` (a line feed, distinct from `Enter`'s carriage return in the legacy encoding), and a trailing `\` then `Enter` as a third route. State the newline key in the placeholder or footer (`Enter send ⋅ Alt+Enter newline`). In editor-like fields invert it: `Enter` inserts a newline and `Ctrl+Enter` or `Ctrl+S` sends. Bracketed paste inserts pasted newlines and never submits (`terminal-protocols.md` → *Modes and sequences*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-325-- **Validation timing** is under *Forms and settings screens* below.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-326-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-327----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-328-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-329-## Forms and settings screens
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-330-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-331-### Validation timing — avoid premature errors
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-332-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-333-Default to validation on **blur** or **submit** so an incomplete value is not treated as an error while the user is still typing. huh's `Input` validates when a field loses focus and again on Next/Submit — there's no per-keystroke validation path in its implementation. Clack and Inquirer validate only on Enter (there's no blur concept in a single-prompt-at-a-time flow). After an error has been shown, live revalidation can help it disappear as soon as the value becomes valid; expensive or remote checks should be debounced or reserved for submit.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-334-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-335-Textual's `Input.validate_on` accepts `"blur"`, `"changed"`, and `"submitted"`, and **defaults to all three**. Narrow it to `validate_on=["blur"]` or `["submitted"]` when errors should wait; keep `"changed"` only when immediate feedback is useful and non-disruptive.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-336-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-337-### Required-field marking — there is no framework convention
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-349-- **Live-apply** (htop's F2 setup screen): changes take effect immediately as you make them; persistence to disk happens implicitly, not via an explicit Save action. No dirty-state indicator, no discard.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-350-- **Explicit Apply / Save / Cancel**: appropriate when changes must be validated together, committed atomically, trigger an expensive reload, or update a remote system. Show dirty state, make `Esc` behavior explicit, and confirm before discarding meaningful edits.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-351-- **Defer to `$EDITOR`** (lazygit): no in-app settings form at all — press `e` in the Status panel to open the raw config file in the user's editor. Since v0.44, lazygit reloads the changed file when its terminal regains focus; only a few settings (refresh and fetch intervals, update checks) still need a restart, and lazygit says which. If you take this route, reload on focus or file change rather than demanding a restart.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-352-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:353:There is no settled convention for Esc-to-discard on a dirty form. Design and document it explicitly, and match confirmation friction to the cost of losing the edits.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-354-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-355----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-356-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-357-## The fzf pattern in detail
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-358-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-359-The instant-filter interaction has spread far beyond fzf: telescope.nvim, atuin, zoxide, helix's `Space+f`, and Textual's command palette match fuzzily; k9s's `/` (regex) and lazygit's `/` (substring by default) keep the instant filter with a stricter matcher.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-360-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-361-1. **Open** with a key (often `/` or `Ctrl+P`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-362-2. **Type to filter** — shows results updating in real time.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-363-3. **Arrow / `Ctrl+J` / `Ctrl+K`** to navigate while the query owns printable input. Reserve bare `hjkl` for an explicit navigation mode or a view with no active text field.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-364-4. **Tab** to mark for multi-select (in `--multi` mode; why Tab and not Space: *Multi-select*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-365-5. **Enter** to confirm; **Esc** to cancel.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-366-6. **Optional preview pane** (right side) showing detail of hovered result.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-367-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-368-Implementation rules: everything in *Search and filter* → *Filter* (sub-100ms updates, match count, highlighting, smart case), plus **sensible result ranking** — exact matches first, then prefix, then substring.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-369-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-370-For Go: `sahilm/fuzzy` or `lithammer/fuzzysearch`. For Rust: `nucleo` (used by helix) or `skim`'s matcher. For Python: `rapidfuzz`. For TS/JS: `fuse.js` or `fzy.js`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-371-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-372-**Case study:** `references/exemplar-apps.md` → *fzf*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-373-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-374----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-375-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-376-## The lazygit pattern — multi-pane with numeric tabs
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-377-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-384-Used by k9s, helix (`:` ex-commands), weechat (`/` commands), and aerc: press `:`, type a resource or command name (`pods`, `svc`), Tab-completion narrows, Enter runs, and aliases shorten common ones (`po` = `pods`). It is fast for power users and scales to many commands, but demands completion or a discoverability layer: k9s suggests completions as you type and lists every alias in its own view (`Ctrl-A`). Use it when there are many resource types or actions that users repeat often. Case study: `references/exemplar-apps.md` → *k9s*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-385-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-386----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-387-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:388:## The helix pattern — selection-first modal editing
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-389-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:390:Helix selects first, then acts (`wd` selects the word and deletes it, vs vim's `dw`), with multi-cursor as the core and `Space` opening which-key. The transferable principle is *visual feedback before the action*: highlight the rows you're about to delete, the field about to be cleared, the URL about to be visited. Which-key for leader keys suits any modal app. Case study: `references/exemplar-apps.md` → *helix*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-391-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-392----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-393-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-394-## Common interaction pitfalls
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-395-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-396-1. **Broken reserved-key expectations** — Ctrl+C that neither cancels nor quits, Ctrl+Z that doesn't suspend cleanly.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-397-2. **No focus indication.** Users tab around guessing which panel is active.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:398:3. **Mode confusion** (modal apps with weak indicators). Use cursor shape + color.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-399-4. **`q` doesn't quit in a modeless full-screen app** (outside text entry), without offering another visible conventional exit.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:400:5. **`Esc` doesn't back up or dismiss** where the UI establishes a navigation stack or modal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-401-6. **No discoverable key help** in an action-rich app; `?` is conventional, but an equivalent visible route is fine.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-402-7. **Filter that's slow** (>100ms updates).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:403:8. **Destructive single-letter without confirmation or undo.** Either confirm or implement undo.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-404-9. **Inconsistent meanings for the same key across panels** without a footer hint bar to explain.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md:405:10. **Mouse-only actions** with no keyboard equivalent.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-406-11. **Tab order that skips around** (not following visual reading order).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-407-12. **No multi-select where users need it** (file managers, lists of items to act on).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-408-13. **Selection jumps on refresh**, or a viewport that scrolls under the cursor (*Live data*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-409-14. **A log viewer that keeps scrolling while the user reads** (*Logs and streams*), or no way to tell it is paused.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-410-15. **`Esc` that quits, or a `q` that quits from a nested view with unsaved work** (*Esc, q, and Ctrl+C*).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-411-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/interaction-patterns.md-412-When reviewing a TUI's interaction design, walk this list.
+
+codex
+Use Lipgloss v2’s **layers and compositor**: put your existing screen at `Z(0)` and a centered dialog at `Z(1)`. Use the same compositor’s `Hit(x, y)` to identify what was clicked.
+
+```go
+import (
+    tea "charm.land/bubbletea/v2"
+    "charm.land/lipgloss/v2"
+)
+
+type hitMsg string
+
+// Assumes m.width/m.height come from tea.WindowSizeMsg,
+// m.body contains your existing screen, and m.confirm is a bool.
+func (m model) View() tea.View {
+    v := tea.NewView("")
+    v.AltScreen = true
+    v.MouseMode = tea.MouseModeCellMotion
+
+    if m.width == 0 || m.height == 0 {
+        return v // Waiting for the initial WindowSizeMsg.
+    }
+
+    // Keep the base within the window, including oversized content.
+    base := lipgloss.NewStyle().
+        Width(m.width).Height(m.height).
+        MaxWidth(m.width).MaxHeight(m.height).
+        Render(m.body)
+
+    layers := []*lipgloss.Layer{
+        lipgloss.NewLayer(base).ID("background").Z(0),
+    }
+
+    if m.confirm {
+        if m.width < 32 || m.height < 9 {
+            v.SetContent("Terminal too small.\nResize, or Esc to cancel.")
+            return v
+        }
+
+        box := lipgloss.NewStyle().
+            Width(min(44, m.width-4)).
+            Border(lipgloss.RoundedBorder()).
+            Padding(1, 2).
+            Render("Delete this item?\n\ny: delete · Esc/n: cancel")
+
+        x := (m.width - lipgloss.Width(box)) / 2
+        y := (m.height - lipgloss.Height(box)) / 2
+
+        layers = append(layers,
+            lipgloss.NewLayer(box).
+                ID("dialog").X(x).Y(y).Z(1),
+        )
+    }
+
+    comp := lipgloss.NewCompositor(layers...)
+    v.SetContent(comp.Render())
+
+    // This closure uses the compositor for the displayed frame.
+    v.OnMouse = func(msg tea.MouseMsg) tea.Cmd {
+        click, ok := msg.(tea.MouseClickMsg)
+        if !ok || click.Button != tea.MouseLeft {
+            return nil
+        }
+
+        id := comp.Hit(click.X, click.Y).ID()
+        return func() tea.Msg { return hitMsg(id) }
+    }
+
+    return v
+}
+```
+
+Handle the resulting message in `Update`:
+
+```go
+case tea.WindowSizeMsg:
+    m.width, m.height = msg.Width, msg.Height
+
+case hitMsg:
+    if m.confirm {
+        switch string(msg) {
+        case "dialog":
+            // Click inside the dialog, including border and padding.
+            // Use separate button layers if you need button hit testing.
+        case "background":
+            m.confirm = false // Optional: outside click cancels.
+        }
+        return m, nil // Do not forward input to the underlying screen.
+    }
+    // Handle ordinary background clicks here.
+
+case tea.KeyPressMsg:
+    if m.confirm {
+        switch msg.String() {
+        case "esc", "n", "ctrl+c":
+            m.confirm = false
+        case "y":
+            m.confirm = false
+            return m, deleteItemCmd // Your asynchronous action.
+        }
+        return m, nil // Modal owns keyboard input.
+    }
+```
+
+Key details:
+
+- **Give both layers IDs.** `Hit` returns the topmost layer with an ID; an unidentified dialog can let hits resolve to the background.
+- **Handle clicks once.** Bubble Tea also delivers raw `tea.MouseClickMsg` to `Update`; don’t perform the action there as well.
+- **Measure rendered cells**, using `lipgloss.Width` and `Height`. In Lipgloss v2, style width includes padding and borders.
+- Rebuild placement on resize. The example keeps one dialog border, fits both 80×24 and 60-column terminals, and shows a size fallback below 32×9.
+- Clicking the dialog itself should never confirm a destructive action. Keep confirmation explicit and keyboard accessible.
+
+`lipgloss.Place` centers content in a rectangle; the compositor is what lets you draw that rectangle **over your existing screen**.
+tokens used
+18,315

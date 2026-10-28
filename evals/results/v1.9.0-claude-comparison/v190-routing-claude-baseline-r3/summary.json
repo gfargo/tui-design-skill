@@ -1,0 +1,43 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-routing-claude-baseline-r3",
+  "created_at": "2026-10-27T16:21:29Z",
+  "run_manifest_sha256": "a811a890b8a021bde76aa75beda51c11a5014714ee327b542f19d7e608ee6c00",
+  "grades_file": "grades.json",
+  "grades_sha256": "6236513646c2a15b9d78904e0f795a8eef7f513015ea9f53e5323c47747bbfe9",
+  "passed": 25,
+  "total": 42,
+  "pass_rate": 0.5952380952380952,
+  "by_case": [
+    {
+      "case_id": "tmux-flicker",
+      "case_name": "tmux-flicker",
+      "passed": 3,
+      "total": 12,
+      "pass_rate": 0.25
+    },
+    {
+      "case_id": "shift-enter-missing",
+      "case_name": "shift-enter-missing",
+      "passed": 11,
+      "total": 12,
+      "pass_rate": 0.9166666666666666
+    },
+    {
+      "case_id": "status-and-unicode-routing",
+      "case_name": "status-and-unicode-routing",
+      "passed": 6,
+      "total": 9,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "search-and-multiselect-routing",
+      "case_name": "search-and-multiselect-routing",
+      "passed": 5,
+      "total": 9,
+      "pass_rate": 0.5555555555555556
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

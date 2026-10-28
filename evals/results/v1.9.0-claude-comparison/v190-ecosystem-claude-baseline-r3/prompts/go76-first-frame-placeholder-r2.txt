@@ -1,0 +1,1 @@
+My Bubble Tea v2 app embeds a bubbles list and a viewport. On startup the list renders as a garbled fragment and the viewport is empty until I resize the terminal. How should I handle sizing?

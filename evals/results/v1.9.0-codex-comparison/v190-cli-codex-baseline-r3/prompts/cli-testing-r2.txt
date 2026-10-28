@@ -1,0 +1,1 @@
+How should I test a one-shot CLI written in Go? I mostly care about output and exit codes.

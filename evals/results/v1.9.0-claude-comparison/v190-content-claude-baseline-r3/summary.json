@@ -1,0 +1,57 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-content-claude-baseline-r3",
+  "created_at": "2026-10-27T16:17:00Z",
+  "run_manifest_sha256": "512a36183ca04a340b287eabd8f299db32660c34306748c02a498e4701148167",
+  "grades_file": "grades.json",
+  "grades_sha256": "ffdfed5e573bcf10968e489ff6d564cb0bdb904159027f99752bc1be4697f48e",
+  "passed": 45,
+  "total": 84,
+  "pass_rate": 0.5357142857142857,
+  "by_case": [
+    {
+      "case_id": "floor-sketch-layout",
+      "case_name": "floor-sketch-layout",
+      "passed": 4,
+      "total": 15,
+      "pass_rate": 0.26666666666666666
+    },
+    {
+      "case_id": "state-coverage",
+      "case_name": "state-coverage",
+      "passed": 11,
+      "total": 15,
+      "pass_rate": 0.7333333333333333
+    },
+    {
+      "case_id": "clutter-audit-counts",
+      "case_name": "clutter-audit-counts",
+      "passed": 11,
+      "total": 15,
+      "pass_rate": 0.7333333333333333
+    },
+    {
+      "case_id": "status-message-timing",
+      "case_name": "status-message-timing",
+      "passed": 8,
+      "total": 12,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "footer-hint-collapse",
+      "case_name": "footer-hint-collapse",
+      "passed": 7,
+      "total": 15,
+      "pass_rate": 0.4666666666666667
+    },
+    {
+      "case_id": "palette-and-slash",
+      "case_name": "palette-and-slash",
+      "passed": 4,
+      "total": 12,
+      "pass_rate": 0.3333333333333333
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

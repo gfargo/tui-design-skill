@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building a TUI for browsing Kubernetes pods: a namespace sidebar, a pod list, and a detail pane with logs. Design the layout for me.

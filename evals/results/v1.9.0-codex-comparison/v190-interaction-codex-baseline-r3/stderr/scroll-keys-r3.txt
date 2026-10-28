@@ -1,0 +1,43 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-dytf9zic
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dff-f160-79d1-a593-0552b69dea66
+--------
+user
+Which scrolling keys and position indicator should my list view have?
+
+codex
+I’ll check the workspace for context on your list view and its keyboard conventions.
+exec
+/bin/zsh -lc "pwd; rg --files -g '"'!node_modules'"' -g '"'!vendor'"' -g '"'!package-lock.json'"' -g '"'!pnpm-lock.yaml'"'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-dytf9zic
+ exited 1 in 131ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-dytf9zic
+
+codex
+For a terminal list view, I’d use these defaults:
+
+| Key | Action |
+|---|---|
+| `↑` / `↓` | Move selection one item; scroll when needed |
+| `Page Up` / `Page Down` | Move one viewport, keeping one row of overlap |
+| `Home` / `End` | Jump to the first / last item |
+| `j` / `k` | Optional aliases for down / up, outside text inputs |
+| Mouse wheel | Scroll a few rows |
+
+Keep selection visible and stop at the ends rather than wrapping.
+
+Put a compact position indicator at the bottom right:
+
+- **Selectable list:** `23 of 140` for the selected item.
+- **Scroll-only list:** `21–40 of 140` for the visible range.
+- **Unknown total:** `21–40 · more below`; avoid a misleading percentage.
+
+For long lists, add a slim scrollbar showing the viewport’s relative size and position. Hide the indicator when everything fits unless the item count is useful.
+tokens used
+3,352

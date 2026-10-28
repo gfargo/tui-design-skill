@@ -1,0 +1,1 @@
+My list command hits a paginated API. How should limits and truncation work, and how can users see where config values come from?

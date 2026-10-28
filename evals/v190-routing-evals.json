@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.9.0 routing regressions for #78: prompts that should reach terminal-protocols.md (tmux flicker, a Shift+Enter that does not arrive) and the visual and interaction rows (status bar, spinner, Unicode width, search, multi-select). Assertions grade the answer; whether the right reference was loaded is checked separately from the run transcript. Status: rubric-only; the 1.9.0 evidence round records runs on Claude Code and Codex.",
+  "notes": "Focused v1.9.0 routing regressions for #78: prompts that should reach terminal-protocols.md (tmux flicker, a Shift+Enter that does not arrive) and the visual and interaction rows (status bar, spinner, Unicode width, search, multi-select). Assertions grade the answer; whether the right reference was loaded is checked separately from the run transcript. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956.",
   "evals": [
     {
       "id": "tmux-flicker",

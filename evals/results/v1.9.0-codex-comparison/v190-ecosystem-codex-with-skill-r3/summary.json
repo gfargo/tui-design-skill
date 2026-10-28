@@ -1,0 +1,127 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-ecosystem-codex-with-skill-r3",
+  "created_at": "2026-10-27T15:51:23Z",
+  "run_manifest_sha256": "24c48d8516f3019258f27f768319104a7dd83317d37c3fc0127ee355044fae75",
+  "grades_file": "grades.json",
+  "grades_sha256": "37864f30bdc94e151b2d00372b665647f5e60b765e6cb7bd5c25193cfca9fa43",
+  "passed": 175,
+  "total": 186,
+  "pass_rate": 0.9408602150537635,
+  "by_case": [
+    {
+      "case_id": "go76-spinner-never-moves",
+      "case_name": "go76-spinner-never-moves",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "go76-first-frame-placeholder",
+      "case_name": "go76-first-frame-placeholder",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "go76-lipgloss-overlay-hit",
+      "case_name": "go76-lipgloss-overlay-hit",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "go76-real-cursor-ime",
+      "case_name": "go76-real-cursor-ime",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-inline-exit-cursor",
+      "case_name": "ratatui-inline-exit-cursor",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "ratatui-popup-clear-shadow",
+      "case_name": "ratatui-popup-clear-shadow",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-input-cursor-cells",
+      "case_name": "ratatui-input-cursor-cells",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-tui-logger-crossterm-feature",
+      "case_name": "ratatui-tui-logger-crossterm-feature",
+      "passed": 8,
+      "total": 9,
+      "pass_rate": 0.8888888888888888
+    },
+    {
+      "case_id": "py76-textual-search-cancel",
+      "case_name": "py76-textual-search-cancel",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "py76-textual-side-by-side-panes",
+      "case_name": "py76-textual-side-by-side-panes",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "py76-textual-in-place-reactive",
+      "case_name": "py76-textual-in-place-reactive",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "py76-textual-sigterm-and-llm-stream",
+      "case_name": "py76-textual-sigterm-and-llm-stream",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink-virtualize-long-list",
+      "case_name": "ink-virtualize-long-list",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink-focus-input-routing",
+      "case_name": "ink-focus-input-routing",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink-ctrl-c-cancel-then-quit",
+      "case_name": "ink-ctrl-c-cancel-then-quit",
+      "passed": 14,
+      "total": 15,
+      "pass_rate": 0.9333333333333333
+    },
+    {
+      "case_id": "commander-async-action-ink",
+      "case_name": "commander-async-action-ink",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

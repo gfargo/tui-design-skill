@@ -1,0 +1,44 @@
+Use **unified diffs at 100 columns** and **side-by-side diffs at 160 columns**, with a manual toggle for either view.
+
+| | 100 columns | 160 columns |
+|---|---|---|
+| Default | Unified: removed lines above added lines | Side by side: old left, new right |
+| File navigation | Open as a drawer | Optional sidebar; collapse while reviewing |
+| Line numbers | Old and new number gutters | One number gutter per pane |
+| Long lines | Horizontal scroll by default | Synchronized horizontal scroll |
+| Changed text | Highlight changed spans within each line | Highlight changed spans within each line |
+
+**100 columns — unified**
+```text
+src/config.ts                                      1 of 4 files  +2 −2
+@@ loadConfig · lines 42–46 @@
+42 42    const config = {
+43    −    timeout: 1000,
+   43 +    timeout: 5000,
+44    −    retries: 1,
+   44 +    retries: 3,
+45 45    };
+────────────────────────────────────────────────────────────────────
+↑↓ scroll   [ ] hunk   n/p file   v view   w wrap   ? help
+```
+
+**160 columns — side by side**
+```text
+src/config.ts                                                     1 of 4 files  +2 −2
+ OLD                                      │ NEW
+42   const config = {                     │42   const config = {
+43 −   timeout: 1000,                      │43 +   timeout: 5000,
+44 −   retries: 1,                         │44 +   retries: 3,
+45   };                                   │45   };
+```
+*Sketches abbreviated; panes expand to fill available width.*
+
+Choose the layout using **available diff width**, after subtracting borders and navigation. A good starting threshold is **140 columns**, leaving roughly 65 characters of code per pane after gutters. At 160 columns, a persistent file sidebar can make the diff cramped; collapse it automatically if needed.
+
+Keep a few behaviors consistent across both:
+
+- Preserve the selected hunk and scroll position when resizing.
+- Align corresponding lines in split view, using blank rows for unmatched lines.
+- Show three context lines by default, with expandable gaps.
+- Pair color with `+`/`−` markers; distinguish the cursor from changed-text highlighting.
+- Offer wrapping as a toggle, with continuation markers and no repeated line numbers.

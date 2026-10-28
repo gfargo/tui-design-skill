@@ -1,0 +1,65 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-wralxgf6
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfc-cbaa-7d83-9fa2-9a5a3ff1bb81
+--------
+user
+My Bubble Tea v2 app embeds a bubbles list and a viewport. On startup the list renders as a garbled fragment and the viewport is empty until I resize the terminal. How should I handle sizing?
+
+codex
+I’ll check the workspace for the app’s layout code and how it handles terminal size events.
+
+exec
+/bin/zsh -lc "pwd; rg --files -g 'AGENTS.md' -g '*.go' -g 'go.mod' -g 'README*'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-wralxgf6
+ exited 1 in 20ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-wralxgf6
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+Size both components when the parent receives `tea.WindowSizeMsg`. Bubble Tea sends this at startup and again on resize; forward the resulting **available pane sizes** explicitly to each child.
+
+```go
+case tea.WindowSizeMsg:
+    // Subtract borders, padding, headers, footers, and pane gaps.
+    innerW := max(0, msg.Width-frameWidth)
+    innerH := max(0, msg.Height-frameHeight)
+
+    listW := min(30, innerW)
+    viewportW := max(0, innerW-listW-gap)
+
+    m.list.SetSize(listW, innerH)
+    m.viewport.SetWidth(viewportW)
+    m.viewport.SetHeight(innerH)
+    m.ready = true
+
+    return m, nil
+```
+
+Until that first size event, render a placeholder:
+
+```go
+func (m model) View() tea.View {
+    if !m.ready {
+        return tea.NewView("Loading…")
+    }
+    return tea.NewView(m.renderLayout())
+}
+```
+
+A few details matter:
+
+- Child components don’t automatically inherit their parent’s dimensions. Merely forwarding `WindowSizeMsg` to their `Update` methods isn’t a substitute for setting their sizes.
+- In Bubbles v2, use the viewport’s `SetWidth` and `SetHeight` methods.
+- Set viewport content when the content becomes available; you don’t need to wait for a resize.
+- Keep the child models alive across resizes—update their sizes instead of reconstructing them.
+
+If it works only after a manual resize, check whether startup initialization replaces an already-sized component with a fresh zero-sized one. Route both initial setup and subsequent resizes through the same layout function.
+tokens used
+6,975

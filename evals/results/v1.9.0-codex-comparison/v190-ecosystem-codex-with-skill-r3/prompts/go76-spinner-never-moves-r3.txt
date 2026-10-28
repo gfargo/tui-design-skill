@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Bubble Tea v2 model embeds a bubbles spinner and a bubbles timer. I created them in New() and render m.spinner.View(), but the spinner is frozen on its first frame and the timer never counts down. My Init returns nil. What do I change?

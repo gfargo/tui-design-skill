@@ -1,0 +1,32 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-40cs361t
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dff-b663-7833-9fae-09264969096d
+--------
+user
+Which scrolling keys and position indicator should my list view have?
+
+codex
+For a terminal list view, use familiar scrolling keys:
+
+| Keys | Action |
+|---|---|
+| `↑` / `↓` | Move selection one item |
+| `j` / `k` | Optional Vim-style equivalents |
+| `Page Up` / `Page Down` | Move one viewport, keeping one row of overlap |
+| `Home` / `End` | Jump to first / last item |
+| `g` / `G` | Optional Vim-style first / last shortcuts |
+
+Keep the selected item visible as it moves.
+
+Put a compact position indicator at the bottom right: **`23 / 148`** for the selected item. If the list has no selection, show the visible range: **`21–40 of 148`**. For an unknown total, use **`21–40 · more below`**.
+
+A slim scrollbar can supplement the indicator when space allows. Avoid showing only a percentage—it’s less useful than item counts.
+tokens used
+2,693

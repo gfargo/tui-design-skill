@@ -1,0 +1,1 @@
+My status bar shows a spinner and my table has emoji and CJK text that misalign. Where should I look and what are the rules?

@@ -1,0 +1,1 @@
+How long should status-line messages stay on screen in my TUI, and what should happen to errors?

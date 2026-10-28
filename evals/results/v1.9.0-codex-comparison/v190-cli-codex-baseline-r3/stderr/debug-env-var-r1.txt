@@ -1,0 +1,26 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-evvgii8w
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e17-a579-7f93-8604-bffac6bc97ee
+--------
+user
+Should my CLI read the DEBUG environment variable to turn on stack traces?
+
+codex
+Generally, use a namespaced variable such as `MYCLI_DEBUG=1` and an explicit `--debug` flag. `DEBUG` is widely used by libraries and may already be set for unrelated reasons, causing your CLI to expose stack traces unexpectedly.
+
+A good default:
+
+- Normal mode: concise error message and actionable guidance.
+- Debug mode: full stack trace and diagnostic details, written to stderr.
+- Treat unset, empty, `0`, and `false` as disabled; document accepted values.
+
+If your ecosystem already gives `DEBUG` a specific meaning, follow that convention—but avoid treating any nonempty value as a request for stack traces.
+tokens used
+541

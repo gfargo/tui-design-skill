@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.9.0 interaction-guidance regressions for #74: the Esc/q/Ctrl+C quit ladder, scrolling and position, selection stability under live data, log follow mode, text input and multi-line submit, tree views, modal geometry, emoji width in columns, the mouse default, and diff views. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956.",
+  "notes": "Focused v1.9.0 interaction-guidance regressions for #74: the Esc/q/Ctrl+C quit ladder, scrolling and position, selection stability under live data, log follow mode, text input and multi-line submit, tree views, modal geometry, emoji width in columns, the mouse default, and diff views. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956. 1 case that scored 100% on both hosts in both conditions in the v1.9.0 runs were retired on 2026-10-28 and moved to evals/retired/saturated-2026-10.json.",
   "evals": [
     {
       "id": "quit-ladder",
@@ -41,18 +41,6 @@
         "Keeps the selected row at the same screen position when rows are inserted or removed above it",
         "Does not re-sort on refresh unless the user changed the sort",
         "Offers a freeze or pause key shown in the footer, with a PAUSED marker and a count of pending changes"
-      ]
-    },
-    {
-      "id": "multiline-submit",
-      "name": "multiline-submit",
-      "prompt": "My chat TUI's input field should send on Enter but let users add newlines. Shift+Enter doesn't seem to work in some terminals. What should I do?",
-      "files": [],
-      "assertions": [
-        "Explains that Shift+Enter is distinguishable from Enter only with the kitty keyboard protocol or similar enhanced keyboard reporting",
-        "Falls back to Alt+Enter or Ctrl+J for inserting a newline",
-        "Tells users the newline key in the placeholder or footer",
-        "Makes pasted newlines insert newlines instead of submitting (bracketed paste)"
       ]
     },
     {

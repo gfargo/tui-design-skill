@@ -1,0 +1,122 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Phase 2 of #79: design-review cases whose rubrics are observable outcomes of the answer rather than skill phrasing. Each prompt hands the model a concrete screen, spec, or code and asks for a redesign or a sketch; the assertions check things that can be counted or read off the answer (the nesting depth of a mockup, whether a sketch fits in 60 or 80 columns, whether a footer line fits in 40, which of five servers are named, whether a stated seeded defect is found, whether focus differs in plain text). They do not quote the skill's wording and should hold for any correct answer from any source. Ground truth in the mockups (three borders and four pass/fail signals in case 1, panes that cannot all fit in 60 columns in case 2) was checked by script when the set was generated. The rubric was fixed before any run. Status: rubric-only until its run is recorded.",
+  "evals": [
+    {
+      "id": "count-the-borders",
+      "name": "count-the-borders",
+      "prompt": "Here is the screen of the build monitor I'm working on, at 72 columns. The PASS rows are green and the FAIL row is red. It feels busy and I can't say why. Tell me exactly what to remove, and show me the screen after your changes.\n\n+----------------------------------------------------------------------+\n| BUILD MONITOR                                                        |\n| +----------------------------------+ +-----------------------------+ |\n| | +------------------------------+ | | +-------------------------+ | |\n| | | > api        [PASS] ok    v  | | | | job:      api           | | |\n| | | > web        [PASS] ok    v  | | | | status:   PASSED (v)    | | |\n| | | > worker     [FAIL] fail  x  | | | | duration: 2m 10s        | | |\n| | +------------------------------+ | | +-------------------------+ | |\n| +----------------------------------+ +-----------------------------+ |\n+----------------------------------------------------------------------+",
+      "files": [],
+      "assertions": [
+        "States that a job row sits behind three borders (the outer frame, the pane box, and the inner box), or gives a count of 3 for the nesting",
+        "Counts the signals that each job row gives for pass or fail as four (the [PASS]/[FAIL] tag, the ok/fail word, the v/x glyph, and the color), or as five if it also counts the > marker and says so",
+        "Points out that the > marker appears on all three rows, so it separates none of them from the others",
+        "The redesigned screen shown puts at most one border between the screen edge and any job row",
+        "The redesigned screen still shows all three job names with their pass or fail state, and the job, status, and duration details",
+        "In the redesigned screen each job row shows its pass or fail state in at most two ways, and at least one of them is not color",
+        "No line of the redesigned screen is wider than 72 characters"
+      ]
+    },
+    {
+      "id": "sixty-column-sketch",
+      "name": "sixty-column-sketch",
+      "prompt": "I'm building a git browser with three panes: a repository list on the left (28 columns wide), a commit list in the middle (it needs at least 40 columns to be readable), and a diff view that takes the rest. Every pane's width includes its borders. At 140 columns it looks great.\n\nShow me, as a plain-text sketch, exactly what the screen should look like when the terminal is 60 columns wide and 24 rows tall. Then tell me how a user reaches whatever is not on screen, and what happens if the terminal is made even smaller.",
+      "files": [],
+      "assertions": [
+        "Includes a plain-text sketch of the 60-column screen",
+        "No line of that sketch is longer than 60 characters",
+        "The widths of the panes visible side by side in the sketch add up to no more than 60 columns, and the commit list in it is at least 40 columns wide as the spec requires",
+        "Says how the user reaches each pane that is not on screen, naming a key or an action",
+        "Gives a width, as a number of columns, below which the application shows a message instead of the layout",
+        "The sketch does not squeeze the diff view or the repository list into a sliver of fewer than 15 columns next to the commit list"
+      ]
+    },
+    {
+      "id": "partial-failure-screen",
+      "name": "partial-failure-screen",
+      "prompt": "My dashboard polls five build servers, ci-1 to ci-5, every 30 seconds. Right now ci-2 and ci-4 did not answer (timed out after 10 seconds). The others returned:\n\nci-1: api #412 passed (2m 10s), web #88 passed (1m 02s)\nci-3: api #413 failed (3m 40s)\nci-5: worker #9 running (started 40s ago)\n\nShow me, as a plain-text sketch at 80 columns, what the main screen should display right now, and describe what the user can do from it.",
+      "files": [],
+      "assertions": [
+        "The sketch shows the builds from ci-1, ci-3, and ci-5 rather than an empty screen or a single error for the whole dashboard",
+        "The sketch names ci-2 and ci-4 as the servers that did not answer",
+        "The failure of ci-2 and ci-4 is marked with a word or symbol that is readable without color",
+        "The sketch or the description gives the user a way to retry, naming the key or action",
+        "Does not present any build from ci-2 or ci-4 as current: it shows none for them, or labels any it shows as stale with an age",
+        "States, in the sketch or the text, how many of the five servers answered (three of five)",
+        "No line of the sketch is wider than 80 characters"
+      ]
+    },
+    {
+      "id": "focus-without-color",
+      "name": "focus-without-color",
+      "prompt": "Several of our users run with NO_COLOR set, and our screenshots in the docs are black and white. Users say they can't tell which pane has the keyboard focus. Right now the Files pane has focus, and the screen looks like this in plain text:\n\n+-----------------------+ +--------------------------------------+\n| Files                 | | Preview                              |\n| > main.go             | | package main                         |\n|   util.go             | |                                      |\n|   README.md           | | func main() {                        |\n+-----------------------+ +--------------------------------------+\n\nFix it. Show me the screen with the Files pane focused, and again with the Preview pane focused, as plain text exactly as it would appear with colors disabled.",
+      "files": [],
+      "assertions": [
+        "Shows two plain-text screens, one with the Files pane focused and one with the Preview pane focused",
+        "In each screen, the focused pane differs from the unfocused pane by at least one visible character-level difference such as different border characters, a title marker, or an inverse-video note",
+        "The difference that marks focus does not depend on color",
+        "The focus mark moves to the other pane when focus moves, so exactly one pane carries it in each screen",
+        "Uses no more than two different cues to mark focus, instead of stacking several",
+        "No line of either screen is wider than 66 characters"
+      ]
+    },
+    {
+      "id": "footer-at-two-widths",
+      "name": "footer-at-two-widths",
+      "prompt": "My file browser has these actions, with how often users trigger them in our logs:\n\nEnter open (90%), / filter (40%), j/k move (35%), r refresh (20%), d delete (8%), y copy path (6%), e edit (5%), s sort (4%), t tag (3%), : command (2%), ? help, q quit\n\nI want a single footer line of key hints. Show me exactly what that line should say when the terminal is 80 columns wide and again when it is 40 columns wide, and say which hints you dropped at 40 and why.",
+      "files": [],
+      "assertions": [
+        "Shows one footer line for 80 columns and one for 40 columns",
+        "The 80-column footer line is no longer than 80 characters",
+        "The 40-column footer line is no longer than 40 characters",
+        "Both footer lines include the hint for help (?)",
+        "Both footer lines include the open action (Enter), which users trigger most",
+        "The 40-column line shows fewer hints than the 80-column line, and the hints it drops are among the least frequently used",
+        "Each footer is a single line, not wrapped onto a second line"
+      ]
+    },
+    {
+      "id": "seeded-defects-bubbletea",
+      "name": "seeded-defects-bubbletea",
+      "prompt": "Please review this Bubble Tea model before I merge it. Tell me what is wrong and how you would fix each problem. Rows come from a CI API, `Detail` can be a long free-text string, and people run this in small tmux panes.\n\n```go\npackage main\n\nconst width = 80\n\ntype model struct {\n\trows   []row\n\tok     bool\n\tcursor int\n}\n\nfunc (m model) Init() tea.Cmd { return nil }\n\nfunc (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {\n\tswitch msg := msg.(type) {\n\tcase tea.KeyMsg:\n\t\tswitch msg.String() {\n\t\tcase \"q\", \"ctrl+c\":\n\t\t\treturn m, tea.Quit\n\t\tcase \"r\":\n\t\t\tresp, err := http.Get(\"https://ci.example.com/api/pipelines\")\n\t\t\tif err != nil {\n\t\t\t\tm.ok = false\n\t\t\t\treturn m, nil\n\t\t\t}\n\t\t\tdefer resp.Body.Close()\n\t\t\tjson.NewDecoder(resp.Body).Decode(&m.rows)\n\t\t\tm.ok = true\n\t\t}\n\t}\n\treturn m, nil\n}\n\nfunc (m model) View() string {\n\ts := strings.Repeat(\"-\", width) + \"\\n\"\n\tfor _, r := range m.rows {\n\t\ts += fmt.Sprintf(\"%-20s %s\\n\", r.Name, r.Detail)\n\t}\n\tcolor := lipgloss.Color(\"1\")\n\tif m.ok {\n\t\tcolor = lipgloss.Color(\"2\")\n\t}\n\ts += lipgloss.NewStyle().Foreground(color).Render(\"●\")\n\treturn s\n}\n```",
+      "files": [],
+      "assertions": [
+        "Identifies that the layout uses a hardcoded width of 80 and never reacts to the actual window size (no window-size message is handled)",
+        "Identifies that the HTTP request runs inside Update and will block the interface while it waits",
+        "Identifies that the status indicator is a colored dot with no text or symbol difference, so it is unreadable without color",
+        "Identifies that long Detail text is printed without truncation, so rows will wrap or overflow in a narrow terminal",
+        "Proposes moving the HTTP request into a command or goroutine that returns its result to Update as a message",
+        "Does not claim that the quit handling for q and ctrl+c is wrong"
+      ]
+    },
+    {
+      "id": "log-viewer-from-scratch",
+      "name": "log-viewer-from-scratch",
+      "prompt": "Design a terminal log viewer for tailing a service's JSON-lines logs. People will use it over SSH, often in a narrow tmux pane, and sometimes pipe it into other tools. Give me the screen layout as a plain-text sketch, the key bindings, and what it does in the cases I haven't thought of.",
+      "files": [],
+      "assertions": [
+        "Includes at least one plain-text sketch of the screen, and no line of any sketch is wider than 80 characters",
+        "Says what the screen looks like or does in a terminal narrower than 80 columns",
+        "Says what happens when new lines arrive while the user has scrolled back up",
+        "Distinguishes log levels in a way that does not depend on color, such as a word or symbol",
+        "Describes what the user sees when no log lines have arrived yet, and what they can do",
+        "Gives a way to quit, and does not bind Ctrl+C to anything other than cancelling or quitting",
+        "Says what happens when the output is piped to another program instead of a terminal"
+      ]
+    },
+    {
+      "id": "delete-confirmation",
+      "name": "delete-confirmation",
+      "prompt": "In my file manager, the list has 3,000 files and the user has marked 14 of them. They press d. Design the confirmation. Show it as a plain-text sketch on an 80-column terminal, and say what each key does.",
+      "files": [],
+      "assertions": [
+        "The confirmation text states the number of files affected (14)",
+        "Pressing Enter alone does not delete: the safe choice is the default, or the user must type something to confirm",
+        "The sketch shows how to cancel, naming at least one key",
+        "The sketch is no wider than 64 characters (80 percent of the terminal width)",
+        "Says whether the deletion can be undone (for example moved to a trash versus permanently removed)",
+        "Everything in the design can be done from the keyboard without a mouse"
+      ]
+    }
+  ]
+}

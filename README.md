@@ -356,7 +356,9 @@ tui-design-skill/
 │   ├── v190-cli-evals.json
 │   ├── v190-ecosystem-evals.json
 │   ├── v190-routing-evals.json
+│   ├── design-outcomes-evals.json
 │   ├── trigger-evals.json
+│   ├── retired/                  # saturated cases kept as regression checks
 │   └── results/                  # reviewed, committed run evidence
 ├── CHANGELOG.md
 ├── README.md

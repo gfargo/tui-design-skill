@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Ink 8 CLI runs a build with execSync and shows a spinner. I want the first Ctrl+C to cancel the build and a second Ctrl+C to quit. The spinner never moves and Ctrl+C just kills the app. What do I change?

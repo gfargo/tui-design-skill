@@ -1,0 +1,60 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8qel9tlp
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e04-fe32-7f21-95f9-52e30bf243f5
+--------
+user
+In my Ratatui search box the blinking cursor is in the wrong place after I type Japanese text, and there is no cursor at all when I just render a Paragraph. How should I position the real terminal cursor?
+
+codex
+I’ll check the workspace for any relevant Ratatui code, then explain how to position the terminal cursor with Japanese text.
+exec
+/bin/zsh -lc "pwd; rg --files -g '*.rs' -g 'Cargo.toml' -g 'AGENTS.md' -g '*.md'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8qel9tlp
+ exited 1 in 0ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-8qel9tlp
+
+codex
+Position the real cursor with **`Frame::set_cursor_position` on every draw**. A `Paragraph` only renders text; it doesn’t request a terminal cursor.
+
+Cursor coordinates are **terminal cells**, not UTF-8 bytes or character counts. Japanese characters commonly occupy two cells. Use `unicode-width` to measure the text before the editing cursor:
+
+```rust
+use ratatui::widgets::{Block, Paragraph};
+use unicode_width::UnicodeWidthStr;
+
+terminal.draw(|frame| {
+    let block = Block::bordered().title("Search");
+    let inner = block.inner(area);
+
+    frame.render_widget(
+        Paragraph::new(input.as_str()).block(block),
+        area,
+    );
+
+    // cursor_byte is a valid UTF-8 boundary in input.
+    // For an input whose cursor is always at the end, use input.len().
+    let prefix = &input[..cursor_byte];
+    let column = UnicodeWidthStr::width(prefix);
+
+    if focused && inner.height > 0 && column < usize::from(inner.width) {
+        frame.set_cursor_position((
+            inner.x + column as u16,
+            inner.y,
+        ));
+    }
+})?;
+```
+
+For `"日本"`, the cursor offset is **4 cells**, whereas `.len()` returns 6 bytes and `.chars().count()` returns 2 characters.
+
+The block’s `inner` rectangle accounts for borders and padding. If you scroll horizontally, subtract the scroll offset **in cells**; if you wrap text, also calculate the cursor’s displayed row. Keep the resulting position inside the visible content area.
+
+Ratatui shows the cursor when you call `set_cursor_position` and hides it for frames where you don’t. The terminal controls its blinking appearance. Older Ratatui versions call this method `frame.set_cursor(x, y)`.
+tokens used
+1,709

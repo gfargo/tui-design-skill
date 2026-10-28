@@ -1,0 +1,1 @@
+I'm adding tui-logger 0.18 to my Ratatui 0.30 app. A blog post says I must enable tui-logger's `crossterm` feature or the widget won't compile with my crossterm backend. Is that right?

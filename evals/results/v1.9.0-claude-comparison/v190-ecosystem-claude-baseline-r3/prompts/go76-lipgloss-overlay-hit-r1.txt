@@ -1,0 +1,1 @@
+In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?

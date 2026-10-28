@@ -1,0 +1,1 @@
+My CLI writes a report file and users sometimes get a truncated file after Ctrl+C or a crash. How do I make that safe?

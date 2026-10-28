@@ -1,0 +1,1 @@
+In my Textual app the TCSS gives #sidebar `width: 30` and #main `width: 1fr`, both are Vertical containers yielded from App.compose, but they stack on top of each other instead of sitting side by side. Also my toolbar HorizontalGroup shrinks to one row while my Horizontal swallows the whole screen. Why, and how do I fix it?

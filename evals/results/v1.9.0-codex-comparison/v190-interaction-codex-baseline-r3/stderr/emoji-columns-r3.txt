@@ -1,0 +1,28 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-l4hc4fng
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e02-b43d-7081-9dc1-af7d4ca2f533
+--------
+user
+My table has a status column with ⚠️ and ✅ and the columns misalign in some terminals. Why, and what do I do?
+
+codex
+Those symbols don’t have a consistent display width across terminals. `⚠️` includes a variation selector requesting emoji presentation; terminals may render it as one or two cells. `✅` is commonly two cells, but behavior varies with the terminal, font, and Unicode version.
+
+If your table pads using string length, the problem gets worse: **character count isn’t terminal cell width**.
+
+What to do:
+
+- **Most reliable:** use ASCII statuses such as `[!]` and `[OK]`, padded to the same width.
+- **If you keep emoji:** use a terminal-aware table library that measures display cells, handles grapheme clusters, and ignores ANSI color escapes. Raw `len()` or ordinary string padding won’t suffice.
+- **Provide an ASCII mode:** width libraries and terminals can still disagree about emoji widths.
+
+Removing the variation selector from `⚠️` to get `⚠` may help in some terminals, but it isn’t a portable fix.
+tokens used
+2,698

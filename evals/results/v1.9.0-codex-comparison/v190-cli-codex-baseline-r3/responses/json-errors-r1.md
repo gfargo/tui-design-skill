@@ -1,0 +1,41 @@
+Treat `--json` as a machine-readable API, including when the command fails.
+
+A good failure response is one JSON object on **stdout**, followed by a newline, with a **nonzero exit status**:
+
+```json
+{
+  "schema_version": 1,
+  "ok": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Project 'demo' was not found.",
+    "details": {
+      "project": "demo"
+    }
+  }
+}
+```
+
+Use the same envelope for success: `{"schema_version":1,"ok":true,"data":...}`.
+
+For failures:
+
+- Make `code` stable and machine-readable. Treat `message` as human-facing text that may change.
+- Cover validation, authentication, network, and internal errors consistently. If `--json` is present, argument-parsing errors should use JSON too.
+- Keep stdout free of progress bars, logs, ANSI colors, prompts, and stack traces. Reserve stderr for optional diagnostics; callers should not need it to understand the failure.
+- Exit nonzero on failure even when JSON was emitted successfully. Keep documented exit-code meanings stable.
+- Redact secrets. Abrupt termination can prevent a complete response, so callers must handle missing or invalid JSON.
+
+The compatibility rules should be explicit:
+
+| Change | Compatibility |
+|---|---|
+| Add optional object fields | Compatible; consumers must ignore unknown fields |
+| Reorder object keys or change whitespace | Compatible; consumers must parse JSON |
+| Remove or rename fields; change types, units, or meaning | Breaking |
+| Change human-readable messages | Compatible; consumers must not match them |
+| Add error codes | Compatible if consumers are told to handle unknown codes |
+| Change a documented error code or exit-code meaning | Breaking |
+| Add enum values | Breaking unless that enum explicitly permits unknown values |
+
+Document absent versus `null`, ordering guarantees for arrays, and whether identifiers are strings. Introduce a new schema version for breaking changes, and preserve existing text-mode behavior when `--json` is absent.

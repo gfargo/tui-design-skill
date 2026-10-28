@@ -1,0 +1,1 @@
+Shift+Enter inserts nothing different from Enter in my TUI's input field, especially inside tmux. How do I get a newline?

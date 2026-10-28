@@ -1,0 +1,29 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-bttp_x2n
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e1b-0e84-7ff2-ac20-a512e2f78f3b
+--------
+user
+How long should status-line messages stay on screen in my TUI, and what should happen to errors?
+
+codex
+A good default is **4 seconds for routine messages; errors stay until acknowledged or resolved**.
+
+| Message | Duration | Behavior |
+|---|---|---|
+| Routine success (“Saved”) | 3–5 seconds | Return to the normal status line |
+| Progress (“Uploading…”) | Until complete | Replace with success or failure |
+| Warning requiring action | Until addressed or dismissed | Show the next action |
+| Error | Until acknowledged or resolved | Keep accessible details and a retry path |
+
+Errors shouldn’t disappear on a timer or be overwritten by routine updates. Show a concise explanation and recovery action, such as **“Save failed: disk full. [r] Retry · [Esc] Dismiss.”**
+
+Dismissing an error should clear the banner, not erase the record. Keep it in a message history or log. Reserve modal dialogs for errors that block further interaction.
+tokens used
+2,675

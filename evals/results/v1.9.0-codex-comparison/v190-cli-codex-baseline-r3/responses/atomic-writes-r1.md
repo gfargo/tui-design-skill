@@ -1,0 +1,24 @@
+Use an **atomic file replacement**: write the complete report to a temporary file, then rename it over the destination.
+
+1. Create a uniquely named temp file **in the destination directory** so it’s on the same filesystem.
+2. Write the entire report to it.
+3. Flush buffered output and close the file; handle any write or close errors.
+4. Atomically replace the destination with the temp file using your platform’s supported replace operation.
+5. On failure, remove the temp file when possible.
+
+```text
+temp = create_temp_file(destination.parent)
+try:
+    write_report(temp)
+    flush(temp)
+    close(temp)                 # check for errors
+    atomic_replace(temp.path, destination)
+finally:
+    remove_if_exists(temp.path)
+```
+
+Readers then see either the previous complete report or the new complete report. A Ctrl+C or crash before replacement leaves the previous report intact; it may leave a stray temp file. Don’t truncate or delete the destination first.
+
+If you also need protection against **power loss or an OS crash**, sync the temp file to disk before replacement (`fsync` on POSIX), then sync the parent directory after replacement. Atomic rename alone provides atomic visibility, not guaranteed durability.
+
+Signal handlers can help clean up temp files, but the write protocol should remain safe even when cleanup never runs. On Windows, use an appropriate atomic replacement API and account for open-file sharing restrictions.

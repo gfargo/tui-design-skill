@@ -1,0 +1,37 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0ygbvvah
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e03-3167-74a0-8e0a-6a7b760ca4e9
+--------
+user
+Which mouse reporting modes should my full-screen TUI enable, and should my inline picker use the mouse?
+
+codex
+I’ll check the workspace for context, then recommend mouse modes for each interface.
+exec
+/bin/zsh -lc "rg --files -g '"'!node_modules'"' -g '"'!vendor'"' -g '"'!'"\\.git'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0ygbvvah
+ exited 1 in 0ms:
+codex
+For a **full-screen TUI**, enable:
+
+- **1000 — normal tracking** if you only need clicks and scrolling.
+- **1002 — button-event tracking** instead if you also need dragging. This is a good default for resizable panes, scrollbars, and text selection.
+- **1006 — SGR extended coordinates** alongside either mode. It avoids legacy coordinate limits and clearly identifies button releases.
+
+Use **1003 — all-motion tracking** only when you actually need hover or pointer movement with no button held. It can generate substantial input traffic.
+
+For example, enable dragging plus SGR reporting with:
+```text
+ESC[?1002h ESC[?1006h
+```
+Disable the modes you enabled on exit, and disable reporting while suspended. Keep keyboard equivalents for mouse actions; document the terminal’s selection override, commonly Shift+drag.
+
+For an **inline picker, default to no mouse reporting**. Reporting applies to the terminal, not just the picker’s rows, so it can interfere with selecting text, scrolling, and interacting with shell history. Use arrow keys, typing to filter, Enter, and Escape. If mouse interaction is central to the picker, consider presenting it as a full-screen interface instead.
+tokens used
+3,367

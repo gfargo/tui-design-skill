@@ -1,0 +1,1 @@
+Users typing Japanese with an IME in my Bubble Tea v2 textinput say the candidate window pops up at the bottom-left of the screen instead of next to the text. How do I fix it?

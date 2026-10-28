@@ -1,0 +1,930 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-interaction-claude-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "quit-ladder-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The Esc ladder leaves out cancelling a running operation, which the answer gives to Ctrl+C instead. It also puts closing the modal after clearing the filter, rather than closing the topmost overlay first."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says each press undoes one thing, the most temporary one active, and that the top layer handles Esc and then stops."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer states Esc should never quit the app and does nothing at the root."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer does say q types a letter while a text field has focus. But it explicitly rejects q meaning back in nested views and has q quit from any screen."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Ctrl+C cancels a running operation and stays in the app; otherwise it quits. A confirm or second press is required when unsaved state would be lost."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "The answer confirms only when unsaved state would be lost, but it never says the prompt should default to No."
+        }
+      ]
+    },
+    {
+      "trial_id": "quit-ladder-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The Esc table covers transients, edit mode, modals, filter, back, and root-does-nothing, but it never makes cancelling a running operation an Esc step; that job is given to Ctrl+C only."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says each press undoes exactly one layer, innermost first, and that Esc never skips a layer."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The root row says nothing happens and 'Esc should never quit.'"
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says q is a letter in text inputs, but it recommends q quit from any depth and explicitly rejects the back-then-quit-at-root behavior."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The first Ctrl+C cancels a running operation, otherwise it quits, with confirmation when state is unsaved and a second Ctrl+C to force the quit."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "It asks for confirmation when work would be lost, but never says the default should be No or that an idle quit should not prompt."
+        }
+      ]
+    },
+    {
+      "trial_id": "quit-ladder-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The Esc ladder omits cancelling a running operation, and the table says Esc goes back while the task keeps going."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says 'One layer per press. Never collapse two layers at once.'"
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer states 'Esc never quits' and explains that reflexive repeated presses should not end the session."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer treats q as the letter in text inputs but says q quits the whole app everywhere else, rejecting q as a back key."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The first Ctrl+C cancels what is running, otherwise it exits, and a second press is required when there is unsaved state."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "q asks 'Quit? 2 unsaved changes [y/N]' only when there is unsaved work or a running task, and otherwise quits immediately."
+        }
+      ]
+    },
+    {
+      "trial_id": "follow-mode-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer describes sticky-bottom following while at the bottom, but never says the viewer starts pinned or following when opened, and the pseudocode never initializes `following`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Rule 2 says any upward scroll turns follow off and the viewport must never move while paused; rule 4 adds that the text being read must not shift."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It shows a paused status like '\u23f8 PAUSED \u2014 142 new lines (G to jump)' and tracks `unseen` in the pseudocode."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Rule 3 says pressing G/End/F sets following = true."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It discusses ring-buffer eviction, adjusting the offset by the dropped count, and showing an 'older lines discarded' hint."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "Line wrapping comes up only as a scroll-anchoring concern; no wrap toggle is offered."
+        }
+      ]
+    },
+    {
+      "trial_id": "follow-mode-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer describes following while at the bottom but never says the viewer should start pinned to the bottom when opened."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says scrolling up pauses following and the viewport is kept still, anchored by line index so appends don't shift it."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a status indicator like '\u23f8 PAUSED \u00b7 142 new lines \u2193' and tracks an `unseen` count."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says `G` / `End` / `F` jump to the bottom and re-enable follow, with `f` toggling follow."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "A ring buffer is only mentioned conditionally ('If you use a ring buffer'), and the discard notice appears only when the line being read is evicted, not as a general report that old lines were dropped."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "Wrapping comes up only for computing bottom detection in visual rows; no wrap toggle is offered."
+        }
+      ]
+    },
+    {
+      "trial_id": "follow-mode-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Rule 1 says following is on by default, so new lines keep the viewport at the bottom."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Rule 2 says any upward scroll (arrow, PgUp, k, wheel, search) stops following, and the answer advises keeping content still while paused by anchoring to a line index."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a status-bar indicator such as '\u23f8 PAUSED \u00b7 142 new lines \u00b7 G to resume' with an unseen-line count."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Rule 3 gives G, End or F as explicit keys to resume following."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "The ring buffer is only conditional ('If you have a ring buffer'), and the notice appears only when the line being read is evicted; the answer never recommends capping retained lines or a general dropped-lines indicator."
+        },
+        {
+          "index": 5,
+          "passed": false,
+          "notes": "It covers how to do the at-bottom check when lines wrap, but never offers a user-facing wrap/truncate toggle."
+        }
+      ]
+    },
+    {
+      "trial_id": "selection-stability-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "It tracks the selection by PID and re-resolves it in on_refresh, but it never covers re-resolving after a user-initiated sort change or a filter."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "When the selected process exits, it clamps to the old cursor index ('stay near the same spot instead of jumping to the top'), which lands on the adjacent surviving row."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "keep_cursor_visible only scrolls when the cursor goes off-screen, so the selected row's screen position still shifts when rows are inserted or removed above it."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It assumes the list is re-sorted on every refresh and only suggests skipping the sort briefly after a keypress; it never says to sort only when the user changes the sort."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It suggests a freeze key like Space but does not mention showing it in the footer, a PAUSED marker, or a count of pending changes."
+        }
+      ]
+    },
+    {
+      "trial_id": "selection-stability-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It stores `selected_pid` and looks up that PID's row again after each refresh and re-sort, though it never mentions filtering."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "When the process exits, it clamps to the same index (`min(selected_idx, len-1)`) instead of jumping to the top, which lands on the adjacent surviving row."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It changes `scroll_offset` only when the row leaves the viewport, so the selected row's screen position still shifts when rows move above it."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It calls `sort(new_procs)` on every refresh and only suggests pausing sorting briefly after key presses."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It mentions a freeze key but says nothing about showing it in the footer, a PAUSED marker, or a count of pending changes."
+        }
+      ]
+    },
+    {
+      "trial_id": "selection-stability-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Stores `selected_pid` and looks up the PID's new row index after each refresh and re-sort; filtering isn't mentioned, but the stable-ID re-resolution mechanism is explicit."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "When the PID disappears, it clamps the cursor to the same index so it lands on the nearest valid row, and says explicitly not to reset it to 0."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It keeps the scroll offset fixed and has the cursor follow the process, so the selected row's screen position can shift; it never anchors the selected row's screen position when rows change above it."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The code calls `sort_stable` on every refresh; pausing re-sort during navigation is offered only as an optional middle ground, not as the rule of no re-sort unless the user changes the sort."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It briefly suggests a freeze key like `F` or space, but says nothing about showing it in the footer, a PAUSED marker, or a count of pending changes."
+        }
+      ]
+    },
+    {
+      "trial_id": "multiline-submit-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Enter and Shift+Enter both send `\\r` in most terminals and only become distinguishable with the kitty keyboard protocol or xterm modifyOtherKeys."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Its fallback table lists Ctrl+J and Alt/Option+Enter as newline keys, and the code sketch handles both."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 4 recommends a hint near the input such as 'Enter to send \u00b7 Ctrl+J or \\ + Enter for newline'."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Section 3 says to enable bracketed paste with `\\x1b[?2004h` and insert the text between the 200~/201~ markers literally, so a paste doesn't submit."
+        }
+      ]
+    },
+    {
+      "trial_id": "multiline-submit-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that Enter and Shift+Enter both send `\\r`, and that only an extended keyboard protocol such as kitty or modifyOtherKeys can tell them apart."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer gives both Alt/Option+Enter and Ctrl+J as fallbacks that work in nearly every terminal."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends a hint near the input, such as 'Enter to send \u00b7 Shift+Enter / Alt+Enter / Ctrl+J for newline', and suggests adjusting it based on detected support."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to enable bracketed paste with `\\x1b[?2004h` and insert pasted text as-is, and its key handler never submits during a paste."
+        }
+      ]
+    },
+    {
+      "trial_id": "multiline-submit-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States Enter and Shift+Enter both send `\\r` in the classic protocol and that the kitty keyboard protocol (or modifyOtherKeys) is needed to distinguish them."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Lists Ctrl+J and Alt/Option+Enter as fallbacks for inserting a newline, and includes both in the code sketch."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a hint near the input such as 'Enter to send \u00b7 Shift+Enter / Ctrl+J for newline', changed to match what the terminal supports."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends enabling bracketed paste so text between the 200~/201~ markers is inserted literally rather than submitted."
+        }
+      ]
+    },
+    {
+      "trial_id": "text-input-keys-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Lists arrows and Home/End alongside readline keys such as Ctrl-W, Ctrl-U and Ctrl-K, so readline is not the only route."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Recommends Ctrl-A for start of line but never mentions that it collides with GNU screen's prefix key."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "States that \u2191/\u2193 move through history only when the cursor is on the first or last line of the buffer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Describes gray inline ghost text and says \u2192, or Ctrl-E at the end of the line, accepts it."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Gives Tab to completion in the input and says to move focus with Ctrl-O, F-keys or Esc plus a key, not Tab."
+        }
+      ]
+    },
+    {
+      "trial_id": "text-input-keys-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table lists arrows and Home/End alongside Ctrl-W, Ctrl-U and Ctrl-K, so the readline aliases are not the only route."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Ctrl-A is listed for start of line, but the answer never mentions its collision with GNU screen's prefix key."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says Up/Down switch to history only when the cursor is already on the first or last line."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never mentions dimmed ghost-text suggestions or accepting them with Right or End."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It says the input keeps Tab for completion and Tab should not move focus, but it never gives another way to move focus."
+        }
+      ]
+    },
+    {
+      "trial_id": "text-input-keys-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The editing table pairs readline keys (Ctrl-A/E, Ctrl-W, Ctrl-U/K) with Home/End and Ctrl/Alt-arrow equivalents, so readline is not the only route."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer recommends Ctrl-A for start of line but never mentions that it collides with GNU screen's prefix key."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says Up/Down step through history only when the cursor is on the first line (Up) or the last line (Down)."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It describes a dim inline ghost suggestion that \u2192 or End accepts when the cursor is at the end of the line."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It says not to use Tab for pane focus because users expect it to complete, and to use Shift+Tab or a dedicated key for focus and mode changes."
+        }
+      ]
+    },
+    {
+      "trial_id": "scroll-keys-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The key table lists PgUp/PgDn, Ctrl+u/Ctrl+d for half page, and Home/End with g/G alternates."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to start scrolling 2\u20133 rows before the cursor reaches the top or bottom edge."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a `12/340` selected/total counter in the footer or title bar."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says to add a scrollbar only if a column is spare, calls it redundant next to the counter, and makes the counter the main indicator."
+        }
+      ]
+    },
+    {
+      "trial_id": "scroll-keys-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The core table lists PgUp/PgDn and Home/g and End/G, and Ctrl-u/Ctrl-d for half a page appears under 'Worth adding'."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to keep the cursor 2\u20133 rows from the top or bottom edge as a scroll margin."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It recommends a '42/318' selected/total count in the footer, with a filtered variant."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The scrollbar is shown only on overflow and always paired with the count, and the minimal option drops it for n/total alone."
+        }
+      ]
+    },
+    {
+      "trial_id": "scroll-keys-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Lists PgUp/PgDn and Home/End plus g/G as must-haves, and Ctrl-u/Ctrl-d for half a page as nice-to-have."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says to start scrolling when the cursor is within 2\u20133 rows of the edge, and recommends a 2-row scroll margin."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a right-aligned count indicator such as `12/240` in the footer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The scrollbar is an add-on 'if you have a spare column' and only for long lists; the n/total count is the primary indicator."
+        }
+      ]
+    },
+    {
+      "trial_id": "tree-keys-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The table maps \u2192/l to expand, or to move to the first child if the node is already expanded, and \u2190/h to collapse, or to jump to the parent if the node is collapsed or a leaf."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Under lazy loading, it recommends showing a per-node '\u22ef loading' child while the children load, plus an error node if the load fails; this is a static placeholder rather than an animated spinner, but it is a per-node loading indicator."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says to remember expansion state by stable ID across refreshes and data reloads, but never says this state must survive applying or clearing a filter."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The / filter section says to keep the ancestors of matches visible so context stays intact, which in a tree means those ancestors are expanded."
+        }
+      ]
+    },
+    {
+      "trial_id": "tree-keys-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The key table maps \u2192/l to expand a collapsed node or move to the first child of an expanded one, and \u2190/h to collapse an expanded node or jump to the parent."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "For lazily loaded children it says to show `\u22ef loading` under the specific node without blocking input, which is a per-node loading indicator."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It remembers expansion state across collapse/reopen and tracks the cursor by ID across refreshes, but never says expansion state is keyed by node ID or survives refreshes and filters."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Filter mode hides non-matches but keeps their ancestors, and search auto-expands ancestors to reveal matches."
+        }
+      ]
+    },
+    {
+      "trial_id": "tree-keys-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The navigation table says \u2192/l expands a collapsed parent or moves to the first child of an expanded one, and \u2190/h collapses an expanded parent or otherwise goes to the parent."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Under 'Load lazily' it recommends showing a `\u2026` or spinner for children still loading, without blocking input."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says to remember expansion state per node across refreshes and to restore the cursor by node identity, but never mentions keeping expansion state across filters."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Filter mode hides non-matching nodes but keeps the ancestors of matches, and search matches auto-expand their ancestors so they stay visible."
+        }
+      ]
+    },
+    {
+      "trial_id": "modal-geometry-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer sizes the dialog to its content and clamps it to 40\u201360 columns; it does not use a 60\u201380% share of terminal width, though it does center the dialog with a maximum."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says to limit the UI to one modal at a time."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explicitly says to fill the box interior with spaces so text underneath doesn't show through."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It uses a heavy border, a titled frame and text focus markers, and treats dim as optional, but it never mentions changing the footer or key hints while the modal is open."
+        }
+      ]
+    },
+    {
+      "trial_id": "modal-geometry-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer sizes the dialog to its content, clamped between 36 and about 64 columns with side margins; it never gives a 60\u201380% of terminal width rule."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says nothing about allowing only one modal at a time or about stacking modals."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to paint every cell inside the box with spaces so the content behind it doesn't show through."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says dimming isn't possible without color and relies on heavy borders, a titled border in the example, and Enter/Esc key hints in the footer or button labels."
+        }
+      ]
+    },
+    {
+      "trial_id": "modal-geometry-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer sizes the dialog to its content and clamps it to 30\u201360 columns rather than about 60\u201380% of the terminal width; it mentions vertical centering and side margins but never states a percentage-based width."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer never says to allow only one modal at a time or to prevent stacked modals."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to clear the dialog's area completely by filling it with spaces so no background text shows through."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It warns against relying on faint dimming and uses a border and a title in the border, but it keeps key hints as text without saying the footer hints should change while the modal is open."
+        }
+      ]
+    },
+    {
+      "trial_id": "emoji-columns-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's table says \u26a0\ufe0f is U+26A0 plus VS16 and renders as 1 or 2 cells depending on the terminal and width library, while \u2705 is Wide and 2 cells."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Option 2 recommends 1-cell symbols such as \u2713 \u2717 ! \u25cf \u25b2 with color, and the final recommendation suggests these for logs and CI."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer recommends display-width libraries like wcswidth, which are not grapheme-aware, and mentions grapheme clustering only as an advanced mode 2027 aside; it never says to test on the target terminals."
+        }
+      ]
+    },
+    {
+      "trial_id": "emoji-columns-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's table and explanation show \u26a0\ufe0f is U+26A0 plus FE0F, measured as 1 and drawn as 1 or 2 depending on the terminal, while \u2705 (U+2705) is reliably 2 cells."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Its best option is narrow symbols (\u2713, !, \u2717) with text labels like 'ok', 'warn' and 'fail', plus color."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Point 5 recommends emoji-aware width libraries but never mentions grapheme-aware measurement or testing on the target terminals."
+        }
+      ]
+    },
+    {
+      "trial_id": "emoji-columns-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that \u26a0\ufe0f is a narrow U+26A0 base plus VS16 that renders 1 or 2 columns depending on the terminal and the wcwidth table, while \u2705 is East Asian Wide and takes 2 columns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Its most reliable recommendation is single-width text symbols (\u2713 \u2717 ! \u2022) plus color, with an [OK]/[WARN]/[FAIL] ASCII fallback."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It recommends a current grapheme-aware width library but never says to test on the target terminals; it only notes that the library won't fix a terminal that disagrees."
+        }
+      ]
+    },
+    {
+      "trial_id": "mouse-default-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer enables 1000, 1002 and 1006 for full-screen apps and adds 1003 only when hover states are rendered."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends a `--no-mouse` flag or config option, and says inline mouse support should be opt-in or easy to turn off."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says the inline picker defaults to no mouse and stays keyboard-driven, citing scrollback, copy/paste and coordinate problems."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer keeps the inline picker keyboard-driven but never says every mouse action in the full-screen app needs a keyboard equivalent."
+        }
+      ]
+    },
+    {
+      "trial_id": "mouse-default-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends enabling 1000, 1002, and 1006 for the full-screen app. It treats 1003 as optional, only for apps that actually render hover effects."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer offers no way to turn off mouse capture in the full-screen app. It only points to the terminal's Shift+drag bypass, and the opt-in flag it mentions applies to the inline picker."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends a keyboard-only inline picker by default, with mouse support only as an opt-in flag."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer never says that every mouse action must also be reachable from the keyboard."
+        }
+      ]
+    },
+    {
+      "trial_id": "mouse-default-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends enabling 1000, 1002 and 1006, and adding 1003 only when hover effects are needed."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Suggests a `--no-mouse` flag or config option for the full-screen app, and an opt-in flag for the picker."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends leaving the mouse off by default in the inline picker and gives four reasons."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Says the keyboard is the expected way to use the picker, but never says every mouse action must also be reachable from the keyboard."
+        }
+      ]
+    },
+    {
+      "trial_id": "diff-view-choice-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer picks unified at 100 columns and split at 160, but it puts the switch point at about 150 columns (hysteresis at 144/152), not around 120."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to always show +/- signs and not rely on color alone, and both mockups show signs in a gutter column."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The only key it names is a mode toggle (`s`); there are no keys for jumping between hunks."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It truncates by default but offers a wrap toggle and explains how to keep wrapped lines aligned in split mode, so it allows wrapping side-by-side."
+        }
+      ]
+    },
+    {
+      "trial_id": "diff-view-choice-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer picks unified at 100 and side-by-side at 160, but it puts the switch at about 140\u2013150 columns (hysteresis 145/135), not around 120."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says to always show the `+`/`-` sign in the gutter so the diff still works without color, and the sketches show this."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It mentions keeping the current hunk in place on resize, a split/unified toggle key and \u2190/\u2192 horizontal scrolling, but never gives keys for moving between hunks."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It defaults to truncation but offers wrapping as an option and explains how to align panes when wrapping in split view, so it does not rule out wrapping."
+        }
+      ]
+    },
+    {
+      "trial_id": "diff-view-choice-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer uses unified at 100 columns and side-by-side at 160, but puts the switch at about 150 columns (~70 per pane), not around 120."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer always shows `+`/`-` signs in a sign column and explicitly says not to rely on color alone."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer gives keys for toggling the mode (`s`) and the sidebar (`Tab`) but no keys for jumping between hunks."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer allows wrapping in side-by-side mode and says wrapped lines must be padded to stay row-aligned."
+        }
+      ]
+    }
+  ]
+}

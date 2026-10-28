@@ -1,0 +1,1 @@
+My full-screen TUI flickers when it runs inside tmux. It redraws the whole screen on every update. What should I do?

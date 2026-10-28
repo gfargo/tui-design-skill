@@ -1,0 +1,85 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-cli-codex-with-skill-r3",
+  "created_at": "2026-10-27T16:09:58Z",
+  "run_manifest_sha256": "7b5c2ff07d1442d29ef1cfd9b85d9c2139ab7a7df52fa3f42b841ab25c58dcee",
+  "grades_file": "grades.json",
+  "grades_sha256": "599e0cdf27ac334cdc34f235a035019279a575de2faf6a3b95337f39a292c803",
+  "passed": 107,
+  "total": 123,
+  "pass_rate": 0.8699186991869918,
+  "by_case": [
+    {
+      "case_id": "sigint-re-raise",
+      "case_name": "sigint-re-raise",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "json-errors",
+      "case_name": "json-errors",
+      "passed": 18,
+      "total": 18,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "cli-testing",
+      "case_name": "cli-testing",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "exit-code-scheme",
+      "case_name": "exit-code-scheme",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "windows-one-shot",
+      "case_name": "windows-one-shot",
+      "passed": 6,
+      "total": 12,
+      "pass_rate": 0.5
+    },
+    {
+      "case_id": "atomic-writes",
+      "case_name": "atomic-writes",
+      "passed": 11,
+      "total": 15,
+      "pass_rate": 0.7333333333333333
+    },
+    {
+      "case_id": "completions-contract",
+      "case_name": "completions-contract",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "pagination-config",
+      "case_name": "pagination-config",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "macos-config-dir",
+      "case_name": "macos-config-dir",
+      "passed": 6,
+      "total": 9,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "debug-env-var",
+      "case_name": "debug-env-var",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

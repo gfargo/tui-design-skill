@@ -1,0 +1,1415 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfd-b99b-7ce3-8703-46a568b96f02
+--------
+user
+In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?
+
+codex
+I’ll check the Bubble Tea v2 and Lipgloss v2 APIs so the example uses the current layering and mouse handling approach.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9
+ exited 6 in 886ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls /Users/gfargo/go/pkg/mod/github.com/charmbracelet /Users/gfargo/go/pkg/mod/charm.land /tmp /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9
+ succeeded in 537ms:
+/Users/gfargo/go/pkg/mod/charm.land:
+bubbles
+bubbletea
+huh
+lipgloss
+
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet:
+colorprofile@v0.4.3
+ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4
+x
+
+/tmp:
+CrashUpload-j0eEW
+Godot_2026-10-23_025822_cukU.sample.txt
+Godot_2026-10-23_091539_xdoX.sample.txt
+Godot_2026-10-23_092632_6Dmu.sample.txt
+Godot_2026-10-23_092935_cimt.sample.txt
+Godot_2026-10-23_094114_FTnF.sample.txt
+Godot_2026-10-23_094948_ApoL.sample.txt
+Godot_2026-10-23_094958_NRoG.sample.txt
+Godot_2026-10-23_095028_aXB5.sample.txt
+Godot_2026-10-23_095033_REsv.sample.txt
+Godot_2026-10-23_095456_AZxn.sample.txt
+Godot_2026-10-23_095839_Z4TP.sample.txt
+Godot_2026-10-23_100027_k09q.sample.txt
+Godot_2026-10-23_100052_SXu9.sample.txt
+Godot_2026-10-23_100256_yTog.sample.txt
+Godot_2026-10-23_100521_VeHH.sample.txt
+Godot_2026-10-23_103402_iSoj.sample.txt
+Godot_2026-10-23_135323_2MZb.sample.txt
+Godot_2026-10-23_135335_lr6z.sample.txt
+Godot_2026-10-23_190214_PlA6.sample.txt
+Godot_2026-10-23_190230_yAXb.sample.txt
+adsk_adp_sdk_ipc_channel.socket
+amy_065_docs.py
+amy_071_docs.py
+amy_071_entries.py
+amy_fantasy_manifest.py
+amy_lesson_edit.py
+amy_marbling_edits.py
+amy_status_edit.py
+b2016.txt
+b2082.txt
+bleacher-render-final-v4
+bleacher_3d
+cc-socks
+claude-501
+claude-import.log
+claude-mcp-browser-bridge-gfargo
+codex-app-tools
+codex-browser-use
+com.openai.sky.CUAService
+companion-target
+conf.txt
+dryrun.log
+dumps
+e.txt
+err.txt
+f72.md
+f75.md
+f76.md
+gameoverlay_ui.previous.txt
+gameoverlay_ui.txt
+gdunit_full_2100.log
+gh_err.txt
+ghf.sh
+gt
+hde.bak
+imp.log
+imp2.log
+imp3.log
+imp4.log
+imp5.log
+imp6.log
+imp7.log
+import_2100.log
+import_2100b.log
+import_staging.log
+kapok_dry.log
+marlin-pio-rebuild
+marlin-platformio
+marlin-platformio-core
+marlin-platformio-py312
+more_2100.sh
+n2.err
+n2.out
+node-compile-cache
+node-jiti
+noop-amy
+npm.err
+npm.out
+o.txt
+overhand_checkframes.log
+overhand_gdunit.log
+overhand_gen_b1.log
+overhand_gen_b2.log
+overhand_gen_b3.log
+overhand_gen_b4.log
+overhand_gen_pilot.log
+overhand_gen_pilot2.log
+overhand_gen_r1.log
+overhand_import.log
+overhand_import2.log
+overhand_import3.log
+overhand_import4.log
+overhand_import5.log
+overhand_import6.log
+overhand_npm_ci.log
+overhand_previews
+overhand_pytest_full.log
+parts.txt
+pdfs
+post.log
+post2.log
+post3.log
+powerlog
+pr93.md
+pr97.md
+pytest_2100.log
+pytest_2100_time.log
+rh.log
+rh2.log
+rh3.log
+roster_teams.txt
+s-O2WsQrKz
+sdg-critter-art
+sdg-critter-interactions
+shader_suites_2100.log
+shot.log
+spread.txt
+spread_courses.txt
+stage_final.log
+stage_main.log
+staged30.txt
+steam.pipe
+steam_chrome_overlay_uid501_spid26854
+steam_chrome_overlay_uid501_spid33620
+steam_chrome_overlay_uid501_spid5276
+steam_chrome_overlay_uid501_spid85700
+steam_chrome_overlay_uid501_spid92719
+steam_chrome_shmem_uid501_spid85192
+trigger-mcp-traces
+tty.out
+variants_2100.sh
+x
+x.out
+x70.txt
+xray_test_2100.log
+zeb_def_ipc_10108
+zeb_def_ipc_10188
+zeb_def_ipc_10244
+zeb_def_ipc_1033
+zeb_def_ipc_10666
+zeb_def_ipc_10763
+zeb_def_ipc_10801
+zeb_def_ipc_10819
+zeb_def_ipc_10923
+zeb_def_ipc_10966
+zeb_def_ipc_11086
+zeb_def_ipc_11223
+zeb_def_ipc_11290
+zeb_def_ipc_11295
+zeb_def_ipc_11477
+zeb_def_ipc_11807
+zeb_def_ipc_11822
+zeb_def_ipc_11834
+zeb_def_ipc_11971
+zeb_def_ipc_11987
+zeb_def_ipc_12178
+zeb_def_ipc_12293
+zeb_def_ipc_12340
+zeb_def_ipc_12420
+zeb_def_ipc_12520
+zeb_def_ipc_12728
+zeb_def_ipc_12965
+zeb_def_ipc_13204
+zeb_def_ipc_13270
+zeb_def_ipc_13272
+zeb_def_ipc_1337
+zeb_def_ipc_13455
+zeb_def_ipc_13467
+zeb_def_ipc_13519
+zeb_def_ipc_13543
+zeb_def_ipc_13727
+zeb_def_ipc_13762
+zeb_def_ipc_13933
+zeb_def_ipc_13977
+zeb_def_ipc_14062
+zeb_def_ipc_14083
+zeb_def_ipc_14101
+zeb_def_ipc_14188
+zeb_def_ipc_14329
+zeb_def_ipc_14472
+zeb_def_ipc_14570
+zeb_def_ipc_14688
+zeb_def_ipc_14761
+zeb_def_ipc_14811
+zeb_def_ipc_14856
+zeb_def_ipc_149
+zeb_def_ipc_15122
+zeb_def_ipc_15135
+zeb_def_ipc_15239
+zeb_def_ipc_1532
+zeb_def_ipc_15387
+zeb_def_ipc_15436
+zeb_def_ipc_15512
+zeb_def_ipc_15520
+zeb_def_ipc_15572
+zeb_def_ipc_15670
+zeb_def_ipc_15871
+zeb_def_ipc_15975
+zeb_def_ipc_16054
+zeb_def_ipc_16163
+zeb_def_ipc_1617
+zeb_def_ipc_16259
+zeb_def_ipc_16261
+zeb_def_ipc_16348
+zeb_def_ipc_16571
+zeb_def_ipc_16650
+zeb_def_ipc_16792
+zeb_def_ipc_17188
+zeb_def_ipc_17245
+zeb_def_ipc_17272
+zeb_def_ipc_17344
+zeb_def_ipc_17561
+zeb_def_ipc_17614
+zeb_def_ipc_17706
+zeb_def_ipc_17779
+zeb_def_ipc_17814
+zeb_def_ipc_17859
+zeb_def_ipc_1811
+zeb_def_ipc_18126
+zeb_def_ipc_18535
+zeb_def_ipc_19154
+zeb_def_ipc_19320
+zeb_def_ipc_19328
+zeb_def_ipc_19399
+zeb_def_ipc_19514
+zeb_def_ipc_19630
+zeb_def_ipc_20194
+zeb_def_ipc_2035
+zeb_def_ipc_20420
+zeb_def_ipc_20543
+zeb_def_ipc_2112
+zeb_def_ipc_21123
+zeb_def_ipc_21169
+zeb_def_ipc_21175
+zeb_def_ipc_21291
+zeb_def_ipc_21357
+zeb_def_ipc_21441
+zeb_def_ipc_21509
+zeb_def_ipc_21512
+zeb_def_ipc_21542
+zeb_def_ipc_21565
+zeb_def_ipc_21571
+zeb_def_ipc_21607
+zeb_def_ipc_2164
+zeb_def_ipc_21701
+zeb_def_ipc_21862
+zeb_def_ipc_22021
+zeb_def_ipc_22212
+zeb_def_ipc_22383
+zeb_def_ipc_22442
+zeb_def_ipc_22691
+zeb_def_ipc_22812
+zeb_def_ipc_2283
+zeb_def_ipc_22889
+zeb_def_ipc_22951
+zeb_def_ipc_23369
+zeb_def_ipc_23400
+zeb_def_ipc_23559
+zeb_def_ipc_23760
+zeb_def_ipc_23761
+zeb_def_ipc_23981
+zeb_def_ipc_24066
+zeb_def_ipc_24253
+zeb_def_ipc_24429
+zeb_def_ipc_24845
+zeb_def_ipc_25003
+zeb_def_ipc_25056
+zeb_def_ipc_25433
+zeb_def_ipc_25517
+zeb_def_ipc_25543
+zeb_def_ipc_25666
+zeb_def_ipc_25894
+zeb_def_ipc_25896
+zeb_def_ipc_25916
+zeb_def_ipc_26001
+zeb_def_ipc_26141
+zeb_def_ipc_26169
+zeb_def_ipc_26279
+zeb_def_ipc_26665
+zeb_def_ipc_26880
+zeb_def_ipc_27162
+zeb_def_ipc_2718
+zeb_def_ipc_27276
+zeb_def_ipc_27289
+zeb_def_ipc_27459
+zeb_def_ipc_2749
+zeb_def_ipc_27647
+zeb_def_ipc_27720
+zeb_def_ipc_27832
+zeb_def_ipc_28004
+zeb_def_ipc_2805
+zeb_def_ipc_28202
+zeb_def_ipc_28261
+zeb_def_ipc_28398
+zeb_def_ipc_284
+zeb_def_ipc_28409
+zeb_def_ipc_28527
+zeb_def_ipc_28560
+zeb_def_ipc_28616
+zeb_def_ipc_28644
+zeb_def_ipc_28660
+zeb_def_ipc_28682
+zeb_def_ipc_28745
+zeb_def_ipc_28859
+zeb_def_ipc_28914
+zeb_def_ipc_28944
+zeb_def_ipc_290
+zeb_def_ipc_29044
+zeb_def_ipc_29052
+zeb_def_ipc_29200
+zeb_def_ipc_29637
+zeb_def_ipc_29686
+zeb_def_ipc_29730
+zeb_def_ipc_29742
+zeb_def_ipc_29852
+zeb_def_ipc_29984
+zeb_def_ipc_2999
+zeb_def_ipc_30256
+zeb_def_ipc_30449
+zeb_def_ipc_30611
+zeb_def_ipc_30675
+zeb_def_ipc_30736
+zeb_def_ipc_30790
+zeb_def_ipc_30841
+zeb_def_ipc_30961
+zeb_def_ipc_31422
+zeb_def_ipc_31431
+zeb_def_ipc_31552
+zeb_def_ipc_31647
+zeb_def_ipc_31687
+zeb_def_ipc_31825
+zeb_def_ipc_32039
+zeb_def_ipc_3206
+zeb_def_ipc_32207
+zeb_def_ipc_3223
+zeb_def_ipc_32299
+zeb_def_ipc_3230
+zeb_def_ipc_32317
+zeb_def_ipc_32390
+zeb_def_ipc_32448
+zeb_def_ipc_32467
+zeb_def_ipc_32618
+zeb_def_ipc_32746
+zeb_def_ipc_32794
+zeb_def_ipc_32880
+zeb_def_ipc_3291
+zeb_def_ipc_32979
+zeb_def_ipc_33007
+zeb_def_ipc_33097
+zeb_def_ipc_33294
+zeb_def_ipc_33421
+zeb_def_ipc_33898
+zeb_def_ipc_33914
+zeb_def_ipc_34389
+zeb_def_ipc_34502
+zeb_def_ipc_34659
+zeb_def_ipc_34672
+zeb_def_ipc_34693
+zeb_def_ipc_34698
+zeb_def_ipc_34732
+zeb_def_ipc_34740
+zeb_def_ipc_34825
+zeb_def_ipc_35065
+zeb_def_ipc_35072
+zeb_def_ipc_35223
+zeb_def_ipc_35385
+zeb_def_ipc_35555
+zeb_def_ipc_35690
+zeb_def_ipc_35889
+zeb_def_ipc_35891
+zeb_def_ipc_35985
+zeb_def_ipc_35995
+zeb_def_ipc_36349
+zeb_def_ipc_36364
+zeb_def_ipc_3658
+zeb_def_ipc_36670
+zeb_def_ipc_36764
+zeb_def_ipc_36929
+zeb_def_ipc_36960
+zeb_def_ipc_37210
+zeb_def_ipc_3731
+zeb_def_ipc_37348
+zeb_def_ipc_37362
+zeb_def_ipc_37411
+zeb_def_ipc_375
+zeb_def_ipc_37630
+zeb_def_ipc_37654
+zeb_def_ipc_37910
+zeb_def_ipc_37962
+zeb_def_ipc_38352
+zeb_def_ipc_38440
+zeb_def_ipc_3882
+zeb_def_ipc_38908
+zeb_def_ipc_38979
+zeb_def_ipc_39114
+zeb_def_ipc_39312
+zeb_def_ipc_39426
+zeb_def_ipc_39552
+zeb_def_ipc_39625
+zeb_def_ipc_39727
+zeb_def_ipc_39796
+zeb_def_ipc_40163
+zeb_def_ipc_40329
+zeb_def_ipc_40520
+zeb_def_ipc_4066
+zeb_def_ipc_40790
+zeb_def_ipc_40957
+zeb_def_ipc_40991
+zeb_def_ipc_41196
+zeb_def_ipc_41443
+zeb_def_ipc_41481
+zeb_def_ipc_4157
+zeb_def_ipc_42296
+zeb_def_ipc_42563
+zeb_def_ipc_42640
+zeb_def_ipc_42679
+zeb_def_ipc_42775
+zeb_def_ipc_42945
+zeb_def_ipc_43035
+zeb_def_ipc_43041
+zeb_def_ipc_4308
+zeb_def_ipc_43096
+zeb_def_ipc_43227
+zeb_def_ipc_43270
+zeb_def_ipc_43328
+zeb_def_ipc_43356
+zeb_def_ipc_43373
+zeb_def_ipc_4342
+zeb_def_ipc_43521
+zeb_def_ipc_43540
+zeb_def_ipc_43592
+zeb_def_ipc_43612
+zeb_def_ipc_43713
+zeb_def_ipc_43722
+zeb_def_ipc_43744
+zeb_def_ipc_43853
+zeb_def_ipc_43974
+zeb_def_ipc_4407
+zeb_def_ipc_44189
+zeb_def_ipc_44293
+zeb_def_ipc_44445
+zeb_def_ipc_44543
+zeb_def_ipc_44638
+zeb_def_ipc_44655
+zeb_def_ipc_4471
+zeb_def_ipc_44744
+zeb_def_ipc_44754
+zeb_def_ipc_44879
+zeb_def_ipc_45023
+zeb_def_ipc_45045
+zeb_def_ipc_4512
+zeb_def_ipc_45157
+zeb_def_ipc_45263
+zeb_def_ipc_45381
+zeb_def_ipc_45412
+zeb_def_ipc_45423
+zeb_def_ipc_45545
+zeb_def_ipc_45652
+zeb_def_ipc_46223
+zeb_def_ipc_46288
+zeb_def_ipc_46381
+zeb_def_ipc_46404
+zeb_def_ipc_46695
+zeb_def_ipc_46720
+zeb_def_ipc_4689
+zeb_def_ipc_47116
+zeb_def_ipc_47273
+zeb_def_ipc_47594
+zeb_def_ipc_47611
+zeb_def_ipc_47728
+zeb_def_ipc_47935
+zeb_def_ipc_48090
+zeb_def_ipc_48143
+zeb_def_ipc_4819
+zeb_def_ipc_48257
+zeb_def_ipc_48506
+zeb_def_ipc_48573
+zeb_def_ipc_48602
+zeb_def_ipc_48676
+zeb_def_ipc_4900
+zeb_def_ipc_49197
+zeb_def_ipc_49273
+zeb_def_ipc_49307
+zeb_def_ipc_49936
+zeb_def_ipc_50118
+zeb_def_ipc_50171
+zeb_def_ipc_50264
+zeb_def_ipc_50403
+zeb_def_ipc_50434
+zeb_def_ipc_505
+zeb_def_ipc_5055
+zeb_def_ipc_50669
+zeb_def_ipc_50789
+zeb_def_ipc_50898
+zeb_def_ipc_51114
+zeb_def_ipc_51172
+zeb_def_ipc_51362
+zeb_def_ipc_51525
+zeb_def_ipc_51614
+zeb_def_ipc_517
+zeb_def_ipc_51733
+zeb_def_ipc_51762
+zeb_def_ipc_51795
+zeb_def_ipc_51861
+zeb_def_ipc_51896
+zeb_def_ipc_5195
+zeb_def_ipc_51990
+zeb_def_ipc_52106
+zeb_def_ipc_52162
+zeb_def_ipc_52187
+zeb_def_ipc_52276
+zeb_def_ipc_52285
+zeb_def_ipc_52299
+zeb_def_ipc_52330
+zeb_def_ipc_52486
+zeb_def_ipc_52696
+zeb_def_ipc_52739
+zeb_def_ipc_53162
+zeb_def_ipc_53312
+zeb_def_ipc_5367
+zeb_def_ipc_53798
+zeb_def_ipc_54382
+zeb_def_ipc_54419
+zeb_def_ipc_54499
+zeb_def_ipc_54523
+zeb_def_ipc_54547
+zeb_def_ipc_54552
+zeb_def_ipc_54807
+zeb_def_ipc_54846
+zeb_def_ipc_54956
+zeb_def_ipc_55033
+zeb_def_ipc_55138
+zeb_def_ipc_55175
+zeb_def_ipc_55225
+zeb_def_ipc_55429
+zeb_def_ipc_55475
+zeb_def_ipc_55521
+zeb_def_ipc_55578
+zeb_def_ipc_55630
+zeb_def_ipc_56113
+zeb_def_ipc_56145
+zeb_def_ipc_56151
+zeb_def_ipc_56333
+zeb_def_ipc_56374
+zeb_def_ipc_56427
+zeb_def_ipc_56477
+zeb_def_ipc_56553
+zeb_def_ipc_56692
+zeb_def_ipc_57078
+zeb_def_ipc_57119
+zeb_def_ipc_57297
+zeb_def_ipc_57383
+zeb_def_ipc_57399
+zeb_def_ipc_57478
+zeb_def_ipc_57563
+zeb_def_ipc_57568
+zeb_def_ipc_57812
+zeb_def_ipc_58219
+zeb_def_ipc_5831
+zeb_def_ipc_58345
+zeb_def_ipc_58574
+zeb_def_ipc_58588
+zeb_def_ipc_5863
+zeb_def_ipc_58695
+zeb_def_ipc_58984
+zeb_def_ipc_58999
+zeb_def_ipc_59136
+zeb_def_ipc_59337
+zeb_def_ipc_59762
+zeb_def_ipc_60459
+zeb_def_ipc_60618
+zeb_def_ipc_60692
+zeb_def_ipc_60983
+zeb_def_ipc_61054
+zeb_def_ipc_61249
+zeb_def_ipc_6130
+zeb_def_ipc_61387
+zeb_def_ipc_61467
+zeb_def_ipc_61468
+zeb_def_ipc_61485
+zeb_def_ipc_61490
+zeb_def_ipc_61789
+zeb_def_ipc_61920
+zeb_def_ipc_62218
+zeb_def_ipc_62332
+zeb_def_ipc_62367
+zeb_def_ipc_62586
+zeb_def_ipc_62900
+zeb_def_ipc_6305
+zeb_def_ipc_63067
+zeb_def_ipc_63497
+zeb_def_ipc_63509
+zeb_def_ipc_63957
+zeb_def_ipc_64153
+zeb_def_ipc_64198
+zeb_def_ipc_64329
+zeb_def_ipc_64449
+zeb_def_ipc_64457
+zeb_def_ipc_64461
+zeb_def_ipc_64556
+zeb_def_ipc_64693
+zeb_def_ipc_64772
+zeb_def_ipc_64794
+zeb_def_ipc_64851
+zeb_def_ipc_64946
+zeb_def_ipc_64952
+zeb_def_ipc_65239
+zeb_def_ipc_65245
+zeb_def_ipc_65260
+zeb_def_ipc_65278
+zeb_def_ipc_65414
+zeb_def_ipc_65535
+zeb_def_ipc_65741
+zeb_def_ipc_65753
+zeb_def_ipc_65851
+zeb_def_ipc_65905
+zeb_def_ipc_66372
+zeb_def_ipc_66380
+zeb_def_ipc_66418
+zeb_def_ipc_66558
+zeb_def_ipc_6686
+zeb_def_ipc_67410
+zeb_def_ipc_67529
+zeb_def_ipc_6755
+zeb_def_ipc_67550
+zeb_def_ipc_67574
+zeb_def_ipc_67680
+zeb_def_ipc_67733
+zeb_def_ipc_67748
+zeb_def_ipc_6775
+zeb_def_ipc_67913
+zeb_def_ipc_68045
+zeb_def_ipc_68074
+zeb_def_ipc_68092
+zeb_def_ipc_68158
+zeb_def_ipc_68242
+zeb_def_ipc_68316
+zeb_def_ipc_68631
+zeb_def_ipc_68831
+zeb_def_ipc_68881
+zeb_def_ipc_68885
+zeb_def_ipc_69019
+zeb_def_ipc_69134
+zeb_def_ipc_69139
+zeb_def_ipc_69238
+zeb_def_ipc_6928
+zeb_def_ipc_69283
+zeb_def_ipc_69294
+zeb_def_ipc_69403
+zeb_def_ipc_69628
+zeb_def_ipc_69756
+zeb_def_ipc_69769
+zeb_def_ipc_69799
+zeb_def_ipc_69828
+zeb_def_ipc_69948
+zeb_def_ipc_70076
+zeb_def_ipc_70297
+zeb_def_ipc_7034
+zeb_def_ipc_70432
+zeb_def_ipc_70539
+zeb_def_ipc_70603
+zeb_def_ipc_70667
+zeb_def_ipc_70688
+zeb_def_ipc_70781
+zeb_def_ipc_70836
+zeb_def_ipc_70875
+zeb_def_ipc_70992
+zeb_def_ipc_71530
+zeb_def_ipc_71568
+zeb_def_ipc_71576
+zeb_def_ipc_71654
+zeb_def_ipc_71674
+zeb_def_ipc_71722
+zeb_def_ipc_71758
+zeb_def_ipc_71816
+zeb_def_ipc_72358
+zeb_def_ipc_72413
+zeb_def_ipc_72474
+zeb_def_ipc_72732
+zeb_def_ipc_72737
+zeb_def_ipc_72827
+zeb_def_ipc_72904
+zeb_def_ipc_73006
+zeb_def_ipc_73134
+zeb_def_ipc_7333
+zeb_def_ipc_73374
+zeb_def_ipc_73406
+zeb_def_ipc_73550
+zeb_def_ipc_73593
+zeb_def_ipc_73881
+zeb_def_ipc_73975
+zeb_def_ipc_74041
+zeb_def_ipc_74049
+zeb_def_ipc_74160
+zeb_def_ipc_74211
+zeb_def_ipc_7432
+zeb_def_ipc_74755
+zeb_def_ipc_74865
+zeb_def_ipc_74924
+zeb_def_ipc_75014
+zeb_def_ipc_7510
+zeb_def_ipc_75176
+zeb_def_ipc_7525
+zeb_def_ipc_75559
+zeb_def_ipc_75672
+zeb_def_ipc_75759
+zeb_def_ipc_75884
+zeb_def_ipc_76022
+zeb_def_ipc_76131
+zeb_def_ipc_7619
+zeb_def_ipc_76686
+zeb_def_ipc_76872
+zeb_def_ipc_7689
+zeb_def_ipc_76907
+zeb_def_ipc_77094
+zeb_def_ipc_77132
+zeb_def_ipc_77148
+zeb_def_ipc_77165
+zeb_def_ipc_77197
+zeb_def_ipc_77292
+zeb_def_ipc_7736
+zeb_def_ipc_77884
+zeb_def_ipc_77915
+zeb_def_ipc_78068
+zeb_def_ipc_78093
+zeb_def_ipc_78104
+zeb_def_ipc_78290
+zeb_def_ipc_78326
+zeb_def_ipc_78434
+zeb_def_ipc_78770
+zeb_def_ipc_78821
+zeb_def_ipc_789
+zeb_def_ipc_78972
+zeb_def_ipc_78991
+zeb_def_ipc_79107
+zeb_def_ipc_79202
+zeb_def_ipc_79213
+zeb_def_ipc_79231
+zeb_def_ipc_79256
+zeb_def_ipc_79395
+zeb_def_ipc_79545
+zeb_def_ipc_79548
+zeb_def_ipc_79624
+zeb_def_ipc_79808
+zeb_def_ipc_80026
+zeb_def_ipc_80047
+zeb_def_ipc_80566
+zeb_def_ipc_80657
+zeb_def_ipc_80864
+zeb_def_ipc_80904
+zeb_def_ipc_80954
+zeb_def_ipc_81174
+zeb_def_ipc_81445
+zeb_def_ipc_81644
+zeb_def_ipc_81671
+zeb_def_ipc_81690
+zeb_def_ipc_81754
+zeb_def_ipc_81945
+zeb_def_ipc_81979
+zeb_def_ipc_82286
+zeb_def_ipc_82328
+zeb_def_ipc_82399
+zeb_def_ipc_82504
+zeb_def_ipc_82548
+zeb_def_ipc_82558
+zeb_def_ipc_82590
+zeb_def_ipc_8286
+zeb_def_ipc_82910
+zeb_def_ipc_83055
+zeb_def_ipc_8324
+zeb_def_ipc_83247
+zeb_def_ipc_83304
+zeb_def_ipc_83380
+zeb_def_ipc_83435
+zeb_def_ipc_83465
+zeb_def_ipc_83889
+zeb_def_ipc_83919
+zeb_def_ipc_8392
+zeb_def_ipc_84031
+zeb_def_ipc_84060
+zeb_def_ipc_84303
+zeb_def_ipc_84525
+zeb_def_ipc_84577
+zeb_def_ipc_84588
+zeb_def_ipc_84750
+zeb_def_ipc_84775
+zeb_def_ipc_8513
+zeb_def_ipc_85233
+zeb_def_ipc_85324
+zeb_def_ipc_85503
+zeb_def_ipc_85538
+zeb_def_ipc_85620
+zeb_def_ipc_85806
+zeb_def_ipc_85824
+zeb_def_ipc_85829
+zeb_def_ipc_85893
+zeb_def_ipc_8598
+zeb_def_ipc_86213
+zeb_def_ipc_86403
+zeb_def_ipc_86418
+zeb_def_ipc_86430
+zeb_def_ipc_86541
+zeb_def_ipc_86581
+zeb_def_ipc_86620
+zeb_def_ipc_86634
+zeb_def_ipc_86753
+zeb_def_ipc_86814
+zeb_def_ipc_86942
+zeb_def_ipc_87217
+zeb_def_ipc_87316
+zeb_def_ipc_87691
+zeb_def_ipc_87743
+zeb_def_ipc_87906
+zeb_def_ipc_87969
+zeb_def_ipc_88107
+zeb_def_ipc_88181
+zeb_def_ipc_88231
+zeb_def_ipc_88327
+zeb_def_ipc_88850
+zeb_def_ipc_88877
+zeb_def_ipc_88898
+zeb_def_ipc_88929
+zeb_def_ipc_89122
+zeb_def_ipc_89288
+zeb_def_ipc_89309
+zeb_def_ipc_89312
+zeb_def_ipc_8954
+zeb_def_ipc_89720
+zeb_def_ipc_89865
+zeb_def_ipc_89876
+zeb_def_ipc_89903
+zeb_def_ipc_90026
+zeb_def_ipc_90096
+zeb_def_ipc_90347
+zeb_def_ipc_90397
+zeb_def_ipc_90488
+zeb_def_ipc_90555
+zeb_def_ipc_90777
+zeb_def_ipc_90822
+zeb_def_ipc_91002
+zeb_def_ipc_91109
+zeb_def_ipc_91122
+zeb_def_ipc_91217
+zeb_def_ipc_9132
+zeb_def_ipc_91411
+zeb_def_ipc_91479
+zeb_def_ipc_91511
+zeb_def_ipc_91535
+zeb_def_ipc_91603
+zeb_def_ipc_91730
+zeb_def_ipc_91829
+zeb_def_ipc_91836
+zeb_def_ipc_92062
+zeb_def_ipc_92182
+zeb_def_ipc_92643
+zeb_def_ipc_9272
+zeb_def_ipc_92813
+zeb_def_ipc_93014
+zeb_def_ipc_93047
+zeb_def_ipc_93169
+zeb_def_ipc_93286
+zeb_def_ipc_93300
+zeb_def_ipc_93301
+zeb_def_ipc_93381
+zeb_def_ipc_93406
+zeb_def_ipc_93678
+zeb_def_ipc_93746
+zeb_def_ipc_938
+zeb_def_ipc_93845
+zeb_def_ipc_94248
+zeb_def_ipc_94711
+zeb_def_ipc_94731
+zeb_def_ipc_94911
+zeb_def_ipc_94954
+zeb_def_ipc_95114
+zeb_def_ipc_95193
+zeb_def_ipc_95229
+zeb_def_ipc_95389
+zeb_def_ipc_95412
+zeb_def_ipc_95466
+zeb_def_ipc_95472
+zeb_def_ipc_95502
+zeb_def_ipc_95596
+zeb_def_ipc_95770
+zeb_def_ipc_95780
+zeb_def_ipc_95784
+zeb_def_ipc_95938
+zeb_def_ipc_96205
+zeb_def_ipc_96238
+zeb_def_ipc_96259
+zeb_def_ipc_96355
+zeb_def_ipc_96725
+zeb_def_ipc_96838
+zeb_def_ipc_96905
+zeb_def_ipc_97083
+zeb_def_ipc_97295
+zeb_def_ipc_97397
+zeb_def_ipc_97402
+zeb_def_ipc_97496
+zeb_def_ipc_97547
+zeb_def_ipc_97597
+zeb_def_ipc_97689
+zeb_def_ipc_97809
+zeb_def_ipc_9783
+zeb_def_ipc_97937
+zeb_def_ipc_98025
+zeb_def_ipc_98028
+zeb_def_ipc_98103
+zeb_def_ipc_98227
+zeb_def_ipc_98368
+zeb_def_ipc_9848
+zeb_def_ipc_98502
+zeb_def_ipc_98700
+zeb_def_ipc_98835
+zeb_def_ipc_99500
+zeb_def_ipc_99626
+zeb_def_ipc_99629
+zeb_def_ipc_99654
+zeb_def_ipc_99894
+zsh_2026-10-23_100052_rj0i.sample.txt
+zsh_2026-10-23_100057_bKOT.sample.txt
+zsh_2026-10-23_100537_u7VW.sample.txt
+zsh_2026-10-23_100916_eURP.sample.txt
+zsh_2026-10-23_100921_ZoBB.sample.txt
+
+/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9:
+
+exec
+/bin/zsh -lc "rg -n 'func .*Hit|func .*NewLayer|func .*NewCompositor|func .*Z\\(|func .*ID\\(|func .*X\\(|func .*Y\\(|func .*Center|type Layer' /Users/gfargo/go/pkg/mod/charm.land/lipgloss; rg -n 'type MouseClickMsg|MouseModeCellMotion|type View struct' /Users/gfargo/go/pkg/mod/charm.land/bubbletea" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9
+ succeeded in 1175ms:
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:13:type Layer struct {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:22:func NewLayer(content string, layers ...*Layer) *Layer {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:46:func (l *Layer) GetID() string {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:51:func (l *Layer) ID(id string) *Layer {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:57:func (l *Layer) X(x int) *Layer {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:63:func (l *Layer) Y(y int) *Layer {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:69:func (l *Layer) Z(z int) *Layer {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:75:func (l *Layer) GetX() int {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:80:func (l *Layer) GetY() int {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:85:func (l *Layer) GetZ() int {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:121:func (l *Layer) MaxZ() int {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:159:type LayerHit struct {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:166:func (lh LayerHit) Empty() bool {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:171:func (lh LayerHit) ID() string {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:176:func (lh LayerHit) Layer() *Layer {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:181:func (lh LayerHit) Bounds() image.Rectangle {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:206:func NewCompositor(layers ...*Layer) *Compositor {
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go:289:func (c *Compositor) Hit(x, y int) LayerHit {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:53:    v.MouseMode = tea.MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:93:| `MouseMode` | `MouseModeNone`, `MouseModeCellMotion`, or `MouseModeAllMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:281:    v.MouseMode = tea.MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:293:| `tea.WithMouseCellMotion()` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:308:| `tea.EnableMouseCellMotion` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:445:    v.MouseMode = tea.MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:507:| `tea.WithMouseCellMotion()` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md:517:| `tea.EnableMouseCellMotion` | `view.MouseMode = tea.MouseModeCellMotion` |
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:84:type View struct {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:190:	// [MouseModeNone], [MouseModeCellMotion], or [MouseModeAllMotion].
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:304:	// MouseModeCellMotion enables mouse click, release, and wheel events.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:311:	MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:148:	case MouseModeCellMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:219:		case MouseModeCellMotion, MouseModeAllMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:398:		case MouseModeCellMotion:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go:404:			if s.lastView != nil && s.lastView.MouseMode == MouseModeCellMotion {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:83:type MouseClickMsg Mouse
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go:82:				{mouseMode: MouseModeCellMotion},
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer_test.go:31:		MouseMode: MouseModeCellMotion,
+
+exec
+/bin/zsh -lc "sed -n '150,325p' /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go; sed -n '1,100p' /Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-2xf_tlh9
+ succeeded in 2940ms:
+var _ uv.Drawable = (*Layer)(nil)
+
+// Draw draws the content of the layer on the screen at the specified area.
+func (l *Layer) Draw(scr uv.Screen, area uv.Rectangle) {
+	content := uv.NewStyledString(l.content)
+	content.Draw(scr, area)
+}
+
+// LayerHit represents the result of a hit test on a [Layer].
+type LayerHit struct {
+	id     string
+	layer  *Layer
+	bounds image.Rectangle
+}
+
+// Empty returns true if the LayerHit represents no hit.
+func (lh LayerHit) Empty() bool {
+	return lh.layer == nil
+}
+
+// ID returns the ID of the hit Layer.
+func (lh LayerHit) ID() string {
+	return lh.id
+}
+
+// Layer returns the layer that was hit.
+func (lh LayerHit) Layer() *Layer {
+	return lh.layer
+}
+
+// Bounds returns the bounds of the LayerHit.
+func (lh LayerHit) Bounds() image.Rectangle {
+	return lh.bounds
+}
+
+// Compositor manages the composition of layers. It flattens a layer hierarchy
+// once and provides efficient drawing and hit testing operations. All computation
+// related to layers happens in the Compositor.
+type Compositor struct {
+	root   *Layer
+	layers []compositeLayer
+	index  map[string]*Layer
+	bounds image.Rectangle
+}
+
+// compositeLayer holds a flattened layer with its calculated absolute position and bounds.
+type compositeLayer struct {
+	layer  *Layer
+	absX   int
+	absY   int
+	bounds image.Rectangle
+}
+
+// NewCompositor creates a new Compositor with an internal root layer. Optional
+// layers can be provided which will be added as children of the root. The layer
+// hierarchy is flattened and sorted by z-index for efficient rendering and hit testing.
+func NewCompositor(layers ...*Layer) *Compositor {
+	root := NewLayer("")
+	root.AddLayers(layers...)
+	c := &Compositor{
+		root:  root,
+		index: make(map[string]*Layer),
+	}
+	c.flatten()
+	return c
+}
+
+// AddLayers adds layers to the compositor's root and refreshes the internal state.
+func (c *Compositor) AddLayers(layers ...*Layer) *Compositor {
+	c.root.AddLayers(layers...)
+	c.flatten()
+	return c
+}
+
+// flatten builds the internal flattened layer list and calculates overall bounds.
+func (c *Compositor) flatten() {
+	c.layers = nil
+	c.index = make(map[string]*Layer)
+	c.flattenRecursive(c.root, 0, 0)
+
+	// Sort by absolute z-index (lowest to highest for drawing)
+	slices.SortFunc(c.layers, func(a, b compositeLayer) int {
+		return a.layer.z - b.layer.z
+	})
+
+	// Calculate overall bounds
+	if len(c.layers) > 0 {
+		c.bounds = c.layers[0].bounds
+		for i := 1; i < len(c.layers); i++ {
+			c.bounds = c.bounds.Union(c.layers[i].bounds)
+		}
+	}
+}
+
+// flattenRecursive recursively collects all layers with their absolute positions.
+func (c *Compositor) flattenRecursive(layer *Layer, parentX, parentY int) {
+	absX := layer.x + parentX
+	absY := layer.y + parentY
+
+	width, height := Width(layer.content), Height(layer.content)
+	bounds := image.Rectangle{
+		Min: image.Pt(absX, absY),
+		Max: image.Pt(absX+width, absY+height),
+	}
+
+	c.layers = append(c.layers, compositeLayer{
+		layer:  layer,
+		absX:   absX,
+		absY:   absY,
+		bounds: bounds,
+	})
+
+	// Index layer by ID if it has one
+	if layer.id != "" {
+		c.index[layer.id] = layer
+	}
+
+	for _, child := range layer.layers {
+		c.flattenRecursive(child, absX, absY)
+	}
+}
+
+// Bounds returns the overall bounds of all layers in the compositor.
+func (c *Compositor) Bounds() image.Rectangle {
+	return c.bounds
+}
+
+// Draw draws all layers onto the given [uv.Screen] in z-index order.
+func (c *Compositor) Draw(scr uv.Screen, area image.Rectangle) {
+	for _, cl := range c.layers {
+		if cl.bounds.Overlaps(area) {
+			cl.layer.Draw(scr, cl.bounds)
+		}
+	}
+}
+
+// Hit performs a hit test at the given (x, y) coordinates. If a layer is hit,
+// it returns the ID of the top-most layer at that point. Layers with empty IDs
+// are ignored. If no layer is hit, it returns an empty [LayerHit].
+func (c *Compositor) Hit(x, y int) LayerHit {
+	var hit LayerHit
+	pt := image.Pt(x, y)
+	// Check from highest z to lowest (reverse order)
+	for i := len(c.layers) - 1; i >= 0; i-- {
+		cl := c.layers[i]
+		if cl.layer.id != "" && pt.In(cl.bounds) {
+			hit.id = cl.layer.id
+			hit.layer = cl.layer
+			hit.bounds = cl.bounds
+			return hit
+		}
+	}
+	return hit
+}
+
+// GetLayer returns a layer by its ID, or nil if not found.
+// Layers with empty IDs are not indexed and cannot be retrieved.
+func (c *Compositor) GetLayer(id string) *Layer {
+	if id == "" {
+		return nil
+	}
+	return c.index[id]
+}
+
+// Refresh re-flattens the layer hierarchy. Call this after modifying the layer
+// tree structure or positions to update the compositor's internal state.
+func (c *Compositor) Refresh() {
+	c.flatten()
+}
+
+// Render renders the compositor into a styled string. This is a helper
+// function that creates a temporary canvas, draws the compositor onto it, and
+// returns the resulting string.
+func (c *Compositor) Render() string {
+	width, height := c.bounds.Dx(), c.bounds.Dy()
+	canvas := NewCanvas(width, height)
+package tea
+
+import (
+	"fmt"
+
+	uv "github.com/charmbracelet/ultraviolet"
+)
+
+// MouseButton represents the button that was pressed during a mouse message.
+type MouseButton = uv.MouseButton
+
+// Mouse event buttons
+//
+// This is based on X11 mouse button codes.
+//
+//	1 = left button
+//	2 = middle button (pressing the scroll wheel)
+//	3 = right button
+//	4 = turn scroll wheel up
+//	5 = turn scroll wheel down
+//	6 = push scroll wheel left
+//	7 = push scroll wheel right
+//	8 = 4th button (aka browser backward button)
+//	9 = 5th button (aka browser forward button)
+//	10
+//	11
+//
+// Other buttons are not supported.
+const (
+	MouseNone       = uv.MouseNone
+	MouseLeft       = uv.MouseLeft
+	MouseMiddle     = uv.MouseMiddle
+	MouseRight      = uv.MouseRight
+	MouseWheelUp    = uv.MouseWheelUp
+	MouseWheelDown  = uv.MouseWheelDown
+	MouseWheelLeft  = uv.MouseWheelLeft
+	MouseWheelRight = uv.MouseWheelRight
+	MouseBackward   = uv.MouseBackward
+	MouseForward    = uv.MouseForward
+	MouseButton10   = uv.MouseButton10
+	MouseButton11   = uv.MouseButton11
+)
+
+// MouseMsg represents a mouse message. This is a generic mouse message that
+// can represent any kind of mouse event.
+type MouseMsg interface {
+	fmt.Stringer
+
+	// Mouse returns the underlying mouse event.
+	Mouse() Mouse
+}
+
+// Mouse represents a Mouse message. Use [MouseMsg] to represent all mouse
+// messages.
+//
+// The X and Y coordinates are zero-based, with (0,0) being the upper left
+// corner of the terminal.
+//
+//	// Catch all mouse events
+//	switch msg := msg.(type) {
+//	case MouseMsg:
+//	    m := msg.Mouse()
+//	    fmt.Println("Mouse event:", m.X, m.Y, m)
+//	}
+//
+//	// Only catch mouse click events
+//	switch msg := msg.(type) {
+//	case MouseClickMsg:
+//	    fmt.Println("Mouse click event:", msg.X, msg.Y, msg)
+//	}
+type Mouse struct {
+	X, Y   int
+	Button MouseButton
+	Mod    KeyMod
+}
+
+// String returns a string representation of the mouse message.
+func (m Mouse) String() (s string) {
+	return uv.Mouse(m).String()
+}
+
+// MouseClickMsg represents a mouse button click message.
+type MouseClickMsg Mouse
+
+// String returns a string representation of the mouse click message.
+func (e MouseClickMsg) String() string {
+	return Mouse(e).String()
+}
+
+// Mouse returns the underlying mouse event. This is a convenience method and
+// syntactic sugar to satisfy the [MouseMsg] interface, and cast the mouse
+// event to [Mouse].
+func (e MouseClickMsg) Mouse() Mouse {
+	return Mouse(e)
+}
+
+// MouseReleaseMsg represents a mouse button release message.
+type MouseReleaseMsg Mouse
+
+// String returns a string representation of the mouse release message.
+
+codex
+Use Lipgloss v2’s **`Layer` and `Compositor`** APIs. Give the dialog a higher Z index, center it using its rendered size, and call `Compositor.Hit(x, y)` to identify the topmost layer under a click.
+
+Here’s a complete Bubble Tea v2 example:
+
+```go
+package main
+
+import (
+	"log"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+)
+
+type model struct {
+	width, height int
+	showDialog    bool
+	status        string
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+// Use the same layout for rendering and hit testing.
+func (m model) scene() *lipgloss.Compositor {
+	background := lipgloss.NewStyle().
+		Width(m.width).
+		Height(m.height).
+		Render("Press d to open the dialog.\n\n" + m.status)
+
+	layers := []*lipgloss.Layer{
+		lipgloss.NewLayer(background).ID("background").Z(0),
+	}
+
+	if m.showDialog {
+		dialog := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			Padding(1, 3).
+			Render("Delete this item?\n\n[y] Yes    [n / Esc] Cancel")
+
+		// Measure terminal cells, including border and padding.
+		x := max(0, (m.width-lipgloss.Width(dialog))/2)
+		y := max(0, (m.height-lipgloss.Height(dialog))/2)
+
+		layers = append(layers,
+			lipgloss.NewLayer(dialog).
+				ID("dialog").
+				X(x).Y(y).Z(1),
+		)
+	}
+
+	return lipgloss.NewCompositor(layers...)
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width, m.height = msg.Width, msg.Height
+
+	case tea.KeyPressMsg:
+		if msg.String() == "ctrl+c" {
+			return m, tea.Quit
+		}
+
+		if m.showDialog {
+			switch msg.String() {
+			case "y":
+				m.showDialog = false
+				m.status = "Confirmed."
+			case "n", "esc":
+				m.showDialog = false
+				m.status = "Cancelled."
+			}
+			return m, nil // Consume keys while the modal is open.
+		}
+
+		if msg.String() == "d" {
+			m.showDialog = true
+		}
+
+	case tea.MouseClickMsg:
+		if msg.Button != tea.MouseLeft {
+			return m, nil
+		}
+
+		hit := m.scene().Hit(msg.X, msg.Y)
+
+		if m.showDialog {
+			switch hit.ID() {
+			case "dialog":
+				m.status = "Clicked inside the dialog."
+			case "background":
+				m.status = "Clicked outside; cancelled."
+				m.showDialog = false
+			}
+			return m, nil // Prevent clicks reaching background controls.
+		}
+
+		// Handle ordinary background clicks here.
+	}
+
+	return m, nil
+}
+
+func (m model) View() tea.View {
+	v := tea.NewView(m.scene().Render())
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
+}
+
+func main() {
+	if _, err := tea.NewProgram(model{}).Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+A few details matter:
+
+- **Assign IDs:** `Hit` ignores layers with empty IDs.
+- **Hits are rectangular:** the dialog’s border, padding, and blank cells count as inside. `hit.Empty()` means no named layer was hit.
+- **Coordinates are zero-based terminal cells.** Using the alternate screen and rendering the compositor at `(0, 0)` keeps them aligned.
+- Rebuilding the compositor keeps geometry current. If you retain one and change layer positions or contents, call `Refresh()` before rendering or hit testing.
+
+For clickable Yes/Cancel buttons, give each button its own named layer above the dialog and handle those IDs too.
+tokens used
+18,498

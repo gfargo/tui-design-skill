@@ -1,0 +1,55 @@
+Test it as a user runs it: build the binary, execute it with arguments and stdin, then assert **stdout, stderr, and exit code**.
+
+A useful structure is:
+
+```go
+func main() {
+    os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
+}
+
+func run(args []string, in io.Reader, out, errOut io.Writer) int {
+    // Parse arguments, do work, print output.
+    return 0
+}
+```
+
+Use two levels of tests:
+
+- **Most tests call `run` directly.** Pass `bytes.Buffer` for stdout and stderr, then compare their contents and the returned code. These tests are fast and easy to debug.
+- **A few tests execute the compiled binary.** These verify the actual process exit code and catch mistakes in `main`, argument handling, and stream wiring. Build once in `TestMain` into a temporary directory; avoid `go run`, which can obscure the program’s exit code.
+
+For subprocess tests, capture streams separately:
+
+```go
+cmd := exec.Command(binaryPath, "--bad-flag")
+
+var stdout, stderr bytes.Buffer
+cmd.Stdout = &stdout
+cmd.Stderr = &stderr
+
+err := cmd.Run()
+code := 0
+if err != nil {
+    var exitErr *exec.ExitError
+    if !errors.As(err, &exitErr) {
+        t.Fatalf("could not run CLI: %v", err)
+    }
+    code = exitErr.ExitCode()
+}
+
+if code != 2 {
+    t.Errorf("exit code = %d, want 2", code)
+}
+if stdout.Len() != 0 {
+    t.Errorf("unexpected stdout: %q", stdout.String())
+}
+if !strings.Contains(stderr.String(), "unknown flag") {
+    t.Errorf("unexpected stderr: %q", stderr.String())
+}
+```
+
+Cover success, help, invalid arguments, invalid input, and operational failures such as missing files. Check exact output when formatting is part of the contract; use substring checks for diagnostics whose wording can vary. For longer stable output, use golden files.
+
+Keep tests deterministic by controlling the working directory, environment, stdin, and temporary files. Give subprocesses a timeout with `exec.CommandContext`.
+
+If you want a convenient framework for many command/output cases, [`testscript`](https://pkg.go.dev/github.com/rogpeppe/go-internal/testscript) is a good fit. Standard `testing` plus `os/exec` is plenty to start.

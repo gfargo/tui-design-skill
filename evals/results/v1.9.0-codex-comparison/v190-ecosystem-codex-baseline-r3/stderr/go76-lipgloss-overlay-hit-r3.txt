@@ -1,0 +1,1342 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-h0nm1a01
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dff-53f9-71f0-a197-410c57425390
+--------
+user
+In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?
+
+codex
+I’ll check the available docs tools for the Bubble Tea v2 and Lipgloss v2 APIs.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-h0nm1a01
+ exited 6 in 18ms:
+exec
+/bin/zsh -lc "pwd; rg --files -g '*go*' -g '*md' . /Users/gfargo/go/pkg/mod/github.com/charmbracelet /Users/gfargo/go/pkg/mod/charm.land 2>/dev/null" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-h0nm1a01
+ succeeded in 35ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-h0nm1a01
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/blending.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/whitespace_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ansi_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/wrap.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/style_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/set.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/blending_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/get.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/lipgloss.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/canvas.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/whitespace.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ranges.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/list_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/enumerator.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/list.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/join_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/color_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/canvas_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/size.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/join.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/size_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/unset.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/align_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestSublistItems.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestComplexSublist.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestList.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestSublist.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ranges_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/wrap_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/runes_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/writer.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/README.md
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/.golangci.yml
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/ansi_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/borders.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/borders_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestListIntegers.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/clipboard.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/paste.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/commands.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/programstatus_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mod.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/signals_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursor.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/keyboard.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/environ.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/focus.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termcap.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/programstatus.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/signals_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/options_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/.goreleaser.yml
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/input.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/cursed_renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_other.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/signals_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/README.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/.golangci.yml
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/key.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/logging_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_bsd.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/exec.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/profile.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/commands_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/screen.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/termios_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/logging.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/options.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/exec_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/xterm.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/color.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tty.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumerators/arabic.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumerators/dash.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumerators/roman.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumerators/asterisk.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumerators/alphabet.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumerators/bullet.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestSubListItems2.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestMultiline.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestListItems.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumeratorsAlign.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/table.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/rows.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/util.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/resizing.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumeratorsTransform/arabic).golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumeratorsTransform/bullet_is_dash.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumeratorsTransform/roman_within_().golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/list/testdata/TestEnumeratorsTransform/alphabet_lower.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/mouse_allmotion.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/mouse_cellmotion.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/altscreen.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/bg_set_color.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/kitty_stop_startreleases.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/bp_stop_start.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/mouse_disable.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/cursor_hideshow.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/altscreen_autoexit.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestViewModel/cursor_hide.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightExact.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestWrapStyleFuncContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/compat/doc.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/compat/color.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/color.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/align.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/style.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestClearMsg/clear_screen.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestClearMsg/bg_fg_cur_color.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/testdata/TestClearMsg/read_set_clipboard.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/nil_renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/raw.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/terminal.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/query.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestNoFinalEmptyRowWhenOverflow.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableOverFlowNoWrap.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestExtraPaddingHeadingLong.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithPadding/LongHeaderContentLongAndShortRows.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithPadding/LongRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithPadding/LongTextDifferentLanguages.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithPadding/MissingRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableRowSeparators.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthSmartCrop.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableEmpty.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestExtraPaddingHeading.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableExample.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestMoreCellsThanHeadersExtra.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTable.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestWrapPreStyledContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableMultiLineRowSeparator.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableYOffset.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableUnsetHeaderSeparatorWithBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthExpand.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/env_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/doc.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/.goreleaser.yml
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/writer.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/README.md
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/.golangci.yml
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/profile.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/env_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/writer_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/env_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/env.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/colorprofile@v0.4.3/profile_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableShrinkWithYOffset/WithBorderRow.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableShrinkWithYOffset/WithHeaders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableShrinkWithYOffset/NoHeaders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableNoColumnSeparators.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/enumerator.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/tree_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/renderer.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/tree.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/children.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/example_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf06.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf08.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf04.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf12.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf10.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf02.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf07.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf09.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf05.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf01.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf13.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf11.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRow/HeightOf03.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/MarkdownBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/HiddenBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/ThickBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/BlockBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/NormalBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/ASCIIBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderStyles/RoundedBorder.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableNoHeaders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestFilterInverse.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthShrink/NoBorders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthShrink/DefaultBorders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthShrink/OutlineBordersOnly.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWithBackground.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestCarriageReturn.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/help.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/help_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/console_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/width_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_tabdly_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/winch_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_renderer_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/styled.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/tty_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/programstatus_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_renderer_output_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/border.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/winch.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cursor.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cursor_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/pipeconsole_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/environ.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_tabdly.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cancelreader_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/tty_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_renderer_hardscroll.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf18.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf06.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf14.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf20.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf16.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf08.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf04.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf12.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf10.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf02.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf07.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf19.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf15.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf09.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf17.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf05.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf21.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf01.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf13.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf11.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRowPadding/HeightOf03.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf06.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf08.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestEmbedListWithinTree.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf04.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf02.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeStartsWithSubtree.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf07.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestMultilinePrefixSubtree.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf09.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf05.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf01.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/NoBorderRow/HeightOf03.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/testdata/TestFullHelp/full_help_40_width.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/testdata/TestFullHelp/full_help_30_width.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/help/testdata/TestFullHelp/full_help_20_width.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/LongHeaderContentLongAndShortRows.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/LongRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/LongTextDifferentLanguages.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/LongRowContentNoWrap.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/LongRowContentNoWrapCustomMargins.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/LongRowContentNoWrapNoMargins.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping/MissingRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthSmartCropExtensive.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderColumnsWithExtraRows.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightWithYOffset.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf22.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf18.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf06.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf14.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf20.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf16.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf08.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf04.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf12.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf24.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf10.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf02.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf07.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf19.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf15.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf23.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf09.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf17.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf05.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf21.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf25.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf01.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf13.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf11.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightShrink/WithBorderRowPadding/HeightOf03.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/paginator/paginator.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/paginator/paginator_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cancelreader_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/screen/context.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/screen/screen_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_bsd.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_fallback.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_fallback_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/grapheme_width_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/tabstop_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_default_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/screen/screen.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/utils.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_linux.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/TUTORIAL.md
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/doc.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_bsdly.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/.goreleaser.yml
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/buffer.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/buffer_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_renderer_hashmap.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/tty_unix.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/README.md
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/uv.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_bsdly_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_reader.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/mouse.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_unix.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cancelreader_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/event_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/transformline_bug_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/.golangci.yml
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/key.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cell.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_reader_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_input_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_renderer.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_stop_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_select.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTree/before.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTree/after.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeMixedEnumeratorSize.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestMultilinePrefix.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTypes.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestRootStyle.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeAddTwoSubTreesWithoutName.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeAllHidden.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeStyleNilFuncs.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestMultilinePrefixInception.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeNil.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeHidden.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeCustom.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithHeight/LongHeaderContentLongAndShortRows/HeightOf15.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithHeight/LongHeaderContentLongAndShortRows/HeightOf05.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithHeight/LongHeaderContentLongAndShortRows/HeightOf25.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithHeight/LongHeaderContentLongAndShortRows/HeightOf35.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestStyleFunc/MarginAndPaddingSet.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestStyleFunc/RightAlignedTextWithMargins.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidths.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableNoStyleFunc.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestInnerBordersOnly.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableANSI.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestMoreCellsThanHeaders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeights.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestBorderedCells.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableHeightExtra.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableUnsetHeaderSeparator.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableSetRows.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/hidden_windows.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/filepicker_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/filepicker.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableRowSeparators/with_overflow.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableRowSeparators/no_overflow.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/runes.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/position.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/.goreleaser.yml
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/table_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableNoColumnSeparatorsWithHeaders.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestFilter.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableMarginAndRightAlignment.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableWidthSmartCropTiny.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/key/key.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/key/key_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithMargins/LongHeaderContentLongAndShortRows.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithMargins/LongRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithMargins/LongTextDifferentLanguages.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_WithMargins/MissingRowContent.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_reader_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/event.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/key_table.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/tty.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cell_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_solaris.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_screen.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/styled_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/window.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/decoder_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/poll_default.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/console_unix.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/decoder.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/terminal_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/widecell_placeholder_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/console.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/cell_iszero_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/border_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/tabstop.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/key_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/winch_unix.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/logger.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/internal/casso/math.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/internal/casso/casso_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/internal/casso/solver.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/internal/lru/lru.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/internal/lru/lru_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestAddItemWithAndWithoutRoot/without_root.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestAddItemWithAndWithoutRoot/with_root.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeStyleAt.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeSubTreeWithCustomEnumerator.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeMultilineNode.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeRoot.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeLastNodeIsSubTree.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestTreeTable.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/tree/testdata/TestFilter.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/bubbles.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/highlight.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/viewport_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/viewport.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/keymap.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/cursor/cursor.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/cursor/cursor_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/runeutil/runeutil_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/runeutil/runeutil.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/node.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/tree_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/styles.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/tree.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/progress.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/progress_test.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_ColumnWidth/LongHeaderContentLongAndShortRows.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_ColumnWidth/LongRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_ColumnWidth/LongTextDifferentLanguages.golden
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestContentWrapping_ColumnWidth/MissingRowContent.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/timer/timer.go
+/Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/table/testdata/TestTableUnsetBorders.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/memoization/memoization.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/internal/memoization/memoization_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/selection.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/selection_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/textarea_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textarea/textarea.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/README.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/.golangci.yml
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/layout/flex.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/layout/padding.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/layout/layout_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/layout/layout.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/layout/cache.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4/layout/constraint.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/spinner/spinner.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/spinner/spinner_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/filepicker/hidden_unix.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/testdata/TestTree/default_tree.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/10w-red-to-green-scaled-50perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/10w-red-to-green-50perc-full-block.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/30w-red-to-green-100perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/30w-colorfunc-rgb-100perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/30w-red-to-green-scaled-100perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/progress/testdata/TestBlend/10w-red-to-green-50perc.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/styles.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/textinput/textinput_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap-scrolled-plus-1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-at-bottom.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-scrolled-plus-2.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-at-bottom.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-scrolled-plus-1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-at-top.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap-at-bottom.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x100percent.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-content-lines.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1-softwrap-scrolled-plus-2.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-at-top.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-gutter-scrolled-plus-1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-40x1.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/viewport/testdata/TestSizing/view-50x15-softwrap-scrolled-plus-2.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_unix.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/util.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_unix_bsd.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_plan9.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_unix_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/term_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/term@v0.2.2/terminal.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/errors@v0.0.0-20240508181413-e8d8b6e2de86/join_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/errors@v0.0.0-20240508181413-e8d8b6e2de86/join.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/errors@v0.0.0-20240508181413-e8d8b6e2de86/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/table.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/stopwatch/stopwatch.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/eval.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_multiselect.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/UPGRADE_GUIDE_V2.md
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/wrap.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_confirm.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_filepicker.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/huh_test.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/validate.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/form.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_input.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/.goreleaser.yml
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_select.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/zz_resize_width_test.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/group.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/README.md
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_note.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/.golangci.yml
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/spinner/spinner_test.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/go.sum
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/layout.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/internal/accessibility/accessibility.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/internal/compat/model.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/internal/selector/selector.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/keymap.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/accessor.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/field_text.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/run.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/theme.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/option.go
+/Users/gfargo/go/pkg/mod/charm.land/huh/v2@v2.0.3/huh.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/.goreleaser.yml
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/table_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/strings@v0.0.0-20240722160745-212f7b056ed0/join_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/strings@v0.0.0-20240722160745-212f7b056ed0/join.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/strings@v0.0.0-20240722160745-212f7b056ed0/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/list_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/README.md
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/keys.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/defaultitem.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/list.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/list/style.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/ordered@v0.1.0/ordered.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/ordered@v0.1.0/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/ordered@v0.1.0/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/ordered@v0.1.0/ordered_test.go
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Bordered_headers.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Width_greater_than_columns.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/No_padding.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Modified_viewport_height.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Height_greater_than_rows.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Extra_padding.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Empty.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Height_less_than_rows.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Width_less_than_columns.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Single_row_and_column.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Multiple_rows_and_columns.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View/Bordered_cells.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestModel_View_CenteredInABox.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/golden_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/golden.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestTableAlignment/With_border.golden
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/table/testdata/TestTableAlignment/No_border.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/teatest_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/send_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/go.mod
+/Users/gfargo/go/pkg/mod/charm.land/bubbles/v2@v2.2.1/tree/testdata/TestTreeAdditionalHelp/additional_help.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/teatest.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/app_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/conpty.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/zsyscall_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/conpty_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/doc.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/exec_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/doc.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/syscall_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/types.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/types_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/conpty_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/windows@v0.2.2/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/conpty@v0.1.1/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/testdata/TestRequireEqualOutputUpdate.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/testdata/TestApp.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/teatest/v2@v2.0.0-20261012121918-43427fdbad12/testdata/TestAppSendToOtherProgram.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/testdata/TestRequireEqualUpdate.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/testdata/TestRequireWithLineBreaks.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/termios.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/syscalls_bsd.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/termios_solaris.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/termios_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/bit_bsd.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/bit_darwin.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/termios_bsd.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/termios_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/termios_linux.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/syscalls_linux.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/syscalls_darwin.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/termios@v0.1.1/bit_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/testdata/TestRequireEqualNoUpdate.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/pty_unix.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/xpty.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/pty_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/conpty_windows.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/pty.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/conpty.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/xpty@v0.1.3/conpty_other.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/mouse_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/wcwidth.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/style.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/background_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/urxvt.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/go.mod
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/c1.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/color.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/urxvt_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/gen.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/c0.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/winop.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/truncate.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/xterm.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/mode_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/progress_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/ctrl.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/screen.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sgr.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_sync.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/graphics.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/keypad.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/palette.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/modes.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/mode_deprecated.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/testdata/TestTypes/SliceOfBytes.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/exp/golden@v0.0.0-20251109135125-8916d276318f/testdata/TestTypes/String.golden
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/width.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/inband.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sgr_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/wrap_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/method.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/passthrough_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_dcs_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/mouse.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_handler.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/clipboard_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/method_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/util.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/ansi.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/width_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/progress.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/clipboard.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/passthrough.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/paste.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/cwd.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/wrap.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/style_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/title_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/programstatus_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_apc_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/cwd_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser/transition_table.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser/const.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser/seq.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/palette_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/go.sum
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/notification.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/ascii.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/hyperlink.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/reset.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/truncate_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/background.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/color_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/mode.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_csi_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/termcap.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/iterm2.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/iterm2/file.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/iterm2/iterm2_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/iterm2/file_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/programstatus.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/wcwidth_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/charset.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/hyperlink_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/title.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_decode_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/encoder_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/options_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/writer.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/encoder.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/writer_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/options.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/decoder.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/graphics.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/kitty/decoder_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/status.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/cursor.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/notification_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_esc_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_decode.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/focus.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/finalterm.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/doc.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/parser_osc_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/graphics_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/sixel_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/raster.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/repeat_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/repeat.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/palette_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/raster_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/sixel_bench_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/color_test.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/palette_sort.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/palette.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/encoder.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/decoder.go
+/Users/gfargo/go/pkg/mod/github.com/charmbracelet/x/ansi@v0.11.9/sixel/color.go
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/layer.go /Users/gfargo/go/pkg/mod/charm.land/lipgloss/v2@v2.0.6/canvas.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-h0nm1a01
+ succeeded in 0ms:
+package lipgloss
+
+import (
+	"fmt"
+	"image"
+	"slices"
+
+	uv "github.com/charmbracelet/ultraviolet"
+)
+
+// Layer represents a visual layer with content and positioning. It's a pure
+// data structure that defines the layer hierarchy without any computation.
+type Layer struct {
+	id            string
+	content       string
+	width, height int
+	x, y, z       int
+	layers        []*Layer
+}
+
+// NewLayer creates a new [Layer] with the given content and optional child layers.
+func NewLayer(content string, layers ...*Layer) *Layer {
+	l := &Layer{
+		content: content,
+	}
+	l.AddLayers(layers...)
+	return l
+}
+
+// GetContent returns the content of the Layer.
+func (l *Layer) GetContent() string {
+	return l.content
+}
+
+// Width returns the width of the Layer.
+func (l *Layer) Width() int {
+	return l.width
+}
+
+// Height returns the height of the Layer.
+func (l *Layer) Height() int {
+	return l.height
+}
+
+// GetID returns the ID of the Layer.
+func (l *Layer) GetID() string {
+	return l.id
+}
+
+// ID sets the ID of the Layer.
+func (l *Layer) ID(id string) *Layer {
+	l.id = id
+	return l
+}
+
+// X sets the x-coordinate of the Layer relative to its parent.
+func (l *Layer) X(x int) *Layer {
+	l.x = x
+	return l
+}
+
+// Y sets the y-coordinate of the Layer relative to its parent.
+func (l *Layer) Y(y int) *Layer {
+	l.y = y
+	return l
+}
+
+// Z sets the z-index of the Layer relative to its parent.
+func (l *Layer) Z(z int) *Layer {
+	l.z = z
+	return l
+}
+
+// GetX returns the x-coordinate of the Layer relative to its parent.
+func (l *Layer) GetX() int {
+	return l.x
+}
+
+// GetY returns the y-coordinate of the Layer relative to its parent.
+func (l *Layer) GetY() int {
+	return l.y
+}
+
+// GetZ returns the z-index of the Layer relative to its parent.
+func (l *Layer) GetZ() int {
+	return l.z
+}
+
+// AddLayers adds child layers to the Layer.
+func (l *Layer) AddLayers(layers ...*Layer) *Layer {
+	for i, layer := range layers {
+		if layer == nil {
+			panic(fmt.Sprintf("layer at index %d is nil", i))
+		}
+		l.layers = append(l.layers, layer)
+	}
+	area := l.boundsWithOffset(0, 0)
+	l.width = area.Dx()
+	l.height = area.Dy()
+	return l
+}
+
+// GetLayer returns a descendant layer by its ID, or nil if not found.
+// Layers with empty IDs are skipped.
+func (l *Layer) GetLayer(id string) *Layer {
+	if id == "" {
+		return nil
+	}
+	if l.id == id {
+		return l
+	}
+	for _, child := range l.layers {
+		if found := child.GetLayer(id); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+// MaxZ returns the maximum z-index among this layer and all its descendants.
+func (l *Layer) MaxZ() int {
+	maxZ := l.z
+	for _, child := range l.layers {
+		childMaxZ := child.MaxZ()
+		if childMaxZ > maxZ {
+			maxZ = childMaxZ
+		}
+	}
+	return maxZ
+}
+
+// boundsWithOffset calculates bounds with parent offset applied.
+func (l *Layer) boundsWithOffset(parentX, parentY int) image.Rectangle {
+	absX := l.x + parentX
+	absY := l.y + parentY
+
+	width, height := Width(l.content), Height(l.content)
+	bounds := image.Rectangle{
+		Min: image.Pt(absX, absY),
+		Max: image.Pt(absX+width, absY+height),
+	}
+
+	for _, child := range l.layers {
+		bounds = bounds.Union(child.boundsWithOffset(absX, absY))
+	}
+
+	return bounds
+}
+
+var _ uv.Drawable = (*Layer)(nil)
+
+// Draw draws the content of the layer on the screen at the specified area.
+func (l *Layer) Draw(scr uv.Screen, area uv.Rectangle) {
+	content := uv.NewStyledString(l.content)
+	content.Draw(scr, area)
+}
+
+// LayerHit represents the result of a hit test on a [Layer].
+type LayerHit struct {
+	id     string
+	layer  *Layer
+	bounds image.Rectangle
+}
+
+// Empty returns true if the LayerHit represents no hit.
+func (lh LayerHit) Empty() bool {
+	return lh.layer == nil
+}
+
+// ID returns the ID of the hit Layer.
+func (lh LayerHit) ID() string {
+	return lh.id
+}
+
+// Layer returns the layer that was hit.
+func (lh LayerHit) Layer() *Layer {
+	return lh.layer
+}
+
+// Bounds returns the bounds of the LayerHit.
+func (lh LayerHit) Bounds() image.Rectangle {
+	return lh.bounds
+}
+
+// Compositor manages the composition of layers. It flattens a layer hierarchy
+// once and provides efficient drawing and hit testing operations. All computation
+// related to layers happens in the Compositor.
+type Compositor struct {
+	root   *Layer
+	layers []compositeLayer
+	index  map[string]*Layer
+	bounds image.Rectangle
+}
+
+// compositeLayer holds a flattened layer with its calculated absolute position and bounds.
+type compositeLayer struct {
+	layer  *Layer
+	absX   int
+	absY   int
+	bounds image.Rectangle
+}
+
+// NewCompositor creates a new Compositor with an internal root layer. Optional
+// layers can be provided which will be added as children of the root. The layer
+// hierarchy is flattened and sorted by z-index for efficient rendering and hit testing.
+func NewCompositor(layers ...*Layer) *Compositor {
+	root := NewLayer("")
+	root.AddLayers(layers...)
+	c := &Compositor{
+		root:  root,
+		index: make(map[string]*Layer),
+	}
+	c.flatten()
+	return c
+}
+
+// AddLayers adds layers to the compositor's root and refreshes the internal state.
+func (c *Compositor) AddLayers(layers ...*Layer) *Compositor {
+	c.root.AddLayers(layers...)
+	c.flatten()
+	return c
+}
+
+// flatten builds the internal flattened layer list and calculates overall bounds.
+func (c *Compositor) flatten() {
+	c.layers = nil
+	c.index = make(map[string]*Layer)
+	c.flattenRecursive(c.root, 0, 0)
+
+	// Sort by absolute z-index (lowest to highest for drawing)
+	slices.SortFunc(c.layers, func(a, b compositeLayer) int {
+		return a.layer.z - b.layer.z
+	})
+
+	// Calculate overall bounds
+	if len(c.layers) > 0 {
+		c.bounds = c.layers[0].bounds
+		for i := 1; i < len(c.layers); i++ {
+			c.bounds = c.bounds.Union(c.layers[i].bounds)
+		}
+	}
+}
+
+// flattenRecursive recursively collects all layers with their absolute positions.
+func (c *Compositor) flattenRecursive(layer *Layer, parentX, parentY int) {
+	absX := layer.x + parentX
+	absY := layer.y + parentY
+
+	width, height := Width(layer.content), Height(layer.content)
+	bounds := image.Rectangle{
+		Min: image.Pt(absX, absY),
+		Max: image.Pt(absX+width, absY+height),
+	}
+
+	c.layers = append(c.layers, compositeLayer{
+		layer:  layer,
+		absX:   absX,
+		absY:   absY,
+		bounds: bounds,
+	})
+
+	// Index layer by ID if it has one
+	if layer.id != "" {
+		c.index[layer.id] = layer
+	}
+
+	for _, child := range layer.layers {
+		c.flattenRecursive(child, absX, absY)
+	}
+}
+
+// Bounds returns the overall bounds of all layers in the compositor.
+func (c *Compositor) Bounds() image.Rectangle {
+	return c.bounds
+}
+
+// Draw draws all layers onto the given [uv.Screen] in z-index order.
+func (c *Compositor) Draw(scr uv.Screen, area image.Rectangle) {
+	for _, cl := range c.layers {
+		if cl.bounds.Overlaps(area) {
+			cl.layer.Draw(scr, cl.bounds)
+		}
+	}
+}
+
+// Hit performs a hit test at the given (x, y) coordinates. If a layer is hit,
+// it returns the ID of the top-most layer at that point. Layers with empty IDs
+// are ignored. If no layer is hit, it returns an empty [LayerHit].
+func (c *Compositor) Hit(x, y int) LayerHit {
+	var hit LayerHit
+	pt := image.Pt(x, y)
+	// Check from highest z to lowest (reverse order)
+	for i := len(c.layers) - 1; i >= 0; i-- {
+		cl := c.layers[i]
+		if cl.layer.id != "" && pt.In(cl.bounds) {
+			hit.id = cl.layer.id
+			hit.layer = cl.layer
+			hit.bounds = cl.bounds
+			return hit
+		}
+	}
+	return hit
+}
+
+// GetLayer returns a layer by its ID, or nil if not found.
+// Layers with empty IDs are not indexed and cannot be retrieved.
+func (c *Compositor) GetLayer(id string) *Layer {
+	if id == "" {
+		return nil
+	}
+	return c.index[id]
+}
+
+// Refresh re-flattens the layer hierarchy. Call this after modifying the layer
+// tree structure or positions to update the compositor's internal state.
+func (c *Compositor) Refresh() {
+	c.flatten()
+}
+
+// Render renders the compositor into a styled string. This is a helper
+// function that creates a temporary canvas, draws the compositor onto it, and
+// returns the resulting string.
+func (c *Compositor) Render() string {
+	width, height := c.bounds.Dx(), c.bounds.Dy()
+	canvas := NewCanvas(width, height)
+	return canvas.Compose(c).Render()
+}
+package lipgloss
+
+import (
+	uv "github.com/charmbracelet/ultraviolet"
+	"github.com/charmbracelet/x/ansi"
+)
+
+// Canvas is a cell-buffer that can be used to compose and draw [uv.Drawable]s
+// like [Layer]s.
+//
+// Composed drawables are drawn onto the canvas in the order they were
+// composed, meaning later drawables will appear "on top" of earlier ones.
+//
+// A canvas can read, modify, and render its cell contents.
+//
+// It implements [uv.Screen] and [uv.Drawable].
+type Canvas struct {
+	scr uv.ScreenBuffer
+}
+
+var _ uv.Screen = (*Canvas)(nil)
+
+// NewCanvas creates a new [Canvas] with the given size.
+func NewCanvas(width, height int) *Canvas {
+	c := new(Canvas)
+	c.scr = uv.NewScreenBuffer(width, height)
+	c.scr.Method = ansi.GraphemeWidth
+	return c
+}
+
+// Resize resizes the canvas to the given width and height.
+func (c *Canvas) Resize(width, height int) {
+	c.scr.Resize(width, height)
+}
+
+// Clear clears the canvas.
+func (c *Canvas) Clear() {
+	c.scr.Clear()
+}
+
+// Bounds implements [uv.Screen].
+func (c *Canvas) Bounds() uv.Rectangle {
+	return c.scr.Bounds()
+}
+
+// Width returns the width of the canvas.
+func (c *Canvas) Width() int {
+	return c.scr.Width()
+}
+
+// Height returns the height of the canvas.
+func (c *Canvas) Height() int {
+	return c.scr.Height()
+}
+
+// CellAt implements [uv.Screen].
+func (c *Canvas) CellAt(x int, y int) *uv.Cell {
+	return c.scr.CellAt(x, y)
+}
+
+// SetCell implements [uv.Screen].
+func (c *Canvas) SetCell(x int, y int, cell *uv.Cell) {
+	c.scr.SetCell(x, y, cell)
+}
+
+// WidthMethod implements [uv.Screen].
+func (c *Canvas) WidthMethod() uv.WidthMethod {
+	return c.scr.WidthMethod()
+}
+
+// Compose composes a [Layer] or any [uv.Drawable] onto the [Canvas].
+func (c *Canvas) Compose(drawer uv.Drawable) *Canvas {
+	drawer.Draw(c, c.Bounds())
+	return c
+}
+
+// Draw draws the [Canvas] onto the given [uv.Screen] within the specified
+// area.
+//
+// It implements [uv.Drawable].
+func (c *Canvas) Draw(scr uv.Screen, area uv.Rectangle) {
+	c.scr.Draw(scr, area)
+}
+
+// Render renders the canvas into a styled string. Any trailing spaces are
+// trimmed.
+func (c *Canvas) Render() string {
+	return uv.TrimSpace(c.scr.Render())
+}
+
+exec
+/bin/zsh -lc "rg -n 'MouseMode|type MouseClickMsg|func .*Mouse|type View struct|func NewView' /Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/{mouse.go,tea.go}" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-h0nm1a01
+ succeeded in 56ms:
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:76:func NewView(s string) View {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:84:type View struct {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:189:	// MouseMode sets the mouse mode for this view. It can be one of
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:190:	// [MouseModeNone], [MouseModeCellMotion], or [MouseModeAllMotion].
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:191:	MouseMode MouseMode
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:297:// MouseMode represents the mouse mode of a view.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:298:type MouseMode int
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:301:	// MouseModeNone disables mouse events.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:302:	MouseModeNone MouseMode = iota
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:304:	// MouseModeCellMotion enables mouse click, release, and wheel events.
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:311:	MouseModeCellMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:313:	// MouseModeAllMotion enables all mouse events, including click, release,
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/tea.go:319:	MouseModeAllMotion
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:78:func (m Mouse) String() (s string) {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:83:type MouseClickMsg Mouse
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:86:func (e MouseClickMsg) String() string {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:93:func (e MouseClickMsg) Mouse() Mouse {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:101:func (e MouseReleaseMsg) String() string {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:108:func (e MouseReleaseMsg) Mouse() Mouse {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:116:func (e MouseWheelMsg) String() string {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:123:func (e MouseWheelMsg) Mouse() Mouse {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:131:func (e MouseMotionMsg) String() string {
+/Users/gfargo/go/pkg/mod/charm.land/bubbletea/v2@v2.1.0/mouse.go:142:func (e MouseMotionMsg) Mouse() Mouse {
+
+codex
+Use Lipgloss v2’s **layers and compositor**: put the existing screen in one layer, center the dialog in a higher layer, and call `Compositor.Hit(x, y)` to identify the topmost layer under a click.
+
+This example uses `charm.land/bubbletea/v2` and `charm.land/lipgloss/v2`:
+
+```go
+package main
+
+import (
+	"log"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+)
+
+type model struct {
+	width, height int
+	showConfirm   bool
+	status        string
+}
+
+func (m model) Init() tea.Cmd { return nil }
+
+// Use the same layout for rendering and hit testing.
+func (m model) scene() *lipgloss.Compositor {
+	background := lipgloss.NewStyle().
+		Width(m.width).
+		Height(m.height).
+		Render("Your existing screen\n\n" + m.status)
+
+	layers := []*lipgloss.Layer{
+		lipgloss.NewLayer(background).ID("background").Z(0),
+	}
+
+	if m.showConfirm {
+		dialog := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			Padding(1, 2).
+			Render("Continue?\n\n[y] Yes    [n / Esc] Cancel")
+
+		// Measure rendered cells, including border and padding.
+		w, h := lipgloss.Size(dialog)
+		x := max(0, (m.width-w)/2)
+		y := max(0, (m.height-h)/2)
+
+		layers = append(layers,
+			lipgloss.NewLayer(dialog).
+				ID("dialog").
+				X(x).Y(y).Z(1),
+		)
+	}
+
+	return lipgloss.NewCompositor(layers...)
+}
+
+func (m model) View() tea.View {
+	// A fixed-size canvas clips content to the terminal.
+	content := lipgloss.NewCanvas(m.width, m.height).
+		Compose(m.scene()).
+		Render()
+
+	v := tea.NewView(content)
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width, m.height = msg.Width, msg.Height
+
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		case "y":
+			if m.showConfirm {
+				m.showConfirm = false
+				m.status = "Confirmed"
+				// Run the confirmed action here.
+			}
+		case "n", "esc":
+			m.showConfirm = false
+		case "c":
+			m.showConfirm = true
+		}
+
+	case tea.MouseClickMsg:
+		if msg.Button != tea.MouseLeft {
+			return m, nil
+		}
+
+		hit := m.scene().Hit(msg.X, msg.Y)
+
+		if m.showConfirm {
+			switch hit.ID() {
+			case "dialog":
+				m.status = "Clicked inside dialog"
+				// Route to dialog controls here.
+			case "background":
+				m.showConfirm = false // Optional: dismiss on outside click.
+				m.status = "Clicked background"
+			}
+			// Consume the click while modal; don't forward it underneath.
+			return m, nil
+		}
+
+		// Handle normal screen clicks here.
+	}
+	return m, nil
+}
+
+func main() {
+	if _, err := tea.NewProgram(model{
+		showConfirm: true,
+	}).Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```
+
+A few details matter:
+
+- **Assign IDs to both layers.** `Hit` ignores layers with empty IDs and returns a `LayerHit`; inspect `hit.ID()` or `hit.Empty()`.
+- Hit testing uses **rectangular bounds**, including dialog padding and borders. It does not test whether a particular character is visible.
+- Mouse coordinates are zero-based terminal cells. With this full-screen view, they match compositor coordinates directly.
+- Rebuilding the scene keeps rendering and hit testing consistent. If you retain a compositor and change layer positions, call `Refresh()`.
+- For clickable Yes/Cancel buttons, give each button its own positioned layer and ID with a higher Z value; use `hit.Bounds().Min` to convert a click to local coordinates.
+
+Verified against locally installed Bubble Tea v2.1.0 and Lipgloss v2.0.6 source.
+tokens used
+29,397

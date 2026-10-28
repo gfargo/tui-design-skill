@@ -1,0 +1,69 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6ecevele
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0d-6006-7a11-99bf-171cf0b2feb9
+--------
+user
+In my Ink 8 app a file list and a search box (@inkjs/ui TextInput) share the screen. I used useFocus in both so Tab switches between them, but typing in the search box also moves the list selection and arrow keys in the list edit the search text. Why, and how do I fix it?
+
+codex
+I’ll check how Ink focus interacts with `useInput` and `TextInput` so the fix matches their keyboard handling.
+
+exec
+/bin/zsh -lc 'ls -a' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-6ecevele
+ succeeded in 0ms:
+.
+..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+`useFocus()` tracks focus and enables Tab navigation; it **doesn’t route keyboard events**. Each active `useInput()` listener still receives input, including the listener inside `TextInput`.
+
+Connect focus to input handling in both components:
+
+```tsx
+import {Text, useFocus, useInput} from 'ink';
+import {TextInput} from '@inkjs/ui';
+
+function FileList() {
+  const {isFocused} = useFocus({autoFocus: true});
+
+  useInput((input, key) => {
+    if (key.upArrow) {
+      // Move selection up.
+    } else if (key.downArrow) {
+      // Move selection down.
+    }
+  }, {isActive: isFocused});
+
+  return <Text color={isFocused ? 'cyan' : undefined}>Files…</Text>;
+}
+
+function SearchBox({onSearch}: {onSearch: (value: string) => void}) {
+  const {isFocused} = useFocus();
+
+  return (
+    <TextInput
+      placeholder="Search…"
+      isDisabled={!isFocused}
+      onChange={onSearch}
+    />
+  );
+}
+```
+
+The two connections are:
+
+- **Custom list:** `useInput(handler, {isActive: isFocused})`.
+- **`@inkjs/ui` `TextInput`:** `isDisabled={!isFocused}` gates its internal input handler.
+
+Keep both `useFocus()` registrations enabled so Tab can reach both controls. Setting `useFocus({isActive: false})` removes a component from focus navigation; it does not disable that component’s keyboard listeners.
+tokens used
+3,364

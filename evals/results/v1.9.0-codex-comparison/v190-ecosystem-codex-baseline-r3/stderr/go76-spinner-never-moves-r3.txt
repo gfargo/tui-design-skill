@@ -1,0 +1,39 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-dlp_7k6o
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17dfc-029b-7db3-857d-e974b519cbf9
+--------
+user
+My Bubble Tea v2 model embeds a bubbles spinner and a bubbles timer. I created them in New() and render m.spinner.View(), but the spinner is frozen on its first frame and the timer never counts down. My Init returns nil. What do I change?
+
+codex
+Creating the components doesn’t start their ticks. Start both in `Init`, then forward messages to their `Update` methods and return the commands they produce:
+
+```go
+func (m model) Init() tea.Cmd {
+	return tea.Batch(
+		m.spinner.Tick, // method value—no parentheses
+		m.timer.Init(),
+	)
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle your app's keys and other messages here.
+
+	var spinnerCmd, timerCmd tea.Cmd
+	m.spinner, spinnerCmd = m.spinner.Update(msg)
+	m.timer, timerCmd = m.timer.Update(msg)
+
+	return m, tea.Batch(spinnerCmd, timerCmd)
+}
+```
+
+`View()` only renders the current state. The initial commands start ticking; forwarding messages and returning subsequent commands keeps both components running. Make sure any early returns in your existing `Update` don’t swallow their tick messages.
+tokens used
+2,810

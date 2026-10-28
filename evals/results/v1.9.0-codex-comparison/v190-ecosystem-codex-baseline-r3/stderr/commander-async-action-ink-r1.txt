@@ -1,0 +1,39 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-dfaoi2ul
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e0e-de4e-7a60-8a88-f6dd5ba52e7b
+--------
+user
+My commander 15 CLI has `.action(async () => { const app = render(<App />); await app.waitUntilExit(); })` and I call program.parse() at the bottom. Errors thrown in the action crash with an unhandled rejection and post-run code sometimes runs too early. What is wrong?
+
+codex
+Your action is async, but `program.parse()` is synchronous: it doesn’t await the promise returned by the action. That lets post-run code execute early and leaves action rejections unhandled.
+
+Use `parseAsync()` and await it:
+
+```tsx
+program.action(async () => {
+  const app = render(<App />);
+  await app.waitUntilExit();
+});
+
+try {
+  await program.parseAsync(process.argv);
+  // Runs after the action finishes successfully.
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+}
+```
+
+If your environment doesn’t support top-level `await`, put this in an `async function main()` and call `main().catch(...)`.
+
+The `await app.waitUntilExit()` is correct; the missing piece is awaiting Commander’s async parsing at the entry point.
+tokens used
+657

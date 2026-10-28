@@ -1,0 +1,56 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-x1iwsbvk
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e07-68e4-75d0-af66-59475337b175
+--------
+user
+My Textual 8 app runs a search in a thread worker on every keystroke (`@work(thread=True)`). Old searches keep running and their rows flicker into the table after a newer search has started. How do I make a new search replace the old one?
+
+codex
+Use `exclusive=True` to cancel the previous worker in the same group. Because thread workers cannot be forcibly stopped, also check cancellation before publishing results.
+
+```python
+from textual import work
+from textual.worker import get_current_worker
+from textual.widgets import DataTable, Input
+
+def on_input_changed(self, event: Input.Changed) -> None:
+    self.search(event.value)
+
+@work(thread=True, exclusive=True, group="search")
+def search(self, query: str) -> None:
+    worker = get_current_worker()
+    rows = []
+
+    for row in blocking_search(query):
+        if worker.is_cancelled:
+            return
+        rows.append(row)
+
+    def publish() -> None:
+        # Check here too: cancellation may happen while this
+        # callback is waiting to run on the UI thread.
+        if worker.is_cancelled:
+            return
+
+        table = self.query_one(DataTable)
+        table.clear()
+        table.add_rows(rows)
+
+    self.call_from_thread(publish)
+```
+
+The two parts serve different purposes:
+
+- **`exclusive=True`** marks older workers in `"search"` as cancelled when a new one starts.
+- **`worker.is_cancelled`** makes the thread cooperate and prevents stale results from reaching the table.
+
+If `blocking_search()` is one long blocking call, it may keep running until it returns. You can still discard its results afterward. Always update Textual widgets on the UI thread via `call_from_thread()`.
+tokens used
+835

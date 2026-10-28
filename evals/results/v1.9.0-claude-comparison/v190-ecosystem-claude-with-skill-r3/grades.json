@@ -1,0 +1,1200 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-ecosystem-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "go76-spinner-never-moves-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the spinner has no Init(), says its Tick method value is the command and should not be called, and batches m.spinner.Tick with m.timer.Init()."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Init returns tea.Batch(m.spinner.Tick, m.timer.Init())."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It forwards spinner.TickMsg to m.spinner.Update, returns the resulting cmd, and warns that dropping that cmd freezes the spinner."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says the spinner has no Init() and uses m.spinner.Tick as a method value, not a package-level function."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-spinner-never-moves-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The Init example batches m.spinner.Tick, used as a method value with a comment saying it is the Cmd, alongside the timer, and the text says the spinner has no Init."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Init returns m.timer.Init() inside tea.Batch."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Update forwards spinner.TickMsg to m.spinner.Update and appends the returned cmd, and the text warns that dropping the Cmd stops the component after one frame."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly says the spinner has no Init() and uses the method value m.spinner.Tick rather than a package-level function."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-spinner-never-moves-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's Init returns tea.Batch(m.spinner.Tick, m.timer.Init()), with the comment that the spinner has no Init and the method value is the Cmd."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It returns m.timer.Init() inside the tea.Batch call in Init."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It forwards spinner.TickMsg to m.spinner.Update, appends the returned cmd, and warns that dropping the cmd freezes the spinner."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says outright that the spinner has no Init() and uses the method value m.spinner.Tick, not a package-level function."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-first-frame-placeholder-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by saying the program starts with no size and that Bubbles never read tea.WindowSizeMsg themselves, so the children stay zero-sized until the parent sizes them."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It handles tea.WindowSizeMsg in Update by calling layout(), which uses list.SetSize and viewport.SetWidth/SetHeight, and it explicitly warns against v1 field assignments."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "View returns \"loading\u2026\" when m.width == 0, with a comment saying no WindowSizeMsg has arrived yet."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It never claims the children size themselves and never suggests sleeping or polling; sizing comes only from WindowSizeMsg and explicit layout() calls."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-first-frame-placeholder-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the program starts before it knows the terminal size and that Bubbles components never read tea.WindowSizeMsg themselves."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "layout() is called from Update on WindowSizeMsg and uses list.SetSize plus viewport.SetWidth/SetHeight, and the answer warns against v1 field assignment."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "View returns a 'loading\u2026' placeholder when m.width == 0, before the first WindowSizeMsg."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly says the children do not size themselves and never suggests sleeping or polling for the size."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-first-frame-placeholder-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the program starts with no size and that the bubbles never read tea.WindowSizeMsg on their own, so they stay 0\u00d70 until sized."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Update handles tea.WindowSizeMsg by calling layout(), which uses list.SetSize and viewport.SetWidth/SetHeight, and the answer notes these as the v2 API."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "View returns a \"loading\u2026\" placeholder when m.width == 0, before the first WindowSizeMsg arrives."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says children don't size themselves and explicitly warns against guessing a size or querying the terminal; it suggests no sleeping or polling."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-lipgloss-overlay-hit-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses lipgloss.NewLayer with X/Y and Z(1)/Z(2) for the dialog and buttons, and renders the result with lipgloss.NewCompositor(layers...).Render()."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Gives the base, dialog, cancel and confirm layers IDs and calls comp.Hit(c.X, c.Y).ID() to find the top-most layer under the click."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Sets v.MouseMode = tea.MouseModeCellMotion and hit-tests in v.OnMouse against the comp built in View."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Uses no v1 program options such as WithMouseCellMotion and states explicitly that Z is not added to a parent layer's Z."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-lipgloss-overlay-hit-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer builds a base layer and a dialog layer with lipgloss.NewLayer, places the dialog with X(x).Y(y).Z(1), and renders them through lipgloss.NewCompositor(layers...).Render()."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It gives the layers ID(\"base\") and ID(\"dialog\") and calls comp.Hit(c.X, c.Y).ID() to find the top-most layer under the click."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It sets v.MouseMode = tea.MouseModeCellMotion and runs the hit test in v.OnMouse against the comp built in the same View()."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It uses v.MouseMode rather than tea.WithMouseCellMotion and states that Z values are compared as written, not added to a parent's Z."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-lipgloss-overlay-hit-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses lipgloss.NewLayer with X/Y and Z(1)/Z(2) for the dialog and buttons over a Z(0) base, then lipgloss.NewCompositor(layers...).Render()."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Assigns IDs \"base\", \"dialog\", \"no\", \"yes\" and calls comp.Hit(c.X, c.Y).ID() to get the top-most layer."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Sets v.MouseMode = tea.MouseModeCellMotion and hit-tests inside v.OnMouse using the compositor built in View."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Uses no v1 program options like tea.WithMouseCellMotion, and explicitly states Z is not added to the parent's Z."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-real-cursor-ime-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says textinput paints a fake caret and keeps the real cursor hidden, so the IME places its candidate window at the parked real cursor."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls SetVirtualCursor(false), sets v.Cursor = m.input.Cursor() in View, focuses the input, and notes Cursor() is nil while blurred."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Adds c.Y++ for the title row and explains that rows above and columns to the left must be added because Cursor() is relative to the input."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Warns that Cursor() counts runes not cells, and offers both an ansi.StringWidth correction and a one-line textarea as alternatives."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-real-cursor-ime-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States textinput draws a virtual styled-cell cursor while the real terminal cursor stays hidden, so the IME opens at the unplaced real cursor."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls SetVirtualCursor(false), Focus(), sets v.Cursor = c from m.input.Cursor() in View, and notes Cursor() is nil while blurred."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Increments c.Y and explains adding lines above and left borders/padding to X because Cursor() is relative to the input."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Warns Cursor() counts runes not cells for full-width kana/kanji, provides an ansi.StringWidth correction, and suggests textarea."
+        }
+      ]
+    },
+    {
+      "trial_id": "go76-real-cursor-ime-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the default virtual cursor is just a styled cell and the real cursor stays hidden where the last render left it, and that the IME follows the real cursor."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer calls SetVirtualCursor(false) and Focus(), notes that Cursor() is nil while blurred, and sets v.Cursor = c in View."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer adds lipgloss.Height(header) to c.Y, points to a c.X offset for borders and padding, and explains that Cursor() is relative to the input."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer warns that Cursor() counts runes rather than cells, gives a fix using ansi.StringWidth, and suggests textarea as an alternative."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-inline-exit-cursor-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States run() and init() always enter the alternate screen and uses init_with_options with Viewport::Inline(10), noting raw mode and panic hook without the alt screen."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Tells the user to lay out from frame.area(), not Rect::new(0, 0, ..), because the inline viewport starts at the cursor."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends terminal.insert_before for permanent lines and mentions the scrolling-regions feature to avoid flicker."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Explains that the last frame stays with the cursor at its end, gives println!() after restore() to keep it, and gives clear() plus set_cursor_position(origin) to erase it, because clear() restores the old cursor position."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-inline-exit-cursor-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states that run() and init() always enter the alternate screen, and it uses init_with_options with Viewport::Inline(12), commented as raw mode plus panic hook without the alternate screen."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It tells the user to draw into frame.area() rather than Rect::new(0, 0, \u2026) because the viewport starts at the cursor row."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It shows terminal.insert_before for permanent lines and mentions turning on the scrolling-regions feature to avoid clearing and redrawing the viewport."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explains that the last frame stays with the cursor at its end, and gives println!() after restore() for keeping the frame. For erasing, it uses clear() plus moving the cursor to the viewport origin, noting that clear() puts the cursor back where it was."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-inline-exit-cursor-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States run()/init() always enter the alternate screen and uses init_with_options with TerminalOptions { viewport: Viewport::Inline(10) }, noting raw mode + panic hook, no alt screen."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explicitly says draw into frame.area(), not Rect::new(0, 0, ..), because the viewport starts where the cursor was."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends terminal.insert_before for permanent lines and mentions the scrolling-regions feature to avoid clearing and redrawing the viewport."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Explains the last frame stays with the cursor at its end, recommends println!() after restore() to keep it, and erase_inline does clear() then set_cursor_position(origin) because clear() restores the old cursor position."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-popup-clear-shadow-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The main example uses `frame.area().centered(Constraint::Percentage(60), Constraint::Length(5))`; the Flex::Center layout appears only as an older-version fallback, not as hand-rolled percentage splits."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Both examples call `frame.render_widget(Clear, area)` before rendering the Paragraph into the same area."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It uses `Block::bordered()...shadow(Shadow::dark_shade()...)` and states that `Block::shadow` needs Ratatui 0.30.1 or later."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says the shadow is drawn on cells beside and below the block, outside the cleared rect, so Clear does not erase it."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-popup-clear-shadow-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Primary example uses frame.area().centered(Constraint::Percentage(60), Constraint::Length(5)); the Flex helper appears only as a fallback for older versions."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls frame.render_widget(Clear, area) before rendering the Paragraph."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Uses Block::bordered().shadow(Shadow::dark_shade()...) and labels it as Ratatui 0.30.1+."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that the shadow is drawn on cells outside `area`, which Clear doesn't touch."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-popup-clear-shadow-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The main code centers the dialog with frame.area().centered(Constraint::Percentage(60), Constraint::Length(5)); the Layout version is offered only as a fallback for older Ratatui releases."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It calls frame.render_widget(Clear, area) before rendering the Paragraph and explains that this is what fixes the bleed-through."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It uses Block::bordered().shadow(Shadow::dark_shade()...) and notes 'Block::shadow, 0.30.1+'."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says the shadow is drawn on cells beside and below the block, outside the cleared area, so it does not claim Clear covers the shadow."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-input-cursor-cells-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer calls frame.set_cursor_position inside the draw. It explains that Ratatui hides the cursor unless that call is made, and it gates the call on `focused`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer computes x as inner.x + text[..cursor].cell_width() using CellWidth (0.30.1+), and it explicitly rejects String::len() and char counts."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer states that Japanese characters are 2 terminal cells wide, and it starts from inner.x/inner.y and clamps to inner.right()-1 to keep the cursor off the border."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-input-cursor-cells-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer calls frame.set_cursor_position((x, y)) in the draw closure. It says Ratatui hides the cursor unless it is placed during that draw, and it only places it when the box is focused."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer computes x as inner.x + text[..cursor].cell_width() using ratatui::buffer::CellWidth (0.30.1+), and it explicitly rejects text.len() and chars().count()."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says most Japanese characters are 2 cells wide, starts x from the block's inner area, and clamps x to inner.right()-1 so the cursor stays off the border."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-input-cursor-cells-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer calls frame.set_cursor_position((x, inner.y)) inside `if focused`, and explains that Ratatui hides the cursor when it is not called."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "x is computed as inner.x + text[..cursor].cell_width() using ratatui::buffer::CellWidth, with unicode-width as a fallback; the answer explicitly rejects len() and chars().count()."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer states that CJK characters take 2 cells (\u691c\u7d22 = 4 cells), starts from inner.x/inner.y to avoid the border, and clamps x to inner.right()-1."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-tui-logger-crossterm-feature-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the feature isn't needed because tui-logger depends on ratatui with default features off, so the widget renders through whatever backend the app already uses."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says the crossterm and termion features only gate the bundled demo example, not the widget; it does not mention that they forward to ratatui's backend feature."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer explains that the app reads crossterm KeyEvents and passes them to the widget state as TuiWidgetEvent values, e.g. PageUp becomes PrevPageKey."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-tui-logger-crossterm-feature-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says tui-logger depends on ratatui with default features off and that the widget renders into the shared Buffer/Frame, so it works with whatever backend the app uses."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states the crossterm and termion features only gate the crate's demo example, not the widget; it does not mention forwarding to ratatui's backend feature, but the main point is made."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says event handling is the app's job: map your own key events to TuiWidgetEvent (e.g. PageUp to PrevPageKey) and pass them to TuiWidgetState::transition."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-tui-logger-crossterm-feature-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the blog's claim is wrong. It explains that tui-logger pulls in ratatui with default features off, so the widget renders through whatever backend the app already uses."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states that the crossterm/termion features only turn on the crate's demo example. It does not mention that they forward to ratatui's backend feature, but the main claim is there."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer tells the user to map their own crossterm key events to TuiWidgetEvents and pass them to the widget's state."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-search-cancel-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The decorator is `@work(thread=True, exclusive=True, group=\"search\", ...)`, and the answer explains that a new worker cancels earlier ones in the same group on the same widget."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says a thread worker can't be interrupted and keeps running after cancellation, so the function must poll `get_current_worker().is_cancelled` and return before calling `call_from_thread`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "UI updates go through `self.app.call_from_thread(self.show_rows, ...)`, and the answer notes that `call_from_thread` exists only on App."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer uses `exit_on_error=False` so a failed search doesn't quit the app, and says to handle the ERROR state in `on_worker_state_changed` on the widget that started the worker."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-search-cancel-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses @work(thread=True, exclusive=True, group=\"search\") and explains it cancels earlier workers in that group on the same widget."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States cancelling only marks the worker CANCELLED while the thread keeps running, and polls get_current_worker().is_cancelled, returning before writing to the table."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Updates the table through self.app.call_from_thread(self.show_rows, ...) rather than touching widgets from the thread."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sets exit_on_error=False and says to handle WorkerState.ERROR in on_worker_state_changed."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-search-cancel-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The decorator is `@work(thread=True, exclusive=True, group=\"search\", ...)`, and the answer says this cancels earlier workers in the same group on the same widget."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains that cancelling a thread worker only sets its state to CANCELLED while the thread keeps running, so the code polls `worker.is_cancelled` and returns before the UI update."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Table updates go through `self.app.call_from_thread(self.show_rows, ...)` rather than touching the widget from the thread."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It sets `exit_on_error=False` and says to handle the ERROR state in `on_worker_state_changed` so a failed search doesn't quit the app."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-side-by-side-panes-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says a Textual Screen stacks its children top to bottom by default, which is why the sidebar sits above #main."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It gives two fixes: Option A sets `layout: horizontal` on Screen, and Option B wraps the panes in a Horizontal container."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its table lists Vertical/Horizontal/Grid as width and height 1fr (fill the space) and VerticalGroup/HorizontalGroup/ItemGrid as height auto (shrink to content)."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It states that width rules don't change direction and that direction must be set on the parent."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-side-by-side-panes-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says a Screen uses `layout: vertical` by default, so the two Verticals yielded from App.compose stack."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It gives both fixes: Option A sets `Screen { layout: horizontal; }` and Option B wraps the panes in a `Horizontal`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its table gives Horizontal/Vertical/Grid a default height of 1fr that expands to fill, and HorizontalGroup/VerticalGroup/ItemGrid height auto that shrinks to fit content; it doesn't mention width, but the fill-versus-hug distinction is clear."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says `width` doesn't decide whether children sit side by side; the parent's layout does."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-side-by-side-panes-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the Screen uses `layout: vertical` by default, so each pane goes on its own row."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer gives both fixes: Option A sets `Screen { layout: horizontal; }` and Option B wraps the panes in a `Horizontal`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer's table lists Horizontal/Vertical/Grid as `width: 1fr; height: 1fr` and HorizontalGroup/VerticalGroup/ItemGrid as `height: auto`, sized to their content."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says width only sizes a widget and that the parent's layout decides whether children sit side by side."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-in-place-reactive-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "States Textual only notices assignment, and that append mutates the same list in place, so the setter never runs and no watcher fires or repaint happens."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls self.mutate_reactive(ItemList.items) after the append, and also offers assigning a new list as an alternative."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Declares cursor = var(0) and explains that watchers still fire but no repaint or layout happens."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Never suggests calling watch_items by hand; refresh() appears only for partial cursor repaints, not as the fix for the missing watcher."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-in-place-reactive-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Textual only notices assignment, and that append and other in-place changes leave the same object, so no watcher runs and no repaint happens."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer calls self.mutate_reactive(MyWidget.items) after the append, and also offers assigning a new list as an alternative."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer uses cursor = var(0) and explains that watchers still fire without a refresh or re-layout."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer never suggests calling watch_items by hand, and it mentions refresh() only for the cursor highlight, not as the fix for the missing watcher."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-in-place-reactive-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Textual only notices assignment, and that append mutates in place, so neither watch_items nor a redraw is triggered."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer calls self.mutate_reactive(ItemList.items) after the append and also offers assigning a new list [*self.items, x] as an alternative."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer declares cursor = var(0) and explains that watchers still fire but the widget is not repainted or relaid out."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The fix offered is mutate_reactive or reassignment; refresh() only comes up for repainting the visible cursor, never as the fix for the missing watcher."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-sigterm-and-llm-stream-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses Markdown.get_stream(...), awaits stream.write(chunk) in a loop, and calls await stream.stop() in a finally block with a comment that it flushes queued fragments."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls self.query_one(VerticalScroll).anchor() and explains that this keeps the view pinned to the bottom."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Uses asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, lambda: self.exit(return_code=143)) behind a non-Windows guard, with a comment that the call raises NotImplementedError on Windows."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Explicitly advises against restoring the terminal from a signal.signal handler and relies on the normal shutdown path instead."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-sigterm-and-llm-stream-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The code calls Markdown.get_stream(...), awaits stream.write(chunk) in a loop, and awaits stream.stop() in a finally block, which the answer says flushes queued text."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer calls self.query_one(VerticalScroll).anchor() and says to anchor the scroll container, not the Markdown widget."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer registers SIGTERM via asyncio.get_running_loop().add_signal_handler to call self.exit(return_code=143), and guards it with a Windows check noting that add_signal_handler raises NotImplementedError there."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly warns against restoring the terminal from a signal.signal handler and relies on the normal exit path instead."
+        }
+      ]
+    },
+    {
+      "trial_id": "py76-textual-sigterm-and-llm-stream-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses Markdown.get_stream(markdown), awaits stream.write(chunk) in a loop, and awaits stream.stop() in a finally block to flush queued text."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Calls .anchor() on the VerticalScroll container and says it must be the scrolling container, not the Markdown widget."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Registers SIGTERM via asyncio.get_running_loop().add_signal_handler calling self.exit(return_code=143), relies on normal shutdown to restore the terminal, and guards it with a Windows check, noting NotImplementedError on Windows."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Explicitly advises against signal.signal() and against writing terminal reset codes manually, explaining the reentrancy risk."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-virtualize-long-list-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says contentOffsetY only shifts and clips already-rendered content, so Yoga lays out and Ink paints all 20,000 rows on every press."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It keeps `top` and `selected` in state and renders `entries.slice(top, top + height)` inside a Box with a numeric height."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It renders each row as `<Text wrap=\"truncate-end\">` inside a fixed-width column Box and explains that default wrapping makes long lines take several rows, overflow the box and cause selection drift."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly advises against `<Static>`, saying it suits only finalized append-only output and doesn't virtualize a selectable or filterable list."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-virtualize-long-list-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says contentOffsetY only moves and clips the content, while React, Yoga and Ink still reconcile, lay out and paint all 20,000 rows on every keypress."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer keeps `selected` in state, derives `top` from it, and renders `entries.slice(top, top + height)` inside a Box with a fixed `height`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Each row is a single `<Text wrap=\"truncate-end\">`, and the answer explains that the slice math assumes one line per entry while default wrap pushes rows out; it has no fixed-width cell Boxes, but a single-column log has no cells to wrap."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says not to fall back to `<Static>`, because it cannot scroll back, select, or filter."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-virtualize-long-list-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says contentOffsetY only moves and clips the content, while Yoga still lays out and Ink still paints all 20,000 children on every key press."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It keeps `selected` and `top` in state and renders `entries.slice(top, top + height)` inside a Box with a fixed `height`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Rows use `<Text wrap=\"truncate-end\">` because the slice assumes one terminal line per entry and default wrapping breaks the scroll math; there is no explicit fixed-width cell Box, but each row is a single full-width cell."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly says not to use `<Static>` for a list you scroll, because it never re-renders its lines."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-focus-input-routing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says every mounted useInput handler gets every keystroke unless isActive is false. It also says useFocus only records which component Tab selected and does not stop other components from receiving keys."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The list's useInput is passed {isActive: isFocused}, and isFocused comes from useFocus."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says TextInput does not use Ink's focus system and is muted with isDisabled, and the code passes isDisabled={!isFocused}."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer states outright that useFocus alone does not mute the unfocused component, and that isFocused only matters where you pass it in yourself."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-focus-input-routing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says useInput runs for every key in every mounted component unless isActive is false, and that useFocus only tracks Tab selection without stopping handlers."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The list's useInput is passed {isActive: isFocused}, where isFocused comes from useFocus."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says @inkjs/ui TextInput doesn't connect to useFocus and listens to every key unless isDisabled is set, and it passes isDisabled={!isFocused}."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly says useFocus alone doesn't stop any keyboard handler from running."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-focus-input-routing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says every mounted useInput handler gets every keypress, and that useFocus only records which component Tab selected without muting other handlers."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The list's useInput is passed {isActive: isFocused} from useFocus, and mode flags are mentioned for dialogs."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says @inkjs/ui TextInput doesn't connect to Ink's focus system and needs isDisabled, then passes isDisabled={!isFocused}."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly says calling useFocus around the input changes nothing, and that useFocus alone doesn't route keys."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-ctrl-c-cancel-then-quit-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Explains that execSync blocks the event loop, which freezes redraws and queues keypresses, and replaces it with execFile using an AbortController signal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Passes exitOnCtrlC: false to render and explains that the default makes Ink exit before useInput sees the key."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The useInput handler checks key.ctrl && input === 'c', aborts while the build is running, and calls exit() on the next press."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "States that the hook must stay mounted and active, because with no active input hook raw mode turns off and Ctrl+C becomes SIGINT."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Sets process.exitCode to 130 when quitting after a cancel and explains why."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-ctrl-c-cancel-then-quit-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Explains that execSync blocks the single loop Ink uses for frames, timers and keys, so the spinner freezes and keypresses queue; replaces it with execFile/spawn passing an AbortSignal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Passes exitOnCtrlC: false to render and explains that the default makes Ink exit before the useInput handler runs."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "useInput checks key.ctrl && input === 'c', calls abort() while running, and calls exit() on the next press."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says to keep the useInput hook active the whole time because with no active hook raw mode turns off and Ctrl+C becomes SIGINT; the code's hook is not gated by isActive."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Sets process.exitCode = 130 before calling exit() on the quitting press and explains why."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink-ctrl-c-cancel-then-quit-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that execSync holds the single event loop, which freezes frames and queues keypresses. It replaces execSync with async execFile using an AbortSignal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer passes exitOnCtrlC: false to render and says Ink's default exits before useInput sees the key."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The useInput handler checks key.ctrl and input 'c', aborts while the build is running, and calls exit() afterward."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to keep the hook always active, because with no active input hook raw mode turns off and Ctrl+C becomes SIGINT."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer sets process.exitCode to 130 for an interrupted run and explains why that exit code matters."
+        }
+      ]
+    },
+    {
+      "trial_id": "commander-async-action-ink-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says parse() is synchronous and does not await the action's Promise, which causes the unhandled rejection and lets code after parse() run early."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The fix it gives is `await program.parseAsync()`, with a .catch fallback for entry files without top-level await."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says the `await app.waitUntilExit()` inside the action is correct and keeps it in the fixed code."
+        }
+      ]
+    },
+    {
+      "trial_id": "commander-async-action-ink-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that parse() returns without waiting for the action's promise. As a result, the rejection goes unhandled and code placed after parse() runs early."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The fix uses await program.parseAsync(), and the rule of thumb says to use it whenever any action is async."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer keeps await app.waitUntilExit() inside the action and calls it the right pattern."
+        }
+      ]
+    },
+    {
+      "trial_id": "commander-async-action-ink-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says parse() is synchronous and ignores the action's Promise, so rejections go unhandled and code after parse() runs while Ink is still rendering."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The fix it gives is `await program.parseAsync()`, and it cites the guidance to use it whenever an action is async."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Its notes say to keep `await app.waitUntilExit()` inside the action so the action doesn't finish as soon as Ink mounts."
+        }
+      ]
+    }
+  ]
+}

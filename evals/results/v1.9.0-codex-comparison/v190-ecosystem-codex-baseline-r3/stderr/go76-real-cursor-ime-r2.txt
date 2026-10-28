@@ -1,0 +1,76 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0_f5oyv9
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e00-9ca2-7e70-b321-4ec36c8f022a
+--------
+user
+Users typing Japanese with an IME in my Bubble Tea v2 textinput say the candidate window pops up at the bottom-left of the screen instead of next to the text. How do I fix it?
+
+codex
+I’ll check how Bubble Tea v2 positions the IME cursor and how that connects to `textinput`.
+
+exec
+/bin/zsh -lc 'ls -la' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0_f5oyv9
+ succeeded in 0ms:
+total 0
+drwx------@    2 gfargo  staff      64 Oct 27 11:35 .
+drwx------@ 5930 gfargo  staff  189760 Oct 27 11:35 ..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L -s https://raw.githubusercontent.com/charmbracelet/bubbles/main/textinput/textinput.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0_f5oyv9
+ exited 6 in 70ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+Use a **real terminal cursor** and pass its position through your top-level `tea.View`. The IME anchors its candidate window to that cursor; a virtual cursor is only painted text.
+
+With current Bubbles v2:
+
+```go
+import (
+    "charm.land/bubbles/v2/textinput"
+    tea "charm.land/bubbletea/v2"
+)
+
+// During model construction:
+input := textinput.New()
+input.SetVirtualCursor(false)
+// Ensure the input is focused; return its Focus() command as usual.
+```
+
+Then expose its cursor on every render:
+
+```go
+func (m model) View() tea.View {
+    // The input starts at column 2, row 1.
+    v := tea.NewView("Name:\n  " + m.input.View())
+
+    if c := m.input.Cursor(); c != nil {
+        c.Position.X += 2
+        c.Position.Y += 1
+        v.Cursor = c
+    }
+
+    return v
+}
+```
+
+The offsets must match the input’s actual location, including surrounding borders, padding, and content above it. Use terminal **cell widths**, not byte lengths, when calculating horizontal offsets. `input.Cursor()` supplies the position within the widget. citeturn603580search2
+
+On older v2 prereleases, use `input.VirtualCursor = false` instead of the setter. Returning only the rendered input string without assigning `v.Cursor` leaves the IME anchor misplaced. citeturn603580search3turn380975view1
+tokens used
+27,257

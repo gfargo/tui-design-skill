@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.9.0 content-and-structure regressions (#73 so far: layout sketches at the floor size, the States section, concrete defaults, the clutter-audit example, palette and `/` guidance). Later v1.9.0 issues add cases here. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-26): rubric-only, no run is recorded under evals/results/.",
+  "notes": "Focused v1.9.0 content-and-structure regressions (#73 so far: layout sketches at the floor size, the States section, concrete defaults, the clutter-audit example, palette and `/` guidance). Later v1.9.0 issues add cases here. Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956.",
   "evals": [
     {
       "id": "floor-sketch-layout",

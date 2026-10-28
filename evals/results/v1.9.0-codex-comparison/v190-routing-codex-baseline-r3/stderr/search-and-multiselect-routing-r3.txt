@@ -1,0 +1,30 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-y9m6smgy
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17f87-e354-7bf2-8897-9f0c41b3d76d
+--------
+user
+In my list view, `/` should do what, and how should multi-select work if the list also has a type-to-filter box?
+
+codex
+`/` should focus the filter box from the list. Once the box has focus, typing—including spaces—edits the query. Show a hint such as **`/ Filter`**.
+
+Keep filtering and selection separate:
+
+- **↑/↓:** move the active row.
+- **Space:** toggle selection when the list has focus.
+- **Shift+↑/↓:** extend a selection range across visible rows.
+- **Tab:** move between the filter and list; preserve the query and selections.
+- **Esc:** return from the filter to the list without clearing the query. Provide an explicit clear-filter control.
+
+Selections should survive filtering. Show **“5 selected · 2 hidden by filter”** so bulk actions have a predictable scope. “Select all” should select the filtered results, and its label should say so.
+
+The key rule: **Space types in the filter; Space selects in the list.** Make keyboard focus visually obvious.
+tokens used
+659

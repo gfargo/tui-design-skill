@@ -1,0 +1,1 @@
+Design the footer hint bar for my file-manager TUI. It has about eight actions. Show what it looks like at 80 columns and at 40.

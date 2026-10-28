@@ -1,0 +1,1 @@
+My table has a status column with ⚠️ and ✅ and the columns misalign in some terminals. Why, and what do I do?

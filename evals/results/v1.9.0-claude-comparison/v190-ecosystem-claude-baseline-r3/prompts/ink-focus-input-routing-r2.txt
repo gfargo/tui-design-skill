@@ -1,0 +1,1 @@
+In my Ink 8 app a file list and a search box (@inkjs/ui TextInput) share the screen. I used useFocus in both so Tab switches between them, but typing in the search box also moves the list selection and arrow keys in the list edit the search text. Why, and how do I fix it?

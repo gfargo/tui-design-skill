@@ -1,0 +1,1 @@
+This feels busy. Each row of my test list looks like `> [PASS] (ok) build 2.1s`, and the whole list is inside two nested bordered boxes. How do I clean it up?

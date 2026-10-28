@@ -1,0 +1,1 @@
+I built a Ratatui file picker that runs inline under the shell prompt. I start it with `ratatui::run(...)` but it takes over the whole screen, and when I switched to a hand-built terminal the shell prompt printed on the last line of my UI after I quit. How do I run it inline and exit cleanly?

@@ -1,0 +1,50 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-57ya78qe
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e07-2695-7d52-b0af-cfd043a6afd4
+--------
+user
+My Textual 8 app runs a search in a thread worker on every keystroke (`@work(thread=True)`). Old searches keep running and their rows flicker into the table after a newer search has started. How do I make a new search replace the old one?
+
+codex
+Use `exclusive=True` to cancel the previous worker in the same group. **Thread cancellation is cooperative**: the old thread must check `worker.is_cancelled` and stop publishing results.
+
+```python
+from textual import work
+from textual.worker import Worker, get_current_worker
+
+@work(thread=True, exclusive=True, group="search")
+def search(self, query: str) -> None:
+    worker = get_current_worker()
+    rows = []
+
+    for result in run_search(query):
+        if worker.is_cancelled:
+            return
+        rows.append(result)
+
+    if not worker.is_cancelled:
+        self.call_from_thread(self.show_results, worker, rows)
+
+def show_results(self, worker: Worker, rows: list) -> None:
+    # Check again on the UI thread: cancellation may have happened
+    # while this callback was waiting to run.
+    if worker.is_cancelled:
+        return
+
+    table = self.query_one(DataTable)
+    table.clear()
+    table.add_rows(rows)
+```
+
+Call `self.search(event.value)` from your input change handler.
+
+The explicit group keeps cancellation scoped to searches. `exclusive=True` marks older searches as cancelled; it cannot forcibly interrupt a running thread or a blocking search call. Those may finish in the background, but the cancellation checks prevent their stale rows from reaching the table. Always update Textual widgets through `call_from_thread` when working in a thread.
+tokens used
+2,911

@@ -1,0 +1,1 @@
+My Textual 8 app runs a search in a thread worker on every keystroke (`@work(thread=True)`). Old searches keep running and their rows flicker into the table after a newer search has started. How do I make a new search replace the old one?

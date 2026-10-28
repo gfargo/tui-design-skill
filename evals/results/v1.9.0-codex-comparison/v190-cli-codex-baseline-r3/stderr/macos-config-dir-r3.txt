@@ -1,0 +1,39 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-gbusoq73
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e17-6e84-7f12-ae05-e8edf266883f
+--------
+user
+I'm using Go's os.UserConfigDir for my CLI's config and a macOS user set XDG_CONFIG_HOME but my tool ignores it. Why?
+
+codex
+`os.UserConfigDir()` follows **platform-specific conventions**, so it doesn’t honor `XDG_CONFIG_HOME` on macOS.
+
+Its behavior is:
+
+| Platform | Config directory |
+|---|---|
+| macOS | `$HOME/Library/Application Support` |
+| Linux and most other Unix systems | `$XDG_CONFIG_HOME`, falling back to `$HOME/.config` |
+| Windows | `%AppData%` |
+
+If you want your CLI to honor `XDG_CONFIG_HOME` on macOS, implement that precedence yourself:
+
+```go
+func configDir() (string, error) {
+    if dir := os.Getenv("XDG_CONFIG_HOME"); dir != "" && filepath.IsAbs(dir) {
+        return dir, nil
+    }
+    return os.UserConfigDir()
+}
+```
+
+The absolute-path check follows the XDG specification, which says relative values should be ignored. Then append your app’s directory with `filepath.Join(dir, "your-cli")`.
+tokens used
+2,168

@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm adding tui-logger 0.18 to my Ratatui 0.30 app. A blog post says I must enable tui-logger's `crossterm` feature or the widget won't compile with my crossterm backend. Is that right?

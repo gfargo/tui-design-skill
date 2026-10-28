@@ -1,0 +1,39 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-giyor3bq
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17f86-5ea5-79b0-ba10-968fbf277853
+--------
+user
+Shift+Enter inserts nothing different from Enter in my TUI's input field, especially inside tmux. How do I get a newline?
+
+codex
+I’ll check how the TUI handles Enter and modified keys, including any tmux-specific behavior.
+exec
+/bin/zsh -lc "pwd; rg --files -g 'AGENTS.md' -g '*.{ts,tsx,js,py,rs,go,md,json}' -g '"'!node_modules'"' -g '"'!vendor'"'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-giyor3bq
+ exited 1 in 0ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-giyor3bq
+
+codex
+Inside tmux, **Shift+Enter often arrives as plain Enter**, so your TUI can’t distinguish them.
+
+Try **Ctrl+J**: it sends a line-feed character, which some TUIs use for a newline. If it also submits, the app needs a separate newline binding.
+
+If you’re implementing the TUI:
+
+- Bind newline insertion to **Ctrl+J** or another explicit shortcut.
+- For **Shift+Enter**, enable an extended keyboard protocol supported by your terminal, tmux, and TUI library.
+- On recent tmux versions, this setting can help:
+  ```tmux
+  set -s extended-keys on
+  ```
+  It works only when the terminal and application also support extended keys.
+
+Which TUI or input library are you using? The exact newline shortcut and configuration depend on it.
+tokens used
+3,420

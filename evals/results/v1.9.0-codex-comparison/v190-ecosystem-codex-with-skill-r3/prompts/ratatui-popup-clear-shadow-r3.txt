@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Ratatui confirm dialog is a bordered Paragraph rendered over the main view, but the text underneath shows through the blank parts of the dialog. How do I center it and fix that, and can I give it a drop shadow?

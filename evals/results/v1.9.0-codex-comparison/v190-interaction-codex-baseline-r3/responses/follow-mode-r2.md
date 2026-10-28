@@ -1,0 +1,9 @@
+Auto-scroll should follow the user’s position: **follow new logs while they’re at the bottom; pause when they scroll up.**
+
+- **Start in follow mode.** Keep the newest entry visible as logs arrive.
+- **Pause on upward navigation.** Scrolling, Page Up, or searching older entries should hold the viewport steady while new logs accumulate.
+- **Keep the reading position stable.** Anchor to a log entry, so incoming lines or buffer eviction don’t silently shift what the user is reading.
+- **Show paused status.** A footer like `Follow paused · 128 new entries · End to resume` makes the behavior clear without covering the logs.
+- **Resume at the bottom.** Scrolling back to the latest entry or pressing `End` should restore follow mode. New arrivals alone should never resume it.
+
+If old entries expire from the buffer, preserve the nearest available position and show a brief notice. Avoid animated scrolling—it makes fast logs harder to read.

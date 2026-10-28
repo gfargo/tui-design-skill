@@ -1,0 +1,41 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-urck9leu
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e08-86b0-7011-b6b1-dd5ecb45f714
+--------
+user
+In Textual I have `items: reactive[list[str]] = reactive(list)` and call `self.items.append(x)`, but my `watch_items` never fires and the widget does not repaint. I also have a `cursor` index that changes constantly and I do not want it to repaint the widget. What should I do?
+
+codex
+Textual detects **assignment** to a reactive attribute, not mutations inside a list. Replace the list to trigger `watch_items` and the default repaint:
+
+```python
+from textual.reactive import reactive, var
+
+class MyWidget(Widget):
+    items: reactive[list[str]] = reactive(list)
+    cursor: var[int] = var(0)
+
+    def add_item(self, x: str) -> None:
+        self.items = [*self.items, x]
+
+    def watch_items(self, items: list[str]) -> None:
+        ...
+```
+
+If you need to mutate the list in place, explicitly notify Textual afterward:
+
+```python
+self.items.append(x)
+self.mutate_reactive(MyWidget.items)
+```
+
+Use `var(0)` for `cursor`: it supports reactive watchers but doesn’t automatically repaint or trigger layout. Alternatively, use `reactive(0, repaint=False)`.
+tokens used
+2,781

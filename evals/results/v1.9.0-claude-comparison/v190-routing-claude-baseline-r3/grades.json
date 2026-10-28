@@ -1,0 +1,300 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-routing-claude-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "tmux-flicker-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends wrapping frames in mode 2026 but says to send it unconditionally and never mentions detecting support with DECRQM."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It mentions one write per frame, sending changed cells, and hiding the cursor, but only says 'recent tmux' and older releases without naming version 3.7."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Nothing in the answer says the end sequence must always be sent, including on error paths."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Frame-rate limiting appears only as a minor extra alongside diffing, single writes, and synchronized output."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-flicker-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends wrapping each frame in mode 2026 but never mentions detecting support with DECRQM; instead it says it is safe to always send the codes."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says tmux supports sync from 3.4, not 3.7. It covers single writes and diffing but never mentions hiding the cursor while drawing."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer never says the end sequence must always be sent, including on error paths."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Frame-rate limiting appears as item 5 among several fixes. Clearing, diffing, single writes and sync output come first."
+        }
+      ]
+    },
+    {
+      "trial_id": "tmux-flicker-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer wraps frames in \\x1b[?2026h/l but never mentions detecting support with DECRQM."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It covers one write per frame, sending only changed cells and hiding the cursor, but says only 'recent tmux versions' without naming 3.7."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It never says the end sequence must be sent on error paths too."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Rate capping is item 6 of seven fixes; diffing, single writes and sync output are ranked as more important."
+        }
+      ]
+    },
+    {
+      "trial_id": "shift-enter-missing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Shift+Enter and Enter both send `\\r` in a classic terminal. It explains that the difference only arrives via the kitty/CSI u protocol or modifyOtherKeys, which the app must request and the outer terminal must support (with a per-terminal table)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says tmux drops the modifier and gives `set -s extended-keys on` plus the terminal-features extkeys line. That clearly implies the option is not on by default, though the answer never says 'off by default' outright."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It recommends Alt+Enter and Ctrl+J as fallbacks, but never says to tell users which key inserts a newline. The only docs advice is about the tmux config lines."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It tells the developer to accept Ctrl+J and Alt+Enter 'anyway' because they work everywhere without setup. Shift+Enter is added on top as an enhancement."
+        }
+      ]
+    },
+    {
+      "trial_id": "shift-enter-missing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Explains that terminals send the same `\\r` for Enter and Shift+Enter by default, and that Shift+Enter only gets its own sequence when kitty keyboard protocol or modifyOtherKeys is enabled 'when the terminal supports them' (it notes Terminal.app does not)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Gives `set -s extended-keys on` for tmux 3.2+ and says tmux won't pass Shift+Enter through without it, which conveys that the option is off by default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends always accepting Ctrl+J and Alt+Enter, and showing a hint such as 'Enter send \u00b7 Ctrl+J / Alt+Enter newline' in the input area."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Puts the keys that work in every terminal first ('regardless of anything else') and treats Shift+Enter via extended modes as an enhancement used only when supported."
+        }
+      ]
+    },
+    {
+      "trial_id": "shift-enter-missing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says Enter and Shift+Enter both send \\r in the legacy encoding and become distinct only via the kitty keyboard protocol or xterm modifyOtherKeys, which the outer terminal must support (lists which terminals do and don't)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says tmux 'needs extra config' and gives `set -s extended-keys on` plus extkeys terminal-features, which implies the option is off by default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends Ctrl+J and Alt+Enter as fallbacks and says to show a hint such as 'Ctrl+J / Alt+Enter for newline' in the input area."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says to support the fallback keys even when extended reporting is enabled, keeping Ctrl+J and Alt+Enter, which work in the legacy encoding, alongside Shift+Enter."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-and-unicode-routing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The spinner advice covers frame widths, a fixed slot, and cursor hiding, but it never mentions delaying the spinner, showing a static line in plain/non-TTY mode, or starting status messages with a symbol or label."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The width table separates 1-cell, 2-cell, and 0-cell content (CJK and emoji at 2), and the answer says to measure by grapheme cluster (UAX #29) before summing widths."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It lists East Asian Ambiguous characters that become 2 cells under ambiguous=wide, tells the reader to avoid \u25d0\u25cf\u2605 in favour of ASCII or Braille spinners, and suggests `...` instead of `\u2026`."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-and-unicode-routing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The spinner advice covers fixed-width frames, throttling and disabling off-TTY, but never mentions delaying the spinner, showing a static line in plain mode, or leading messages with a symbol or label."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains that CJK and emoji take 2 cells versus 1 for ASCII, and says to work in grapheme clusters using width libraries such as uniseg and unicode-segmentation."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names East Asian Ambiguous characters such as \u25cf, \u25d0 and \u2026, and recommends unambiguous glyphs like 1-cell Braille spinner frames instead of ambiguous or emoji ones."
+        }
+      ]
+    },
+    {
+      "trial_id": "status-and-unicode-routing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "Spinner guidance covers frame width, fixed slot, and redraw mechanics. It does not mention delaying the spinner, a static line in plain/non-TTY mode, or leading status messages with a symbol or label."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Explains that CJK and emoji take 2 cells and combining marks take 0. Recommends grapheme-cluster segmentation plus width libraries (string-width, unicode-segmentation, uniseg)."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Has a section on 'ambiguous width' characters (\u2500, \u2502, \u2026, \u25cf, \u2192). Suggests plain ASCII borders and non-VS16 narrow symbols (\u2713, \u2717) as fallbacks."
+        }
+      ]
+    },
+    {
+      "trial_id": "search-and-multiselect-routing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer covers `/` focusing the filter for lists and names vim/less/man, but never says that `/` means search in documents and logs as a separate behavior."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The table gives Space to toggle in normal mode and Tab in filter mode because Space is text there, following fzf."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Esc clears the filter, but the status line shows only selected and hidden-selected counts, not the number of matches."
+        }
+      ]
+    },
+    {
+      "trial_id": "search-and-multiselect-routing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says `/` should filter in this list and mentions search with n/N only as an alternative. It never says `/` searches in documents and logs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Space toggles selection in list mode and Tab toggles in filter mode, because there Space is typed as a character."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer shows a match count in the filter indicator (`filter: foo  (12/340)`) and says Esc clears the applied filter in list mode."
+        }
+      ]
+    },
+    {
+      "trial_id": "search-and-multiselect-routing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer makes `/` filter the list and says to pick filter or search, but it never says `/` should search within documents or logs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says Space toggles selection only when the list has focus, and that Tab/Shift-Tab toggle selection in an fzf-style picker where the filter box always has focus."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It shows the match count in the header (`filter: foo (12/240)`) and says Esc clears the query or the active filter."
+        }
+      ]
+    }
+  ]
+}

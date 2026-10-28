@@ -1,0 +1,1 @@
+In Textual I have `items: reactive[list[str]] = reactive(list)` and call `self.items.append(x)`, but my `watch_items` never fires and the widget does not repaint. I also have a `cursor` index that changes constantly and I do not want it to repaint the widget. What should I do?

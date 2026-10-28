@@ -1,0 +1,73 @@
+OpenAI Codex v0.164.0-alpha.11.1
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-543hlze2
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a17e01-5636-7d21-8730-695ba7766c82
+--------
+user
+Users typing Japanese with an IME in my Bubble Tea v2 textinput say the candidate window pops up at the bottom-left of the screen instead of next to the text. How do I fix it?
+
+codex
+I’ll check how Bubble Tea v2 exposes the cursor position for IME placement.
+exec
+/bin/zsh -lc 'ls -la' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-543hlze2
+ succeeded in 0ms:
+total 0
+drwx------@    2 gfargo  staff      64 Oct 27 11:36 .
+drwx------@ 5933 gfargo  staff  189856 Oct 27 11:36 ..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/charmbracelet/bubbles/main/textinput/textinput.go' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-543hlze2
+ exited 6 in 0ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls /Users/gfargo/go/pkg/mod/github.com/charmbracelet' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-543hlze2
+ succeeded in 0ms:
+colorprofile@v0.4.3
+ultraviolet@v0.0.0-20261008173134-6b8d4baf91b4
+x
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+The IME anchors its candidate window to the **terminal’s real cursor**. A virtual cursor drawn by `textinput` doesn’t move that cursor, so the window appears in the wrong place.
+
+Disable the virtual cursor and pass the input’s cursor through your Bubble Tea v2 view:
+
+```go
+// When initializing the input:
+m.input.SetVirtualCursor(false)
+m.input.Focus()
+
+func (m model) View() tea.View {
+    v := tea.NewView(m.input.View())
+    v.Cursor = m.input.Cursor()
+    return v
+}
+```
+
+If the input is inside a larger layout, offset its cursor to match its rendered position:
+
+```go
+func (m model) View() tea.View {
+    v := tea.NewView("Name:\n" + m.input.View())
+
+    if c := m.input.Cursor(); c != nil {
+        c.Y += 1 // One line above the input.
+        v.Cursor = c
+    }
+    return v
+}
+```
+
+Include any surrounding padding, borders, or preceding content in those offsets. Use terminal **cell coordinates**, not byte counts—especially for Japanese text. The input’s `Cursor()` handles its internal text positioning; you supply the layout offset.
+tokens used
+18,351

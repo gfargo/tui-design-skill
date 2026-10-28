@@ -1,0 +1,1 @@
+How should my TUI show diffs on both a 100-column and a 160-column terminal?

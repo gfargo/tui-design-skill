@@ -4,6 +4,10 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-10-27
+
+Content and structure release for the October 2026 audit roadmap: a trimmed reference set with room for new guidance, a separate terminal-protocols reference, wireframes and a States section, interaction and CLI defaults, gaps filled in all four ecosystem references, routing rows and a pointer check, and the first recorded evidence for the new content on Claude Code and Codex.
+
 ### Added
 - **Layout wireframes and States ([#73](https://github.com/gfargo/tui-design-skill/issues/73)):** `visual-patterns.md` now shows the design instead of only describing it.
   - *The seven canonical layouts* is a decision table (use when, avoid when, 60-column fallback, exemplars) plus an ASCII thumbnail of each layout wide and at its 60-column fallback. The long per-layout prose became short notes.
@@ -51,6 +55,11 @@ All notable changes to the `tui-design` skill are documented here. The format is
   - **Visual patterns:** *Visual hierarchy* is a subsection of *Typography*, the border, density, theming, and Nerd Fonts lists are shorter, and the focus rule points to `interaction-patterns.md` → *Focus indicators* instead of repeating it.
   - **CLI basics:** the environment-variable table is one sentence, and the final checklist is ten review questions that point to the owning sections.
   - **Ecosystems:** TypeScript has one runtime-floors table, its stack recommendations are a table, and its two "Pitfalls" headings are renamed *Ink pitfalls* and *Cross-library pitfalls*. Framework subsections in the Python and TypeScript references moved from `##` to `###`. Go and Rust drop release history, production-user lists, and repeated companion-crate text.
+
+### Release engineering
+- **Pointer check:** `scripts/validate-release.sh` fails on a `file.md` → *Heading* pointer that names no heading or file, and `AGENTS.md` documents the convention (the subtitle before ` —` or ` (`).
+- **Sample checks:** 62 reference code fences are built and tested in CI (53 in 1.8.2). New samples cover Lipgloss layers and hit-testing, the first frame and spinner ticks, the real cursor, Ratatui popups, inline viewports and the input cursor, Textual Markdown streaming and SIGTERM, and Ink list virtualization and cancel-then-quit.
+- **Inventory:** `scripts/reference-inventory.json` tracks the new version-sensitive claims and source links for the protocols, CLI, and ecosystem additions.
 
 ### Evaluation
 - **v1.9.0 evidence round:** `evals/results/v1.9.0-claude-comparison/` and `v1.9.0-codex-comparison/` record baseline and with-skill runs of the five `v190` rubric sets (47 cases) on Claude Code (`claude-opus-5-5`) and the Codex CLI (`gpt-6.1-sol`, low effort), three repetitions per case and condition, all at one commit and one skill hash, with a report for each host. With the skill, Claude Code went from 67.0% to 98.1% of assertions and Codex from 55.3% to 91.2%. No case scored lower with the skill, and every paired repetition favored it on both hosts. The sets check what the release added, so the gap measures that content, not design or build quality (tracked in #79); each report lists the assertions the skill still missed. Three Codex jobs were rerun in full after a usage limit and the failed attempts were not committed.
@@ -462,7 +471,8 @@ Freshness and accuracy pass on the ecosystem references. No structural changes; 
 
 Initial release. Universal TUI/CLI design principles in `SKILL.md` routing to eight reference files covering the Go, Rust, Python, and TypeScript ecosystems plus CLI basics, visual patterns, interaction patterns, and exemplar apps.
 
-[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.8.2...HEAD
+[Unreleased]: https://github.com/gfargo/tui-design-skill/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/gfargo/tui-design-skill/compare/v1.8.2...v1.9.0
 [1.8.2]: https://github.com/gfargo/tui-design-skill/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/gfargo/tui-design-skill/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/gfargo/tui-design-skill/compare/v1.7.4...v1.8.0

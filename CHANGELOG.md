@@ -4,6 +4,14 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Evaluation
+- **Phase 1 of [#79](https://github.com/gfargo/tui-design-skill/issues/79):** `evals/results/v1.9.0-claude-behavior-comparison/` and `v1.9.0-codex-behavior-comparison/` record baseline and with-skill runs of five older sets that had no recorded run (`evals.json`, `v160-structural`, `tier2`, `tier3`, `v174`; 27 cases), three repetitions per case and condition, all at one commit and one skill hash, with a report for each host. Claude Code went from 77.2% to 94.4% of assertions and Codex from 63.5% to 87.7%. The design-review sets show the least: the Claude baseline already scored 92.3% on the clutter and floor reviews, and the Claude `tier2` set scored slightly lower with the skill (−1.1 pp). The biggest gap is in the v1.7.4 corrections, which test facts newer than the model. The Codex account hit its usage limit twice; every affected bundle was discarded and rerun in full, so no failed trial is committed.
+- **Grader spot-check:** a Codex re-grade of a deterministic 15% sample of trials (612 assertions across this round and the v1.9.0 round) agreed with the Claude grader on 94.1% of assertions (Cohen's kappa 0.83). Codex was the stricter grader (33 of 36 disagreements), and the skill's measured gain held under both graders. See `evals/results/v1.9.0-grader-spotcheck/`.
+- The five sets' status notes now point at these runs. Build output and outcome-based design cases remain unmeasured (phases 2 and 3 of #79).
+
+### Release engineering
+- `scripts/grader_spotcheck.py` samples recorded trials, re-grades them through the isolated Codex runner with each bundle's own grading prompt, and reports per-assertion agreement, Cohen's kappa, pass rates by answering provider and condition, and every disagreement (six tests in `tests/test_grader_spotcheck.py`).
+
 ## [1.9.0] — 2026-10-27
 
 Content and structure release for the October 2026 audit roadmap: a trimmed reference set with room for new guidance, a separate terminal-protocols reference, wireframes and a States section, interaction and CLI defaults, gaps filled in all four ecosystem references, routing rows and a pointer check, and the first recorded evidence for the new content on Claude Code and Codex.

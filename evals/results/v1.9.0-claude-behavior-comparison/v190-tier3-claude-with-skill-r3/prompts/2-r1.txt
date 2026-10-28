@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I want nice icons in my Ratatui app (Nerd Font glyphs) but I'm worried about users who don't have one installed — what's the right way to handle this, and separately: my app polls a remote API every few seconds and sometimes it times out — what should the UI do?

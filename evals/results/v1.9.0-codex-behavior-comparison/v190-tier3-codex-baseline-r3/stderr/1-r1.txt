@@ -1,0 +1,31 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-31uq7uk2
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18100-449d-7b33-a224-96f71cb6f31c
+--------
+user
+My Go CLI needs an API key before it can do anything. What should happen the very first time someone runs it with no key configured — and once I have huh set up for the prompt, where should I store the key?
+
+codex
+On first run, treat the missing key as a short setup flow:
+
+1. Check for a key in an environment variable such as `MYCLI_API_KEY`, then in your saved credentials.
+2. If none exists and stdin is interactive, explain where to get a key and use a masked `huh` input to collect it. Include the signup or API-key settings URL.
+3. Validate it with a lightweight API request. Let the user retry if it’s invalid; distinguish invalid credentials from network failures.
+4. Save it after successful validation, then continue the command they originally ran.
+
+For CI, scripts, and piped input, **don’t prompt or hang**. Exit with a clear error explaining how to set `MYCLI_API_KEY` or run `mycli auth login`. Keep `--help`, `--version`, and auth commands usable without a key.
+
+**Store the key in the OS credential store**, using a Go library such as [`zalando/go-keyring`](https://github.com/zalando/go-keyring): macOS Keychain, Windows Credential Manager, or Linux Secret Service. Use a stable service name (`mycli`) and an account identifier (`default`, or a profile name).
+
+Keep ordinary settings in `os.UserConfigDir()`; avoid putting the API key in that config file by default. If the credential store is unavailable, offer an explicit file-storage fallback with a private directory (`0700`) and credentials file (`0600` on Unix). Never silently fall back to plaintext.
+
+`huh` handles collecting the secret; your auth layer should handle validation, storage, and retrieval. Add `mycli auth logout` to delete the saved credential, and never include keys in logs or error messages.
+tokens used
+2,870

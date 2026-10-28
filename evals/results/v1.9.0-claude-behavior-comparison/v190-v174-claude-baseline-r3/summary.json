@@ -1,0 +1,92 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-v174-claude-baseline-r3",
+  "created_at": "2026-10-28T03:10:40Z",
+  "run_manifest_sha256": "756b3f91b0ff3448df01c63f21ced0a8cd32e15f08cce6fdf519f4344a89b937",
+  "grades_file": "grades.json",
+  "grades_sha256": "21d3518ae2ad7c5b2c39a10905d445c4d926cc84c8aae4589fccf318089e7616",
+  "passed": 57,
+  "total": 111,
+  "pass_rate": 0.5135135135135135,
+  "by_case": [
+    {
+      "case_id": "huh-v2-embedding",
+      "case_name": "huh-v2-embedding",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "lipgloss-v2-printing",
+      "case_name": "lipgloss-v2-printing",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-textarea-crate",
+      "case_name": "ratatui-textarea-crate",
+      "passed": 0,
+      "total": 9,
+      "pass_rate": 0.0
+    },
+    {
+      "case_id": "ratatui-select-reader-ends",
+      "case_name": "ratatui-select-reader-ends",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ratatui-ctrl-c-raw-mode",
+      "case_name": "ratatui-ctrl-c-raw-mode",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "ink8-new-project",
+      "case_name": "ink8-new-project",
+      "passed": 3,
+      "total": 12,
+      "pass_rate": 0.25
+    },
+    {
+      "case_id": "cjs-require-esm",
+      "case_name": "cjs-require-esm",
+      "passed": 9,
+      "total": 9,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "typer-vendored-click",
+      "case_name": "typer-vendored-click",
+      "passed": 0,
+      "total": 9,
+      "pass_rate": 0.0
+    },
+    {
+      "case_id": "ai-chat-rendering-tradeoff",
+      "case_name": "ai-chat-rendering-tradeoff",
+      "passed": 0,
+      "total": 12,
+      "pass_rate": 0.0
+    },
+    {
+      "case_id": "gocui-new-app",
+      "case_name": "gocui-new-app",
+      "passed": 3,
+      "total": 9,
+      "pass_rate": 0.3333333333333333
+    },
+    {
+      "case_id": "textual-snapshot-pytest9",
+      "case_name": "textual-snapshot-pytest9",
+      "passed": 3,
+      "total": 9,
+      "pass_rate": 0.3333333333333333
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

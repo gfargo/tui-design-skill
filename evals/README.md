@@ -123,3 +123,16 @@ CLAUDE_BIN=/path/to/claude python3 scripts/runners/trigger_probe.py --host claud
 ```
 
 The harness records the git commit and dirty state when each run starts, so leave the worktree untouched until every run in a batch has started. Before committing bundles, check that every manifest records `"dirty": false`.
+
+## Spot-checking the grader
+
+Every committed bundle is graded blind by Claude, so a Claude grader scores Claude answers. `scripts/grader_spotcheck.py` re-grades a deterministic sample of trials with the Codex CLI (through `codex_runner.py`, using each bundle's own `grading-prompt.md`) and reports per-assertion agreement, Cohen's kappa, pass rates by answering provider and condition, and every disagreement:
+
+```bash
+CODEX_BIN=/path/to/codex python3 scripts/grader_spotcheck.py \
+  --runs evals/results/v1.9.0-claude-behavior-comparison/*/ evals/results/v1.9.0-codex-behavior-comparison/*/ \
+  --fraction 0.15 --seed 79 --jobs 3 --runner-version "codex-cli 0.164.0-alpha.11.1" \
+  --output evals/results/v1.9.0-grader-spotcheck/spotcheck.json
+```
+
+The report does not touch the bundles or their grades, and it is not a schema artifact, so `validate-evidence.sh` ignores it. The v1.9.0 spot-check is in `evals/results/v1.9.0-grader-spotcheck/`.

@@ -1,0 +1,46 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-cxu2v5h1
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f4-c2b5-73f0-b475-9caee5225cab
+--------
+user
+My Ratatui app quits on `q`. Users report that Ctrl+C does nothing. Why, and what should the key handling be?
+
+codex
+Ratatui apps typically enable **raw terminal mode**, which disables the terminal’s normal Ctrl+C → `SIGINT` behavior. Ctrl+C arrives as a key event instead, so your app must handle it explicitly.
+
+With Crossterm, match `Char('c')` plus the `CONTROL` modifier:
+
+```rust
+use crossterm::event::{
+    self, Event, KeyCode, KeyEventKind, KeyModifiers,
+};
+
+if let Event::Key(key) = event::read()? {
+    if key.kind == KeyEventKind::Press {
+        let quit = match key.code {
+            KeyCode::Char('q') => key.modifiers.is_empty(),
+            KeyCode::Char('c') => {
+                key.modifiers.contains(KeyModifiers::CONTROL)
+            }
+            _ => false,
+        };
+
+        if quit {
+            break;
+        }
+    }
+}
+```
+
+Ctrl+C is **not** `KeyCode::Char('\x03')` in Crossterm’s decoded key events. Checking `Press` also avoids acting on release events reported by some terminals.
+
+Exit through your normal loop and restore the terminal—disable raw mode and leave the alternate screen—rather than calling `process::exit()`, which skips destructors and cleanup.
+tokens used
+2,776

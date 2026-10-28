@@ -1,0 +1,47 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-s7z0vg44
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180ff-9bf8-7363-98a9-e124bc4a2a78
+--------
+user
+I'm building a Rust TUI file picker (like a specialized yazi) — when the user selects a directory and quits, I want their actual shell to `cd` into it, not just print the path. Is that possible, and if not, what's the real pattern people use for this?
+
+codex
+A normal Rust process **can’t change its parent shell’s working directory**. `std::env::set_current_dir()` changes only the picker process’s directory; that change disappears when it exits.
+
+The standard pattern is a **shell function wrapping the executable**:
+
+1. The picker returns the selected directory.
+2. The function runs `cd` inside the user’s existing shell.
+
+For Bash or Zsh:
+
+```sh
+function cdp() {
+    local selected
+    selected="$(command my-picker "$@")" || return
+    if [[ -n "$selected" ]]; then
+        builtin cd -- "$selected"
+    fi
+}
+```
+
+Your Rust program writes just the selected path to stdout:
+
+```rust
+println!("{}", selected_dir.display());
+```
+
+Render the TUI to **stderr or `/dev/tty`**, since stdout is being captured. On cancellation, return a nonzero exit status or emit no path. Quoting `"$selected"` preserves spaces, and `--` handles paths starting with `-`.
+
+**Yazi uses the same principle**, commonly through a temporary file: a shell wrapper passes `--cwd-file`, Yazi writes its final directory there, and the wrapper reads it and executes `cd`. That keeps the directory output separate from the terminal UI.
+
+So yes, you can deliver the behavior users want—but the final `cd` must run in shell integration, not in the Rust child process.
+tokens used
+856

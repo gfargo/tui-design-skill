@@ -1,0 +1,36 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-structural-claude-with-skill-r3",
+  "created_at": "2026-10-28T03:32:47Z",
+  "run_manifest_sha256": "3aea0665843a599cb8eb951257113de56940e8150c18a7ccaf5e443b25a8db49",
+  "grades_file": "grades.json",
+  "grades_sha256": "cfa3e9d28e4e6c07c61d973984b904467a1408d16e91c8dc24a5e40a1ec2a0c1",
+  "passed": 40,
+  "total": 42,
+  "pass_rate": 0.9523809523809523,
+  "by_case": [
+    {
+      "case_id": "0",
+      "case_name": "bubble-tea-cleanup-after-slimming",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "1",
+      "case_name": "kubernetes-browser-clutter-and-floor",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "2",
+      "case_name": "branch-picker-output-contract",
+      "passed": 13,
+      "total": 15,
+      "pass_rate": 0.8666666666666667
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

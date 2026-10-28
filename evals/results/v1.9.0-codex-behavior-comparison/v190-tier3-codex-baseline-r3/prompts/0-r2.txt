@@ -1,0 +1,1 @@
+I'm building a Rust TUI file picker (like a specialized yazi) — when the user selects a directory and quits, I want their actual shell to `cd` into it, not just print the path. Is that possible, and if not, what's the real pattern people use for this?

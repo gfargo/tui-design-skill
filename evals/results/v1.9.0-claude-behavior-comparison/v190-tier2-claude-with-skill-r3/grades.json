@@ -1,0 +1,570 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-tier2-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Names teatest and gives the import paths github.com/charmbracelet/x/exp/teatest (v1) and .../teatest/v2 (v2)."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Shows golden.RequireEqual on stripped frames, explains that `go test ./... -update` rewrites the goldens, and says to review the diff."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Layer 1 calls Update directly with key messages through a press helper and asserts on m.focused, calling this the cheapest and largest layer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Pins the color profile (tea.WithColorProfile(colorprofile.ASCII) or lipgloss.SetColorProfile) or strips ANSI, and uses fixed WindowSizeMsg sizes and WithInitialTermSize(80, 24)."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Sets out three layers: Update unit tests, golden-file view tests, and a teatest smoke test."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Names teatest with the import paths `github.com/charmbracelet/x/exp/teatest` for v1 and `.../teatest/v2` for v2."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Shows `golden.RequireEqual` with snapshots in `testdata/TestView/80x24.golden`, says to regenerate them with `go test ./... -update`, and says to review the diff in the PR."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Layer 1 sends key messages through the top-level `Update` and asserts on `focusedCol` in table tests, called the cheapest and main layer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Pins window sizes via `WindowSizeMsg`, strips ANSI because TERM, COLORTERM and NO_COLOR vary in CI, and says to pin the color profile if snapshots keep color."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Lays out three layers, cheapest first: Update unit tests, View golden tests, and a few teatest flows."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Step 3 names `teatest` and gives the import path `github.com/charmbracelet/x/exp/teatest` (with a `/v2` variant), which is correct."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Step 2 renders View() at fixed sizes, compares against committed `testdata/*.golden` files with `golden.RequireEqual`, and says to update them with `go test ./... -update` and review the diff."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Step 1 calls `m.Update(k)` directly through a `press` helper and asserts on `m.focused`, and calls this the layer that should hold most tests."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It forces an ASCII color profile (`lipgloss.SetColorProfile(termenv.Ascii)` on v1, `tea.WithColorProfile(colorprofile.ASCII)` on v2), sends fixed `WindowSizeMsg` sizes, and uses `WithInitialTermSize(80, 24)`."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It lays out three explicit layers (Update unit tests, golden View snapshots, one or two teatest smoke tests) and says most tests belong at the bottom layer."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Tests use `async with app.run_test(size=(80, 24)) as pilot:` inside async test functions, with `asyncio_mode = \"auto\"` configured as the equivalent of the asyncio marker."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Tests await `pilot.click(\"#submit\")` and `pilot.press(*\"Ada\")`, then call `await pilot.pause()` before asserting, and explain why the pause is needed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "A FormHarness app records `EntryForm.Submitted` messages, and the tests assert on `app.submitted`, `error.display` and `app.focused`, not only on rendered text."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "An optional section recommends pytest-textual-snapshot for SVG visual-regression snapshots as a complementary layer, though it doesn't name `snap_compare`."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The code uses async run_test, reads `Label.content` rather than `.renderable`, and does not use push_screen_wait."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses `async with app.run_test(size=(80, 24)) as pilot:` and sets `asyncio_mode = \"auto\"` in pyproject, an equivalent to marking each test."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Awaits `pilot.click(\"#submit\")` and `pilot.press(*\"Ada\")`, calls `await pilot.pause()` before assertions, and explains why."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "A harness app records `EntryForm.Submitted` messages and asserts on their `entry` payloads; it also shows `message_hook`, and checks `display` and focus state."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The gotchas section mentions `pytest-textual-snapshot`'s `snap_compare` for visual checks, with version-pinning advice."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Uses async `run_test`, `Label.content` rather than `.renderable`, and current params such as `message_hook` and `notifications`; there is no `push_screen_wait`."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Uses `async with app.run_test(size=(80, 24)) as pilot:` and sets pytest-asyncio `asyncio_mode = \"auto\"` in pyproject, while noting that @pytest.mark.asyncio is the alternative."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Tests await pilot.click and pilot.press, then call `await pilot.pause()` before asserting, and a gotcha note explains why the pause is needed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "A FormHarness app records EntryForm.Submitted messages in a list, and the tests assert `app.submitted == [Entry(...)]`, along with display, class and focus state."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "An optional section covers pytest-textual-snapshot and snap_compare as an additional visual layer, including a version-pinning caveat."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The code uses async run_test, `Label.content` (current API, not `.renderable`), and no push_screen_wait, so it contains no stale API."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says println! can't work in raw mode and the next draw paints over it, then shows tracing_subscriber writing to app.log watched with `tail -f` in a second terminal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Uses `Terminal::new(TestBackend::new(w, h))` at fixed sizes to render deterministically in the resize and snapshot tests."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Asserts the backend buffer equals a freshly rendered Buffer and uses `insta::assert_snapshot!` on the TestBackend."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Names a size kept from `Event::Resize` or cached rects as a likely cause and says to always lay out from `frame.area()`."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Loops over every width and height from the minimum up, and runs resize sequences through odd sizes like 61x24, 200x17 and 133x51."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It explains that println fails in raw mode and gets overwritten, then shows tracing-subscriber writing to app.log watched with `tail -f` in another terminal, and also mentions tui-logger."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It uses `Terminal::new(TestBackend::new(80, 24))` and fixed-size TestBackend terminals for deterministic resize-replay and snapshot tests."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It shows `insta::assert_snapshot!` on `terminal.backend()` at fixed sizes, plus row-level assertions on the rendered buffer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Its most likely cause is a stale stored size from Resize events or cached rects, and it says to compute layout only from `frame.area()` inside draw."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It runs an exhaustive loop over all widths 0..=200 and heights 0..=80, which covers odd sizes, and pins the failing size as a permanent case."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says println! breaks in raw mode and the alternate screen, then shows a tracing_subscriber file writer to app.log and `tail -f app.log` in a second terminal."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer drives the app through `TestBackend::new(80, 24)` and resizes it to explicit fixed sizes to reproduce the layout deterministically."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer asserts on cells read from `terminal.backend().buffer()` and adds `insta::assert_snapshot!` on the backend at fixed sizes."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer names a size saved from `Event::Resize` instead of `frame.area()` as the most likely cause of a bug that appears after resizes."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer sweeps every width and height in a range, uses a resize list that includes odd sizes like 81x25 and 60x17, says to add the failing size from the log, and flags odd heights as common culprits."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explains that Ink patches console.* by default via `patchConsole: true`, printing those calls above the live UI and then repainting, and it also names the `debug: true` render option."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends installing react-devtools-core, running with `DEV=true`, and opening `npx react-devtools` to inspect props and state."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It supplies a `dbg` helper that writes to a file set by DEBUG_LOG, watched with `tail -f` in a second pane, and says traces should go to a file and never stdout."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It includes an ink-testing-library example that uses render, lastFrame, frames and stdin.write with an awaited tick to isolate the bug."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It identifies a mutated reducer returning the same reference (React bails out on Object.is) as the most common cause, and also covers Static, memo and duplicate-instance causes."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says Ink patches console.* by default via patchConsole: true and prints logs above the live area before redrawing; also covers the debug option."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "React DevTools and DEV=true are never mentioned."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a file logger (appendFileSync to DEBUG_LOG) for frequent tracing in place of console.log."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Shows ink-testing-library render with lastFrame, frames, and stdin.write, though as a regression test after the fix rather than as the isolation step."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Names mutated state returning the same reference, so React skips the re-render, as the most common cause, and adds store mix-ups and memo issues."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Explains that patchConsole is on by default, intercepts console.* calls, and prints them above the live UI; also covers the debug option."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends react-devtools-core with DEV=true and npx react-devtools to inspect props and state."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Provides a file logger with tail -f as the main fix and mentions useStderr; this covers the log-file path."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Shows an ink-testing-library render with lastFrame, frames, and stdin.write, then awaiting a tick, to reproduce the bug."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Diagnoses mutation returning the same reference so React skips the render, plus wrong subscription and stale closures."
+        }
+      ]
+    },
+    {
+      "trial_id": "4-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends inline rendering below the prompt. Its reason is that the alternate screen has no scrollback and restores the old view on exit, so nothing from the session is kept."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It uses the Bubble Tea v2 API correctly: View returns tea.View via tea.NewView, the comment notes inline is the default with no v.AltScreen, and it uses tea.KeyPressMsg, tea.Interrupt and tea.ErrInterrupted."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says to erase the picker on exit and print the branch on stdout, then shows a scrollback example in which the command line and the pick both remain visible."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly cites `fzf --height 40%` as the model for capping the picker height inline."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It draws the UI on stderr via tea.WithOutput(os.Stderr) or on /dev/tty, prints only the branch on stdout, and uses `git switch $(gsw)` as the example."
+        }
+      ]
+    },
+    {
+      "trial_id": "4-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "It recommends inline rendering but explicitly denies that the alt screen erases the user's context, saying the terminal restores the prior screen, and argues for inline on other grounds."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Its Bubble Tea v2 sketch returns tea.View via tea.NewView, notes inline is the default as long as AltScreen is never set, and uses real APIs like tea.WithOutput and tea.ErrInterrupted."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It erases the picker with an empty final frame, prints the branch as one plain line on stdout so it stays in scrollback and works in `git switch \"$(pick-branch)\"`, and relies on Run() to restore the terminal."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It names the fzf `--height` / atuin pattern and caps the inline picker at about 10 rows."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It sends the picker UI to stderr or /dev/tty and the branch name alone to stdout, citing the `$(pick-branch)` command-substitution use case."
+        }
+      ]
+    },
+    {
+      "trial_id": "4-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends drawing inline below the prompt and says the alternate screen has no scrollback, so it would lose exactly the context the user wants to keep."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says inline is the default in Bubble Tea v2 and to just not set v.AltScreen = true, and cites tea.WithOutput; no invented API."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The picker erases itself via an empty final View, and the branch is printed plain to stdout after p.Run(), with a receipt line kept in scrollback."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Explicitly cites fzf --height 40% as the bounded inline model and notes that fzf's default is full screen."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Draws the UI on /dev/tty, falling back to stderr, and puts only the branch on stdout so git switch $(brp) captures no escape codes."
+        }
+      ]
+    },
+    {
+      "trial_id": "5-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It explicitly rejects OSC 8 file:// links because over SSH they open on the user's laptop where the path doesn't exist, and notes Ratatui has no native hyperlink support."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends OSC 52 for `y` and explains that the sequence travels through the TTY to the user's terminal emulator, which sets its own clipboard, so it crosses SSH."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It gives `set -g set-clipboard on` (explaining that the default 'external' blocks apps), the terminal-features clipboard line for older tmux, and a note that nested tmux needs it at each layer."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It covers varying emulator support (iTerm2 setting, GNU screen dropping OSC 52) and a local clipboard fallback via arboard, but never mentions OSC 52 payload size limits."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It calls OSC 52 write-only but never warns that clipboard read is a security-sensitive capability that terminals disable."
+        }
+      ]
+    },
+    {
+      "trial_id": "5-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Addresses OSC 8 directly: a file:// link opens on the local machine where the remote path doesn't exist, and Ratatui can't render OSC 8 cleanly (issue #1227). It therefore recommends an in-app click action that runs $EDITOR on the remote host."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends OSC 52 and explains that the local terminal emulator reads the sequence and sets the local clipboard, so the sequence passes through SSH unchanged."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Covers tmux in detail: `set -g set-clipboard on`, why the default `external` ignores app OSC 52, why passthrough isn't needed, and the Ms/terminal-features clipboard setting."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Notes that some terminals disable OSC 52 or cap it at roughly 75 KB, and keeps a local clipboard fallback via arboard when not over SSH."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Says never to request clipboard reads, because most terminals block them since a remote host could use them to steal data, and describes OSC 52 as write-only."
+        }
+      ]
+    },
+    {
+      "trial_id": "5-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Explicitly advises against OSC 8 for paths because file:// opens on the local machine, notes Ratatui lacks OSC 8 support (span width breakage), and limits OSC 8 to https URLs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends OSC 52 and explains it travels in the terminal stream so the user's local emulator sets the clipboard over SSH."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Covers tmux's default set-clipboard external behavior, load-buffer -w, and documents `set -g set-clipboard on` plus terminal-features clipboard."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Mentions best-effort delivery, blocked OSC 52 and a native arboard fallback, but never mentions OSC 52 payload size caps."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "Never discusses OSC 52 clipboard read or its security implications; the answer only covers writes."
+        }
+      ]
+    }
+  ]
+}

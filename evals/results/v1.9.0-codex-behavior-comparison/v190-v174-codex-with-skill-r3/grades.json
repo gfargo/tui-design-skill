@@ -1,0 +1,750 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-v174-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "huh-v2-embedding-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer does `updated.(*huh.Form)` before assigning to `m.form`, and its text explains why."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer returns `cmd` directly, or batches it with `tea.Quit` on completion or abort."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer wraps the form's string view as `tea.NewView(m.form.View())`, producing a tea.View instead of returning a raw string."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer batches `tea.RequestBackgroundColor` in the parent's Init and says to forward all messages, including background-color replies, to the form."
+        }
+      ]
+    },
+    {
+      "trial_id": "huh-v2-embedding-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer type-asserts `updated.(*huh.Form)` before assigning it to `m.form`, and says the assertion is needed because Update returns `huh.Model`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It returns `cmd` from form.Update, and batches it with `tea.Quit` on completion or abort."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "View wraps the form's string in `tea.NewView(m.form.View())` and notes the parent must return `tea.View`."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Init batches `tea.RequestBackgroundColor` from the parent, and Update forwards every message, explicitly including background-color replies, to the form."
+        }
+      ]
+    },
+    {
+      "trial_id": "huh-v2-embedding-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer type-asserts `updated.(*huh.Form)` and explains that `Form.Update` returns a `huh.Model`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer returns `cmd`, and batches it with `tea.Quit` on completion."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer wraps `m.form.View()` in `tea.NewView` inside a `View() tea.View`."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Init batches `tea.RequestBackgroundColor`, the answer says to forward background-color messages to the form, and it notes this lets huh choose its theme."
+        }
+      ]
+    },
+    {
+      "trial_id": "lipgloss-v2-printing-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says style.Render produces ANSI styling without detecting the output terminal, so escapes leak into pipes and remain under NO_COLOR."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends lipgloss.Println and says the print helpers handle color profile detection, downsampling, and disabling color for redirected output and NO_COLOR."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer never mentions SetColorProfile or a renderer-based approach; it recommends only the v2 print helpers."
+        }
+      ]
+    },
+    {
+      "trial_id": "lipgloss-v2-printing-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Style.Render does not detect terminal capabilities or honor NO_COLOR, and that fmt.Println writes the styled ANSI text unchanged into pipes."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends lipgloss.Println and says it detects the output color profile, including non-TTY output and NO_COLOR, and downsamples colors."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer never mentions SetColorProfile or a renderer-based fix; it only recommends the v2 lipgloss.Println helper."
+        }
+      ]
+    },
+    {
+      "trial_id": "lipgloss-v2-printing-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says style.Render produces ANSI styling without checking the output terminal or NO_COLOR, so escapes leak into pipes and files."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends lipgloss.Println and says the printing helpers detect the color profile and downsample, including for non-TTY output and NO_COLOR."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer never mentions SetColorProfile or a renderer-based fix."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-textarea-crate-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends ratatui-textarea as the Ratatui organization's maintained fork, linking ratatui/ratatui-textarea."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States tui-textarea is unmaintained and its last release 0.7 targets Ratatui 0.29, so it should be avoided for this app."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Never mentions crossterm version duplication or importing crossterm via ratatui::crossterm."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-textarea-crate-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends ratatui-textarea as the Ratatui organization's maintained fork, with the repo link under ratatui/."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States the original tui-textarea is unmaintained and its last release, 0.7, requires Ratatui 0.29, and tells the reader to avoid it."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Never mentions crossterm version duplication or importing crossterm via ratatui::crossterm."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-textarea-crate-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends ratatui-textarea and describes it as the Ratatui organization's maintained fork."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States the original tui-textarea is unmaintained and its last release 0.7 targets Ratatui 0.29, so it should be avoided."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "Never mentions crossterm version duplication or importing crossterm via ratatui::crossterm."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-select-reader-ends-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says recv() returns None, which fails the Some(event) pattern, so select! disables that branch while ticks continue without keyboard input."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says the user may be unable to quit but never explains that raw mode delivers Ctrl+C as a key event rather than SIGINT."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The fix matches on recv()'s result and breaks out of the loop on None."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer explicitly says to ensure that exiting this loop reaches terminal restoration."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-select-reader-ends-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says `recv()` returns None, the `Some(event)` pattern rejects it and disables the branch, and the timer keeps the loop running without input."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer says users may be unable to quit but never explains that Ctrl+C arrives as a key event in raw mode rather than as SIGINT."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code matches `event = rx.recv()` and breaks on `None` with an 'input reader ended' comment."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to route the loop exit through terminal cleanup."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-select-reader-ends-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says recv() returns None, the Some(event) pattern fails, select! disables that branch, and the tick branch keeps the loop running without input."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer states that in raw mode Ctrl+C arrives as a key event, so with the reader dead the user cannot quit that way."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code matches the None case explicitly and breaks out of the loop."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says to route this exit through terminal cleanup, which means restoring the terminal on that path."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-ctrl-c-raw-mode-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says raw mode stops the terminal from converting Ctrl+C into SIGINT, so it arrives as a Char('c') key event with CONTROL. That is the ISIG behavior, though the flag is not named."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The code matches KeyCode::Char('c') with KeyModifiers::CONTROL to set should_quit alongside 'q', and the policy table also covers Esc."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The handler wraps the match in `if key.kind == KeyEventKind::Press`, so release and repeat events are ignored."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-ctrl-c-raw-mode-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says raw mode stops the terminal from turning Ctrl+C into SIGINT, so it arrives as KeyCode::Char('c') with CONTROL; it does not name ISIG but describes the same mechanism."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The match arm handles KeyCode::Char('c') with KeyModifiers::CONTROL as cancel-or-quit, alongside q and Esc arms."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The code wraps all handling in `if key.kind == KeyEventKind::Press`, so release events are ignored."
+        }
+      ]
+    },
+    {
+      "trial_id": "ratatui-ctrl-c-raw-mode-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says raw mode disables the terminal driver's automatic SIGINT behavior, so Ctrl+C arrives as a key event; it doesn't name ISIG, but the point is the same."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The code matches KeyCode::Char('c') with KeyModifiers::CONTROL to quit alongside 'q', and the policy section covers Esc."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The handler is wrapped in `if key.kind == KeyEventKind::Press`, so release events are ignored."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink8-new-project-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends Ink 8.x and its table lists React 19.3 and Node 22 as the minimums for Ink 8."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends Node 24, keeps Node 22 as an option, and says to avoid Node 20 because it is end-of-life."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says Ink 8 types useStdout().stdout as a generic stream so .columns is not in its typed API, and it recommends useWindowSize() with an example."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer names no other Ink 8 breaking change, such as the minWidth/maxWidth or useInput changes."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink8-new-project-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer targets Ink 8 and lists React 19.3 and Node 22 as the Ink 8 minimums in its table."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends Node 24 LTS (minimum 22) and says Node 20 is end-of-life, offering Ink 6 only as a compatibility bridge rather than recommending Node 20."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says Ink 8 types useStdout().stdout as a generic stream so .columns is no longer in its type, and recommends useWindowSize() with an example."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The answer mentions no other Ink 8 breaking change, such as number-only minWidth/maxWidth or useInput dropping unrecognized sequences."
+        }
+      ]
+    },
+    {
+      "trial_id": "ink8-new-project-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Names Ink 8.x with React \u226519.3 and states Ink 8's minimum Node version is 22."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends Node 24 LTS and notes Node 20 is end-of-life, so it does not recommend Node 20."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says stdout.columns is no longer typed because Ink 8's output stream is generic, and recommends useWindowSize() with an example."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Mentions no other Ink 8 breaking change, such as the minWidth/maxWidth or useInput changes."
+        }
+      ]
+    },
+    {
+      "trial_id": "cjs-require-esm-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer sets Node 22.12+ as the floor, says require(ESM) works when the dependency graph is synchronous, and shows require('chalk').default, so chalk needs no old pin; it does not mention 20.19 or commander."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says require('ink') fails because Yoga uses top-level await, which produces ERR_REQUIRE_ASYNC_MODULE."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends await import('ink') at the UI entry point and includes a CommonJS code example."
+        }
+      ]
+    },
+    {
+      "trial_id": "cjs-require-esm-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Node 22.12+ can require() synchronous ESM, so modern Chalk works from CommonJS without pinning old versions. It omits Node 20.19 and commander, but the asker is on Node 22."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Ink depends on Yoga's top-level await, so require('ink') throws ERR_REQUIRE_ASYNC_MODULE."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends dynamic import inside the CommonJS entry point and shows `await import('ink')` in code."
+        }
+      ]
+    },
+    {
+      "trial_id": "cjs-require-esm-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Node 22.12+ can require() synchronous ESM, so Chalk loads without pinning Chalk 4; it omits 20.19 and commander, but the main point is clear."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Ink loads Yoga, which uses top-level await, so require('ink') throws ERR_REQUIRE_ASYNC_MODULE."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer recommends `await import('ink')` inside the CommonJS entry point and shows working code; a bundler is not mentioned, but the assertion accepts either."
+        }
+      ]
+    },
+    {
+      "trial_id": "typer-vendored-click-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states Typer 0.26+ vendors Click, so extracting a Click command and attaching Click plug-ins is no longer supported."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer limits Trogon to pinned `typer<0.26` as a legacy integration, says other plug-ins face 'the same Typer 0.26 compatibility boundary', and calls Trogon unmaintained since 0.6.0."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer gives three concrete paths: an explicit Textual `tui` command, pinning `typer<0.26` with Trogon, and using Click directly with `@tui()`."
+        }
+      ]
+    },
+    {
+      "trial_id": "typer-vendored-click-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Typer 0.26+ vendors Click, so external Click plug-ins like Trogon are no longer supported, and that extracting a Click command only works on older Typer."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Trogon no longer works with Typer 0.26+ and that its last release was 0.6.0 in 2024. It never says 'unmaintained', but it presents Trogon as a stale, legacy-only option."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer gives three concrete paths: pin typer<0.26 with click<8.3 and trogon==0.6.0, write the CLI in Click directly (with code), or build a separate Textual TUI."
+        }
+      ]
+    },
+    {
+      "trial_id": "typer-vendored-click-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says Typer 0.26+ vendors Click, so external Click plug-ins like Trogon are no longer supported, and says the `get_command` extraction path needs `typer<0.26`."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says Trogon is not supported with Typer 0.26+ and notes its last release was 0.6.0 in 2024, calling it a legacy dependency."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer gives three concrete paths: a separate Textual `tui` command, using Click directly with Trogon, and pinning `typer<0.26` with `get_command`."
+        }
+      ]
+    },
+    {
+      "trial_id": "ai-chat-rendering-tradeoff-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer accepts the premise that Claude Code uses inline <Static>. It never says Claude Code's fullscreen renderer uses the alternate screen, and it never mentions Copilot CLI or Gemini CLI."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It credits inline mode with native scrollback and selection. It does not mention terminal search or say that inline rendering cost grows with the transcript."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says the alternate screen needs app-provided history navigation, search, and separate export. It never mentions flat memory use or avoiding flicker."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends plain streaming output for pipes and accessibility, and offers plain output when the terminal is too small."
+        }
+      ]
+    },
+    {
+      "trial_id": "ai-chat-rendering-tradeoff-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer accepts the premise that Claude Code uses inline <Static>, and never mentions that its fullscreen renderer uses the alternate screen, nor how Copilot CLI or Gemini CLI render."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It credits inline mode with terminal scrollback, selection, and copying, but it ties the cost to tall live regions and long answers rather than to growth of the whole transcript, and it omits search."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says the alternate screen must own scrolling, search, selection, copying, and export, but it never mentions flat memory or avoiding flicker."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends a linear `--no-tui` mode with answers on stdout for accessibility, noting that inline repainting alone does not make streaming accessible."
+        }
+      ]
+    },
+    {
+      "trial_id": "ai-chat-rendering-tradeoff-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer accepts the premise that Claude Code uses inline <Static>. It never says Claude Code's fullscreen renderer or Copilot CLI use the alternate screen, or that Gemini CLI stays inline."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "It credits inline mode with native scrollback, selection and search. It never says rendering cost grows with the transcript; its stated risk is only that the streaming answer overwhelms the live region."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says the alternate screen means implementing scrolling, search and copying yourself. It never mentions flat memory, avoiding flicker, or exporting the transcript to scrollback."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It recommends a linear plain mode with stdout/stderr separation. It never ties that fallback to screen-reader users or to users who prefer scrollback."
+        }
+      ]
+    },
+    {
+      "trial_id": "gocui-new-app-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says lazygit maintains its gocui fork in its own repository at pkg/gocui, but it never mentions tcell v3 and never states that no maintained upstream gocui exists."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends Bubble Tea + Lipgloss for a new project and offers tview for apps that want ready-made widgets."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It never suggests adding jesseduffield/gocui as a dependency, and it notes that a standalone gocui package is not the framework lazygit uses."
+        }
+      ]
+    },
+    {
+      "trial_id": "gocui-new-app-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says lazygit carries its gocui fork inside its own repository, but it never mentions pkg/gocui or tcell v3, and it never says there is no maintained upstream to depend on."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends Bubble Tea + Lipgloss for a new project and presents tview as the choice for ready-made widgets such as tables, trees and forms."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer treats lazygit as an interaction-design reference rather than a dependency recommendation and never suggests adding jesseduffield/gocui as a dependency."
+        }
+      ]
+    },
+    {
+      "trial_id": "gocui-new-app-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says lazygit copied its fork into `pkg/gocui`, but it never mentions tcell v3 or says there is no maintained upstream gocui to depend on."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends Bubble Tea + Lipgloss for a new project and names tview for table-, tree- and form-heavy interfaces."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It never recommends adding jesseduffield/gocui as a dependency and warns that an external gocui package is not lazygit's implementation."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-snapshot-pytest9-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states that 1.1.0 pins syrupy==4.8.0, which requires pytest<9, so pip resolves to 1.0.0, and it ties that version to the .raw files."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer installs \"pytest>=8.4,<9\" and says to add those constraints to the dependency declarations and lockfile."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer requires pytest-asyncio and says to use either @pytest.mark.asyncio or asyncio_mode = \"auto\" in pyproject.toml."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-snapshot-pytest9-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says pytest-textual-snapshot 1.1.0 pins syrupy 4.8.0, which requires pytest<9, so pip falls back to 1.0.0, and that 1.0.0 writes .raw files."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends installing \"pytest>=8.4,<9\" and keeping that constraint in dependency declarations and the lockfile."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says async Pilot tests need pytest-asyncio, with either @pytest.mark.asyncio on each test or asyncio_mode = \"auto\" in pyproject.toml."
+        }
+      ]
+    },
+    {
+      "trial_id": "textual-snapshot-pytest9-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says pytest-textual-snapshot 1.1.0 pins syrupy 4.8.0, which requires pytest<9, so resolution can fall back to 1.0.0, which writes .raw files."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer gives an install command with \"pytest>=8.4,<9\" and says to keep those constraints in the test dependencies; it does not mention lifting the pin once the plugin is updated."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says to install pytest-asyncio and then either set asyncio_mode = \"auto\" in pyproject.toml or mark each test with @pytest.mark.asyncio."
+        }
+      ]
+    }
+  ]
+}

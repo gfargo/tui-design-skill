@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building a small 'pick one of your recent git branches' helper in Go — like fzf but specialized. Two design questions before I start: should it take over the whole screen the way lazygit does, and what should the terminal look like after it exits? I want the command a user ran and the branch they picked to still be visible in scrollback afterwards.

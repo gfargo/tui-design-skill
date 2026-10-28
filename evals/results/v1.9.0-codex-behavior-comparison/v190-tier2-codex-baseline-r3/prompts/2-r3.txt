@@ -1,0 +1,1 @@
+My Ratatui app (crossterm backend, tokio) has a rendering bug: after certain resizes, one panel's bottom border overlaps the footer by one row. It's intermittent and I've been println-debugging, which obviously corrupts the screen. What's the right way to (a) debug this properly and (b) write a regression test so it can't come back?

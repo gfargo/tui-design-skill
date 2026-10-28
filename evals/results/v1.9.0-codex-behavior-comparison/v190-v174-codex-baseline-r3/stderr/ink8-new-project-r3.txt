@@ -1,0 +1,46 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-l03a7yih
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f6-3f3e-7b01-ace4-671c4895f45f
+--------
+user
+We're starting a new Ink CLI today. Which Ink, React, and Node versions should we target, and can I still read the terminal width from useStdout().stdout.columns?
+
+codex
+I’ll check the current Ink requirements and API guidance so the version targets and terminal-width advice line up.
+exec
+/bin/zsh -lc 'ls -la' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-l03a7yih
+ succeeded in 632ms:
+total 0
+drwx------@    2 gfargo  staff      64 Oct 28 01:23 .
+drwx------@ 8016 gfargo  staff  256512 Oct 28 01:23 ..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+For a new CLI today, target **Ink 8, React 19.3+, and Node.js 22+**. With TypeScript, use **`@types/react` 19.3+** too. These are Ink 8’s declared requirements; configure the project for ESM. [Package requirements](https://github.com/vadimdemedes/ink/blob/v8.0.0/package.json)
+
+For terminal width, use **`useWindowSize()`**:
+
+```tsx
+import {Text, useWindowSize} from 'ink';
+
+function App() {
+  const {columns, rows} = useWindowSize();
+  return <Text>{columns} × {rows}</Text>;
+}
+```
+
+In Ink 8, `useStdout().stdout` is typed as `NodeJS.WritableStream`, so `.columns` and `.rows` are no longer available in its types. They may still exist at runtime for a TTY, but aren’t guaranteed. `useWindowSize()` also automatically re-renders on resize. [Ink 8 migration guide](https://github.com/vadimdemedes/ink/releases/tag/v8.0.0)
+tokens used
+24,874

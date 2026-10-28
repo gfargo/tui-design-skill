@@ -1,0 +1,866 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yz7az4z5
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180ff-f192-7b92-9bec-227fa004d9a4
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building a Rust TUI file picker (like a specialized yazi) — when the user selects a directory and quits, I want their actual shell to `cd` into it, not just print the path. Is that possible, and if not, what's the real pattern people use for this?
+
+codex
+I’ll read the tui-design skill and use it to explain the shell integration pattern.
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yz7az4z5
+ succeeded in 602ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, `--json` and errors, completions, paging, config, Windows, CLI testing, automation | `references/cli-basics.md` |
+| Layouts and wireframes, inline vs alternate screen, borders, hierarchy, color, density, responsive behavior and the floor size, states (empty, loading, partial, error, stale), tables, diff views, modals, status bars and messages, progress and spinners, themes, icons and Nerd Fonts, localization and Unicode width, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, the Esc/q/Ctrl+C quit order, keys that tmux or the key encoding steal, focus, navigation, search and filter, multi-select, help and the command palette, scrolling, live-data selection, log follow mode, trees, text input, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
+| Flicker or tearing, escape sequences and terminal modes (bracketed paste, keyboard protocol and a Shift+Enter that doesn't arrive, mouse, focus, synchronized output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color depth and theme detection | `references/terminal-protocols.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small (`visual-patterns.md` → *States*). In a design answer, include an ASCII sketch of the layout at the floor size (60 columns) next to the wide one.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Which other keys are reserved, and why raw mode frees `Ctrl+S`, is in `interaction-patterns.md` → *Reserved keys*.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+- for one-shot CLIs, stdout, stderr, and the exit code in golden tests, with no TTY and under `NO_COLOR` (`cli-basics.md` → *Testing one-shot CLIs*).
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc "rg -n -C 5 'shell|cwd|chdir|directory|stdout|tty' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yz7az4z5
+ succeeded in 980ms:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-92-| Boundary | Ratatui 0.30 contract |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-93-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-94-| Normal exit | Prefer `ratatui::run(...)`; it initializes, runs the closure, and restores afterward. With `init()` / `restore()`, retain the loop result, restore, then return the result so errors cannot skip cleanup. `restore()` covers only raw mode and the alternate screen; tear down any extra modes first (see *Extra modes* below). |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-95-| SIGTERM | Ratatui does not turn process signals into application events. Use the runtime or a signal integration to send a quit event or cancellation into the loop, then let the closure return through managed cleanup. Default SIGTERM and SIGKILL do not unwind Rust cleanup code. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-96-| Interactive child | Stop the input reader first (a still-running reader steals the child's keystrokes and terminal capability responses), restore, run and wait for the child, reinitialize, clear, and redraw. Keep the child's result; if child and reentry both fail, report both instead of letting `?` discard one. See the snippet below. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:97:| Foreground suspend | Ratatui and Crossterm have no suspend support, and in raw mode Ctrl+Z is just a key event, so you must bind it yourself. On Unix, use the same temporary-handoff sequence, send SIGTSTP only after restoration, then reinitialize and redraw after SIGCONT (snippet below). Windows has no job control: offer a drop-to-shell handoff (the editor sequence, running the user's shell) instead. |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-98-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:99:**Extra modes are yours to undo.** [`try_restore`](https://github.com/ratatui/ratatui/blob/ratatui-v0.30.2/ratatui/src/init.rs) disables raw mode and leaves the alternate screen, nothing else, and the panic hook only calls `restore()`. Mouse capture, bracketed paste, and Kitty keyboard-enhancement flags stay on after a normal exit or a panic unless you disable them. Pop the keyboard flags while still on the alternate screen, because terminals keep separate [keyboard-mode stacks](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) for the main and alternate screens. So disable extras first, then let `restore()` run, including from a hook that wraps Ratatui's:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-100-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-101-```rust check=rust/extra-modes
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:102:use std::io::stdout;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-103-use std::sync::atomic::{AtomicBool, Ordering};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-104-use ratatui::crossterm::{
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-105-    event::{
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-106-        DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-107-        KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-111-};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-112-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-113-static KITTY_PUSHED: AtomicBool = AtomicBool::new(false);
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-114-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-115-fn enable_extra_modes() -> std::io::Result<()> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:116:    execute!(stdout(), EnableMouseCapture, EnableBracketedPaste)?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-117-    if supports_keyboard_enhancement()? {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:118:        execute!(stdout(), PushKeyboardEnhancementFlags(
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-119-            KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES))?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-120-        KITTY_PUSHED.store(true, Ordering::Relaxed);
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-121-    }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-122-    Ok(())
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-123-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-124-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-125-/// Best effort and idempotent: safe from the panic hook and the normal path.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-126-fn disable_extra_modes() {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-127-    if KITTY_PUSHED.swap(false, Ordering::Relaxed) {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:128:        let _ = execute!(stdout(), PopKeyboardEnhancementFlags);
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-129-    }
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:130:    let _ = execute!(stdout(), DisableBracketedPaste, DisableMouseCapture);
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-131-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-132-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-133-fn main() -> color_eyre::Result<()> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-134-    color_eyre::install()?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-135-    ratatui::run(|terminal| {
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-161-Do not add that `restore()` wrapper on top of `ratatui::run()` or `ratatui::init()`; those managed APIs already install it. A hook that only undoes extra modes and then delegates to the existing hook, as above, is the exception. The fallible helpers are not transactional: `try_init()` can return after an earlier setup step changed terminal state, and `try_restore()` stops at its first teardown error. If the caller requires fallible setup or teardown, handle an error with independent best-effort cleanup attempts (disable raw mode, leave the alternate screen, disable mouse/paste modes, show the cursor) rather than assuming one returned `Err` rolled everything back. `ratatui::restore()` performs the default Crossterm teardown—custom backends must run their matching backend-specific teardown instead. Whichever path you choose, inject setup/teardown failures and verify normal exit, returned errors, and panics in a PTY.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-162-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-163-**Child handoff,** following Ratatui's official [external-editor recipe](https://ratatui.rs/recipes/apps/spawn-vim/):
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-164-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-165-```rust check=rust/editor-handoff
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:166:use std::{io::stdout, process::{Command, ExitStatus}};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-167-use ratatui::crossterm::{execute, terminal::{enable_raw_mode, EnterAlternateScreen}};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-168-use color_eyre::eyre::eyre;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-169-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-170-fn run_editor(terminal: &mut DefaultTerminal, app: &mut App) -> Result<ExitStatus> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-171-    app.input.stop();                                    // async apps: cancel the EventStream task
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-172-    ratatui::restore();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-173-    let child = Command::new("vim").arg(&app.path).status(); // keep it; no `?` yet
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-174-    let reentry = enable_raw_mode()
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:175:        .and_then(|()| execute!(stdout(), EnterAlternateScreen))
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-176-        .and_then(|()| terminal.clear());                // next draw repaints every cell
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-177-    app.input.start();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-178-    app.reload();                                        // the child may have changed state
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-179-    match (child, reentry) {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-180-        (Ok(status), Ok(())) => { terminal.draw(|f| app.draw(f))?; Ok(status) }
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-192-fn suspend(terminal: &mut DefaultTerminal) -> Result<()> {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-193-    disable_extra_modes();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-194-    ratatui::restore();
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-195-    signal_hook::low_level::raise(signal_hook::consts::SIGTSTP)?; // returns after `fg` (SIGCONT)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-196-    enable_raw_mode()?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:197:    execute!(stdout(), EnterAlternateScreen)?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-198-    enable_extra_modes()?;
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-199-    terminal.clear()?;                                            // next draw repaints every cell
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-200-    Ok(())
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-201-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-202-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-203-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-204-### Inline viewport
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-205-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:206:For tools you summon (pickers, prompts, progress), keep the shell visible. `run()` and `init()` always take the alt screen; `ratatui::init_with_options` enables raw mode and the panic hook but not the alt screen, and `Viewport::Inline(n)` reserves `n` rows below the prompt. Draw into `frame.area()`, not `Rect::new(0, 0, ..)`: the viewport starts wherever the cursor was.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-207-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-208-- **Permanent lines** (logs, results) go through `Terminal::insert_before(height, draw_fn)`: they push the viewport down, then scroll into scrollback. Enable Ratatui's `scrolling-regions` feature so it does not clear and redraw the viewport.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:209:- **Exit:** the last frame stays on screen with the cursor at the end of its last cell, so later shell output joins that line. To keep the result, `println!()` after `restore()`. To remove a transient UI, `Terminal::clear()` alone is not enough: it restores the old cursor, so return to the viewport origin as below.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-210-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-211-```rust check=rust/inline
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-212-use ratatui::{backend::Backend, text::Line, widgets::Widget, Terminal, TerminalOptions, Viewport};
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-213-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-214-fn main() -> std::io::Result<()> {
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-314-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-315-## Backends: Crossterm vs Termion vs Termwiz
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-316-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-317-- **Crossterm** — default, cross-platform (Linux/macOS/Windows), pure Rust, MIT. Use this unless you have a specific reason not to.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-318-- **Termion** — Unix-only, older, smaller. Choose only if you want Unix-only and minimal dependencies.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:319:- **Termwiz** — terminal library from the WezTerm project. It can encode Sixel, iTerm2, and kitty images, but Ratatui's termwiz backend doesn't expose them; for images use `ratatui-image`, which works with Crossterm.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:320:- **Termina** — `termina` feature (`TerminaBackend`, Ratatui 0.30.2+), built on the Helix editor's terminal library, which sits between Crossterm and Termwiz and targets newer VT extensions such as the kitty keyboard protocol. Import it as `ratatui::termina` (like `ratatui::crossterm`, not a separate dependency). `ratatui::init()` is Crossterm-only, so set up raw mode and cleanup through Termina yourself. Newer and less proven than Crossterm; choose it only when you need what it exposes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-321-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-322-**Crossterm version conflicts** are a foot-gun: two semver-incompatible Crossterm majors cause separate event queues and broken raw-mode tracking. Run `cargo tree -p crossterm` and verify only one version. Crossterm 0.29 (April 2025) is the current stable; 0.28 is the legacy pin. Ratatui 0.30 has per-version feature flags (`crossterm_0_28`, `crossterm_0_29`) so widget-library authors can pin a Crossterm without forcing it on apps; the default is 0.29, and if both end up enabled `crossterm_0_29` takes precedence. In app code, import Crossterm through the re-export (`use ratatui::crossterm`) rather than a separate dependency, so you get the exact version Ratatui uses.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-323-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-324-## State management patterns
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-325-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-484-5. **`String::len()` is bytes, not cells.** Use `Line::width()` / `Span::width()` for Ratatui text, but for cursor math or any width that must match what Ratatui draws use `ratatui::buffer::CellWidth` (`s.cell_width()`, 0.30.1+). `Line::width()` and `unicode_width` count halfwidth katakana marks (U+FF9E, U+FF9F) as zero cells; the renderer draws one.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-485-6. **No accessibility layer.** Ratatui has no screen-reader support; [ratatui#2610](https://github.com/ratatui/ratatui/issues/2610) tracks it, and the experimental `tui-a11y` crate is Linux-only. Give screen-reader users a linear mode; see `visual-patterns.md` → *Accessibility*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-486-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-487-## Notable Rust TUI apps to study
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-488-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md:489:**gitui** (Ratatui's flagship demo), **bottom** (widget dashboard), **yazi** (miller columns, image preview), **atuin** (fzf pattern + sync backend), **tokio-console** (async debugger), **helix** (modal editor, custom renderer). Ratatui's own `examples/` directory is also gold; point the user at the closest repo.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-490-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-491-## CLI design in Rust
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-492-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-493-For non-TUI CLIs: **clap** (arguments), **indicatif** (progress bars and spinners; auto-hides on non-TTY), **owo-colors** (zero-allocation colors, recommended; see Companion crates for `NO_COLOR` gating), **anyhow** or **color-eyre** (errors), **env_logger** or **tracing** + **tracing-subscriber** (logging), and **inquire** (modern) or **dialoguer** (stable) for prompts, **cliclack** for Clack-style wizards.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-rust.md-494-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-8-- [Foundational principles](#foundational-principles)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-9-- [Input and arguments](#input-and-arguments)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-10-- [Output design](#output-design)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-11-- [Exit codes](#exit-codes)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-12-- [Error messages](#error-messages)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:13:- [Help and discoverability](#help-and-discoverability) (includes [shell completions](#shell-completions) and [demo recordings](#demo-recordings))
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-14-- [Subcommands](#subcommands)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:15:- [Shell integration](#shell-integration)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-16-- [Configuration and state](#configuration-and-state)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-17-- [Performance and signals](#performance-and-signals) (includes Windows)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-18-- [Testing one-shot CLIs](#testing-one-shot-clis)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-19-- [Future-proofing](#future-proofing)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-20-- [Shipping, updates, and telemetry](#shipping-updates-and-telemetry)
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-24-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-25----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-26-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-27-## Foundational principles
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-28-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:29:**Human-first, machine-friendly.** Default output is readable; machine output is opt-in (`--json`, `--plain`, `-o yaml`). **Composable:** honor stdin/stdout/stderr, exit codes, signals, and line-based text. **Discoverable:** help text, examples, "did you mean…?" suggestions, and shell completions. **Consistent and robust:** the same flag names mean the same things across tools; validate input early, fail fast, never lie about state.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-30-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-31-**Always use a real argument-parsing library** (Cobra, urfave/cli, Click, Typer, argparse, clap, oclif, picocli, swift-argument-parser). Hand-rolled parsers always get edge cases wrong.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-32-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-33----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-34-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-40-- Lowercase 2–9 char names.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-41-- Options begin with `-` and a single alphanumeric character.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-42-- `-abc` ≡ `-a -b -c` (combined boolean flags).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-43-- `-o file` or `-ofile` (optionally combined with arg).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-44-- `--` ends option parsing (rest are positional).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:45:- Bare `-` means stdin/stdout.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-46-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-47-GNU extensions (now near-universal):
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-48-- Long options (`--verbose`, `--output=foo.txt`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-49-- Every short option has a long counterpart.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-50-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-52-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-53-### Flags vs positional args
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-54-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-55-Prefer flags when meaning is ambiguous. Heroku's example: `heroku fork --from FROMAPP --to TOAPP` is clearer than `heroku fork FROMAPP --app TOAPP`. Jeff Dickey's [12 Factor CLI Apps](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46) rule of thumb, which clig.dev cites: one type of argument is fine, two types are suspect, three are never good.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-56-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:57:### Stdin / stdout / stderr discipline
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-58-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:59:- **stdout** = primary output (the result; machine-readable when piped).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-60-- **stderr** = secondary channel (logs, progress, prompts, errors).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:61:- Support `-` for stdin/stdout where it makes sense.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-62-- If stdin is a TTY but your program expects piped input, **show help instead of hanging** (avoid `cat` UX).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-63-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-64-### Interactivity
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-65-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:66:Prompt only when an interactive input channel is available—normally a TTY, or an explicitly opened `/dev/tty` for a composable picker. When input is piped or the process is in CI, fail with a message naming the documented flag, environment variable, or stdin contract that makes the operation non-interactive; there is no universal `--no-input` spelling. Confirm destructive actions; allow a documented `-y`/`--yes` or `-f`/`--force` override. For severe actions, require typed confirmation (`--confirm=name-of-thing`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-67-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:68:**Cancelling a prompt (Ctrl-C, or Esc where the prompt library maps it) is an abort, not success: restore the terminal and exit 130**, the same code a shell reports for SIGINT (128 + 2). Exit 0 would let `mytool init && mytool deploy` carry on with no answer. A real SIGINT is different; see *Signals*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-69-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-70-Never accept a secret as a flag value; see *Secrets — what NOT to do*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-71-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-72----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-73-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-84-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-85-### JSON / NDJSON
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-86-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-87-`--json` for structured output.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-88-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:89:- **Bounded results: one document. Unbounded or streaming results: NDJSON** (one compact object per line, nothing else on stdout), so downstream tools can `jq` line by line. Pretty-print only on a TTY.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-90-- **The schema is additive.** Add fields; never remove, rename, retype, or repurpose one, and have consumers ignore unknown fields (Terraform's JSON format states this rule). Times are RFC 3339 UTC with a `Z` (`2026-04-29T15:25:16Z`). Numbers are JSON numbers, never `"1.2 MB"` or `"1,234"`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:91:- **Errors under `--json`.** No convention is settled (npm prints `{"error":{…}}` on stdout, the AWS CLI's `--cli-error-format json` writes to stderr, and gh, cargo, and kubectl emit no structured errors). Pick stderr so stdout stays result-only: one compact line, empty stdout, the same non-zero exit as the human error, and a stable `code` that scripts branch on:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-92-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-93-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-94-{"schema_version":1,"error":{"code":"permission_denied","message":"cannot write out.txt: permission denied","hint":"chmod +w out.txt"}}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-95-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-96-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-99-`kubectl`'s `-o {wide,json,yaml,name,jsonpath=…,go-template=…,custom-columns=…}` is the gold standard projection system. Adopt it for tools with structured data.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-100-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-101-### Verbosity
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-102-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-103-- `-q` / `--quiet` — suppress non-essential output (errors still print).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:104:- `-v` / `--verbose` — chatty mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-105-- `-vv` / `-vvv` — progressive debug levels.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-106-- `--debug` (or `MYTOOL_DEBUG=1`) for stack traces — never appear by default. Don't read plain `DEBUG`: Node's `debug` package owns it, so `DEBUG=*` set for another tool would flood yours, and `DEBUG=1` matches nothing there.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-107-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-108-### Progress
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-109-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:110:Write progress to **stderr**, not stdout (so it doesn't pollute piped output). Suppress all animations when not a TTY. Start showing progress once work has run for roughly 100–200ms: an indicator that flashes for near-instant work feels twitchy, and silence past a few hundred milliseconds feels frozen. The same delayed-spinner rule is spelled out in `references/visual-patterns.md` → *Spinners*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-111-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-112-For multi-step work, hide noisy logs behind a progress indicator while things succeed and print them if something fails (the Docker Compose pattern).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-113-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-114-### Color
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-115-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:116:**Decide per stream.** Color stdout by whether stdout is a TTY and stderr by whether stderr is, so `mytool | less` keeps colored errors and `mytool 2>err.log` stays plain ([clig.dev](https://clig.dev/#output)).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-117-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-118-**Disable color when:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-119-- that stream is not a TTY, or
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-120-- `NO_COLOR` env var is set to a non-empty value ([no-color.org](https://no-color.org)), or
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-121-- `TERM=dumb`, or
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-135-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-136-Glyphs like ✅, ❌, ⚠ clarify state, but detect locale and `TERM`, fall back to ASCII (`[ok]`, `[!]`, `[X]`) when piped or unsupported, and never use emoji as the only signal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-137-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-138-### Paging
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-139-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:140:Pipe through `less` (or `$PAGER`) **only when stdout is a TTY**, and never page `--json` or other machine output. Set `LESS=FRX` only when `LESS` is unset, as git does (its `FRX` default is applied only if the variable is unset): `F` exits immediately if content fits one screen, `R` passes ANSI color through, `X` leaves content in scrollback on exit. Never override a `LESS` the user set. Honor `$PAGER` and `$BAT_PAGER`/`$GIT_PAGER`-style overrides.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-141-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-142-### Pagination for API-backed lists
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-143-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-144-Give list commands a documented `--limit N` with a finite default and a way to see the rest (`--paginate`, or a cursor in the output). When the limit cut results off, say so on **stderr** with the flag that fixes it, and exit 0, since truncating on request is not an error:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-145-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-160-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-161-| 0 | Success |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-162-| 1 | Failure with no more specific code |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-163-| 2 | Usage error (bad flag or argument). Not universal, but bash builtins, argparse, clap, and Go's `flag` use it |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-164-| 3–123 | Your documented domain codes. The status is 8 bits, so `exit(256)` is success: clamp computed codes |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:165:| 124–128 | Not yours: `timeout` uses 124 and 125, the shell uses 126 (not executable), 127 (not found), and 128 |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-166-| 129–255 | Not yours: 128 + N means killed by signal N (130 SIGINT, 137 SIGKILL, 143 SIGTERM), and 255 makes `xargs` stop |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-167-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-168-Document your codes in `--help`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-169-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-170-### BSD `sysexits.h` (legacy, nonportable richer signaling; codes 64–78 fit the scheme above)
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-248-- **Description** — 1–3 paragraphs.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-249-- **Commands and flags grouped by purpose.** `gh --help` groups commands (Core, GitHub Actions, Additional) while its per-command flags stay one flat list; for a long flag list, add headings such as Output, Filtering, Auth. Grouping scales much better than one alphabetical list.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-250-- **Examples first, right after the description**, building from simple to complex. [clig.dev](https://clig.dev/#help) says users read examples before any other documentation, so show them first and move a long set to `help <topic>` or the docs. `gh` puts its examples last, which only works while the flag list is short enough to keep them on screen.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-251-- Link to docs, man page, or `mycli help <topic>`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-252-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:253:A literal template (stdout, exit 0, for `-h` and `--help`):
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-254-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-255-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-256-Sync local files to a bucket.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-257-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-258-Usage: mytool [OPTIONS] <COMMAND>
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-259-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-260-Examples:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:261:  mytool push ./dist s3://site     Upload a directory
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-262-  mytool pull s3://site --dry-run  Preview a download
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-263-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-264-Commands:  push, pull, status
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-265-Options:   -o, --output <text|json>  -q, --quiet  -h, --help
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-266-Docs: https://example.com/mytool
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-270-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-271-Power users love them. Generate them from the same command tree as `--help`, in the release build, and ship them in the package: Cobra's `doc.GenManTree`, `clap_mangen`, `click-man`, or `argparse-manpage` (Typer has no generator; feed `typer.main.get_command(app)` to `click-man` and re-test on upgrade). Otherwise write Markdown and convert with `ronn` or `pandoc`. Route `git help foo` and `npm help foo` to the corresponding man page.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-272-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-273-### Versioning
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-274-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:275:Support `--version`, `-V`, and `version` subcommand. The first line is `mytool 1.2.3` on stdout with exit 0, and it makes no network call. Detail lines may follow:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-276-- Git commit (short SHA).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-277-- Build date.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-278-- Runtime info (Go/Node/Python version).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-279-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-280-These end up in bug reports — make them easy to copy. If your tool talks to a server, send the version in the `User-Agent` header.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-283-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-284-Generate for bash, zsh, fish, pwsh where the parser allows. Cobra, Click (PowerShell from 8.5), and Typer generate all four from the command definition; yargs documents bash, zsh, and fish but not PowerShell, and picocli's `AutoComplete` targets only bash and zsh. clap needs the `clap_complete` crate and oclif needs `@oclif/plugin-autocomplete`; commander has no built-in support ([commander.js#2008](https://github.com/tj/commander.js/issues/2008)), so add a completion package or write the scripts. Wire them up.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-285-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-286-Flags should autocomplete. Argument values where possible: `kubectl` completes resource names from the API; `gh` completes repos and PRs; `git` completes branches and tags.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-287-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:288:- **Contract:** `mytool completion <bash|zsh|fish|pwsh>` prints the script to stdout and writes nothing. Document where each shell loads it from: bash `~/.local/share/bash-completion/completions/mytool` (`/etc/bash_completion.d` is the legacy eager directory), zsh a file named `_mytool` in a directory on `$fpath` before `compinit`, fish `~/.config/fish/completions/mytool.fish`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:289:- **Dynamic values** go through the framework's hook, which runs your binary on every Tab press: Cobra's hidden `__complete` ([docs](https://github.com/spf13/cobra/blob/v1.10.2/site/content/completions/_index.md)); Click `_MYTOOL_COMPLETE=<shell>_source` ([docs](https://github.com/pallets/click/blob/8.5.0/docs/shell-completion.md)) and Typer `source_<shell>`, with a Click PowerShell script only from 8.5; clap's `COMPLETE=<shell>`, which `clap_complete` still gates behind `unstable-dynamic` (static `generate()` is stable).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:290:- **Keep the hook fast and pure:** no prompts, no file writes, nothing on stdout but candidates; time-box and cache network lookups, and return no candidates on failure.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-291-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-292-### Demo recordings
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-293-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:294:For screenshots and demo GIFs of a CLI or TUI, use the `vhs-cli-demos` skill when it is installed. Otherwise record with [VHS](https://github.com/charmbracelet/vhs), which needs `ttyd` and `ffmpeg` on `PATH`:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-295-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-296-- Script the scene in a `.tape` file and render it with `vhs demo.tape`. `vhs new demo.tape` writes a starter tape; `vhs record > demo.tape` captures a live session to edit.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-297-- Pin everything that changes the frame: `Set Columns` and `Set Rows` (VHS 0.12+; older releases take pixel `Width`/`Height`) at a size whose layout you have tested, `Set FontSize`, `Set Theme`, and `Env` for other inputs such as `TZ` or `LANG`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-298-- Put setup and cleanup between `Hide` and `Show`, wait for slow output with `Wait+Screen /regex/` instead of a guessed `Sleep`, and declare each program the tape needs with `Require` so a missing one fails before recording.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-299-- `Screenshot demo.png` captures a still and `Output demo.gif` records motion. Shrink GIFs losslessly with `gifsicle -O3` before publishing; `charmbracelet/vhs-action` regenerates them in CI.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-318-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-319----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-320-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-321-## Shell integration
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-322-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:323:A child process cannot change its parent shell's working directory or environment variables — only the shell itself can do that. There's no IPC trick around this; two patterns cover everything real tools need.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-324-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:325:### cd-on-exit: the cwd-file wrapper function
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-326-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:327:If your tool navigates directories and should `cd` the user's shell on exit (a file picker, a directory jumper), ship a flag that writes the final directory to a caller-specified file, and document a shell wrapper function that reads it and `cd`s after your program exits. yazi and ranger converge on the identical shape:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-328-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-329-```bash
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-330-function y() {
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:331:    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:332:    command yazi "$@" --cwd-file="$tmp"
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:333:    IFS= read -r -d '' cwd < "$tmp"
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:334:    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-335-    command rm -f -- "$tmp"
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-336-}
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-337-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-338-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-339-ranger's `--choosedir` does the same thing under a different flag name. This is the pattern, not an implementation detail — there's no other way to get a "cd on exit" TUI.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-340-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:341:### The `eval "$(tool init shell)"` pattern
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-342-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:343:For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-344-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-345-- **starship:** a `precmd` prompt-regeneration hook plus a `preexec` hook.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-346-- **zoxide:** `z`/`zi` functions plus a `chpwd` hook that tracks visited directories.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-347-- **atuin:** keybindings (Ctrl-R and the Up arrow by default; `--disable-up-arrow` opts out) plus history-capture hooks.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:348:- **mise:** a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd`. It can't set the parent shell's env, so it has the *shell itself* recompute it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-349-- **fzf:** `--zsh`/`--bash` (since v0.48, replacing an older `install.sh`) emit keybindings and completions from one embedded call.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-350-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-351-### Never silently edit rc files
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-352-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-353-Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-396-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-397-Prefix tool-specific variables `TOOL_FOO_BAR` (uppercase, underscores, single-line values) and honor the general-purpose ones that apply: `NO_COLOR`, `FORCE_COLOR`, and `CLICOLOR_FORCE` (see *Color*), `DO_NOT_TRACK` (see *Telemetry*), `EDITOR`/`VISUAL`, `PAGER`, `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`, `TMPDIR`, `TERM`, `LINES`/`COLUMNS`, and `LANG`/`LC_*`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-398-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-399-### Secrets — what NOT to do
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-400-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:401:Never accept secrets via `--password=`, `--token=`, etc. on the command line. They leak through `ps`, shell history, `docker inspect` and `systemctl show`, crash dumps and debug logs, and process accounting.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-402-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-403-**Use instead:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-404-- Credential files with restrictive permissions (`--password-file path/to/secret`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-405-- Stdin (`--password-stdin`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-406-- AF_UNIX sockets.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-412-Two patterns dominate, and both are legitimate:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-413-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-414-1. **Browser + OAuth device-code flow**, token written to the OS keychain (`gh auth login`, `vercel login`): open a browser tab, or show a URL and one-time code, and poll until the user approves. Support a non-browser fallback (`--with-token`, a PAT from stdin) for headless use.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-415-2. **Direct prompt for long-lived credentials**, written to a plaintext config file — still standard for access-key-style cloud CLIs (`aws configure`), though AWS is moving federated auth to device flow (`aws configure sso`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-416-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:417:**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`, and `GH_PROMPT_DISABLED` (any value turns gh's prompts off)—not a flag. There is no settled `--no-input`-style flag name (Django uses `--no-input`, Terraform `-input=false`, git `GIT_TERMINAL_PROMPT=0`, npm and gh none)—don't present one as a standard; fit your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-418-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-419-**Keychain libraries for OS-native storage:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-420-- Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; more backends, including an encrypted-file fallback for headless hosts).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-421-- Rust — the `keyring` crate. Python — `keyring` (`PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring` disables it).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-422-- Node — **not `keytar`, archived and unmaintained since December 2022**; VS Code moved to Electron's `safeStorage`, and a plain Node CLI should fall back to a config file.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-437-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-438-Tactics: lazy-load subcommand modules (oclif's architecture), run update checks at most daily in the background, cache parsed config, and prefer Go or Rust over Python or Node for prompt-tier speed.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-439-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-440-### Streaming
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-441-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:442:Stream line-by-line where possible (`grep`, `jq`, `rg`). Don't read whole input before outputting. Flush stdout on newlines so piped consumers see data immediately.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-443-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-444-### Signals
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-445-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-446-| Signal | Convention |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-447-|---|---|
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-458-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-459-**SIGPIPE handling per language:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-460-- **Python**: `signal.signal(signal.SIGPIPE, signal.SIG_DFL)` at startup.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-461-- **Rust**: handle `ErrorKind::BrokenPipe` explicitly.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-462-- **Go**: nothing by default. A broken-pipe write to fd 1 or 2 already kills the program with SIGPIPE unless it calls `signal.Notify` for SIGPIPE, in which case the write returns `EPIPE` and you exit quietly on it ([os/signal](https://pkg.go.dev/os/signal#hdr-SIGPIPE)).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:463:- **Node**: handle `EPIPE` on `process.stdout`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-464-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-465-### Windows
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-466-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-467-- No SIGPIPE, SIGHUP, or 128 + N codes (console close arrives as an event, [`CTRL_CLOSE_EVENT`](https://learn.microsoft.com/en-us/windows/console/handlerroutine)). A write to a closed pipe is a plain write error: exit quietly. Keep your own codes small (0–123), and don't map an unhandled Ctrl+C (status `0xC000013A`) to 130.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:468:- Enable `ENABLE_VIRTUAL_TERMINAL_PROCESSING` before emitting ANSI: Go and Rust do it themselves (`golang.org/x/sys/windows`, `anstyle-query`), Python via `colorama.just_fix_windows_console()`, and Node's tty layer already does.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:469:- The shell doesn't expand globs, so expand them yourself, and emit `\n` only. Windows Terminal sets no `TERM` or `COLORTERM`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-470-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-471-### Atomicity and idempotency
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-472-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:473:- **Atomic writes:** write a temp file in the *same directory* as the target (a cross-filesystem rename fails), `fsync` it, set the final mode (temp files are 0600), then rename it over the target. Readers and crashes see the old file or the whole new one; the file `fsync` is for durability, and a directory `fsync` makes the entry itself durable. On Windows the replace is best effort, not guaranteed atomic (Go's `os.Rename` isn't atomic there; use Python's `os.replace`, not `os.rename`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-474-- **Partial results:** never leave a truncated file at the final path. Write atomically, or keep it under an explicit partial name (`.part`, `--partial`) and say so on stderr, and exit non-zero on any incomplete result.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-475-- `--dry-run` for destructive operations (`rsync`, `terraform plan`, `git add -n`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-476-- Re-running should converge ("crash-only" design). The user shouldn't fear running the command twice.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-477-- Configurable timeouts, exponential backoff, and retries limited to transient failures (`EX_TEMPFAIL` (75) if you use sysexits).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-478-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-479----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-480-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-481-## Testing one-shot CLIs
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-482-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:483:Test the built binary as a black box on three channels: **stdout, stderr, and the exit code**. Add cases for no TTY (the default under a test runner) and for `NO_COLOR`, and keep golden files for text only, not color escapes.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-484-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-485-| Stack | Tool |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-486-|---|---|
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-487-| Go | [`testscript`](https://github.com/rogpeppe/go-internal/blob/v1.16.0/testscript/doc.go). `! exec` asserts only non-zero, so add a small custom command to check an exact code |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-488-| Rust | `trycmd` (`.toml` and `.trycmd` cases), `snapbox`, or `assert_cmd` |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:489:| Click | `click.testing.CliRunner`: `result.stdout`, `result.stderr`, and `result.output` (interleaved) since Click 8.2 |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-490-| Typer | `typer.testing.CliRunner` (Typer 0.26+ vendors Click) |
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-491-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-492-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-493-# testdata/basic.txtar  (testscript)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-494-exec mytool ann
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:495:stdout '^hello ann\n$'
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-496-! stderr .
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-497-! exec mytool bad
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:498:! stdout .
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-499-stderr '^error: cannot read bad: no such file\n$'
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-500-env NO_COLOR=1
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-501-exec mytool ann
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:502:! stdout '\x1b'
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-503-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-504-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-505-```python
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-506-r = CliRunner().invoke(cli, ["bad"])
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:507:assert (r.exit_code, r.stdout, r.stderr) == (1, "", "error: cannot read bad: no such file\n")
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-508-```
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-509-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-510----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-511-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-512-## Future-proofing
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-528-- **npm with per-platform `optionalDependencies`** (esbuild, `@swc/core`): each platform gets its own scoped package and the package manager installs only the matching one. It superseded the `postinstall`-downloads-a-binary approach, which breaks under offline installs, custom registries, and `--ignore-scripts`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-529-- **Pure npm / pipx**: needs the language runtime present, but is the cheapest to publish and update.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-530-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-531-### Update-check etiquette
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-532-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:533:If you check for updates: check async, cache the result (once a day is the norm — both gh and the widely-used `update-notifier` npm package default to a 24-hour interval), and print the notice to stderr *after* your normal output, not interleaved with it. Auto-skip in CI and gate on stdout being a TTY. Provide an opt-out env var (gh's is `GH_NO_UPDATE_NOTIFIER`; the npm package's is `NO_UPDATE_NOTIFIER`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-534-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-535-**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh compiles its update checker in only under the `updateable` build tag, which the Homebrew formula sets ([update_enabled.go](https://github.com/cli/cli/blob/v2.103.2/internal/ghcmd/update_enabled.go)), and the notice it prints for Homebrew installs says `brew upgrade gh`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-536-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-537-### Telemetry, if you collect it
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-538-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-553-## Concrete exemplars to study
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-554-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-555-- **gh** — noun-verb subcommands; `--json field1,field2` + `--jq` + `--template`; OS-keychain credentials.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-556-- **rg** — smart defaults (`gitignore`, skip binary, recurse); `--json` emits NDJSON; `RIPGREP_CONFIG_PATH`; exit 0/1/2 for found/not-found/error.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-557-- **jq** — tiny startup; `-r`, `-c`, `-s`; help on empty invocation.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:558:- **bat** and **httpie/xh** — pretty on a TTY, plain on a pipe (`--plain`, `$BAT_PAGER`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-559-- **docker** — multi-level subcommands, per-layer progress bars, backward-compatible aliases (`docker ps` ≡ `docker container ls`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-560-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-561----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-562-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-563-## Final checklist
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-564-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-565-Answer each before shipping; a "no" points to the section that owns the rule.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-566-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:567:- **Streams and signals:** Does the result go to stdout and everything else to stderr, with `-` and `--` honored, and do SIGPIPE and a second Ctrl-C end cleanly? → *Stdin / stdout / stderr discipline*, *Signals*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-568-- **Exit codes:** Does each failure class have a documented code, and does a cancelled prompt exit 130? → *Exit codes*, *Interactivity*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:569:- **Help:** Does every entry point show help, with examples near the top and completions for each shell your parser supports? → *Help and discoverability*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-570-- **Flags and subcommands:** Do flags use standard names with one meaning everywhere, and does the tool avoid catch-all defaults and prefix-matching? → *Argument syntax*, *Subcommands*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-571-- **Output:** Can a script rely on stable machine output while the human default degrades cleanly without a TTY, under `NO_COLOR`, and on `TERM=dumb`? → *Output design*, *Color*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-572-- **Errors:** Does each failure say what, why, and how to fix it, fix last, under a plain `error:` and without a stack trace? → *Error messages*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-573-- **Interactivity and secrets:** Does it prompt only on a TTY, offer a documented non-interactive path, and never take a secret as a flag? → *Interactivity*, *Secrets — what NOT to do*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-574-- **Configuration:** Do precedence, XDG paths, and `MYTOOL_` env names follow the conventions? → *Configuration and state*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-575-- **Performance and safety:** Is cold start within budget, output streamed, destructive work behind `--dry-run`, and writes atomic and idempotent? → *Performance and signals*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md:576:- **Tests and platforms:** Do tests pin stdout, stderr, and the exit code with no TTY and under `NO_COLOR`, and does the tool work on Windows? → *Testing one-shot CLIs*, *Windows*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-577-- **Future-proofing:** Will existing scripts survive the next release? → *Future-proofing*
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-578-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-579----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-580-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md-581-If the tool grows to need a full-screen UI later, that's a TUI — return to the main `SKILL.md` and pick an ecosystem reference. Many great tools (`atuin`, `glow`) ship both a CLI and a TUI from the same core, with the CLI handling scripts and the TUI handling exploration.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-60-> Kubernetes TUI. Drill-down stack + command mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-61-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-62-**Layout:** drill-down stack with command-mode navigation: a top status header (cluster, context, namespace), the main resource list, footer hints. Drill into a resource for a full-screen detail view, `Esc` back. Go, derailed's forks of tview and tcell, K8s client-go.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-63-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-64-**Copy this:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:65:- **Resource-aware actions:** `s` shells into a pod, `l` shows logs, `d` describes; different resources get different actions.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-66-- **Sortable columns** via Shift+letter (`shift-n` name, `shift-a` age, `shift-o` the selected column).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-67-- **Instant filter** (`/`) narrows huge lists in real time: regex by default, `/-f` switches to fuzzy matching.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-68-- **Live updates** without manual refresh, via a debounced redraw (don't refresh on every event).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-69-- A status header showing the current "address" of where you are; a plugin system for custom actions (`plugins.yaml`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-70-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-118-**Layout:** full-screen by default; `--height` opts into a bounded picker below the cursor. Either form does one thing and exits. Go, no UI framework: its own renderer on Unix, tcell on Windows.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-119-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-120-**Copy this:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-121-- **Preview pane** (`--preview`): file contents or command output without leaving the picker.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-122-- **Composable:** `git branch | fzf | xargs git checkout` is the canonical pattern; even a full TUI can have a "summon fzf for picking" sub-flow.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:123:- Opens `/dev/tty` for its interactive UI while keeping the selected value on stdout. Use `--height` when shell context must remain visible; see `visual-patterns.md` → *Inline, alt-screen, or overlay*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-124-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-125-**Lesson:** speed is a feature. Users summon fzf hundreds of times a day; 50ms instead of 200ms transforms the experience. The instant-fuzzy-filter interaction (sub-100ms updates, match count, smart-case, ranking) is dissected in `interaction-patterns.md` → *The fzf pattern in detail*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-126-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-127-**Cite when:** designing search latency or a picker.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-128-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-130-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-131-## atuin (Rust, Ratatui)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-132-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-133-> Shell history with sync. Replaces Ctrl+R.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-134-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:135:**Layout:** inline, capped at `inline_height` (default 40 lines; `0` = full screen): the same bounded model as fzf `--height`, not an overlay. It replaces the default shell reverse-search with a richer fzf-style picker.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-136-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-137-**Copy this:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-138-- **Replace a familiar built-in** (Ctrl+R) so users keep their muscle memory and get a better version of what they already use.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:139:- **Metadata on every result** (when you ran it, exit code, working directory, hostname) without clutter, plus optional encrypted sync across machines.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-140-- **CLI and TUI from the same core:** the CLI for scripts (`atuin search`), the TUI for interactive use.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-141-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-142-**Lesson:** the highest-leverage tools replace existing workflows rather than adding new ones; users will switch to a slightly better Ctrl+R, not to a wholly new mental model.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-143-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-144-**Cite when:** choosing an adoption strategy or the height of an inline picker.
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-147-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-148-## helix (Rust, custom renderer)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-149-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-150-> Modal editor. Selection-first, multi-cursor first.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-151-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:152:**Layout:** main editor area (with multiple split views) plus a bottom statusline and diagnostics; everything else arrives as a picker. Even its file explorer (`Space e`, released in 25.07) is a directory-browsing picker, not a persistent sidebar tree: helix's identity is pickers instead of trees.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-153-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-154-**Copy this:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-155-- **Space-based which-key:** press `Space`, see a menu of `f` (file picker), `b` (buffer picker), `s` (symbols), etc.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-156-- A `:` command mode with completion; tree-sitter for syntax-aware text objects; built-in LSP, so most languages need no plugins.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-157-- **Mouse:** on by default but never required (keyboard-first).
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-167-> File manager with image preview. Miller columns.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-168-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-169-**Layout:** miller columns (parent / current / preview), configurable widths (default `[1, 4, 3]`). Layout details are in `visual-patterns.md`.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-170-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-171-**Copy this:**
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:172:- **Async I/O everywhere**, even directory listing; the UI never stalls. A tasks pane shows ongoing work (copies, transcodes).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:173:- **Built-in image preview** via Sixel / kitty / iTerm2 (auto-detected), supporting all three protocols.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:174:- **Vim-style keybindings**, with `;` / `:` to run a shell command (`:` blocks until it finishes).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-175-- **Lua plugins**: extension without recompiling or forking.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-176-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-177-**Lesson:** every I/O can be slow on the wrong filesystem (network mounts, encrypted drives, dead USB), so async-first is the foundation, not an option.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-178-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:179:**Siblings:** ranger (Python, mature, many features, slower startup), lf (Go, very fast, minimal), nnn (C, fastest and most minimal), broot (Rust, tree mode + fuzzy filter at once). All share vim-style `hjkl`, bookmarks, and shell composability (`ranger --choosefile=/tmp/path`); the cd-on-exit wrapper is in `cli-basics.md`. For browsing tools, startup time is a real axis to compete on.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-180-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-181-**Cite when:** designing a file manager or anything that touches slow filesystems.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-182-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-183----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-184-
+--
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-223-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-224-**Layout:** chat-like: transcript above, input pinned at the bottom. Two render models, both shipping:
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-225-- **Inline, append-only:** Gemini CLI's default and Claude Code's classic renderer. Finalized turns go to native scrollback (Ink's `<Static>` or an equivalent), so the terminal's own scrollback, search, and copy work for free. The cost grows with the transcript: long streaming sessions can flicker, jump the scroll position, and grow memory.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-226-- **Alternate screen with a virtualized transcript:** Claude Code's fullscreen renderer (a research preview; the default for users who first ran Claude Code on or after May 6, 2026; `/tui` switches) and Copilot CLI (default since 1.0.8, no opt-out since 1.0.12). Only visible messages render, so memory stays flat and nothing flickers. The cost: the app must rebuild what the terminal gave for free (search, copy, exporting the transcript to scrollback) and keep an inline fallback. Claude Code forces its classic renderer in screen-reader mode.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-227-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:228:**Copy this:** status indicators (thinking, tool use, error) that don't overwhelm; inline diff rendering for code changes; `/`-prefixed slash commands; shell integration (paste files, run commands, read the working directory).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-229-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-230-**Lesson:** a chat TUI is something users live in, so it faces the same choice as any app (`visual-patterns.md` → *Inline, alt-screen, or overlay*). Inline with `<Static>` for finalized turns is the simpler start. Move to the alternate screen with a virtualized transcript when sessions run long, and ship search, copy, scrollback export, and an inline or accessible fallback with it. Ink's README lists all three as users, and Gemini CLI renders with a fork of Ink (React, Yoga); the internals of Claude Code's and Copilot CLI's alternate-screen renderers aren't documented.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-231-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-232-**Cite when:** a chat or agent UI must stay smooth at high token rates.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-233-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-234----
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-235-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-236-## starship (Rust, no UI framework)
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-237-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:238:> Cross-shell prompt: not a TUI, but a performance exemplar.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-239-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:240:**Layout:** none; direct ANSI emission from a single binary, configured by one TOML file with a block per module (`[character]`, `[directory]`, `[git_branch]`).
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-241-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-242-**Copy this:** per-module time budgets instead of a single startup number, so a module that overruns is dropped from that prompt with a warning instead of delaying it. The numbers (`scan_timeout`, `command_timeout`) are in `cli-basics.md` → *Startup time*.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-243-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md:244:**Lesson:** for any tool that runs frequently (shell prompts, pickers, fuzzy finders), startup time is a feature; users feel 100ms even if they can't articulate it.
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-245-
+/Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/exemplar-apps.md-246-**Cite when:** setting a startup or per-module latency budget.
+
+exec
+/bin/zsh -lc "rg -n -A 72 -B 4 'cd-on-exit|cwd-file|parent shell' /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/cli-basics.md" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-yz7az4z5
+ succeeded in 808ms:
+319----
+320-
+321-## Shell integration
+322-
+323:A child process cannot change its parent shell's working directory or environment variables — only the shell itself can do that. There's no IPC trick around this; two patterns cover everything real tools need.
+324-
+325:### cd-on-exit: the cwd-file wrapper function
+326-
+327-If your tool navigates directories and should `cd` the user's shell on exit (a file picker, a directory jumper), ship a flag that writes the final directory to a caller-specified file, and document a shell wrapper function that reads it and `cd`s after your program exits. yazi and ranger converge on the identical shape:
+328-
+329-```bash
+330-function y() {
+331-    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+332:    command yazi "$@" --cwd-file="$tmp"
+333-    IFS= read -r -d '' cwd < "$tmp"
+334-    [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+335-    command rm -f -- "$tmp"
+336-}
+337-```
+338-
+339-ranger's `--choosedir` does the same thing under a different flag name. This is the pattern, not an implementation detail — there's no other way to get a "cd on exit" TUI.
+340-
+341-### The `eval "$(tool init shell)"` pattern
+342-
+343-For env vars, keybindings, or functions that need to live in the *current* shell session, ship an `init`/`activate` subcommand that prints shell source for the user to `eval`. What gets emitted varies by need:
+344-
+345-- **starship:** a `precmd` prompt-regeneration hook plus a `preexec` hook.
+346-- **zoxide:** `z`/`zi` functions plus a `chpwd` hook that tracks visited directories.
+347-- **atuin:** keybindings (Ctrl-R and the Up arrow by default; `--disable-up-arrow` opts out) plus history-capture hooks.
+348:- **mise:** a wrapper function plus `precmd`/`chpwd` hooks that re-derive and re-export `PATH` on every prompt render and `cd`. It can't set the parent shell's env, so it has the *shell itself* recompute it.
+349-- **fzf:** `--zsh`/`--bash` (since v0.48, replacing an older `install.sh`) emit keybindings and completions from one embedded call.
+350-
+351-### Never silently edit rc files
+352-
+353-Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+354-
+355----
+356-
+357-## Configuration and state
+358-
+359-### Precedence (highest wins)
+360-
+361-1. Command-line flags.
+362-2. Environment variables.
+363-3. Project-local config (`./mytool.toml`, `./.mytoolrc`).
+364-4. User config (`$XDG_CONFIG_HOME/mytool/`).
+365-5. System config (`/etc/mytool/`).
+366-6. Built-in defaults.
+367-
+368-This is the [clig.dev](https://clig.dev/#configuration) order (flags, env, project, user, system), with built-in defaults as the floor. Predictable.
+369-
+370-### XDG Base Directory Specification
+371-
+372-| Variable | Default | Purpose |
+373-|---|---|---|
+374-| `XDG_CONFIG_HOME` | `~/.config` | User config |
+375-| `XDG_DATA_HOME` | `~/.local/share` | Persistent user data |
+376-| `XDG_STATE_HOME` | `~/.local/state` | History, logs, recent files — state that persists between restarts |
+377-| `XDG_CACHE_HOME` | `~/.cache` | Regenerable cache |
+378-| `XDG_RUNTIME_DIR` | (no default) | Sockets, pipes, mode 0700 |
+379-
+380-**Use `~/.config/mytool/`, not `~/.mytool/`.** Older "dotfile in $HOME" pollution is being phased out — adopt XDG for new tools.
+381-
+382-On Windows: `%APPDATA%\mytool` for config, `%LOCALAPPDATA%\mytool` for cache. On macOS, prefer XDG (`~/.config/mytool/`) for developer CLIs — it keeps dotfiles portable across machines; reserve `~/Library/Application Support/` for GUI-style apps. The "native" helpers return that folder and, except `platformdirs` 4.6+, ignore `XDG_CONFIG_HOME`: Go's `os.UserConfigDir`, Rust's `dirs` and `directories`, and `platformdirs` when the variable is unset. Check an absolute `XDG_CONFIG_HOME`, then fall back to `~/.config`, by hand (or use `etcetera` or `xdg`, which already do).
+383-
+384-### Explaining where a value came from
+385-
+386-Accept `--config PATH` and `MYTOOL_CONFIG` (flag beats env), and give users a command that prints each effective value with its source, redacting secrets, as `git config --show-origin`, `npm config list -l`, and `aws configure list` do:
+387-
+388-```
+389-$ mytool config list --show-origin
+390-user   /home/ann/.config/mytool/config.toml   format = "json"
+391-env    MYTOOL_FORMAT                          format = "text"   (wins)
+392-default                                       color  = "auto"
+393-```
+394-
+395-### Environment variables
+396-
+397-Prefix tool-specific variables `TOOL_FOO_BAR` (uppercase, underscores, single-line values) and honor the general-purpose ones that apply: `NO_COLOR`, `FORCE_COLOR`, and `CLICOLOR_FORCE` (see *Color*), `DO_NOT_TRACK` (see *Telemetry*), `EDITOR`/`VISUAL`, `PAGER`, `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`, `TMPDIR`, `TERM`, `LINES`/`COLUMNS`, and `LANG`/`LC_*`.
+398-
+399-### Secrets — what NOT to do
+400-
+401-Never accept secrets via `--password=`, `--token=`, etc. on the command line. They leak through `ps`, shell history, `docker inspect` and `systemctl show`, crash dumps and debug logs, and process accounting.
+402-
+403-**Use instead:**
+404-- Credential files with restrictive permissions (`--password-file path/to/secret`).
+405-- Stdin (`--password-stdin`).
+406-- AF_UNIX sockets.
+407-- OS keychains (gh uses macOS Keychain / libsecret / Windows Credential Manager).
+408-- `git-credential-*`-style helper protocols.
+409-
+410-### First-run authentication
+411-
+412-Two patterns dominate, and both are legitimate:
+413-
+414-1. **Browser + OAuth device-code flow**, token written to the OS keychain (`gh auth login`, `vercel login`): open a browser tab, or show a URL and one-time code, and poll until the user approves. Support a non-browser fallback (`--with-token`, a PAT from stdin) for headless use.
+415-2. **Direct prompt for long-lived credentials**, written to a plaintext config file — still standard for access-key-style cloud CLIs (`aws configure`), though AWS is moving federated auth to device flow (`aws configure sso`).
+416-
+417-**Before prompting through ordinary stdio, check both stdin and stdout are TTYs** (`isatty()` on both)—gh's auth flow does this. A tool that deliberately opens `/dev/tty` should test that channel instead. **The real cross-ecosystem non-interactive convention is an environment variable that short-circuits the interactive flow**—`GH_TOKEN`, `VERCEL_TOKEN`, and `GH_PROMPT_DISABLED` (any value turns gh's prompts off)—not a flag. There is no settled `--no-input`-style flag name (Django uses `--no-input`, Terraform `-input=false`, git `GIT_TERMINAL_PROMPT=0`, npm and gh none)—don't present one as a standard; fit your tool's existing flag vocabulary and honor `CI=true` as a secondary signal.
+418-
+419-**Keychain libraries for OS-native storage:**
+420-- Go — `zalando/go-keyring` (what gh uses) or `99designs/keyring` (no release since 2022; more backends, including an encrypted-file fallback for headless hosts).
+
+codex
+**Your Rust process cannot directly change its parent shell’s working directory.** `std::env::set_current_dir()` changes your process and the directory inherited by future children. Running `sh -c 'cd …'` changes only that child shell.
+
+**Ship a shell function that launches your TUI, reads the chosen directory, and calls `cd` in the current shell.** This is the pattern behind yazi’s `--cwd-file` and ranger’s `--choosedir`.
+
+For example, define your binary’s contract as:
+
+- `--cwd-file PATH`: write the chosen **absolute path followed by NUL** on acceptance.
+- Cancellation: leave the file empty; errors: return nonzero.
+- Restore terminal modes before exiting.
+
+Then provide this Bash/Zsh wrapper in the user’s shell configuration:
+
+```bash
+pick() {
+    local tmp cwd rc
+    tmp=$(mktemp) || return 1
+
+    command mypicker --cwd-file "$tmp" "$@"
+    rc=$?
+
+    if [ "$rc" -eq 0 ]; then
+        if IFS= read -r -d '' cwd < "$tmp" && [ -n "$cwd" ]; then
+            builtin cd -- "$cwd" || rc=$?
+        fi
+    fi
+
+    command rm -f -- "$tmp"
+    return "$rc"
+}
+```
+
+The NUL delimiter preserves paths containing newlines; quoting handles spaces and glob characters. In Rust on Unix, write the `OsStr`’s raw bytes rather than using `to_string_lossy()`.
+
+Users invoke `pick`, and the function’s `cd` affects their actual shell. Executing that wrapper as a separate script would introduce another child process and lose the effect.
+
+A stdout-based picker also works—`dir=$(mypicker)` followed by `cd -- "$dir"`—provided UI output goes to stderr or `/dev/tty`. The dedicated result file keeps full-screen rendering independent of the result channel and avoids command substitution stripping trailing newlines.
+
+For convenient installation, offer `mypicker init bash` / `init zsh` to emit the wrapper. **Pass paths as data; don’t `eval` selected paths or generated `cd` commands.**
+tokens used
+15,307

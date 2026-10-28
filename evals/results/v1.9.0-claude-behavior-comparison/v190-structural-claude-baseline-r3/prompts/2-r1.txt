@@ -1,0 +1,1 @@
+I need a small Go tool that lets someone pick one of their recent git branches with fuzzy search, then use it in `git checkout $(branchpick)`. I want the invoking command and chosen branch to remain visible in scrollback. Should this be a full-screen Bubble Tea app? Describe the output contract, terminal mode, and the most important implementation and test choices.

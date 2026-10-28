@@ -1,0 +1,113 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-0fygw48j
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f4-3b02-7d30-be95-7aa7466d6a98
+--------
+user
+My Ratatui app (crossterm backend, tokio) has a rendering bug: after certain resizes, one panel's bottom border overlaps the footer by one row. It's intermittent and I've been println-debugging, which obviously corrupts the screen. What's the right way to (a) debug this properly and (b) write a regression test so it can't come back?
+
+codex
+Use **file logging for diagnosis** and **`TestBackend` tests that render your production UI across resize sequences**.
+
+For diagnosis, keep all diagnostic output off the terminal while the TUI is active—including `println!`, `eprintln!`, and panic output.
+
+With `tracing`, a minimal setup is:
+
+```rust
+let log = std::fs::File::create("tui-debug.log")?;
+
+tracing_subscriber::fmt()
+    .with_writer(log)
+    .with_ansi(false)
+    .with_max_level(tracing::Level::DEBUG)
+    .init();
+```
+
+Watch it from another terminal with `tail -f tui-debug.log`. For heavy logging, use `tracing_appender::non_blocking` and keep its returned guard alive until shutdown.
+
+Log the geometry **inside the draw callback**, where you know the actual frame size:
+
+```rust
+terminal.draw(|frame| {
+    let area = frame.area();
+    let [body, footer] = Layout::vertical([
+        Constraint::Min(0),
+        Constraint::Length(1),
+    ])
+    .areas(area);
+
+    tracing::debug!(?area, ?body, ?footer, "render geometry");
+
+    // Render using these rectangles.
+})?;
+```
+
+The likely things to check are:
+
+- **Exclusive boundaries:** `rect.bottom()` is the first row *after* the rectangle. The bottom border belongs at `rect.bottom() - 1`.
+- **Footer reservation:** split the footer from the full frame first, then subdivide the body into panels.
+- **Borders:** use `block.inner(panel_area)` for panel contents instead of manually subtracting border rows.
+- **Stale geometry:** recompute layout from `frame.area()` every draw. A queued resize event’s dimensions may already be stale.
+- **Concurrent terminal access:** have one task own the terminal and draw; Tokio tasks should send it events or state updates.
+
+If your panel is above the footer, this invariant is useful:
+
+```rust
+debug_assert!(panel_area.bottom() <= footer_area.y);
+```
+
+Adjacent rectangles satisfy equality; overlapping rectangles do not.
+
+For regression testing, exercise **the same render function your application uses**, with deterministic application state. Keep one terminal alive across the sequence so shrinking and growing can expose stale-buffer or cached-layout bugs:
+
+```rust
+use ratatui::{
+    backend::TestBackend,
+    layout::Rect,
+    Terminal,
+};
+
+#[test]
+fn panel_border_stays_above_footer_after_resize() {
+    let mut terminal =
+        Terminal::new(TestBackend::new(80, 24)).unwrap();
+    let mut app = App::fixture(); // Stable data, selection, clock, etc.
+
+    // Replace/add sizes from the resize sequence that reproduces the bug.
+    let sizes = [
+        (80, 24),
+        (80, 23),
+        (81, 23),
+        (40, 10),
+        (80, 24),
+    ];
+
+    for (step, (width, height)) in sizes.into_iter().enumerate() {
+        terminal.backend_mut().resize(width, height);
+        terminal
+            .resize(Rect::new(0, 0, width, height))
+            .unwrap();
+
+        terminal.draw(|frame| app.render(frame)).unwrap();
+
+        insta::assert_debug_snapshot!(
+            format!("resize_{step}_{width}x{height}"),
+            terminal.backend().buffer()
+        );
+    }
+}
+```
+
+Add `insta` as a dev dependency and review the initial snapshots carefully: verify that the panel’s bottom border occupies the row above the footer and that the footer is complete. Subsequent runs compare the entire rendered buffer, including leftover cells.
+
+Also add a focused assertion for your actual footer text or expected border cells, so the intended behavior is explicit. Include odd dimensions, your minimum supported height, and repeated shrink–grow cycles.
+
+One limitation: `TestBackend` catches layout and buffer bugs, but does not reproduce crossterm event delivery or terminal-emulator behavior. If these tests pass while the live app fails, record the resize/event sequence and test the event handling next—especially any cached dimensions or draws initiated by multiple tasks.
+tokens used
+3,643

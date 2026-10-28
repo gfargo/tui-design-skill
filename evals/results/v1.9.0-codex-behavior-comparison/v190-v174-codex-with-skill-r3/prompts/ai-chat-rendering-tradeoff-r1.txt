@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I'm building an AI chat client for the terminal with streaming responses. Should I keep the transcript inline with Ink's <Static>, the way Claude Code does it, or use the alternate screen?

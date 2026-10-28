@@ -1,0 +1,51 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-4lh82cia
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f5-da25-7b70-b671-0c3b4a41c773
+--------
+user
+We're starting a new Ink CLI today. Which Ink, React, and Node versions should we target, and can I still read the terminal width from useStdout().stdout.columns?
+
+codex
+I’ll check the available package information and Ink’s current API guidance so the version recommendations fit a new project.
+exec
+/bin/zsh -lc 'ls -la' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-4lh82cia
+ succeeded in 102ms:
+total 0
+drwx------@    2 gfargo  staff      64 Oct 28 01:22 .
+drwx------@ 8016 gfargo  staff  256512 Oct 28 01:22 ..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'curl -L --max-time 20 -s https://raw.githubusercontent.com/vadimdemedes/ink/main/package.json' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-4lh82cia
+ exited 6 in 76ms:
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+codex
+For a new CLI, I’d target **Ink 6.x, React 19.x, and Node 24 LTS**. Ink 6’s compatibility floor is Node 20 and React 19; Node 20 is already end-of-life, so avoid it for a new project. Use ESM (`"type": "module"`).
+
+Yes, you can still read:
+
+```tsx
+const {stdout} = useStdout();
+const columns = stdout.columns ?? 80;
+```
+
+But reading that property **doesn’t subscribe your component to terminal resizes**. For responsive layouts, use Ink’s dedicated hook in versions that provide it:
+
+```tsx
+import {useWindowSize} from 'ink';
+
+const {columns, rows} = useWindowSize();
+```
+
+I couldn’t reach the live registry or docs here, so treat those as recommended major versions, not a verified claim about today’s latest releases.
+tokens used
+9,531

@@ -1,0 +1,390 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-tier3-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says a child can't change the parent shell's cwd and that no syscall or IPC trick gets around it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes the program writing the chosen directory to a file that a shell function reads and cd's into after exit."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names yazi's --cwd-file and ranger's --choosedir, and presents its bash function as yazi's documented one."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It tells users to add the eval line themselves and explicitly warns against silently editing their rc files."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It gives bash/zsh and fish functions that mktemp a file, pass --cwd-file, read the file back, cd, and rm the file."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says a process can only change its own cwd and that 'no signal and no IPC trick' can change the parent shell's directory."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes the binary writing the final directory to a `--cwd-file` path and a shell function reading that file and running `cd` after the binary exits."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names yazi's `--cwd-file` and ranger's `--choosedir`, and says its wrapper follows the shape yazi documents."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says 'Don't edit the user's rc file for them' and recommends printing the line with instructions on where to add it; the `eval \"$(picker init zsh)\"` line is still added by the user."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It gives a bash/zsh function that uses mktemp, runs `command picker --cwd-file=\"$tmp\"`, reads the file with `read -r -d ''`, guards with `-d`, runs `builtin cd`, and removes the temp file."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens by stating the binary can't do it: a child process can't change its parent shell's cwd, chdir only affects the binary itself, and every tool relies on a shell function instead."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Lays out the pattern: the binary accepts --cwd-file and writes the chosen directory there, then a shell wrapper reads the file and runs cd after exit."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Names yazi's --cwd-file and ranger's --choosedir explicitly, and says the bash wrapper follows the shape yazi documents."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends a `picker init <shell>` subcommand whose output users add to their rc file themselves, and says not to edit the rc file silently."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Provides bash/zsh and fish wrappers that mktemp a file, run the picker with --cwd-file pointing at it, read it back, cd with guards, and rm the temp file."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer checks term.IsTerminal on both stdin and stdout, also checks CI, and lets the MYTOOL_API_KEY env var skip the prompt."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It names github.com/zalando/go-keyring and covers macOS Keychain, Windows Credential Manager and libsecret."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says headless Linux and containers often lack Secret Service so keyring.Set fails, and it calls for an explicit opt-in plaintext fallback (--insecure-storage) instead of a silent one."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It sets the directory to 0700 and explicitly chmods the file to 0600, warns against relying on umask, and includes a test under umask 022."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions a --no-input flag and adds no asterisk convention; required input is enforced with a Validate function."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer checks term.IsTerminal on both os.Stdin and os.Stdout, lets MYTOOL_API_KEY short-circuit the flow, and prints a stderr hint with exit 1 when not interactive."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends the OS keychain through zalando/go-keyring and uses keyring.Get and keyring.Set in the code."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says headless Linux and containers often lack a Secret Service daemon, and it requires an explicit --insecure-storage opt-in instead of silently writing plaintext."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It writes the file with 0o600 and then calls os.Chmod(p, 0o600) explicitly, noting that umask should not be relied on."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions --no-input, and it enforces the required field with a Validate function rather than an invented asterisk convention."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer prompts only when both stdin and stdout are TTYs and CI isn't set; otherwise it exits non-zero with guidance, and the MYTOOL_API_KEY env var is checked first so CI skips the prompt."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends OS keychain storage via zalando/go-keyring by name and shows keyring.Set and keyring.Get usage."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says headless Linux hosts and containers often lack a Secret Service daemon, and tells the reader not to fall back to a file silently but to fail clearly and require opt-in via --insecure-storage."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It calls os.Chmod(path, 0600) explicitly after writing and explains that os.WriteFile won't fix the permissions of an existing file."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never presents --no-input as a standard flag, and the huh prompt uses a Validate function rather than an invented asterisk convention for required fields."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says no terminal can tell the app which font it uses, that the protocol has no font query, and that the user should opt in rather than the app detecting it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends a config key, flag, or env var and cites lazygit's gui.nerdFontsVersion, eza's --icons, yazi, and starship presets."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Makes Unicode the default with an ASCII level below it (Nerd \u2192 Unicode \u2192 ASCII lookup table) and suggests telling users who see boxes to set icons = \"unicode\"."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Its 5s timeout and backoff values appear only as implementation examples, and it never presents a fixed give-up time as an established TUI convention."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Keeps last-good data visible and dimmed with a 'STALE 42s' age marker, a retry countdown, and an 'r' key to retry now."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says no terminal can tell the app whether a Nerd Font is installed, that no protocol exists for asking, and that icons should be opt-in rather than detected."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It cites lazygit's gui.nerdFontsVersion, eza's --icons, and starship's presets as opt-in precedents."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It makes plain Unicode the default and adds an ASCII icon set as a further fallback."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The 5s timeout and 30\u201360s backoff cap appear only as example values; the answer never presents a universal give-up threshold as a TUI convention and retries indefinitely."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It keeps the last good data visible, dimmed and marked STALE with its age, and shows first-load elapsed time with an Esc cancel option."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says no terminal lets a program ask whether a Nerd Font is active, tells the reader not to try detecting it, and makes icons a setting."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends an opt-in setting and cites lazygit's gui.nerdFontsVersion, eza's --icons and starship's presets as precedent."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It provides a three-level Nerd \u2192 Unicode \u2192 ASCII icon table, defaults to Unicode, and pairs icons with text labels."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The 3s timeout and backoff values appear only as example code parameters; none is claimed as an established TUI convention for giving up."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It keeps last-known-good data visible and dimmed instead of blanking the view, and shows the data's age ('updated 9s ago', 'STALE 1m'); it offers manual retry and pause keys rather than cancel."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends attaching py-spy record to the running process and explicitly says built-in Textual tools don't measure speed."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "States add_rows() won't help because it just calls add_row() once per row."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says DevTools can't profile Ink because its renderer doesn't enable Profiler features, yielding an empty Profiler tab."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Recommends node --cpu-prof and opening the .cpuprofile in Chrome DevTools or speedscope."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Names unmemoized re-renders, <Static> misuse, and always-animating ink-spinner as Ink cost sinks."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends py-spy record with a flame graph and says the console and dev tools only show logs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says add_rows() just loops over add_row() and won't help."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says no and explains the Profiler tab won't give real timings because Ink's renderer doesn't set the needed flags."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer recommends node --cpu-prof and viewing the output in Chrome DevTools or speedscope."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer names unmemoized re-renders, <Static> misuse, and always-animating spinners."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends attaching py-spy with `--idle` and says Textual's console and diagnose tools don't measure performance."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says add_rows() is a plain loop over add_row() and that switching to it won't speed up a slow insert."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says React DevTools can inspect the tree but can't profile, because Ink's reconciler lacks the flags the Profiler tab needs."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends `node --cpu-prof` and loading the .cpuprofile into Chrome DevTools or speedscope."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It names unmemoized re-renders, <Static> misuse, non-virtualized lists, and always-animating ink-spinner as Ink cost sinks."
+        }
+      ]
+    }
+  ]
+}

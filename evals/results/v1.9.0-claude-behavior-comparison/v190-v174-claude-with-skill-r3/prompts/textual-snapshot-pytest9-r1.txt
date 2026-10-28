@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+After upgrading to pytest 9, my Textual snapshot tests started writing .raw files instead of SVGs and my async Pilot tests error out. What changed?

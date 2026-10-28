@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+I've got a Bubble Tea app in Go — a small kanban TUI, ~1500 lines — that my team relies on daily. Every refactor breaks something: last week Tab-cycling between columns silently stopped working and nobody noticed for two days. I want automated tests running in CI so this stops happening, but honestly I don't even know how you test a TUI. Where do I start?

@@ -1,0 +1,270 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-design-review-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names three border layers (application, pane, inner box) as the top noise source and recommends removing them."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends separating the panes with whitespace or a single divider in place of the boxes."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer flags `\u2705 PASSED \u2705` as three redundant state signals and says to show PASS once."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer includes a size table for 120, 80x24 and 60 columns plus a minimum-size message, and shows a 60-column mockup."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The first table row names three border layers (app frame, pane frame, inner box) and explains why they hurt."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends removing the app frame and inner boxes and using whitespace between sections."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It flags the two checkmarks around PASSED and says the version should move into help/about."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It proactively gives layouts for 80\u00d724 and 60 columns, a 60-column sketch, and a 60\u00d712 minimum fallback."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer's first table row calls out three border layers around the content and recommends removing the application frame and the innermost boxes."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends using whitespace and one divider between panes in place of the boxes, and says to compose mostly borderless blocks."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It explicitly flags that `\u2705 PASSED \u2705` repeats success three times and recommends showing PASS once."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It proactively covers 80\u00d724 and 60-column layouts, a 60\u00d712 minimum, and how to handle terminals below that size."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives a table with named column breakpoints at 120, 90\u2013119, 60\u201389, 40\u201359, and below 40 columns or 8 rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Between 60 and 89 columns it collapses to the current directory only, and at 40\u201359 to a compact single pane."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The preview is dropped first (at 90\u2013119), then the parent; the current pane is always protected."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It declares a 40x8 minimum and renders a 'Need 40x8; have 35x6' too-small message that recovers on resize."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It replaces the fixed thirds with constraint-based layout: Length with a clamped 18\u201328 parent plus Fill(55)/Fill(45) ratios."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a table with explicit thresholds at 120, 80\u2013119, 60\u201379, 40\u201359, and <40 columns / <8 rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends a 'Current directory only' single pane at 60\u201379 columns and below."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Preview is hidden first at 80\u2013119 columns, then the parent, and the current directory always survives."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sets a 40\u00d78 minimum and shows a 'Terminal too small; need 40\u00d78' message while keeping resize and quit working."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces equal thirds with pane budgets, a clamped parent width, minimum widths, and Ratatui Length/Fill constraints."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a table with 120+, 80\u2013119, 60\u201379 column breakpoints and a 40x8 minimum, and the code encodes them as well."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "At 60\u201379 columns it collapses to 'Current only,' implemented as SinglePane mode."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says to remove the preview first and then the parent column, keeping the current directory as the pane that always survives."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Proposes a 40x8 minimum and shows a too-small message such as 'Need 40x8; have 35x7'."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Recommends minimum widths per pane, a weighted 1:4:3 ratio, and Constraint::Length/Fill in place of equal thirds."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer replaces 'every field' with a short diagnostic summary and puts IPs, QoS, labels and annotations behind expandable sections, warning that long annotations can swallow the panel."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends showing roughly five contextual actions plus `? help`, with all 14 bindings moved into the help view."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It gives a resize ladder for 120\u00d730, 80\u00d724, 60 columns and a minimum-size message, plus a narrow-layout sketch."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It says to show READY counts and the actual status reason alongside color, honor NO_COLOR, and keep the UI understandable in monochrome, so color is paired with text."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 2 replaces the 'every field' panel with a prioritized summary (readiness, status reason, restarts, node, owner, events) and moves labels, annotations, QoS and similar fields behind expandable sections or a full-screen describe view."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends showing about five contextual shortcuts in the footer and putting all 14 in `?` help."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 4 lays out behavior at 100\u00d730, 80\u00d724 and 60\u00d724, plus a minimum-size message below 60\u00d716, including a 60-column mockup."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Says to keep status text alongside color and shows a STATUS text column, which pairs color with words; it doesn't call color-only coding an accessibility issue, but the recommendation is clear."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Replaces the 'every field' panel with a diagnostic summary, moving IPs/QoS/labels/annotations into expanded or searchable sections, a YAML view, and Enter-to-open details."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says to show about five contextual actions plus `?` for the complete keymap, because fourteen bindings compete with content."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Gives a resize policy table covering 120+, 80\u00d724, and 60 columns, sets a 60\u00d712 minimum with a message, and shows a narrow-layout sketch."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Notes that color is the only status cue and recommends status text plus color, honoring NO_COLOR."
+        }
+      ]
+    }
+  ]
+}

@@ -253,6 +253,19 @@ The v1.9.0 evidence round ran five new rubric sets (47 cases) written for that r
 
 No case scored lower with the skill, and every paired repetition favored it on both hosts. The reports in [`evals/results/v1.9.0-claude-comparison/`](evals/results/v1.9.0-claude-comparison/comparison.md) and [`evals/results/v1.9.0-codex-comparison/`](evals/results/v1.9.0-codex-comparison/comparison.md) list every assertion the skill still missed. The Codex runs used CLI 0.164.0-alpha.11.1; three of its jobs were rerun in full after a usage limit and the failed attempts were not committed.
 
+The first phase of [#79](https://github.com/gfargo/tui-design-skill/issues/79) ran five older sets that had no recorded run (27 cases, the same v1.9.0 skill, three repetitions per case and condition, one commit):
+
+| Eval set | Claude Code: baseline → with skill | Codex CLI: baseline → with skill |
+|---|---|---|
+| Clutter and floor reviews (`evals.json`) | 92.3% → 100.0% | 84.6% → 100.0% |
+| Structural forward tests (v1.6.0) | 83.3% → 95.2% | 66.7% → 100.0% |
+| Tier-2 content (testing, debugging, OSC) | 94.4% → 93.3% | 66.7% → 82.2% |
+| Tier-3 content (shell integration, forms, Nerd Fonts) | 85.0% → 100.0% | 70.0% → 91.7% |
+| v1.7.4 corrections | 51.4% → 90.1% | 48.6% → 81.1% |
+| **All 27 cases** | **77.2% → 94.4%** | **63.5% → 87.7%** |
+
+The design-review sets show the least: the Claude baseline already scored 92.3% on the clutter and floor reviews, the Claude `tier2` set scored slightly lower with the skill (−1.1 pp), and the biggest gap is in the set of corrections to facts newer than the model. A Codex re-grade of a 15% sample of trials (612 assertions across both rounds) agreed with the Claude grader on 94.1% of assertions (Cohen's kappa 0.83); Codex was the stricter grader, and the skill's gain held under both. The reports in [`evals/results/v1.9.0-claude-behavior-comparison/`](evals/results/v1.9.0-claude-behavior-comparison/comparison.md) and [`evals/results/v1.9.0-codex-behavior-comparison/`](evals/results/v1.9.0-codex-behavior-comparison/comparison.md) and the [spot-check](evals/results/v1.9.0-grader-spotcheck/spotcheck.md) give the details. Build output and outcome-based design cases are still unmeasured.
+
 ## Reference freshness
 
 The framework references (`plugins/tui-design/skills/tui-design/references/ecosystem-*.md`) carry version-sensitive guidance for Bubble Tea, Ratatui, Textual, and Ink — pinned "current version" claims and tag-pinned source-code citations that can age even though the surrounding design guidance stays correct. `scripts/reference-inventory.json` is the explicit, hand-maintained list of those claims and links; `scripts/check-reference-freshness.py` audits it:

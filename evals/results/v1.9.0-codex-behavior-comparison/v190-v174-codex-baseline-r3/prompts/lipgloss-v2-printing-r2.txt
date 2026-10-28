@@ -1,0 +1,1 @@
+My non-interactive Go CLI uses Lipgloss v2 styles and prints with fmt.Println(style.Render(msg)). Is that fine when stdout is piped or NO_COLOR is set?

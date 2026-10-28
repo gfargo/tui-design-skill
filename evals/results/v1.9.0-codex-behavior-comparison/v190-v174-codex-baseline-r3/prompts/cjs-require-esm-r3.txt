@@ -1,0 +1,1 @@
+Our CLI is still CommonJS on Node 22. Do we have to pin chalk 4 and an old Ink to keep using require()?

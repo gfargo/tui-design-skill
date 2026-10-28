@@ -1,0 +1,43 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-rf0_7egn
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18100-8cca-7b12-b83c-1f7a3e614104
+--------
+user
+My Go CLI needs an API key before it can do anything. What should happen the very first time someone runs it with no key configured — and once I have huh set up for the prompt, where should I store the key?
+
+codex
+On the first run, make the missing key an onboarding step:
+
+1. Explain why the key is needed and show the URL where users can create one.
+2. If running in an interactive terminal, prompt with `huh` using hidden input:
+   ```go
+   huh.NewInput().
+       Title("API key").
+       EchoMode(huh.EchoModePassword).
+       Value(&apiKey)
+   ```
+3. Check that it’s nonempty, then validate it with a lightweight authenticated request if the API supports one. Distinguish an invalid key from a network failure.
+4. Save it after successful validation, then continue the command the user originally ran.
+
+For scripts and CI, **don’t prompt**. Return a clear error explaining how to supply `MYCLI_API_KEY`. Let `--help` and `--version` work without credentials.
+
+**Store the key in the OS credential store**, using something like [`github.com/zalando/go-keyring`](https://github.com/zalando/go-keyring): macOS Keychain, Windows Credential Manager, or Linux Secret Service. Use a stable service name such as `mycli` and an account name identifying the profile.
+
+A sensible lookup order is:
+
+```text
+MYCLI_API_KEY → OS credential store → interactive prompt
+```
+
+Keep ordinary settings in your config file. If a credential store is unavailable, offer an explicit file-storage fallback: use the OS config directory, a `0700` directory, and a `0600` file on Unix. Explain that the file is plaintext; don’t silently fall back to it.
+
+Also provide `mycli auth login`, `mycli auth logout`, and `mycli auth status`. Never print the key in logs or status output, and avoid a key flag that could expose it in shell history or process listings.
+tokens used
+844

@@ -1,0 +1,39 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-_12r7zda
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180f6-eaf6-7be0-9b17-d268abee187f
+--------
+user
+I'm building a small 'pick one of your recent git branches' helper in Go — like fzf but specialized. Two design questions before I start: should it take over the whole screen the way lazygit does, and what should the terminal look like after it exits? I want the command a user ran and the branch they picked to still be visible in scrollback afterwards.
+
+codex
+For a small “pick a branch” helper, I’d default to a **compact, inline picker** beneath the command prompt. Show perhaps 8–12 rows, filter as the user types, and scroll the list within that space. A full-screen interface makes more sense when users need multiple panels or extended browsing.
+
+After selection, remove the transient picker and leave a simple receipt in the normal terminal buffer:
+
+```text
+$ pick-branch
+Selected: feature/login-refresh
+$
+```
+
+On cancellation, remove the picker without printing a selected branch. Avoid clearing the terminal or erasing anything above the picker.
+
+The key distinction is the **alternate screen buffer**. Full-screen TUIs commonly use it; its contents disappear when the app exits. That’s useful for cleanup, but anything you want preserved must be printed **after returning to the normal buffer**. You can therefore offer a full-screen mode and still preserve the command and selection.
+
+For the Go implementation, keep these concerns separate:
+
+- Render interactive UI to the terminal, usually via stderr or `/dev/tty`.
+- Restore terminal settings and clean up the UI before printing the final result.
+- Write only the branch name to stdout so scripts can consume it.
+- If used as `git switch "$(pick-branch)"`, print the human-readable receipt to stderr too: captured stdout won’t appear in scrollback.
+
+That gives you a lightweight default, clean scripting behavior, and a visible record of what the user picked.
+tokens used
+812

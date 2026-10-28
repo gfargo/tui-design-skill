@@ -1,0 +1,1 @@
+My Rust log-viewer TUI shows file paths and request IDs. Users keep asking for two things: click a path to open the file in their editor, and press y to copy the request ID. The catch is half of them run it over SSH, often inside tmux, so I can't just shell out to pbcopy/xclip. How do I make both features work, including the tmux case?

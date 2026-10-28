@@ -1,0 +1,36 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-design-review-claude-baseline-r3",
+  "created_at": "2026-10-28T03:32:40Z",
+  "run_manifest_sha256": "750794b542c4675daad6f7c3a06dcbf500036240a9d50cad4f426963a61a1a69",
+  "grades_file": "grades.json",
+  "grades_sha256": "c023e0e917139a48f1cd89057a9309efaeb3a16450b7424ab9cc8fbb29b977a3",
+  "passed": 36,
+  "total": 39,
+  "pass_rate": 0.9230769230769231,
+  "by_case": [
+    {
+      "case_id": "0",
+      "case_name": "cluttered-ci-dashboard-review",
+      "passed": 9,
+      "total": 12,
+      "pass_rate": 0.75
+    },
+    {
+      "case_id": "1",
+      "case_name": "responsive-miller-columns",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "2",
+      "case_name": "open-ended-k8s-tui-review",
+      "passed": 12,
+      "total": 12,
+      "pass_rate": 1.0
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

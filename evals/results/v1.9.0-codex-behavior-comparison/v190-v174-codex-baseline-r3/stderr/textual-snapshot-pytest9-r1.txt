@@ -1,0 +1,78 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-hzqm4baz
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180fb-650a-7d42-be66-aeb08d84e86b
+--------
+user
+After upgrading to pytest 9, my Textual snapshot tests started writing .raw files instead of SVGs and my async Pilot tests error out. What changed?
+
+codex
+I’ll check the project’s test setup and dependency versions to see what’s behind both changes.
+exec
+/bin/zsh -lc "pwd; rg --files -g '*pytest*' -g 'pyproject.toml' -g '*test*' -g '*requirements*' -g 'AGENTS.md' -g '*lock*' -g '*README*'" in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-hzqm4baz
+ exited 1 in 340ms:
+/private/var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-hzqm4baz
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (failed)
+exec
+/bin/zsh -lc 'ls -la' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-hzqm4baz
+ succeeded in 139ms:
+total 0
+drwx------@    2 gfargo  staff      64 Oct 28 01:28 .
+drwx------@ 8017 gfargo  staff  256544 Oct 28 01:29 ..
+
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+The `.raw` files match a known incompatibility between the snapshot plugin and newer Syrupy APIs. I’m checking the pytest 9 async changes too, since the Pilot failures may have a separate cause.
+mcp: codex_apps/search_service.web_run started
+mcp: codex_apps/search_service.web_run (completed)
+codex
+You’re likely hitting **two separate compatibility changes**, rather than a change to Textual’s screenshot format.
+
+**The `.raw` files come from Syrupy.** `pytest-textual-snapshot` 1.1.0 pins Syrupy 4.8.0. Moving to a newer Syrupy to support pytest 9 breaks the plugin’s SVG subclass because Syrupy renamed:
+
+```text
+_file_extension                    → file_extension
+_read_snapshot_data_from_location  → read_snapshot_data_from_location
+```
+
+The old overrides are ignored, so Syrupy falls back to `.raw` and skips the plugin’s SVG normalization. [Upstream PR #24](https://github.com/Textualize/pytest-textual-snapshot/pull/24/files) fixes both names and updates the dependency. Use a plugin release or patched fork containing that fix; upgrading Syrupy alone is insufficient. A temporary rollback is `pytest<9` with the plugin’s pinned `syrupy==4.8.0`.
+
+**The async failures depend on the error message:**
+
+- **“async def functions are not natively supported”**: install/enable `pytest-asyncio` and mark async tests. Unhandled async tests began failing instead of being skipped in **pytest 8.4**, so this may surface when jumping directly to 9. [pytest changelog](https://docs.pytest.org/en/8.4.x/changelog.html)
+- **“requested an async fixture … with no plugin or hook that handled it”**: pytest 9 turns the earlier warning into an error. With pytest-asyncio’s default **strict mode**, async fixtures need `@pytest_asyncio.fixture`, and tests need `@pytest.mark.asyncio`. [Async discovery rules](https://pytest-asyncio.readthedocs.io/en/stable/concepts.html)
+
+For example:
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_pilot():
+    app = MyApp()
+    async with app.run_test() as pilot:
+        await pilot.press("tab")
+        await pilot.pause()
+```
+
+For an asyncio-only suite, you can instead enable automatic handling:
+
+```toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+```
+
+Textual’s `Pilot` provides app interaction; it still needs an async test runner. Without your traceback and installed versions, the snapshot diagnosis is a strong match, while the precise async cause remains conditional.
+tokens used
+31,188

@@ -1,0 +1,270 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-design-review-codex-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer explicitly names nested borders (outer frame, pane frames, inner frames) as a clutter source that consumes space."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends removing the outer and inner frames and using whitespace between the list and details, keeping a single divider above logs."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It flags `[PASS]` and `\u2705 PASSED \u2705` as repeated, decorated status using competing symbols."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It only notes that the mockup is 'shown narrower for readability' and never discusses how the layout should adapt or degrade at narrower terminal widths."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The first recommendation is to remove the nested boxes, naming the outer frame, pane frames, and inner frames around the same content as linework that adds no information."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends using whitespace between the pipeline list and details, keeping one divider above the logs, and the mockup shows the flattened layout."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It flags `\u2705 PASSED \u2705` as mixed convention and suggests moving the version number into help."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It only notes that 120 columns gives enough room and never discusses how the layout should behave on narrower terminals."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens its list by saying the pipeline and details panes each have two boxes inside an outer application box, and that these crowd the content."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends removing the inner and outer boxes and relying on padding and aligned columns, and its mockup separates the regions with whitespace."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It calls out `\u2705 PASSED \u2705` as a repeated status alongside `[PASS]` and recommends a single vocabulary, and the mockup drops the version from the title."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It sizes the layout only for 120 columns and never says how it should adapt to a narrower terminal."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a table of named breakpoints (120+, 90\u2013119, 60\u201389, below 60) and matching `layout_mode` code."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends a current-only, full-width single pane for 60\u201389 columns and a compact single view below 60."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Sets the priority as current \u2192 preview \u2192 parent, so the parent is dropped first, then the preview."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Says to 'render a minimal message when there's no room' and refers to 'your intended minimum', but never sets a concrete minimum terminal size or a clear 'terminal too small' notice."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Recommends `Constraint::Length`, `Min`, `Max`, and `Fill` with a capped parent width instead of three `Percentage(33)` constraints."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a table with named breakpoints at 120+, 90\u2013119, 60\u201389, and below 60 columns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Recommends a current-only single pane at 60\u201389 columns and a compact single pane below 60."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Calls the current directory essential and the other panes supporting, dropping the parent first and then the preview."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Defines a compact mode below 60 and avoids panics on tiny rects, but never sets a minimum terminal size or shows a 'terminal too small' message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces equal 33% splits with Constraint::Length/Min constraints and minimum usable widths that account for borders."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Gives a table with named breakpoints at 120, 90\u2013119, 60\u201389, and under 60 columns, plus matching Rust match arms."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "At 60\u201389 columns it switches to a single Current pane, with preview opened on demand as a separate view."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "States an explicit priority: keep the current directory first, then add preview, then parent; parent is dropped first and preview second."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Mentions a 'terminal too small' view for when basic navigation cannot fit, but never names a concrete minimum terminal size."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Replaces equal thirds with 20/40/40 percentage constraints and says to derive breakpoints from minimum usable content widths."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Recommends a summary-first details panel with core fields on top and labels, annotations, conditions, and ownership moved to expandable sections or separate tabs."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Says fourteen footer bindings will be hard to scan and recommends showing only the few relevant to the focused view plus `? Help`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Has a 'Design below 160\u00d750 now' point: sketch an 80\u00d724 layout, collapse secondary panes, and allow maximizing the focused pane."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Under 'Keep status readable without color' it recommends text labels such as Running/Pending/CrashLoopBackOff plus readiness like 1/2."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends summarizing details first with key fields and moving labels, annotations, and conditions into expandable sections, warning that long annotations would dominate the panel."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends keeping navigation, search, actions, and `? Help` visible, putting all 14 bindings in a help overlay, and updating hints with focus."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says to design for smaller windows now, sketch at 100\u00d730 and 80\u00d724, and define rules for collapsing panes and hiding columns."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer says status needs more than three colors, recommends showing readiness, restarts, and a textual reason like `CrashLoopBackOff` alongside color, and says to keep the text readable without color."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says to make details a summary first, put labels and annotations in expandable sections, and offer a full YAML view for exhaustive inspection."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer recommends a footer with a few actions for the current view plus `? Help` for the full binding list."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer calls 160\u00d750 the spacious case, suggests testing at 100\u00d730 and 80\u00d724, and recommends collapsing panes and dropping columns."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Under 'Use more than color for health,' the answer recommends readable status text and readiness counts alongside the colors."
+        }
+      ]
+    }
+  ]
+}

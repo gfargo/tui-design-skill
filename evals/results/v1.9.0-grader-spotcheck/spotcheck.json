@@ -1,0 +1,1043 @@
+{
+  "schema": "tui-design grader spot-check v1",
+  "created_at": "2026-10-28T16:37:30Z",
+  "fraction": 0.15,
+  "seed": 79,
+  "grader": {
+    "provider": "OpenAI",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "runner_version": "codex-cli 0.164.0-alpha.11.1"
+  },
+  "reference_grader": {
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "prompt_version": "v180-direct-rubric-v1"
+  },
+  "bundles": [
+    {
+      "run_id": "v190-cli-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 5,
+      "assertions": 21,
+      "agree": 20,
+      "agreement": 0.9523809523809523,
+      "kappa": 0.8965517241379309,
+      "claude_pass_rate": 0.6666666666666666,
+      "codex_pass_rate": 0.6190476190476191
+    },
+    {
+      "run_id": "v190-cli-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 5,
+      "assertions": 20,
+      "agree": 20,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-cli-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 5,
+      "assertions": 21,
+      "agree": 21,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.42857142857142855,
+      "codex_pass_rate": 0.42857142857142855
+    },
+    {
+      "run_id": "v190-cli-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 5,
+      "assertions": 21,
+      "agree": 20,
+      "agreement": 0.9523809523809523,
+      "kappa": 0.8590604026845636,
+      "claude_pass_rate": 0.8095238095238095,
+      "codex_pass_rate": 0.7619047619047619
+    },
+    {
+      "run_id": "v190-content-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 3,
+      "assertions": 13,
+      "agree": 10,
+      "agreement": 0.7692307692307693,
+      "kappa": 0.5185185185185186,
+      "claude_pass_rate": 0.7692307692307693,
+      "codex_pass_rate": 0.5384615384615384
+    },
+    {
+      "run_id": "v190-content-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 3,
+      "assertions": 13,
+      "agree": 13,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-content-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 3,
+      "assertions": 13,
+      "agree": 12,
+      "agreement": 0.9230769230769231,
+      "kappa": 0.8433734939759037,
+      "claude_pass_rate": 0.46153846153846156,
+      "codex_pass_rate": 0.38461538461538464
+    },
+    {
+      "run_id": "v190-content-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 3,
+      "assertions": 15,
+      "agree": 15,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-design-review-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 9,
+      "agree": 9,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-design-review-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 8,
+      "agree": 8,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-design-review-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 10,
+      "agree": 10,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.8,
+      "codex_pass_rate": 0.8
+    },
+    {
+      "run_id": "v190-design-review-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 9,
+      "agree": 9,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-ecosystem-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 8,
+      "assertions": 29,
+      "agree": 25,
+      "agreement": 0.8620689655172413,
+      "kappa": 0.7010309278350514,
+      "claude_pass_rate": 0.7241379310344828,
+      "codex_pass_rate": 0.5862068965517241
+    },
+    {
+      "run_id": "v190-ecosystem-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 8,
+      "assertions": 32,
+      "agree": 31,
+      "agreement": 0.96875,
+      "kappa": 0.0,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 0.96875
+    },
+    {
+      "run_id": "v190-ecosystem-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 8,
+      "assertions": 31,
+      "agree": 28,
+      "agreement": 0.9032258064516129,
+      "kappa": 0.7120743034055727,
+      "claude_pass_rate": 0.8387096774193549,
+      "codex_pass_rate": 0.7419354838709677
+    },
+    {
+      "run_id": "v190-ecosystem-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 8,
+      "assertions": 32,
+      "agree": 31,
+      "agreement": 0.96875,
+      "kappa": 0.7837837837837838,
+      "claude_pass_rate": 0.9375,
+      "codex_pass_rate": 0.90625
+    },
+    {
+      "run_id": "v190-interaction-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 5,
+      "assertions": 21,
+      "agree": 21,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.5714285714285714,
+      "codex_pass_rate": 0.5714285714285714
+    },
+    {
+      "run_id": "v190-interaction-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 5,
+      "assertions": 22,
+      "agree": 22,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.9090909090909091,
+      "codex_pass_rate": 0.9090909090909091
+    },
+    {
+      "run_id": "v190-interaction-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 5,
+      "assertions": 23,
+      "agree": 20,
+      "agreement": 0.8695652173913043,
+      "kappa": 0.7250996015936254,
+      "claude_pass_rate": 0.43478260869565216,
+      "codex_pass_rate": 0.30434782608695654
+    },
+    {
+      "run_id": "v190-interaction-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 5,
+      "assertions": 21,
+      "agree": 18,
+      "agreement": 0.8571428571428571,
+      "kappa": 0.0,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 0.8571428571428571
+    },
+    {
+      "run_id": "v190-routing-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 7,
+      "agree": 5,
+      "agreement": 0.7142857142857143,
+      "kappa": 0.30000000000000004,
+      "claude_pass_rate": 0.7142857142857143,
+      "codex_pass_rate": 0.7142857142857143
+    },
+    {
+      "run_id": "v190-routing-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 6,
+      "agree": 6,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-routing-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 7,
+      "agree": 6,
+      "agreement": 0.8571428571428571,
+      "kappa": -7.7715611723761e-16,
+      "claude_pass_rate": 0.0,
+      "codex_pass_rate": 0.14285714285714285
+    },
+    {
+      "run_id": "v190-routing-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 7,
+      "agree": 7,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.8571428571428571,
+      "codex_pass_rate": 0.8571428571428571
+    },
+    {
+      "run_id": "v190-structural-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 9,
+      "agree": 9,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.7777777777777778,
+      "codex_pass_rate": 0.7777777777777778
+    },
+    {
+      "run_id": "v190-structural-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 9,
+      "agree": 8,
+      "agreement": 0.8888888888888888,
+      "kappa": 0.0,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 0.8888888888888888
+    },
+    {
+      "run_id": "v190-structural-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 9,
+      "agree": 8,
+      "agreement": 0.8888888888888888,
+      "kappa": 0.7272727272727272,
+      "claude_pass_rate": 0.7777777777777778,
+      "codex_pass_rate": 0.6666666666666666
+    },
+    {
+      "run_id": "v190-structural-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 10,
+      "agree": 10,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-tier2-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 3,
+      "assertions": 15,
+      "agree": 15,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.8666666666666667,
+      "codex_pass_rate": 0.8666666666666667
+    },
+    {
+      "run_id": "v190-tier2-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 3,
+      "assertions": 15,
+      "agree": 15,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-tier2-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 3,
+      "assertions": 15,
+      "agree": 15,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.8,
+      "codex_pass_rate": 0.8
+    },
+    {
+      "run_id": "v190-tier2-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 3,
+      "assertions": 15,
+      "agree": 14,
+      "agreement": 0.9333333333333333,
+      "kappa": 0.6341463414634149,
+      "claude_pass_rate": 0.9333333333333333,
+      "codex_pass_rate": 0.8666666666666667
+    },
+    {
+      "run_id": "v190-tier3-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 10,
+      "agree": 10,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.8,
+      "codex_pass_rate": 0.8
+    },
+    {
+      "run_id": "v190-tier3-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 2,
+      "assertions": 10,
+      "agree": 10,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-tier3-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 10,
+      "agree": 9,
+      "agreement": 0.9,
+      "kappa": 0.782608695652174,
+      "claude_pass_rate": 0.6,
+      "codex_pass_rate": 0.7
+    },
+    {
+      "run_id": "v190-tier3-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 2,
+      "assertions": 10,
+      "agree": 9,
+      "agreement": 0.9,
+      "kappa": 0.7368421052631581,
+      "claude_pass_rate": 0.8,
+      "codex_pass_rate": 0.7
+    },
+    {
+      "run_id": "v190-v174-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 5,
+      "assertions": 16,
+      "agree": 13,
+      "agreement": 0.8125,
+      "kappa": 0.6363636363636364,
+      "claude_pass_rate": 0.5625,
+      "codex_pass_rate": 0.375
+    },
+    {
+      "run_id": "v190-v174-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 5,
+      "assertions": 17,
+      "agree": 17,
+      "agreement": 1.0,
+      "kappa": null,
+      "claude_pass_rate": 1.0,
+      "codex_pass_rate": 1.0
+    },
+    {
+      "run_id": "v190-v174-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 5,
+      "assertions": 16,
+      "agree": 16,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "claude_pass_rate": 0.5,
+      "codex_pass_rate": 0.5
+    },
+    {
+      "run_id": "v190-v174-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 5,
+      "assertions": 15,
+      "agree": 11,
+      "agreement": 0.7333333333333333,
+      "kappa": 0.24999999999999978,
+      "claude_pass_rate": 0.9333333333333333,
+      "codex_pass_rate": 0.6666666666666666
+    }
+  ],
+  "overall": {
+    "assertions": 612,
+    "agree": 576,
+    "agreement": 0.9411764705882353,
+    "kappa": 0.8276919226678345,
+    "claude_pass_rate": 0.8071895424836601,
+    "codex_pass_rate": 0.7581699346405228
+  },
+  "disagreements": [
+    {
+      "run_id": "v190-cli-claude-baseline-r3",
+      "trial_id": "json-errors-r3",
+      "assertion": 4,
+      "text": "Says to add fields but never remove, rename, or retype them, and to ignore unknown fields on the consumer side",
+      "claude": {
+        "passed": true,
+        "note": "It lists adding fields as safe and removing, renaming or retyping as breaking, and says consumers must ignore fields they don't recognize."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It tells consumers to ignore unknown fields but permits removing deprecated fields in a major release."
+      }
+    },
+    {
+      "run_id": "v190-cli-codex-with-skill-r3",
+      "trial_id": "exit-code-scheme-r2",
+      "assertion": 4,
+      "text": "Notes the exit status is 8 bits, so computed codes must be clamped (exit(256) is success)",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Unix statuses are only eight bits and that exit(256) can appear as success; it warns of the wraparound without explicitly saying 'clamp'."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It explains eight-bit statuses and that exit(256) can appear as success, but does not say to clamp computed codes."
+      }
+    },
+    {
+      "run_id": "v190-content-claude-baseline-r3",
+      "trial_id": "status-message-timing-r1",
+      "assertion": 1,
+      "text": "Says success and info messages fade after about 3-5 seconds",
+      "claude": {
+        "passed": true,
+        "note": "The answer says info and success messages auto-clear after 2\u20134 s, capped around 5 s, which roughly matches the 3\u20135 s range."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It recommends 2\u20134 seconds for info and success messages, rather than about 3\u20135 seconds."
+      }
+    },
+    {
+      "run_id": "v190-content-claude-baseline-r3",
+      "trial_id": "status-message-timing-r1",
+      "assertion": 4,
+      "text": "Leads messages with a symbol or label word so the kind survives NO_COLOR",
+      "claude": {
+        "passed": true,
+        "note": "The answer recommends a prefix such as `E:` or `\u2717` alongside color so the kind is clear on monochrome terminals and without color."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It recommends prefixes such as E: or \u2717 for errors, but does not recommend kind prefixes for other messages."
+      }
+    },
+    {
+      "run_id": "v190-content-claude-baseline-r3",
+      "trial_id": "status-message-timing-r3",
+      "assertion": 4,
+      "text": "Leads messages with a symbol or label word so the kind survives NO_COLOR",
+      "claude": {
+        "passed": true,
+        "note": "The answer recommends prefixing errors with `\u2717`, `E:`, or `Error:` so they don't rely on color alone, for monochrome terminals and colorblind users."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer recommends symbols or label prefixes for errors only, without extending that guidance to other message kinds."
+      }
+    },
+    {
+      "run_id": "v190-content-codex-baseline-r3",
+      "trial_id": "status-message-timing-r1",
+      "assertion": 1,
+      "text": "Says success and info messages fade after about 3-5 seconds",
+      "claude": {
+        "passed": true,
+        "note": "Sets a 4-second default for routine messages and gives 3\u20135 seconds for routine success messages before the normal status line returns."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It gives success messages 3\u20135 seconds but does not explicitly specify a duration for info messages."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-claude-baseline-r3",
+      "trial_id": "ratatui-tui-logger-crossterm-feature-r1",
+      "assertion": 1,
+      "text": "Says it is not required: tui-logger depends on ratatui without default features, so the widget works with whatever backend the app's own ratatui enables",
+      "claude": {
+        "passed": true,
+        "note": "The answer says the feature is not needed: the widgets only draw into a Buffer and work with whatever backend the app's Ratatui enables. It does not explicitly mention that tui-logger uses ratatui with default-features off."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer says the widgets work with any backend but omits that tui-logger depends on ratatui with default features disabled."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-claude-baseline-r3",
+      "trial_id": "ratatui-tui-logger-crossterm-feature-r1",
+      "assertion": 2,
+      "text": "Says the crossterm and termion features of tui-logger only gate its bundled demo example (and forward to ratatui's backend feature)",
+      "claude": {
+        "passed": true,
+        "note": "The answer says the crossterm/termion features pass through to ratatui's backend feature and are mainly there for tui-logger's own demo and examples."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer describes backend feature forwarding but says the features are mainly for demos and examples, rather than only gating the bundled demo."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-claude-baseline-r3",
+      "trial_id": "ink-virtualize-long-list-r2",
+      "assertion": 1,
+      "text": "Explains that contentOffsetY (with overflow hidden) only shifts and clips the children: Yoga still lays out, and Ink still paints, every child, so cost scales with the full list",
+      "claude": {
+        "passed": true,
+        "note": "Says overflow=\"hidden\" only clips, while React still builds and Yoga still lays out all 20,000 children on every offset change, so cost scales with the full list. It doesn't say outright that Ink still paints every row."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It explains that clipping leaves all children mounted and laid out by Yoga, but does not state that Ink still paints every child."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-claude-baseline-r3",
+      "trial_id": "ink-virtualize-long-list-r2",
+      "assertion": 3,
+      "text": "Makes each row exactly one line, using <Text wrap=\"truncate-end\"> (inside a fixed-width Box per cell), because the slice math assumes one row per line and the default wrap grows the row",
+      "claude": {
+        "passed": true,
+        "note": "Uses <Text wrap=\"truncate-end\"> so each entry stays one line and explains that wrapping breaks the windowing math. It has no per-cell fixed-width Box."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It uses truncate-end and explains one-line row math, but omits fixed-width Boxes around cells."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-claude-with-skill-r3",
+      "trial_id": "ink-virtualize-long-list-r2",
+      "assertion": 3,
+      "text": "Makes each row exactly one line, using <Text wrap=\"truncate-end\"> (inside a fixed-width Box per cell), because the slice math assumes one row per line and the default wrap grows the row",
+      "claude": {
+        "passed": true,
+        "note": "Each row is a single `<Text wrap=\"truncate-end\">`, and the answer explains that the slice math assumes one line per entry while default wrap pushes rows out; it has no fixed-width cell Boxes, but a single-column log has no cells to wrap."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer uses truncate-end and explains the one-line assumption, but omits a fixed-width Box per cell."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-codex-baseline-r3",
+      "trial_id": "ink-virtualize-long-list-r1",
+      "assertion": 3,
+      "text": "Makes each row exactly one line, using <Text wrap=\"truncate-end\"> (inside a fixed-width Box per cell), because the slice math assumes one row per line and the default wrap grows the row",
+      "claude": {
+        "passed": true,
+        "note": "Each row is rendered as <Text wrap=\"truncate\"> (Ink's alias for truncate-end), and the answer explains that wrapped multi-line entries break count-based slicing, so rows should be forced to one line."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The code uses wrap=\"truncate\" without fixed-width cell Boxes and does not explain that default wrapping grows rows."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-codex-baseline-r3",
+      "trial_id": "ink-virtualize-long-list-r3",
+      "assertion": 1,
+      "text": "Explains that contentOffsetY (with overflow hidden) only shifts and clips the children: Yoga still lays out, and Ink still paints, every child, so cost scales with the full list",
+      "claude": {
+        "passed": true,
+        "note": "It says overflow=\"hidden\" only clips and contentOffsetY only shifts, while all 20,000 entries still go through React rendering and Ink's layout, so cost tracks the full list."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer explains shifting, clipping, and full-list layout work, but does not state that Ink still paints every child."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-codex-baseline-r3",
+      "trial_id": "ink-virtualize-long-list-r3",
+      "assertion": 3,
+      "text": "Makes each row exactly one line, using <Text wrap=\"truncate-end\"> (inside a fixed-width Box per cell), because the slice math assumes one row per line and the default wrap grows the row",
+      "claude": {
+        "passed": true,
+        "note": "Each row uses <Text wrap=\"truncate\"> (Ink's alias for truncate-end), and the answer notes the slice assumes one terminal row per entry and that wrapping entries would break that assumption."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The example uses wrap=\"truncate\" without fixed-width cell Boxes and does not explain that default wrapping grows row height."
+      }
+    },
+    {
+      "run_id": "v190-ecosystem-codex-with-skill-r3",
+      "trial_id": "ratatui-tui-logger-crossterm-feature-r1",
+      "assertion": 2,
+      "text": "Says the crossterm and termion features of tui-logger only gate its bundled demo example (and forward to ratatui's backend feature)",
+      "claude": {
+        "passed": true,
+        "note": "The answer says the crossterm/termion features support the demo example and aren't needed for the widget; it does not mention forwarding to ratatui's backend feature, but that part is parenthetical."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer identifies the features as demo support but omits that they forward to Ratatui\u2019s backend features."
+      }
+    },
+    {
+      "run_id": "v190-interaction-codex-baseline-r3",
+      "trial_id": "selection-stability-r1",
+      "assertion": 1,
+      "text": "Tracks the selection by a stable ID rather than a row index and re-resolves it after refresh, sort, and filter",
+      "claude": {
+        "passed": true,
+        "note": "Recommends tracking selection by stable process identity (PID + start time) and re-finding its index after each refresh and sort, though filtering is not mentioned explicitly."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It uses PID plus start time and re-resolves selection after refresh and sorting, but does not address filtering."
+      }
+    },
+    {
+      "run_id": "v190-interaction-codex-baseline-r3",
+      "trial_id": "tree-keys-r2",
+      "assertion": 2,
+      "text": "Shows a per-node loading spinner for lazily loaded children",
+      "claude": {
+        "passed": true,
+        "note": "It says to distinguish a per-branch loading state alongside collapsed, expanded, empty, and failed, and to load children on demand without blocking."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer mentions loading states but does not specify a per-node loading spinner."
+      }
+    },
+    {
+      "run_id": "v190-interaction-codex-baseline-r3",
+      "trial_id": "mouse-default-r2",
+      "assertion": 1,
+      "text": "Enables modes 1000, 1002, and 1006 for a full-screen app with click targets, not 1003 unless hover effects need it",
+      "claude": {
+        "passed": true,
+        "note": "Recommends 1000 for clicks or 1002 for dragging, always with 1006, and reserves 1003 for hover needs only; it frames 1000/1002 as alternatives rather than enabling both, but 1002 subsumes click reporting."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It recommends 1000 or 1002 alongside 1006, rather than enabling all three, and reserves 1003 for hover."
+      }
+    },
+    {
+      "run_id": "v190-interaction-codex-with-skill-r3",
+      "trial_id": "selection-stability-r3",
+      "assertion": 5,
+      "text": "Offers a freeze or pause key shown in the footer, with a PAUSED marker and a count of pending changes",
+      "claude": {
+        "passed": true,
+        "note": "Offers a visible freeze key shown as a hint like `p pause` and displays `PAUSED \u00b7 N pending` while paused."
+      },
+      "codex": {
+        "passed": false,
+        "note": "Offers a visible pause key and a PAUSED marker with pending count, but does not specify showing the key in the footer."
+      }
+    },
+    {
+      "run_id": "v190-interaction-codex-with-skill-r3",
+      "trial_id": "tree-keys-r1",
+      "assertion": 2,
+      "text": "Shows a per-node loading spinner for lazily loaded children",
+      "claude": {
+        "passed": true,
+        "note": "The answer says to show loading or failure beside the affected branch during lazy fetches, which is a per-node loading indicator."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It recommends showing loading beside the affected branch but does not specify a spinner."
+      }
+    },
+    {
+      "run_id": "v190-interaction-codex-with-skill-r3",
+      "trial_id": "tree-keys-r2",
+      "assertion": 2,
+      "text": "Shows a per-node loading spinner for lazily loaded children",
+      "claude": {
+        "passed": true,
+        "note": "The answer says to load children lazily without blocking input and to show loading on that branch's row, which is a per-node loading indicator."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It recommends showing loading on the branch\u2019s row but does not specify a spinner."
+      }
+    },
+    {
+      "run_id": "v190-routing-claude-baseline-r3",
+      "trial_id": "shift-enter-missing-r1",
+      "assertion": 2,
+      "text": "Notes tmux needs the extended-keys option, which is off by default",
+      "claude": {
+        "passed": true,
+        "note": "It says tmux drops the modifier and gives `set -s extended-keys on` plus the terminal-features extkeys line. That clearly implies the option is not on by default, though the answer never says 'off by default' outright."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It shows how to enable tmux extended-keys but never says the option is off by default."
+      }
+    },
+    {
+      "run_id": "v190-routing-claude-baseline-r3",
+      "trial_id": "shift-enter-missing-r1",
+      "assertion": 3,
+      "text": "Falls back to Alt+Enter or Ctrl+J for inserting a newline and tells users the key",
+      "claude": {
+        "passed": false,
+        "note": "It recommends Alt+Enter and Ctrl+J as fallbacks, but never says to tell users which key inserts a newline. The only docs advice is about the tmux config lines."
+      },
+      "codex": {
+        "passed": true,
+        "note": "It explicitly recommends Ctrl+J and Alt+Enter as newline bindings and explains their encodings."
+      }
+    },
+    {
+      "run_id": "v190-routing-codex-baseline-r3",
+      "trial_id": "shift-enter-missing-r2",
+      "assertion": 3,
+      "text": "Falls back to Alt+Enter or Ctrl+J for inserting a newline and tells users the key",
+      "claude": {
+        "passed": false,
+        "note": "It suggests Ctrl+J and Alt+Enter as keys to try, but never advises the TUI author to bind a fallback and tell users which key inserts a newline."
+      },
+      "codex": {
+        "passed": true,
+        "note": "The answer tells users to try Ctrl+J for a newline and also mentions Alt+Enter."
+      }
+    },
+    {
+      "run_id": "v190-structural-claude-with-skill-r3",
+      "trial_id": "2-r3",
+      "assertion": 4,
+      "text": "Keeps git/subprocess work outside Update and returns results through a tea.Cmd or message",
+      "claude": {
+        "passed": true,
+        "note": "All git loading happens before p.Run(), so it never runs in Update or blocks the event loop; it is not delivered via a tea.Cmd, but that alternative satisfies the same point."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It loads git data before p.Run(), outside Update, but does not return subprocess results through a tea.Cmd or message."
+      }
+    },
+    {
+      "run_id": "v190-structural-codex-baseline-r3",
+      "trial_id": "1-r1",
+      "assertion": 2,
+      "text": "Counts the duplicate readiness signals and recognizes that a marker on every row marks nothing",
+      "claude": {
+        "passed": true,
+        "note": "Says green [READY] plus a checkmark repeat the same signal on every healthy row, and moves emphasis to pending, failing, or unknown states."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It identifies READY and the checkmark as duplicate signals but does not count the full set or explicitly explain that a marker on every row marks nothing."
+      }
+    },
+    {
+      "run_id": "v190-tier2-codex-with-skill-r3",
+      "trial_id": "3-r3",
+      "assertion": 4,
+      "text": "Recommends reproducing in ink-testing-library (render + lastFrame/frames + stdin.write) to isolate the state-update bug",
+      "claude": {
+        "passed": true,
+        "note": "It recommends driving the component with `ink-testing-library`, awaiting the update, and asserting on `lastFrame()`; `stdin.write` is not named explicitly, but the isolation workflow is clear."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It recommends ink-testing-library and lastFrame(), but does not describe render() or driving input with stdin.write()."
+      }
+    },
+    {
+      "run_id": "v190-tier3-codex-baseline-r3",
+      "trial_id": "3-r2",
+      "assertion": 5,
+      "text": "Names at least one plausible Ink-specific cost sink (unmemoized re-renders, <Static> misuse, or an always-animating component like a spinner) rather than only generic React advice",
+      "claude": {
+        "passed": false,
+        "note": "The answer lists generic stages (reconciliation, Yoga layout, output generation, terminal writes) but never names unmemoized re-renders, `<Static>` misuse, or an always-animating spinner."
+      },
+      "codex": {
+        "passed": true,
+        "note": "Identifies Yoga layout and terminal output generation as potential Ink performance costs."
+      }
+    },
+    {
+      "run_id": "v190-tier3-codex-with-skill-r3",
+      "trial_id": "1-r1",
+      "assertion": 3,
+      "text": "Addresses the headless/CI gap honestly \u2014 keychains depend on a running Secret Service/D-Bus daemon on Linux, so an explicit plaintext fallback is needed, not a silent failure",
+      "claude": {
+        "passed": true,
+        "note": "It notes that Linux Secret Service works only 'when available', says to explain the failure and offer an env var or an explicitly chosen file fallback, and says to never silently downgrade to plaintext."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It offers an explicit file fallback but does not explain Linux keychains\u2019 dependence on a running Secret Service/D-Bus daemon."
+      }
+    },
+    {
+      "run_id": "v190-v174-claude-baseline-r3",
+      "trial_id": "cjs-require-esm-r2",
+      "assertion": 1,
+      "text": "Says Node 22.12 and later (and 20.19) can require() synchronous ES modules, so ESM-only packages such as chalk and commander no longer force old pins",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Node 22.12+ can require() synchronous ES modules, so chalk 5 can be required directly instead of pinning chalk 4. It does not mention Node 20.19 or commander."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer explains synchronous ESM support in Node 22.12+ and requiring chalk 5, but omits Node 20.19 support."
+      }
+    },
+    {
+      "run_id": "v190-v174-claude-baseline-r3",
+      "trial_id": "cjs-require-esm-r3",
+      "assertion": 1,
+      "text": "Says Node 22.12 and later (and 20.19) can require() synchronous ES modules, so ESM-only packages such as chalk and commander no longer force old pins",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Node 22.12+ can require() ES modules without a flag and that chalk 5 loads via require(), so pinning chalk 4 isn't needed; it omits 20.19 and commander, but the core point is made."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It explains synchronous ESM support in Node 22.12+, but omits Node 20.19 support."
+      }
+    },
+    {
+      "run_id": "v190-v174-claude-baseline-r3",
+      "trial_id": "cjs-require-esm-r3",
+      "assertion": 2,
+      "text": "Says Ink cannot be loaded with require() because its dependency graph uses top-level await, which fails with ERR_REQUIRE_ASYNC_MODULE",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Ink's yoga-layout 3 dependency uses top-level await, so require('ink') fails with ERR_REQUIRE_ASYNC_MODULE; it hedges slightly but suggests a command to confirm."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It makes Ink's top-level await and ERR_REQUIRE_ASYNC_MODULE failure conditional rather than stating them definitively."
+      }
+    },
+    {
+      "run_id": "v190-v174-codex-with-skill-r3",
+      "trial_id": "cjs-require-esm-r1",
+      "assertion": 1,
+      "text": "Says Node 22.12 and later (and 20.19) can require() synchronous ES modules, so ESM-only packages such as chalk and commander no longer force old pins",
+      "claude": {
+        "passed": true,
+        "note": "The answer sets Node 22.12+ as the floor, says require(ESM) works when the dependency graph is synchronous, and shows require('chalk').default, so chalk needs no old pin; it does not mention 20.19 or commander."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer explains Node 22.12+ require(ESM) support and modern Chalk loading, but omits Node 20.19 support and commander."
+      }
+    },
+    {
+      "run_id": "v190-v174-codex-with-skill-r3",
+      "trial_id": "cjs-require-esm-r3",
+      "assertion": 1,
+      "text": "Says Node 22.12 and later (and 20.19) can require() synchronous ES modules, so ESM-only packages such as chalk and commander no longer force old pins",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Node 22.12+ can require() synchronous ESM, so Chalk loads without pinning Chalk 4; it omits 20.19 and commander, but the main point is clear."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer explains synchronous ESM support in Node 22.12+ for Chalk, but omits Node 20.19 and commander."
+      }
+    },
+    {
+      "run_id": "v190-v174-codex-with-skill-r3",
+      "trial_id": "typer-vendored-click-r3",
+      "assertion": 1,
+      "text": "Says Typer 0.26 and later vendor Click instead of depending on it, so Click plug-ins and extracting the Click app are no longer supported",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Typer 0.26+ vendors Click, so external Click plug-ins like Trogon are no longer supported, and says the `get_command` extraction path needs `typer<0.26`."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It says Typer 0.26+ vendors Click and no longer supports external Click plug-ins, but omits that extracting the Click app is unsupported."
+      }
+    },
+    {
+      "run_id": "v190-v174-codex-with-skill-r3",
+      "trial_id": "typer-vendored-click-r3",
+      "assertion": 2,
+      "text": "Says Trogon breaks with Typer 0.26 or later and is unmaintained",
+      "claude": {
+        "passed": true,
+        "note": "The answer says Trogon is not supported with Typer 0.26+ and notes its last release was 0.6.0 in 2024, calling it a legacy dependency."
+      },
+      "codex": {
+        "passed": false,
+        "note": "It identifies incompatibility with Typer 0.26+ but describes Trogon as a legacy dependency without clearly saying it is unmaintained."
+      }
+    }
+  ],
+  "by_condition": [
+    {
+      "provider": "Anthropic",
+      "condition": "baseline",
+      "assertions": 150,
+      "claude_pass_rate": 0.72,
+      "codex_pass_rate": 0.6466666666666666
+    },
+    {
+      "provider": "Anthropic",
+      "condition": "with-skill",
+      "assertions": 152,
+      "claude_pass_rate": 0.9868421052631579,
+      "codex_pass_rate": 0.9736842105263158
+    },
+    {
+      "provider": "OpenAI",
+      "condition": "baseline",
+      "assertions": 155,
+      "claude_pass_rate": 0.5935483870967742,
+      "codex_pass_rate": 0.5548387096774193
+    },
+    {
+      "provider": "OpenAI",
+      "condition": "with-skill",
+      "assertions": 155,
+      "claude_pass_rate": 0.9290322580645162,
+      "codex_pass_rate": 0.8580645161290322
+    }
+  ]
+}

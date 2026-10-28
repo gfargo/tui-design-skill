@@ -1,0 +1,1058 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-gsxskd75
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18105-246b-7900-9ecc-525739025174
+--------
+user
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My Textual app feels sluggish when the DataTable has 50k rows — how do I find out what's actually slow? And separately, for a different project, I have an Ink CLI where I want to profile render performance — can I just use the React DevTools I already have hooked up for debugging?
+
+codex
+I’ll read the tui-design skill and use its profiling guidance for both Textual and Ink.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/SKILL.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-gsxskd75
+ succeeded in 0ms:
+---
+name: tui-design
+description: Design, build, refactor, or review terminal interfaces—full-screen TUIs, interactive prompts, and command-line tools. Use for terminal-app layout and UX, CLI behavior, ncurses-style tools, dashboards, REPLs, fzf-like pickers, and libraries such as Bubble Tea, Ratatui, Textual, or Ink, including requests that name a known TUI such as lazygit, k9s, btop, helix, or yazi instead of saying “TUI.” Do not use for browser or web UI, native GUI, editor or font configuration, or backend and shell work that has no terminal interface.
+---
+
+# TUI & CLI Design
+
+Design terminal software that is calm, predictable, fast, and honest about the medium. Treat this file as the workflow and cross-cutting contract. Load detailed guidance from the one reference that owns it instead of reconstructing or repeating it here.
+
+## Route before answering
+
+| Need | Authoritative reference |
+|---|---|
+| Go, Bubble Tea, Lipgloss, Bubbles, tview, gocui | `references/ecosystem-go.md` |
+| Rust, Ratatui, crossterm, Cursive | `references/ecosystem-rust.md` |
+| Python, Textual, Rich, prompt_toolkit, urwid | `references/ecosystem-python.md` |
+| TypeScript/JavaScript, Ink, OpenTUI, Clack, Inquirer | `references/ecosystem-typescript.md` |
+| One-shot commands, arguments, streams, exit codes, `--json` and errors, completions, paging, config, Windows, CLI testing, automation | `references/cli-basics.md` |
+| Layouts and wireframes, inline vs alternate screen, borders, hierarchy, color, density, responsive behavior and the floor size, states (empty, loading, partial, error, stale), tables, diff views, modals, status bars and messages, progress and spinners, themes, icons and Nerd Fonts, localization and Unicode width, accessibility (screen readers, plain mode, motion) | `references/visual-patterns.md` |
+| Keys, the Esc/q/Ctrl+C quit order, keys that tmux or the key encoding steal, focus, navigation, search and filter, multi-select, help and the command palette, scrolling, live-data selection, log follow mode, trees, text input, forms, mouse, confirmation, undo | `references/interaction-patterns.md` |
+| Flicker or tearing, escape sequences and terminal modes (bracketed paste, keyboard protocol and a Shift+Enter that doesn't arrive, mouse, focus, synchronized output, cursor, title, progress), tmux, screen, Zellij, SSH, and Windows behavior, clipboard, links, notifications, color depth and theme detection | `references/terminal-protocols.md` |
+| Case studies: lazygit, k9s, fzf, btop, helix, yazi, atuin | `references/exemplar-apps.md` |
+| Screenshots or demo recordings | The `vhs-cli-demos` skill when installed; otherwise `references/cli-basics.md` → *Demo recordings* |
+
+Load only the references the task needs. When the prompt names a framework or ecosystem, always load its ecosystem reference before making API, lifecycle, implementation, or testing claims. Ecosystem references own those specifics. The visual and interaction references own their domains for every ecosystem. Exemplar apps are evidence and inspiration, not substitutes for the pattern references.
+
+If no language is named, ask only when ecosystem choice would materially change the answer or implementation. Otherwise state a reasonable recommendation and proceed: Go for polished single binaries, Rust for control and reliability, Python for rapid product work, and TypeScript when React or npm distribution is already an advantage.
+
+## Classify the product first
+
+Choose the output contract before choosing a framework or layout:
+
+| Product shape | Default contract |
+|---|---|
+| One-shot CLI | No live full-screen UI. Stable stdout for results, stderr for diagnostics, meaningful exit codes. Load `cli-basics.md`. |
+| Summon–choose–exit tool | Prefer inline when shell context matters. Put interactive chrome on stderr or `/dev/tty` and the selected result on stdout. Use full-screen only when a large preview or working set needs stable space. |
+| Full-screen session | Use the alternate screen and a stable spatial model. Treat terminal restoration, resize, suspend, and redraw behavior as product requirements. |
+
+Then name the workflow shape—persistent panels, Miller columns, drill-down stack, dashboard, IDE-style panes, overlay, or tabs—and verify it against `visual-patterns.md`. Sketch the states and layout before writing code: initial, loading, empty, partial, success, error, disconnected, and too-small (`visual-patterns.md` → *States*). In a design answer, include an ASCII sketch of the layout at the floor size (60 columns) next to the wide one.
+
+## Work the task
+
+1. Classify the product shape and its stdout/stderr contract.
+2. Identify the dominant user loop and the 5–8 most common actions.
+3. Select the ecosystem and load its reference plus any relevant pattern reference.
+4. Sketch the layout and state transitions at wide, standard, narrow, and minimum sizes.
+5. Implement in the ecosystem's native architecture; keep state/update/event work separate from rendering where the framework permits.
+6. Verify lifecycle cleanup, input discoverability, output behavior, width handling, and async work.
+7. Test the cheapest stable layer first, then rendered frames, then a small PTY smoke path only if its integration risk justifies it.
+
+For design questions, make the recommendation before explaining it. For implementation, inspect the existing architecture and dependencies before introducing a new framework or abstraction. For reviews, cite concrete observations and prioritize changes by user harm.
+
+## Preserve these cross-cutting contracts
+
+### Terminal lifecycle
+
+- Use the alternate screen for full-screen sessions; keep bounded and one-shot workflows inline when possible.
+- Prefer framework-managed terminal cleanup. Restore raw mode, screen buffer, cursor, and input modes on every exit path, including errors and panics. Do not invent custom signal handling when the framework already owns it.
+- Re-layout from the current frame or window size on resize. Coalesce bursts only when layout work is expensive.
+- Treat final shutdown and temporary handoff as different boundaries. For an editor, shell, or supported suspend, prefer the framework's handoff API: pause UI input, restore the shell-facing terminal, wait, re-enter modes, reload externally mutable data, and force a full redraw. Redrawing only repaints the current model; it does not refresh changed data. Do not final-unmount an app that must resume, and do not assume POSIX signals exist on Windows.
+- Keep logs and debug output away from the screen the TUI owns. Use a file, framework console, or separate diagnostic stream.
+
+### Rendering, data, and performance
+
+- Never block the UI/event thread on disk, network, or subprocess work. Return results through commands, messages, tasks, channels, or framework events.
+- Render on input, data, resize, or intentional ticks; do not redraw unchanged state in an unconditional loop.
+- Measure terminal cell width, not bytes, code points, `len()`, or JavaScript string length. Test CJK, combining marks, and emoji.
+- Virtualize collections that can grow beyond a few hundred rows. Truncate rather than wrap inside tables; reveal full values in a detail view.
+- Keep panel positions stable unless the user explicitly changes the layout. Spatial memory is part of navigation.
+
+### Meaning and access
+
+- Define semantic style tokens rather than scattering color literals. Honor `NO_COLOR` in automatic color mode and preserve meaning in monochrome.
+- Never use color alone. Pair it with text, shape, position, or symbols, and provide an ASCII fallback when Unicode support is uncertain.
+- Make every action keyboard-reachable. Mouse support may accelerate an action but must not gate it.
+- Offer familiar navigation aliases only where they do not conflict with text entry or a complete bounded prompt keymap. Preserve the expected reserved-key behavior: `Ctrl+C` cancels or quits, and `Ctrl+Z` suspends through the framework. Which other keys are reserved, and why raw mode frees `Ctrl+S`, is in `interaction-patterns.md` → *Reserved keys*.
+- Match discoverability to complexity: complete inline controls for bounded prompts; contextual hints, help, and optionally a command palette for action-rich full-screen apps.
+- Provide a plain `--no-tui` or equivalent mode when automation or serious accessibility needs require linear output; `visual-patterns.md` → *Accessibility* defines what it must contain.
+
+## Apply two review reflexes unprompted
+
+These catch the failures users rarely name. Apply both to every layout you design or review, even when the question is about something else.
+
+### Run a clutter audit
+
+Make “busy” countable. Report:
+
+- border-nesting depth—more than one border between the terminal edge and content is usually too much;
+- how many signals encode the same state—`[PASS]`, green, a checkmark, and a row marker is four;
+- markers present on every row, which therefore mark nothing;
+- the share of cells spent on chrome, labels, and repeated boilerplate instead of data.
+
+Name the exact borders, markers, labels, or repeated fields to remove. Do not stop at “simplify it.” Use the full method in `visual-patterns.md` → *The clutter audit*.
+
+### Pressure-test the floor
+
+State what happens at 80×24 and in a 60-column tmux split: which pane wins, what hides, what truncates, what becomes drill-down, and when the truthful “terminal too small” state appears. Every multi-column design needs a single-pane fallback. Use the breakpoint ladder and minimum-size method in `visual-patterns.md` → *Responsive design*.
+
+## Build and verification discipline
+
+Keep business state independent enough to test without a terminal. In MVU or immediate-mode systems, feed synthetic events into update logic and assert state. In retained/widget systems, drive the smallest widget or app harness that owns the behavior.
+
+Use a bottom-heavy test pyramid:
+
+1. Unit-test state transitions, parsing, sorting, filtering, and command construction.
+2. Snapshot or golden-test rendered frames at pinned terminal sizes and color profiles, including 80×24, 60 columns, and the hard minimum.
+3. Use one or two PTY end-to-end flows for lifecycle and real-keyboard integration, not as the primary suite.
+
+Verify at least:
+
+- normal exit, interrupt, error, and panic cleanup;
+- resize, too-small behavior, and suspend/resume where supported;
+- empty, loading, partial, error, disconnected, and large-data states;
+- keyboard reachability, focus visibility, and help accuracy;
+- `NO_COLOR`, 16-color or monochrome, ASCII fallback, and non-TTY output;
+- wide characters, combining marks, truncation, sorting, and virtualization;
+- no stdout corruption and no blocking I/O in the event/render path.
+- for one-shot CLIs, stdout, stderr, and the exit code in golden tests, with no TTY and under `NO_COLOR` (`cli-basics.md` → *Testing one-shot CLIs*).
+
+Use the ecosystem reference's exact testing and debugging APIs. Never print diagnostics into an active raw-mode or alternate-screen UI.
+
+## Review existing interfaces
+
+Report evidence in priority order:
+
+1. Is the product shape right, or should a full-screen flow be inline or one-shot?
+2. Can any exit path leave raw mode, cursor state, mouse capture, or the screen buffer behind?
+3. Does the UI block, redraw wastefully, crash on resize, or mismeasure cell width?
+4. Can a first-time user find and reach the important actions without breaking text entry or terminal conventions?
+5. What does the clutter audit count, and which exact elements should be cut?
+6. What happens at 80×24, 60 columns, and the declared minimum?
+7. Do output streams, exit codes, non-TTY behavior, `NO_COLOR`, and plain mode support scripts and accessibility?
+8. Are state transitions and pinned frames covered at the right test layers?
+
+Avoid generic verdicts. Tie each recommendation to a user-visible failure, an implementation risk, or a measurable reduction in noise.
+
+## Give useful recommendations
+
+Be decisive where practice has converged: semantic colors, clean terminal restoration, responsive fallback, non-blocking work, width-aware rendering, and honest stream contracts. Explain real tradeoffs for inline versus full-screen, modal versus modeless input, mouse support, and destructive-action confirmation.
+
+Use the chosen ecosystem's idioms rather than translating another framework's architecture literally. When a design choice remains abstract, point to the relevant case study in `exemplar-apps.md` and explain which part of its solution transfers.
+
+exec
+/bin/zsh -lc 'cat /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-python.md /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md' in /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-gsxskd75
+ succeeded in 0ms:
+# Python ecosystem — Textual, Rich, prompt_toolkit
+
+Three tools occupy distinct niches: **Textual** (the modern reactive TUI framework — async-first, CSS-styled, web-deployable), **Rich** (output formatting — the rendering engine inside Textual, excellent standalone), and **prompt_toolkit** (input-focused REPLs and shells — powers IPython, ptpython, mycli/pgcli/litecli). They solve different problems. Pick by what the program *is*, not just by Python familiarity.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation)
+- [Textual](#textual-textualizetextual) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Widgets](#widgets) · [Layout (TCSS)](#layout--tcss) · [Events and messages](#events-and-messages) · [Reactive state](#reactive-state) · [Async and workers](#async-and-workers) · [Modal screens](#modal-screens) · [Testing](#testing--pilot--pytest-textual-snapshot) · [Debugging](#debugging) · [Dev tools](#dev-tools) · [Pitfalls](#pitfalls)
+- [Rich](#rich-textualizerich) · [prompt_toolkit](#prompt_toolkit) · [Other libraries](#other-libraries)
+- [Argument parsing: argparse vs Click vs Typer](#argument-parsing-argparse-vs-click-vs-typer)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Full-screen TUI app | **Textual** |
+| CLI tool with pretty output (tables, panels, syntax) | **Rich** |
+| Interactive REPL or shell-like tool | **prompt_toolkit** |
+| One or two prompts inside a CLI | **questionary** (built on prompt_toolkit); InquirerPy is unmaintained |
+| Argument parsing with type hints | **Typer** (decorator API; bundles its own copy of Click since 0.26) |
+
+**Python floor and distribution:** target 3.11+ for new tools (3.9 and 3.10 are end of life; current Typer, Click 8.2+, prompt_toolkit 3.0.53 and pytest 9 need 3.10+, cyclopts 5 needs 3.11+; Textual 8.2.8 and Rich 15 still install on 3.9). Ship a package with a `[project.scripts]` entry point; users install it isolated with `uv tool install <pkg>` (or `pipx`) and run it once with `uvx <pkg>`.
+
+---
+
+## Textual (Textualize/textual)
+
+**Architectural model: reactive, async-first, message-passing.** App subclass + Widgets in a DOM-like tree (App → Screen → Widgets) + TCSS for layout/style + reactive attributes for state + Messages/Events for communication, all on asyncio.
+
+**Status:** Textualize the company wound down in mid-2025, and Will McGugan maintains Textual and Rich as open source. Textual shipped five major versions (4.0 through 8.0) since the May 2025 announcement, with 8.x current as of mid-2026 (Textual 8.2.8, Rich 15.0.0); releases have slowed. The majors carried breaking renames (`Static.renderable` → `Static.content` in 6.0, `Select.BLANK` → `Select.NULL` in 8.0), so pin your major and read the changelog when upgrading. Harlequin, Dolphie and Posting 2.x track Textual 8.2 (see `exemplar-apps.md`); Toolong, elia and frogmouth are pinned to pre-1.0 Textual, so use them as design references only.
+
+```python check=python/hello-app
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Button, Label
+
+class HelloApp(App):
+    CSS = "#greeting { padding: 1 2; }"  # or CSS_PATH = "hello.tcss"; that file must exist
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+        ("d", "toggle_dark", "Toggle dark mode"),
+    ]
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Label("Hello, world!", id="greeting")
+        yield Button("Click me", id="go", variant="success")
+        yield Footer()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.query_one("#greeting", Label).update("Button pressed!")
+
+    def action_toggle_dark(self) -> None:
+        self.theme = "textual-light" if self.theme == "textual-dark" else "textual-dark"
+
+if __name__ == "__main__":
+    HelloApp().run()
+```
+
+`compose()` defines the widget tree (called once on mount). `BINDINGS` declares key bindings declaratively — they auto-render in the `Footer` widget. `action_*` methods are invoked by binding actions. `on_*` methods handle events from child widgets.
+
+### Lifecycle and terminal handoff
+
+| Boundary | Textual 8 contract |
+|---|---|
+| Normal exit | Call `self.exit(result, return_code=...)`; the run lifecycle shuts the driver down in a `finally` path. `return_code` is application metadata, so call `sys.exit(app.return_code)` after `app.run()` when the process must expose it. |
+| SIGTERM | Textual installs no SIGTERM handler. On Unix, have the running event loop call `exit` (recipe below); never restore the terminal from a `signal.signal` handler. SIGKILL cannot be cleaned up. |
+| Interactive child | Run an argv-based subprocess inside `with self.suspend():`. Textual pauses input/output, restores the child-facing terminal, and resumes plus refreshes afterward. Reload any data the child could have changed; layout refresh does not reread it. Handle `SuspendNotSupported` with a non-terminal alternative because Textual Web cannot hand a local terminal to a child. |
+| Foreground suspend | Bind or invoke `suspend_process`; Textual sends SIGTSTP and resumes application mode on Unix. It is intentionally a no-op on Windows and Textual Web. Subscribe to `app_resume_signal` to reload externally mutable data when needed. |
+
+SIGTERM recipe: the loop runs the callback, so `exit` takes the normal shutdown path and the driver restores the terminal. `add_signal_handler` raises `NotImplementedError` on Windows, so skip it there. 143 is 128 plus SIGTERM.
+
+```python check=python/sigterm
+import asyncio
+import signal
+from textual.app import App
+
+class Service(App):
+    def on_mount(self) -> None:
+        asyncio.get_running_loop().add_signal_handler(
+            signal.SIGTERM, lambda: self.exit(return_code=143))
+```
+
+[`App.suspend()`](https://textual.textualize.io/guide/app/#suspend-context-manager) lends the terminal to code inside a context manager; `suspend_process` is Unix job control. Neither is a final-exit substitute.
+
+**Ctrl+C is not quit in Textual.** `ctrl+q` is bound to `quit`; `ctrl+c` is bound to `help_quit`, which only shows a toast naming the key that quits, and `Input` and `TextArea` use it to copy ([`app.py`](https://github.com/Textualize/textual/blob/v8.2.8/src/textual/app.py), `BINDINGS` and `action_help_quit`). To keep the "Ctrl+C cancels or quits" contract, rebind it with a priority binding so it fires even while a text field has focus, at the cost of copy there:
+
+```python check=python/ctrl-c-quit
+from textual.app import App
+from textual.binding import Binding
+
+class QuitOnCtrlC(App):
+    BINDINGS = [Binding("ctrl+c", "quit", "Quit", show=False, priority=True)]
+```
+
+**Inline mode:** `app.run(inline=True)` (since 0.55) renders below the prompt instead of on the alternate screen. Set its height with CSS on `Screen`, as in `Screen { &:inline { height: 50vh; } }`. Inline mode is not supported on Windows.
+
+### Widgets
+
+- **Input:** `Input`, `MaskedInput`, `TextArea` (multi-line, optional tree-sitter syntax highlighting — the `syntax` extras require Python 3.10+ since Textual 5.0), `Button`, `Switch`, `Checkbox`, `RadioButton`, `RadioSet`, `Select`, `OptionList`.
+- **Data and display:** `DataTable` (cell/row/column cursors, sortable, virtualized — handles thousands of rows), `Tree`, `DirectoryTree`, `ListView` + `ListItem`, `Markdown`, `RichLog`, `ProgressBar`, `Sparkline`.
+
+Use `DataTable` for any tabular display. Add columns with `add_columns`, rows with `add_rows`, configure cursor type (`cell`/`row`/`column`/`none`), enable `zebra_stripes`, hook into `on_data_table_row_selected`.
+
+### Layout — TCSS
+
+Layout is CSS:
+
+```css check=python/textual-layout
+Screen {
+    layout: horizontal;
+}
+
+#sidebar {
+    width: 30;
+    border: tall $accent;
+}
+
+#main {
+    width: 1fr;
+    layout: vertical;
+}
+
+DataTable {
+    height: 1fr;
+}
+
+.error {
+    color: $error;
+    text-style: bold;
+}
+```
+
+Concepts:
+- **`layout`** — `vertical | horizontal | grid`. A `Screen` stacks its children vertically, so side-by-side panes need `layout: horizontal` on the Screen (as above) or a `Horizontal` parent.
+- **Containers**: `Vertical`, `Horizontal` and `Grid` expand (`width` and `height: 1fr`); `VerticalGroup`, `HorizontalGroup` and `ItemGrid` are `height: auto`, so use a group for a toolbar or form row that hugs its content. Also `VerticalScroll`, `Center`, `Middle`.
+- **Sizing**: cells (`width: 30`), percentages (`width: 50%`), `auto`, fractional units (`width: 1fr`); `overflow-x: auto` adds scrollbars. **Grid**: `grid-size: 3 4`, `grid-columns`, `grid-rows`, `column-span`. **Docking**: `dock: top | right | bottom | left` for sticky edges, as `Header` and `Footer` do.
+
+**Selectors**: type (`Button { ... }` matches subclasses too, e.g. your `MyButton(Button)`, unlike web CSS; use a class selector for exact targeting), id (`#dialog`), class (`.error`), pseudo (`:focus`, `:hover`, `:disabled`, `:dark`, `:light`). Nesting works. **Theme variables** (`$primary`, `$panel`, `$text`, `$accent`, `$error`, etc.) — semantic tokens that change with the active theme.
+
+### Events and messages
+
+Handle events with `on_<widget>_<message>` methods (as in the hello app) or the **`@on` decorator with a CSS selector**, preferred when you have many widgets of one type:
+```python check=python/on-decorator
+from textual import on
+
+@on(Button.Pressed, "#submit")
+def handle_submit(self) -> None:
+    ...
+
+@on(Button.Pressed, ".danger")
+def handle_danger(self, event: Button.Pressed) -> None:
+    ...
+```
+
+Messages bubble up the DOM. Call `event.stop()` to halt propagation. The idiom: **"attributes down, messages up"** — parents set state on children via attributes; children notify parents via messages.
+
+### Reactive state
+
+```python check=python/reactive
+from textual.reactive import reactive, var
+from textual.widget import Widget
+
+class Counter(Widget):
+    count: reactive[int] = reactive(0)
+    label: reactive[str] = reactive("")
+    history: reactive[list[int]] = reactive(list)  # callable default: one list per widget
+    cursor = var(0)  # watchers fire, but no repaint
+
+    def watch_count(self, old: int, new: int) -> None:
+        # called automatically when count changes; repaint is already automatic
+        self.log(f"count {old} -> {new}")
+
+    def validate_count(self, value: int) -> int:
+        # called before assignment; can clamp or transform
+        return max(0, min(10, value))
+
+    def compute_label(self) -> str:
+        # derived, read-only reactive; recomputed when count changes
+        return f"Count: {self.count}"
+
+    def render(self) -> str:
+        return self.label
+
+    def remember(self) -> None:
+        self.history.append(self.count)  # in-place edits are invisible to Textual...
+        self.mutate_reactive(Counter.history)  # ...so fire watchers and repaint by hand
+```
+
+`compute_<name>` only runs for a declared reactive of that name (`label` here), and that reactive becomes read-only. Don't name one `display` — that's Widget's built-in visibility property. Execution order on assignment: **validate → assign → watch → compute**. Modifiers on `reactive(...)`: `init=False` (no watcher on initial assignment), `always_update=True` (fire even when the value didn't change), `layout=True` (re-layout, not just re-render), `bindings=True` (re-evaluate `BINDINGS`), `recompose=True` (re-run `compose()`; the manual route is `await self.remove_children()` + `await self.mount(...)`).
+
+Textual detects assignment, not mutation: after `append` or `d[k] = v`, call `self.mutate_reactive(Cls.attr)`. Use `var` for state that needs watchers but no repaint or relayout (cursor index, cache). To hide a dependent widget, react in `watch_<name>` and set `widget.display = False` (removes it from layout) or `.visible = False` (hides it without reflowing).
+
+### Async and workers
+
+Handlers can be `async def`. The `@work` decorator turns methods into background workers:
+
+```python check=python/workers
+import httpx
+from textual import work
+from textual.widgets import Static
+from textual.worker import Worker, WorkerState, get_current_worker
+
+@work(exclusive=True)
+async def fetch_data(self, url: str) -> None:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        response.raise_for_status()
+    self.query_one("#result", Static).update(response.text)
+
+# For blocking code:
+@work(thread=True)
+def compute_heavy(self) -> None:
+    result = expensive_sync_thing()
+    self.app.call_from_thread(self.update_result, result)
+
+@work(thread=True, exclusive=True, group="search", exit_on_error=False)
+def search(self, query: str) -> None:
+    worker = get_current_worker()
+    for page in range(20):
+        rows = slow_fetch(query, page)
+        if worker.is_cancelled:  # a newer search replaced this one
+            return
+        self.app.call_from_thread(self.show_rows, rows)
+
+def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+    if event.state is WorkerState.ERROR:
+        self.notify(str(event.worker.error), severity="error")
+```
+
+`call_from_thread(fn, *args)` is required when modifying UI from a thread (vs an asyncio task). It exists only on `App`, so a Screen or Widget worker calls `self.app.call_from_thread(...)`; `self.call_from_thread` there raises `AttributeError`. `post_message` is also thread-safe. `set_interval(secs, callable)` schedules periodic UI updates without blocking.
+
+**Cancellation:** `exclusive=True` cancels earlier workers in the same `group` on the same widget. An async worker stops at its next `await`; a thread worker cannot be interrupted, since cancelling only flips its state to `CANCELLED`, so poll `get_current_worker().is_cancelled` and return before touching the UI. `exit_on_error=False` keeps a failing worker from quitting the app; handle `ERROR` in `on_worker_state_changed` (sent to the widget that started the worker, not bubbled).
+
+**Streaming LLM output:** don't re-render the whole reply per token. `Markdown.get_stream()` batches fragments when the widget can't keep up (about 20 appends a second), and `anchor()` on the scroll container holds the view on the tail until the user scrolls up. Call `stream.stop()` in `finally` to flush queued text.
+
+```python check=python/markdown-stream
+@work(exclusive=True)
+async def stream_reply(self, chunks) -> None:
+    self.query_one(VerticalScroll).anchor()
+    stream = Markdown.get_stream(self.query_one(Markdown))
+    try:
+        async for chunk in chunks:
+            await stream.write(chunk)
+    finally:
+        await stream.stop()
+```
+
+### Modal screens
+
+Push a screen on top for dialogs/modals:
+
+```python check=python/modal
+from textual import on, work
+from textual.app import ComposeResult
+from textual.screen import ModalScreen
+from textual.widgets import Button, Label
+
+class ConfirmDialog(ModalScreen[bool]):
+    def compose(self) -> ComposeResult:
+        yield Label("Are you sure?")
+        yield Button("Yes", id="yes", variant="error")
+        yield Button("No", id="no")
+
+    @on(Button.Pressed, "#yes")
+    def confirm(self) -> None:
+        self.dismiss(True)
+
+    @on(Button.Pressed, "#no")
+    def cancel(self) -> None:
+        self.dismiss(False)
+
+# In your app: a callback works from any handler, no worker needed
+def action_delete(self) -> None:
+    self.push_screen(ConfirmDialog(), self.after_confirm)
+
+async def after_confirm(self, confirmed: bool | None) -> None:
+    if confirmed:
+        await self.do_delete()
+
+# Or wait inline, which only works inside a worker:
+@work
+async def action_delete_inline(self) -> None:
+    if await self.push_screen_wait(ConfirmDialog()):
+        await self.do_delete()
+```
+
+Results come back via `dismiss(value)`; the callback receives it (`None` for a bare `dismiss()`). `push_screen_wait` returns it inline but needs the `@work` decorator; from a plain handler it raises `NoActiveWorker`.
+
+### Testing — Pilot + pytest-textual-snapshot
+
+Pilot drives the app headlessly from pytest:
+
+```python check=python/pilot-test
+import pytest
+from textual.widgets import Label
+
+@pytest.mark.asyncio  # or asyncio_mode = "auto"
+async def test_button_click():
+    app = HelloApp()  # the example app above
+    async with app.run_test(size=(80, 24)) as pilot:
+        await pilot.click("#go")
+        await pilot.pause()
+        assert app.query_one("#greeting", Label).content == "Button pressed!"
+```
+
+For SVG snapshots, call `snap_compare("path/to/app.py", press=["tab", "enter", "a"])` in a test; snapshots live under `__snapshots__/` and failures generate an HTML diff page.
+
+Gotchas worth knowing:
+
+- **Async tests need `pytest-asyncio`.** Its default strict mode fails an unmarked `async def` test ("async def functions are not natively supported"). Set `asyncio_mode = "auto"` under `[tool.pytest.ini_options]`, as Textual's own suite does, or mark each test `@pytest.mark.asyncio`.
+- **Pin `pytest>=8.4,<9` for snapshot suites.** pytest-textual-snapshot's last release, 1.1.0 (January 2025), pins `syrupy==4.8.0`, which requires `pytest<9`; pytest-asyncio 1.4 needs pytest 8.4 or later. On pytest 9, pip silently picks 1.0.0, which writes `.raw` snapshots instead of `.svg`.
+- **`run_test()` runs headless at `size=(80, 24)` and disables notifications and tooltips by default.** A test asserting on a `notify()` toast will silently see nothing — pass `notifications=True` (and `tooltips=True` if relevant) to `run_test`.
+- **There's no `App.messages` capture API.** Assert posted messages via a recorder handler on a test App subclass (an `@on(SomeWidget.Changed)` handler appending events to a list — Textual's own test suite does this), or via the `message_hook` parameter of `run_test`, which sees every message in the app. Messages bubble asynchronously, so always `await pilot.pause()` before asserting.
+### Debugging
+
+Textual redirects `sys.stdout` and `sys.stderr` while the app runs, so `print()` is captured and sent to `textual console` instead of the screen. What corrupts the display is a write that bypasses the redirect: `sys.__stdout__`, file descriptor 1 (C extensions, `os.write(1, ...)`), and child processes that inherit the terminal. To see output, `pip install textual-dev` (the `textual` CLI lives in that separate package):
+
+- **`textual console`** receives logs and `print()`/`self.log(...)` output in another terminal; start the app with **`textual run --dev myapp.py`**, which also hot-reloads TCSS on save.
+- **`textual keys`** — interactive key inspector; press keys to see exactly what events Textual receives, useful for tracking down "why doesn't my binding fire" bugs.
+
+**Profiling:** neither the dev console nor `textual diagnose` (an environment report) measures performance, and there is no built-in FPS overlay. For a "what's slow" answer, attach `py-spy` to the running process (`py-spy record -o profile.svg --pid <pid>`); it needs no code changes, though attaching usually needs `sudo`, and Python 3.15+ has the stdlib `python -m profiling.sampling attach <pid>`. `py-spy` excludes idle threads by default and Textual's main loop mostly awaits, so pass `--idle` if a run over a quiet window shows almost nothing. Heavy synchronous work inside an `async def` handler with no `await` blocks the whole UI; offload it to `@work(thread=True)`, not just `@work`.
+
+### Dev tools
+
+**`textual serve app.py`** serves the app over HTTP/WebSocket in a browser tab with no code changes, so the same codebase runs in a terminal, over SSH, or in a browser. Prefer `textual serve` (self-hosted; works with Textual 8.2) over **textual-web**, the hosted service, which has had no release since 0.8.0 in August 2024.
+
+**Accessibility:** `textual serve` is not an accessibility path. Its browser client paints the terminal grid with xterm.js on a canvas, with xterm's screen-reader mode off, so a screen reader gets no more than it would in a terminal. Textual itself has no screen-reader support; the roadmap item is still open. For reduced motion, `TEXTUAL_ANIMATIONS=none` (or setting `App.animation_level` to `"none"`) makes built-in animations jump to their end state and the loading indicator static; custom timers and spinners must check `app.animation_level` themselves. Design guidance: `visual-patterns.md` → *Accessibility*.
+
+### Pitfalls
+
+1. **Reactives in `__init__` fire watchers before mount** → `NoMatches` errors when watchers try to query DOM. Init in `on_mount` or use the `self.set_reactive(MyClass.attr, value)` method to bypass validators and watchers.
+2. **Don't bypass Textual's stdout capture** (see Debugging). `print()` is safe, but `sys.__stdout__`, fd 1 and inherited child-process output corrupt the screen; run children inside `self.suspend()`.
+3. **Inside Textual, use `ProgressBar` widget**, not Rich's `Live`/`Progress` — they fight each other for the screen.
+4. **`can_focus = True`** on custom widgets that should receive key events. Without this, key events bypass them.
+5. **`DataTable.add_rows()` is not a bulk-insert optimization.** It is a plain loop over `add_row()`, paying the same per-row cost, so switching to it won't speed up a slow bulk insert.
+
+---
+
+## Rich (Textualize/rich)
+
+Immediate-mode output formatting — no input handling, no event loop. The de facto Python library for pretty CLI output; it honors `NO_COLOR`.
+
+```python check=python/rich
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.progress import track
+
+console = Console()
+err = Console(stderr=True)  # diagnostics and progress stay off stdout
+
+# Markup syntax (like BBCode)
+err.print("[bold red]error:[/] file not found")
+
+# Tables
+table = Table(title="Users")
+table.add_column("Name", style="cyan")
+table.add_column("Email", style="green")
+table.add_row("Alice", "alice@example.com")
+console.print(table)
+
+# Panels
+console.print(Panel.fit("Hello, world!", title="Greeting", border_style="blue"))
+
+# Progress
+for item in track(items, description="Processing...", console=err):
+    do_work(item)
+```
+
+**`from rich.traceback import install; install()`** replaces the default traceback with a syntax-highlighted one with source context. (There is no `rich.install()`; the sibling `rich.pretty.install()` only pretty-prints REPL results.)
+
+**Use Rich vs Textual:** Rich is for tools that *print and exit*. Textual is for apps the user *lives inside*. Rich + Click/Typer is the standard for modern Python CLI tools; pip vendors Rich for its own output, and Textual, Harlequin, and most new Typer-based tools build on it. (Poetry uses cleo and Sphinx does not depend on Rich.)
+
+---
+
+## prompt_toolkit
+
+**Prompt-style** — single-line input with completion, history, syntax highlighting:
+
+```python check=python/prompt-toolkit
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+
+cmd_completer = WordCompleter(["help", "list", "quit"])
+text = prompt("> ", completer=cmd_completer)
+```
+
+**Full-screen Application** — HSplit/VSplit/FloatContainer + UIControl + KeyBindings. Powers IPython, ptpython, all the DBCLI tools (mycli, pgcli, litecli), pyvim, pymux.
+
+For one-off prompts inside CLI tools, use **questionary** (built on prompt_toolkit) — much simpler API:
+
+```python check=python/questionary
+import sys
+import questionary
+
+answer = questionary.text("What's your name?").ask()
+if answer is None:  # .ask() turns Ctrl-C into None
+    sys.exit(130)
+choice = questionary.select(
+    "Pick a color",
+    choices=["red", "green", "blue"],
+).unsafe_ask()  # raises KeyboardInterrupt instead
+```
+
+`.ask()` catches Ctrl-C, prints "Cancelled by user" to stdout, and returns `None`; check for `None` and exit 130. `kbi_msg=""` still prints a blank line, so when stdout carries the result, call `.unsafe_ask()` and catch `KeyboardInterrupt`. prompt_toolkit draws prompts on stdout by default, even when stdout is piped, so when stdout carries the result pass `output=create_output(stdout=sys.stderr)` (from `prompt_toolkit.output`). For a single select without questionary, prompt_toolkit 3.0.52+ has a built-in `choice()`.
+
+---
+
+## Other libraries
+
+- **Urwid** — pre-Textual TUI framework, mature and maintained again (4.2.x as of October 2026). New projects should still use Textual.
+- **Blessed** (curses wrapper, via `jinxed` on Windows), stdlib **curses** (Unix-only) and **asciimatics** — avoid for new code unless you need fine control or a zero-dep build.
+- **InquirerPy** — Python port of Inquirer.js. Unmaintained (last release 0.3.4, June 2022); prefer questionary.
+- **tqdm** — progress bars, max performance, the default for ML/data scripts. `with logging_redirect_tqdm():` routes `logging` output around the bar; it does not capture `print()` — use `tqdm.write()`. **alive-progress** is more polished but slightly slower.
+
+---
+
+## Argument parsing: argparse vs Click vs Typer
+
+**argparse** — stdlib, no dependency. Verbose but capable. Since Python 3.14 it colorizes help and can suggest fixes for mistyped choices and subcommands (`suggest_on_error`, on by default in 3.15).
+
+**Click** — decorator-based, very popular:
+```python check=python/click
+import click
+
+@click.command()
+@click.option("--name", default="world", help="Who to greet")
+@click.option("--count", default=1, type=int)
+def hello(name: str, count: int) -> None:
+    """Say hello."""
+    for _ in range(count):
+        click.echo(f"Hello, {name}!")
+```
+
+**Typer** — type-hint-driven (FastAPI's author):
+```python check=python/typer
+import typer
+
+app = typer.Typer()
+
+@app.command()
+def hello(name: str = "world", count: int = 1) -> None:
+    """Say hello."""
+    for _ in range(count):
+        typer.echo(f"Hello, {name}!")
+
+if __name__ == "__main__":
+    app()
+```
+
+**Recommendation: use Typer for new projects.** Type hints give you free validation, documentation, and shell completion. Since 0.26 (May 2026) Typer vendors Click instead of depending on it, so Click plug-ins and extracting the underlying Click app are no longer supported; use Click directly if you need them. **Cyclopts** (Python 3.11+) is the Click-free alternative with a similar type-hint API.
+
+**Trogon** (last release 0.6.0, October 2024; unmaintained) generates a Textual form UI for a **Click** CLI: `from trogon import tui`, then `@tui()` above your Click group. On Click 8.3+ it pre-fills options that have no default with the literal text `Sentinel.UNSET`, and its Typer integration fails on Typer 0.26+; pin `typer<0.26` or write that CLI in Click.
+# TypeScript / JavaScript ecosystem — Ink, Clack, Inquirer
+
+Node splits into pretty CLIs (argument parsing, color, prompts, spinners) and full TUIs, and into imperative versus declarative (React-style) APIs. **Ink has effectively won the high-end TUI space.** It powers Claude Code (publicly TypeScript + React + Ink + Yoga + Bun), GitHub Copilot CLI, Gemini CLI, and Cloudflare Wrangler.
+
+**Contents:**
+- [Quick recommendation](#quick-recommendation) · [Runtime floors and ESM](#runtime-floors-and-esm)
+- [Ink](#ink-vadimdemedesink) — [Lifecycle and terminal handoff](#lifecycle-and-terminal-handoff) · [Primitives](#primitives) · [Layout](#layout) · [Hooks](#hooks) · [Lists, focus, and tables](#lists-focus-and-tables) · [Long-running work and Ctrl+C](#long-running-work-and-ctrlc) · [ink-ui](#ink-ui-vadimdemedesink-ui) · [Testing](#testing--ink-testing-library) · [Debugging](#debugging) · [Pastel](#pastel--nextjs-style-filesystem-routing) · [Strengths and weaknesses](#strengths-and-weaknesses) · [Ink pitfalls](#ink-pitfalls)
+- [Modern prompts: @clack/prompts](#modern-prompts-clackprompts) · [@inquirer/prompts](#inquirerprompts)
+- [Color libraries](#color-libraries) · [Other utilities](#other-utilities) · [Argument parsers](#argument-parsers)
+- [OpenTUI](#opentui-anomalycoopentui) · [blessed / terminal-kit](#blessed--terminal-kit)
+- [Cross-library pitfalls](#cross-library-pitfalls)
+- [Stack recommendations by project shape](#stack-recommendations-by-project-shape)
+
+## Quick recommendation
+
+| If the user wants… | Use |
+|---|---|
+| Full-screen TUI app | **Ink** (React-flexbox) |
+| Modern Clack-style wizard prompts | **@clack/prompts** |
+| Prompt-heavy CLI (many questions) | **@inquirer/prompts** (the modern modular rewrite) |
+| Single elegant spinner | **ora** |
+| Hierarchical task runner | **listr2** |
+| Argument parsing | **commander** (de facto default); yargs, oclif, citty, cac: see Argument parsers |
+| Terminal colors | **picocolors** (fast, functional) or **chalk** (classic chainable API) |
+| Beyond Ink's perf ceiling | **OpenTUI** (Zig-backed, v0.x) |
+| Image rendering in terminal | **terminal-image** 5 (Kitty/iTerm2 protocols, half-block fallback) |
+
+**Default full-TUI stack: Ink + @inkjs/ui + zustand + commander + ink-testing-library** (the last two UI/test packages are unmaintained but work with Ink 8; see ink-ui and Testing).
+
+## Runtime floors and ESM
+
+Node 20 is end-of-life; target Node 22 or 24 (check the Node release schedule). The current majors below need Node 22; use the last Node 20 line only as a bridge for a deployment that can't move yet.
+
+| Package | Current major needs | Last line for Node 20 |
+|---|---|---|
+| Ink | Ink 7 and 8 require Node ≥ 22; Ink 8 also requires React ≥ 19.3 (Ink 7: ≥ 19.2) | Ink 6 (Node ≥ 20, React ≥ 19) |
+| chalk | chalk 6 requires Node ≥ 22 | chalk 5 |
+| commander | v15 is ESM-only and needs Node ≥ 22.12 | v14 (security fixes until May 2027) |
+| listr2, execa | listr2 11 requires Node ≥ 22.13; execa 10 requires Node ≥ 22 | previous major |
+
+Much of the modern stack (chalk v5+, ora v6+, ink v4+, commander v15+, @inquirer/prompts, @clack/prompts) is ESM-only at latest. On Node 20.19+/22.12+, CommonJS code can `require()` synchronous ESM packages such as chalk (`require('chalk').default`), commander, @clack/prompts, and @inquirer/prompts, so don't pin old CJS majors. Ink is the exception: Yoga's top-level await makes `require('ink')` throw `ERR_REQUIRE_ASYNC_MODULE` (Ink 6.8–8), so from CommonJS use `await import('ink')` or a bundler.
+
+---
+
+## Ink (vadimdemedes/ink)
+
+**Architectural model: React for the terminal.** A custom `react-reconciler` renderer that commits to terminal-native host nodes (`ink-root`, `ink-box`, `ink-text`), runs Yoga layout, paints into a screen buffer, and rewrites the live output in a single buffered terminal write. By default each frame replaces the whole live region; `incrementalRendering: true` updates only the changed lines ([readme](https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#incrementalrendering)).
+
+Current major: **Ink 8** (8.0.x, October 2026); runtime floors are in the table above.
+
+```tsx check=typescript/ink-hello
+import React, {useState} from 'react';
+import {render, Text, Box, useInput, useApp} from 'ink';
+
+const App = () => {
+  const [n, setN] = useState(0);
+  const {exit} = useApp();
+
+  useInput((input, key) => {
+    if (key.upArrow) setN(c => c + 1);
+    if (key.downArrow) setN(c => c - 1);
+    if (input === 'q') exit();
+  });
+
+  return (
+    <Box borderStyle="round" padding={1}>
+      <Text color="green">Counter: {n}</Text>
+    </Box>
+  );
+};
+
+render(<App />);
+```
+
+### Lifecycle and terminal handoff
+
+Ink 7.1+ (unchanged in 8.0) distinguishes permanent unmounting from a resumable terminal suspension (`suspendTerminal` is not in 7.0 or Ink 6). Keep signal policy at the render boundary and temporary ownership changes inside `useApp()`.
+
+| Boundary | Ink 7.1+ contract |
+|---|---|
+| Normal exit | Use `useApp().exit(...)` inside the tree or the render handle's `unmount()` outside it. At the top level, await `waitUntilExit()` before post-run output or process termination so pending terminal writes finish. |
+| SIGINT / SIGTERM | `exitOnCtrlC` handles Ctrl+C bytes while stdin is raw; it is not a SIGTERM handler. If the host requires graceful signals, register them once at the process boundary, unmount, await `waitUntilExit()`, set the exit status, and remove listeners. Do not call `process.exit()` before cleanup flushes. To cancel work on the first Ctrl+C, see *Long-running work and Ctrl+C*. |
+| Interactive child | Use `await suspendTerminal(async () => runChild())`. Ink pauses input and rendering, restores terminal modes, runs the callback even without an interactive TTY, and re-enters with a full redraw in `finally`. Reload child-mutated data afterward because redraw preserves the existing React state. For the manual form, always `await suspension.resume()` in `finally` or use `await using`. Do not unmount. |
+| Foreground suspend | Ink has no separate high-level job-control action. If a Unix-only Ctrl+Z feature is necessary, perform SIGTSTP inside `suspendTerminal` and let its resume path re-enter and redraw; expose a different action on Windows. |
+
+The tagged [`suspendTerminal` documentation](https://github.com/vadimdemedes/ink/blob/v8.0.0/readme.md#suspendterminalcallback) covers callback, manual, non-interactive, and nesting behavior. A second overlapping suspension is an error, so centralize ownership.
+
+**Inline or alternate screen.** Inline is the default: the live region sits in the scrollback, and permanent lines go above it through `<Static>`, `useStdout().write()`, or the patched `console.*`. `render(<App />, {alternateScreen: true})` (Ink 7+) enters the alternate screen and restores the terminal on exit. It applies only in interactive mode (ignored in CI or with piped stdout), and teardown-time output is discarded, so print the final summary after `await waitUntilExit()`.
+
+### Primitives
+
+Ink ships only a handful of components — everything else composes from these:
+
+- **`<Text>`** — only place strings can live. Props: `color`, `backgroundColor`, `bold`, `italic`, `underline`, `inverse`, `dimColor`, `wrap`, `strikethrough`. Strings as direct children of `<Box>` will throw — they must be wrapped.
+- **`<Box>`** — flexbox container. Props: `padding`, `paddingX/Y/Top/Right/Bottom/Left`, `margin*`, `borderStyle`, `borderColor`, `borderTop`/`Bottom`/`Left`/`Right` (selective borders), `width`, `height`, `minWidth`/`maxWidth` (numbers only in Ink 8), `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `justifyContent`, `alignItems`, `gap`, `display: 'flex' | 'none'`, `overflow`/`overflowX`/`overflowY`. Ink 8 adds `contentOffsetX`/`contentOffsetY` for scrolling: give a fixed-height viewport `overflow="hidden"`, wrap the content in a `flexShrink={0}` box that carries any padding, and clamp the offset to `content.height - clientHeight` from `useBoxMetrics()`. That suits modest content; for long lists see *Lists, focus, and tables*.
+- **`<Newline>`** — newline characters; only valid inside `<Text>` (use `gap` or margin between boxes). **`<Spacer>`** — flex-grow filler.
+- **`<Static>`** — renders items permanently above the live UI; once rendered, never re-renders. Suited to log streaming.
+- **`<Transform>`** — wraps children and transforms their rendered string. Used for gradients and OSC 8 hyperlinks.
+
+### Layout
+
+Yoga (Meta's open-source flexbox engine, same as React Native). No CSS, no className — props on `<Text>` and `<Box>`. Border styles come from `cli-boxes`: `single`, `double`, `round`, `bold`, `singleDouble`, `doubleSingle`, `classic`, or a custom `BoxStyle` object.
+
+```tsx check=typescript/ink-layout
+<Box flexDirection="column" height="100%">
+  <Box borderStyle="single">
+    <Text>Header</Text>
+  </Box>
+  <Box flexGrow={1} flexDirection="row">
+    <Box width={30} borderStyle="single">
+      <Text>Sidebar</Text>
+    </Box>
+    <Box flexGrow={1} borderStyle="single">
+      <Text>Main content</Text>
+    </Box>
+  </Box>
+</Box>
+```
+
+### Hooks
+
+Ink-specific (items marked 7+ are not in Ink 6):
+- **`useInput((input, key) => ...)`** — keyboard events. `key` is `{upArrow, downArrow, leftArrow, rightArrow, return, escape, tab, backspace, delete, ctrl, shift, meta, pageUp, pageDown, home, end}` (plus Kitty-protocol extras). Ink 8 drops mouse, focus, and cursor-position reports rather than passing them as typed text, so mouse support must parse raw stdin.
+- **`useApp()`** — `{exit(errorOrResult?), waitUntilRenderFlush (7+), suspendTerminal (7.1+)}`. Pass an `Error` to `exit` to reject the render handle's `waitUntilExit()`; there is no separate error variant. Use `suspendTerminal` for a resumable interactive child, not final shutdown.
+- **`useStdin()`** — `{stdin, setRawMode, isRawModeSupported}`. **`useStdout()`** / **`useStderr()`** — write outside the live UI; Ink 8 types the streams generically, so read the size from `useWindowSize()`, not `stdout.columns`.
+- **`useFocus({autoFocus, isActive, id})`** — Tab-focusable component. **`useFocusManager()`** — `{focus(id), focusNext, focusPrevious, enableFocus, disableFocus, activeId (7+)}`.
+- **`useWindowSize()`** (7+) — `{columns, rows}`, updates on resize. **`useCursor()`** — position the real terminal cursor (IME-friendly input).
+- **`usePaste(callback)`** (7+) — bracketed-paste events, so pasted text arrives as one chunk instead of spraying through `useInput` character by character.
+- **`useAnimation()`** (7+) — frame ticker; `isActive: false` stops it, and turning it back on resets the counters to 0 (it does not resume). **`useBoxMetrics()`** (7+) — measured box size; Ink 8 adds `clientWidth`/`clientHeight`, the size inside its borders.
+
+Standard React hooks all work. For larger apps use **Zustand** (recommended), **Jotai**, or `useReducer` + Context.
+
+### Lists, focus, and tables
+
+- **Virtualize by slicing.** `contentOffsetY` only shifts and clips: Yoga still lays out and Ink still paints every child, so 20,000 rows cost 20,000 rows per frame. Mount only `items.slice(top, top + height)` in a fixed-height box.
+- **Every mounted `useInput` fires on every key** unless its `isActive` is false. `useFocus` only tracks which component Tab selected; it mutes nothing. Gate each handler with `{isActive: isFocused}` (or a mode flag, so the list behind a dialog stops moving).
+- **Tables keep one row to one line**, which the slice math assumes: give each cell a fixed-`width` `<Box>` and `<Text wrap="truncate-end">`. The default `wrap` grows the row.
+
+```tsx check=typescript/ink-virtual-list
+import React, {useState} from 'react';
+import {Box, Text, useFocus, useInput} from 'ink';
+
+const VirtualList = ({items, height, width}: {items: string[]; height: number; width: number}) => {
+  const {isFocused} = useFocus();
+  const [selected, setSelected] = useState(0);
+  useInput((_input, key) => {
+    if (key.downArrow) setSelected(i => Math.min(items.length - 1, i + 1));
+    if (key.upArrow) setSelected(i => Math.max(0, i - 1));
+  }, {isActive: isFocused});
+
+  const top = Math.max(0, Math.min(selected - Math.floor(height / 2), items.length - height));
+  return (
+    <Box flexDirection="column" width={width} height={height}>
+      {items.slice(top, top + height).map((item, i) => (
+        <Text key={top + i} wrap="truncate-end" inverse={isFocused && top + i === selected}>{item}</Text>
+      ))}
+    </Box>
+  );
+};
+```
+
+### Long-running work and Ctrl+C
+
+Ink renders, reads keys, and runs timers on one event loop. `execSync`, `spawnSync`, `readFileSync` on a big file, or a long CPU loop freezes the spinner and queues keystrokes until it returns. Use `execFile`/`spawn`, `fs/promises`, or a worker thread, plus an `AbortSignal`.
+
+By default Ink quits on Ctrl+C before `useInput` sees it. For "first cancels, second quits", pass `exitOnCtrlC: false` and handle `key.ctrl && input === 'c'` in an always-active `useInput`: with no active input hook raw mode is off and Ctrl+C is SIGINT again.
+
+```tsx check=typescript/ink-cancel
+import React, {useEffect, useRef, useState} from 'react';
+import {render, Text, useAnimation, useApp, useInput} from 'ink';
+import {execFile} from 'node:child_process';
+
+const Build = ({cmd, args}: {cmd: string; args: string[]}) => {
+  const {exit} = useApp();
+  const [status, setStatus] = useState('running');
+  const abort = useRef(new AbortController());
+  const {frame} = useAnimation({interval: 80, isActive: status === 'running'});
+  useEffect(() => {
+    execFile(cmd, args, {signal: abort.current.signal}, error => setStatus(error ? 'stopped' : 'done'));
+  }, []);
+  useInput((input, key) => {
+    if (!key.ctrl || input !== 'c') return;
+    if (status === 'running') abort.current.abort();  // first Ctrl+C cancels
+    else {
+      process.exitCode = 130;                         // second quits
+      exit();
+    }
+  });
+
+  return <Text>{status === 'running' ? `${'|/-\\'[frame % 4]} ${cmd}` : status}</Text>;
+};
+
+render(<Build cmd="npm" args={['run', 'build']} />, {exitOnCtrlC: false});
+```
+
+### ink-ui (vadimdemedes/ink-ui)
+
+The companion library of themeable widgets:
+
+- `<TextInput>`, `<EmailInput>`, `<PasswordInput>` — uncontrolled inputs: `defaultValue`, `onChange`, `onSubmit`, and no `value` prop (issue #20), so remount with a new `key` to clear one. Every input listens to every key unless `isDisabled`, and none integrates with `useFocus`: pass `isDisabled={!isFocused}`.
+- `<Select>`, `<MultiSelect>`, `<ConfirmInput>` (y/n), `<ProgressBar>`, `<Badge>`, `<StatusMessage>`, `<Alert>`, and `<Spinner>` (use it inside Ink, not `ora`).
+
+Theming via theme objects passed at the root. @inkjs/ui has had no release since 2.0.0 (May 2024) but works on Ink 8; fork or wrap any component you need to change.
+
+### Testing — ink-testing-library
+
+```tsx check=typescript/ink-testing-library
+import {render} from 'ink-testing-library';
+
+const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+
+const {lastFrame, rerender, stdin, frames, unmount} = render(<App />);
+expect(lastFrame()).toContain('Counter: 0');  // frame includes the round border
+stdin.write('\u001B[A');  // up arrow — see the input caveat below
+await tick();             // input and re-render are asynchronous
+expect(lastFrame()).toContain('Counter: 1');
+unmount();
+```
+
+`renderToString()` (Ink 6.8+) renders synchronously for tests. **Staleness caveat.** ink-testing-library 4.0.0 was built against Ink 5 / React 18 (May 2024; unmaintained and still the latest release) but installs and works with Ink 6.8, 7.1, and 8. `stdin.write` drives `useInput` and `usePaste` as long as the test awaits after each write, because frames update asynchronously (the "stdin.write() does not trigger useInput" report reproduces only on Ink 5.0.1). Frames are text only because chalk sees a non-TTY stream (set `FORCE_COLOR=1` to assert styles). Add a few PTY-level tests (**node-pty** + `strip-ansi`) for real keyboard flows. Both packages are ESM-only; prefer vitest over Jest.
+
+### Debugging
+
+- **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*`, renders the message above the live output, and repaints. If console output *is* garbling the screen, something bypassed the patch: direct `process.stdout.write` or child-process stdio inherited straight to the terminal.
+- **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place, the best tool for "which frame went wrong".
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree. **Tree/props inspection only, not profiling:** Ink's reconciler sets none of the flags React's Profiler needs.
+- **High-volume tracing** goes to stderr (`useStderr().write()`) or a file you `tail -f`, never stdout; Ink owns it.
+- **Profiling:** `node --cpu-prof` is the real path; it writes a `.cpuprofile` on exit, loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink cost sinks: unmemoized components re-rendering on every parent update; `<Static>` misuse (static content left out of it, or changing content put in it); a mounted-but-hidden long list (see *Lists, focus, and tables*); and an always-animating leaf such as `ink-spinner` keeping the render cycle busy.
+
+### Pastel — Next.js-style filesystem routing
+
+`vadimdemedes/pastel` builds the command tree from the filesystem: each file under `commands/` is a command (`index.tsx` is `myapp`, `user/add.tsx` is `myapp user add`) exporting a default React component plus optional `args`/`options` Zod schemas. Pastel 4 calls Ink's `render()` without options, so `alternateScreen`, `kittyKeyboard`, `incrementalRendering`, and `concurrent` can't be set (issue #43); call `render()` directly when you need them.
+
+### Strengths and weaknesses
+
+Ink's strengths are the declarative React model and Yoga flexbox layout. Weaknesses:
+- **Heavy startup**: roughly 150–250 ms to the first frame (measure with `hyperfine`); give `--version` and completion commands a fast path that bypasses Ink.
+- **High-frequency re-renders used to flicker.** Ink 6.7+ ships synchronized updates, which largely fixed this. When streaming LLM tokens or tailing logs, still prefer `useDeferredValue` (fully functional only with `render(<App />, {concurrent: true})`) or manual debounce, and `<Static>` for append-only logs. Ink 8's `incrementalRendering: true` rewrites only the changed part of each line, and a lower `maxFps` (default 30) cuts churn further.
+- **Screen-reader support is opt-in and partial.** Ink 6.2 added `aria-label` and `aria-hidden` (on `<Box>` and `<Text>`), `aria-role` and `aria-state` (on `<Box>`, from fixed lists), and a screen-reader renderer that turns on only through `render(..., {isScreenReaderEnabled: true})` or `INK_SCREEN_READER=true`. Nothing detects a screen reader; `useIsScreenReaderEnabled()` only reports that flag. The renderer prints linear text without borders or color and replaces children with their `aria-label`, but it still erases and rewrites the whole live region on every change. In that mode, move finished output into `<Static>`, keep the live part small, and stop per-tick spinners and timers. Design guidance: `visual-patterns.md` → *Accessibility*.
+
+### Ink pitfalls
+
+1. **`nodemon` breaks Inquirer/Ink arrow keys.** Use `nodemon --no-stdin` or `node --watch`.
+2. **Ink 7 fixed Backspace reporting as `key.backspace`.** Old input handlers that check `key.delete` for Backspace silently break on upgrade—check `key.backspace`.
+3. **Ink 8 upgrades break in three places:** percentage `minWidth`/`maxWidth` (numbers only now), `useStdout().stdout.columns` (no longer typed; use `useWindowSize()`), and `useInput` handlers that parsed mouse or focus reports (now dropped).
+
+## Modern prompts: @clack/prompts
+
+`@clack/prompts` has largely displaced Inquirer for new wizard-style CLIs. Stable at 1.x (bomb.sh/clack); used by **create-vite, `sv` (Svelte's CLI), and create-t3-app**. create-astro ships the same look through its own `@astrojs/cli-kit` rather than Clack.
+
+```ts check=typescript/clack
+import {intro, outro, text, confirm, select, spinner, isCancel, cancel} from '@clack/prompts';
+
+intro('create-my-app');
+
+const name = await text({
+  message: 'Project name',
+  validate: v => !v ? 'Required' : undefined,  // v is string | undefined
+});
+if (isCancel(name)) {
+  cancel('Cancelled');
+  process.exit(130);
+}
+
+const framework = await select({
+  message: 'Pick a framework',
+  options: [
+    {value: 'react', label: 'React'},
+    {value: 'vue', label: 'Vue'},
+    {value: 'svelte', label: 'Svelte'},
+  ],
+});
+if (isCancel(framework)) {
+  cancel('Cancelled');
+  process.exit(130);
+}
+
+const s = spinner();
+s.start('Installing dependencies');
+await install();
+s.stop('Dependencies installed');
+
+outro(`You're all set!`);
+```
+
+**Components:** `intro`/`outro`, `text`, `password`, `confirm`, `select`, `multiselect`, `autocomplete`, `path`, `date`, `spinner`, `progress`, `tasks`, `note`, `log.*`, `group`, and more. `validate` also accepts a Standard Schema validator (Zod, Valibot, ArkType) or an async function.
+
+**`isCancel(value)`** is critical — it detects Ctrl+C per prompt and lets you clean up gracefully. Exit 130 on cancel, not 0, so `cli && next` stops; Clack's own `cancel()` example exits 1. Its look suits a `create-*` scaffolder.
+
+## @inquirer/prompts
+
+The modern modular rewrite of Inquirer — TypeScript-first packages that replaced the legacy monolithic `inquirer`. The workhorse for prompt-heavy CLIs:
+
+```ts check=typescript/inquirer
+import {input, select, confirm, password} from '@inquirer/prompts';
+
+try {
+  const name = await input({message: 'What is your name?'});
+  const role = await select({
+    message: 'Choose a role',
+    choices: [
+      {name: 'Admin', value: 'admin'},
+      {name: 'User', value: 'user'},
+    ],
+  });
+} catch (error) {
+  if (error instanceof Error && error.name === 'ExitPromptError') process.exit(130);  // Ctrl+C
+  throw error;
+}
+```
+
+Ctrl+C rejects the prompt with `ExitPromptError`; uncaught, it prints a stack trace in the user's terminal. Catch it as above ([recipe](https://github.com/SBoudrias/Inquirer.js/blob/ea3130ebc609a6a3910b5397244044de7eda3d05/packages/prompts/README.md#handling-ctrlc-gracefully)).
+
+It ships one package per prompt (`@inquirer/input`, `select`, `checkbox`, …). **Inquirer over Clack:** complex flows with conditional questions, validation chains, custom prompt types, i18n. **Clack over Inquirer:** minimal API and look, scaffolding a `create-*` tool.
+
+## Color libraries
+
+| Library | Size | Speed | API | Best for |
+|---|---|---|---|---|
+| **picocolors** | 7 KB | Fastest single-style | Functional only: `pc.red('hi')` | Tooling internals (PostCSS, SVGO, Stylelint, Browserslist, Babel, Prettier, Vite all use it) |
+| **chalk** | ~56 KB (v6) | Slower; chainable | `chalk.red.bold('hi')` | End-user CLIs with frequent chaining; truecolor; familiar |
+
+Color-disable behavior varies by library and version, so treat `NO_COLOR`, non-TTY output, and an explicit `--color` override as an application-level output policy and configure or bypass the library accordingly. chalk is ESM-only from v5 (see Runtime floors and ESM). For zero dependencies, `node:util` `styleText` (added in Node 20.12, stable since 22.13; honors `NO_COLOR`/TTY since 20.18/22.8; hex colors since 24.16/26.1) covers basic styling.
+
+## Other utilities
+
+- **ora** — single spinner (outside Ink; inside it use `<Spinner>` from `@inkjs/ui`). **cli-progress** — single and multi-bar progress with ETA (outside Ink).
+- **listr2** — hierarchical animated task list with concurrency, retries, rollback. Renderers: `default` (live), `simple` (line-per-task, CI-friendly), `verbose`, `silent`, `test`. Used by Angular CLI and Electron Forge.
+- **boxen** — text in boxes. **update-notifier** — checks the npm registry for newer versions and shows a boxed notice. **terminal-link** — OSC 8 hyperlinks with a plain-URL fallback. **string-width** — cell width for strings (CJK, emoji).
+
+## Argument parsers
+
+| Parser | Adoption | Style | Best for |
+|---|---|---|---|
+| **commander** | The most downloaded by a wide margin | Fluent API | The default (webpack-cli, Babel CLI, Svelte's `sv`); floors in Runtime floors and ESM |
+| **yargs** | Very high | Fluent + middleware | Best validation; used by Jest and nyc |
+| **citty** | Growing | TS-first, declarative | UnJS ecosystem (Nuxt, Nitro, unbuild) |
+| **cac** | Niche | One ~20 KB file, no deps | Vite uses it; ESM-only since v7; use ≥ 7.0.1, which fixes a prototype-pollution bug with dotted option names |
+| **oclif** | Plugin marketplace | Class-per-command | Heroku, Salesforce, Shopify CLI; heaviest startup of the group |
+| **node:util.parseArgs** | stdlib | Argument parsing only | Stable since Node 20; zero-dep |
+
+```ts check=typescript/commander
+import {Command} from 'commander';
+
+const program = new Command();
+program
+  .name('myapp')
+  .description('CLI to do things')
+  .version('1.0.0');
+
+program.command('greet')
+  .description('Say hello')
+  .option('-n, --name <name>', 'who to greet', 'world')
+  .action(({name}) => console.log(`Hello, ${name}!`));
+
+program.parse();
+```
+
+With any `async` action, call `await program.parseAsync()`: `parse()` returns before the action settles, so a rejection escapes as an unhandled rejection. For an Ink action, `await` the render handle's `waitUntilExit()` inside it.
+
+## OpenTUI (anomalyco/opentui)
+
+The credible new entrant, built by Anomaly: TypeScript bindings over a Zig native core. Double-buffered rendering with alpha blending, scissor clipping, per-node mouse hit testing. Packages: `@opentui/core` (low-level), `@opentui/react` and `@opentui/solid` (React and SolidJS renderers), and `@opentui/three` (a Three.js WebGPU renderer that rasterizes 3D scenes into terminal cells).
+
+Powers **opencode** (Anomaly's terminal coding agent). **Choose if** pushing past Ink's performance ceiling — animations, real-time streaming with low latency, or complex layouts where Yoga's CPU cost matters. **Trade-off:** v0.x churn (0.6 moved layout and painting into the native core, and 0.6 and 0.7 each broke custom renderables; 0.7 also dropped the screen-sized hit grid and reads renderable hooks from the class at construction), a smaller community, and a native binary in the install. `@opentui/core` 0.6+ declares `engines` of Bun ≥ 1.3.14 or Node ≥ 26.4. Read the [0.7.0 release notes](https://github.com/anomalyco/opentui/releases/tag/v0.7.0) before upgrading.
+
+## blessed / terminal-kit
+
+Retained-mode classics, pre-Ink era. **blessed** (ncurses in pure JS; last release 0.1.81, September 2015) is abandoned, and its fork **neo-blessed** is also unmaintained (last publish 0.2.0, June 2018). **terminal-kit** offers cursor control, screen buffers, input fields, menus, and half-block truecolor images (no Sixel). Choose them only for precise damage-region control or legacy code; prefer Ink for new TUI apps.
+
+## Cross-library pitfalls
+
+1. **Restore terminal state on exit.** Ink: `exit()` or `unmount()`, then await `waitUntilExit()`; blessed: `screen.destroy()`. Ink's Ctrl+C handling does not cover SIGTERM (see Lifecycle). ESM/CJS and Node floors: see Runtime floors and ESM.
+2. **Detect non-TTY and CI** (`process.stdout.isTTY === false`, `process.env.CI`) and degrade to plain output; spinners and prompts must not run there. Raw mode needs `process.stdin.isTTY`; guard it.
+3. **Cell width**: use `string-width` (Ink does), never `.length`.
+4. **Frequently-invoked CLI startup**: lazy-load subcommand modules and give `--version`/`--help` a fast path.
+5. **Don't mix raw-mode libraries** (Ink + ora, Ink + blessed → broken). Older `cmd.exe` lacks some ANSI; target Windows Terminal.
+6. **Prompts and Ink draw on stdout by default.** For a summon–choose–exit tool whose result goes to stdout, redirect the chrome: Clack takes `output: process.stderr` on each call (`intro`, `cancel` and `spinner` too), Inquirer takes `{output: process.stderr}` as its second argument, and Ink takes `render(<App />, {stdout: process.stderr})`.
+
+## Stack recommendations by project shape
+
+| Project shape | Stack |
+|---|---|
+| Simple non-interactive CLI (~50 ms cold start, 19 packages, under 1 MB installed) | `commander + picocolors + ora` |
+| Interactive setup wizard (`create-*` tool) | `@clack/prompts + picocolors + commander` |
+| Complex CLI with tasks | `commander + @inquirer/prompts + listr2 + chalk + boxen + update-notifier` |
+| Full TUI app | `ink + @inkjs/ui + zustand + commander + ink-testing-library` |
+| Heroku-class plugin CLI | `oclif + ink + chalk + listr2` |
+| Performance-critical / animated TUI | `@opentui/core` or `@opentui/react` |
+
+codex
+**Profile a repeatable slow interaction before changing the table.** For Ink, **your React DevTools connection supports inspection, but not render profiling.**
+
+**Textual: find which phase is slow**
+
+Separate initial loading, scrolling, sorting/filtering, and live updates. Use the same 50k-row dataset and terminal size for each run.
+
+1. Attach a sampling profiler, then reproduce one slow action:
+
+   ```sh
+   py-spy record -o profile.svg --pid <pid>
+   ```
+
+   Stop recording after the reproduction and open the flame graph. Attaching may require elevated OS permissions. If a mostly idle capture shows little, retry with `--idle`; py-spy normally excludes idle threads.
+
+2. Look for where CPU time accumulates:
+
+   | Hot path | What to investigate |
+   |---|---|
+   | Parsing, fetching, formatting | Data preparation versus table insertion |
+   | Sorting/filtering callbacks | Full-dataset work on every keystroke |
+   | Rich rendering, cell measurement, layout | Expensive cell content, automatic sizing, repeated invalidation |
+   | Your event handlers/watchers | Rebuilding the table or processing all rows on each update |
+
+3. Time data preparation and table insertion separately with `time.perf_counter()`. Record to a file or Textual’s console. Insertion timing alone does **not** include the deferred layout and paint that follows.
+
+`DataTable` already virtualizes rendering; 50k rows does not mean it paints 50k rows per frame. Loading, measuring, sorting, and updating those rows can still be costly. Optimize the measured hot path.
+
+A synchronous CPU-heavy function inside `async def` still blocks the UI. For blocking work, use `@work(thread=True)` and send UI changes through `self.app.call_from_thread(...)`. Plain `@work` does not move CPU work off the event loop.
+
+`textual console` helps with logs; `textual diagnose` reports the environment. Neither is a performance profiler, and Textual has no built-in FPS overlay.
+
+**Ink: use a Node CPU profile**
+
+Ink’s reconciler does not enable the flags React’s Profiler needs, so the existing DevTools connection is useful for component trees and props, not profiling.
+
+Run the built CLI with:
+
+```sh
+node --cpu-prof ./dist/cli.js
+```
+
+Reproduce the slowdown, then exit normally so Node writes the `.cpuprofile`. Open it in Chrome DevTools’ Performance panel or speedscope.
+
+Inspect React reconciliation, Yoga layout, text processing, and your application callbacks. Common culprits include unnecessary parent-driven renders, long lists whose children remain mounted despite being clipped, and continuously running spinners. For lists, mount only the visible slice; clipping alone still leaves layout and paint work for every child.
+
+For both projects, repeat the same interaction after each change and compare latency as well as the CPU profile—terminal output delays may not appear as a CPU hotspot.
+tokens used
+15,412

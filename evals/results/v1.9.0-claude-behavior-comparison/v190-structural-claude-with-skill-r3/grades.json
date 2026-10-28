@@ -1,0 +1,285 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-structural-claude-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by saying the defer is wrong, should be deleted, and should not be shipped as written."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains that RestoreTerminal pairs with ReleaseTerminal for temporary handoffs and turns Bubble Tea's terminal modes back on rather than returning the terminal to the shell."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states that Run() restores the terminal after a normal quit, an error, or a recovered panic, and that panics are caught by default unless WithoutCatchPanics is set."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It tells the user to let Run() own cleanup and limits a custom cleanup boundary to the case where built-in recovery is disabled with WithoutCatchPanics."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens by saying not to ship the defer and gives a replacement pattern without it."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes RestoreTerminal as the other half of ReleaseTerminal, a handoff API that turns Bubble Tea's terminal modes back on rather than restoring the shell."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says Run() restores the terminal on normal quit, on error, and on a recovered panic, and that panic recovery is on by default."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It warns against competing cleanup on the managed path and limits custom outer cleanup to cases that bypass Bubble Tea or use WithoutCatchPanics."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer opens with 'Don't ship this. Remove the defer,' saying it makes the panic case worse."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It explains RestoreTerminal is the partner of ReleaseTerminal and re-enables Bubble Tea's raw and screen modes rather than restoring the shell."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It states Program.Run() restores the terminal on normal quit, on error, and on a recovered panic in Init/Update/View/Cmd."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It tells the user no custom guard is needed and limits custom cleanup to the tea.WithoutCatchPanics() case; the goroutine recover is for error reporting, not terminal cleanup."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Identifies the double outer frame plus pane borders as nested borders and recommends deleting the outer frame, recovering 2 columns and 2 rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Counts readiness encoded three times (word, green, checkmark) and says a marker on nearly every row tells the reader nothing, so only exceptions should be marked."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Cuts the footer to 5\u20137 hints that change with the focused pane, ending in `? help`, and moves all 18 into a grouped help screen."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Puts responsive behavior first with concrete layouts for 80\u2013119 columns, 60\u201379 columns, and an app-specific minimum of 50x12 shown as a too-small message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "At 60\u201379 columns it switches to a resources-only single pane where Enter opens the YAML full-screen, which is a drill-down rather than three shrunken columns."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The clutter table flags two levels of border nesting and says to delete the double outer frame because the terminal edge already frames the app."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It counts four ready signals (bullet, [READY], green, \u2713) and says the bullet on 100% of rows marks nothing."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It replaces the 18-key footer with one row of 3\u20135 focus-aware hints ending in `?`, plus a full `?` help screen grouped by pane."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It makes responsive behavior the top blocker and gives concrete layouts for 80\u00d724 (80\u2013119 band), 60\u201379 columns, and a too-small screen below 50\u00d712."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "At 60\u201379 columns it switches to one pane at a time with Enter/Esc drill-down, and it says panes should disappear at set widths rather than keep shrinking."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Measures border-nesting depth as 2 and recommends deleting the double-line outer frame, noting it recovers 2 rows and 2 columns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Counts four readiness signals (bullet, [READY], green, \u2713) and states that a marker on every row marks nothing, so only exceptions should be marked."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Cuts the footer to 4\u20136 contextual hints generated from the keymap, ending with `? help`, and moves the full list to a `?` overlay plus a `:` command mode."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Treats responsiveness as the top priority and gives a width ladder: the 80\u2013119 range collapses namespaces into the header, 60\u201379 becomes a single drill-down pane, and below 48\u00d712 shows a too-small message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Specifies a single-pane drill-down (namespace \u2192 resources \u2192 YAML, Esc to go back) at 60\u201379 columns and warns that squeezing three panes is unusable."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens with 'don't make it a full-screen app', recommends inline with a height cap of about 10 rows, and explains that the alternate screen would erase the picker and choice from scrollback."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The output contract puts only the branch name plus newline on stdout, renders the UI to /dev/tty with stderr as fallback, and sends errors to stderr."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says inline is the v2 default and to leave `v.AltScreen` unset; uses v2 APIs such as tea.KeyPressMsg and teatest/v2 and does not recommend v1-only options like WithAltScreen."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "Git loading runs before p.Run(), so it stays out of Update, but results are not delivered through a tea.Cmd or message as the assertion requires."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Covers Update transition tests, golden View tests at pinned sizes (80\u00d724, 60\u00d724, 3 rows), and contract tests that stdout is exactly `name\\n` with exit 130 on cancel and 2 on not-a-repo."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says outright not to go full-screen and to use an inline picker capped like `fzf --height`, because the alt screen would hide the invoking command and leave nothing in scrollback."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The output contract puts only the branch name and a newline on stdout, with the UI on /dev/tty (stderr as fallback) and errors on stderr, and explains why this matters inside `$(...)`."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says 'Inline, never `v.AltScreen`' using the v2 View field, and its other API references (tea.Interrupt, ErrInterrupted, teatest v2) are v2 rather than removed v1 options."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "By default it runs git synchronously before the program starts; it only suggests moving the work into a tea.Cmd for repos with thousands of branches, so results do not normally come back through a Cmd or message."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Covers Update state-transition unit tests, golden frames at 80\u00d724, 60\u00d724 and the minimum size with a pinned color profile, and black-box binary tests that check stdout is exactly `name\\n` and that cancel exits 130 and failures exit 1 or 2."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Opens with 'don't make it full-screen' and recommends height-capped inline mode, because the alternate screen would wipe the command and chosen branch from scrollback."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The output contract puts only the branch name plus newline on stdout, and all UI, the receipt and errors on stderr, falling back to /dev/tty, so $(...) captures only the value."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Says to leave v.AltScreen unset since inline is the v2 default, uses v2 APIs like tea.KeyPressMsg and v.Cursor, and recommends no removed v1 options."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "All git loading happens before p.Run(), so it never runs in Update or blocks the event loop; it is not delivered via a tea.Cmd, but that alternative satisfies the same point."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Includes Update transition unit tests, golden frames at sizes including 40\u00d78 with an ASCII color profile, and a PTY integration test asserting stdout is exactly the branch, Esc gives exit 130, and no TTY gives exit 2."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-tier2-codex-with-skill-r3",
+  "created_at": "2026-10-28T05:40:59Z",
+  "run_manifest_sha256": "f44c073e01e73dbfadd0c095edbe20b107302fd88297ac3b5c84a3a460a60276",
+  "grades_file": "grades.json",
+  "grades_sha256": "d696c65f2024ba41576af4876e52751bac3c67328e889ceaed14c6c5c6faa705",
+  "passed": 74,
+  "total": 90,
+  "pass_rate": 0.8222222222222222,
+  "by_case": [
+    {
+      "case_id": "0",
+      "case_name": "go-testing-ci",
+      "passed": 12,
+      "total": 15,
+      "pass_rate": 0.8
+    },
+    {
+      "case_id": "1",
+      "case_name": "textual-testing-form",
+      "passed": 12,
+      "total": 15,
+      "pass_rate": 0.8
+    },
+    {
+      "case_id": "2",
+      "case_name": "ratatui-debug-regression",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "3",
+      "case_name": "ink-debug-workflow",
+      "passed": 15,
+      "total": 15,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "4",
+      "case_name": "inline-vs-altscreen-picker",
+      "passed": 10,
+      "total": 15,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "case_id": "5",
+      "case_name": "osc-clipboard-hyperlinks-ssh",
+      "passed": 10,
+      "total": 15,
+      "pass_rate": 0.6666666666666666
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

@@ -1,0 +1,390 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-tier3-codex-baseline-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "0-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says a Rust TUI 'can't change the working directory of the shell that launched it' and that `set_current_dir()` only affects its own process and its children."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes a `--cwd-file` option where the app writes the chosen directory to a file, and a shell function reads that file and runs `cd` after the app exits."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names Yazi as using this approach and uses the same `--cwd-file` flag name, though it doesn't mention the `y()` wrapper."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It says users should call the shell function, but never says to document it for users to add to their rc file, or to avoid auto-installing it."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "The shape is right (mktemp, run with `--cwd-file`, read, cd, rm), but the function declares `local status`; `status` is a read-only special variable in zsh, so the function fails there despite being presented as Bash/Zsh."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says a normal Rust process can't change its parent shell's working directory, and that set_current_dir only affects the picker's own process."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes the cwd-file approach: a wrapper passes --cwd-file, the program writes its final directory there, and the wrapper reads it and runs cd."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names yazi's --cwd-file used with a shell wrapper as the real precedent."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It never says to document the wrapper for users to add to their rc file, nor warns against auto-installing it."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "Its concrete wrapper captures stdout instead of using a mktemp scratch file, so there is no temp-file read-back or cleanup."
+        }
+      ]
+    },
+    {
+      "trial_id": "0-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says plainly that the Rust TUI cannot change its parent shell's working directory, since set_current_dir only affects the TUI process."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes a shell function that launches the TUI; the TUI writes the chosen directory to a file, and the function reads it and runs cd after exit."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It names yazi as the precedent and models the design on a --cwd-file option."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "It never says whether the wrapper should be documented for the user to add to their rc file or installed automatically."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It gives a concrete wrapper that uses mktemp, runs the picker with --cwd-file \"$tmp\", reads the path, runs cd, and removes the file with rm -f."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer only checks whether stdin is interactive and never mentions checking stdout or isatty on both streams, though it does let the env var short-circuit the prompt and exits non-interactively in CI."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends the OS credential store and names zalando/go-keyring, with the macOS, Windows and Linux backends."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It offers an explicit, never-silent file fallback when the credential store is unavailable, but it never explains that headless/CI Linux lacks a Secret Service/D-Bus daemon."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly specifies a 0700 directory and a 0600 credentials file."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions a --no-input flag and invents no asterisk/required-field convention for huh."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says to prompt only 'if running in an interactive terminal' and gives an env-var-first lookup order, but it never says to check isatty on both stdin and stdout."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends the OS credential store and names github.com/zalando/go-keyring."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It offers an explicit, non-silent file fallback 'if a credential store is unavailable', but never explains that Linux keyrings need a running Secret Service/D-Bus daemon, which headless and CI machines often lack."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It explicitly specifies a 0700 directory and a 0600 file on Unix for the plaintext fallback."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It mentions no --no-input flag and no required-field asterisk; the huh snippet uses the real EchoModePassword API."
+        }
+      ]
+    },
+    {
+      "trial_id": "1-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer says to prompt only 'if the terminal is interactive' and has an env var short-circuit, but it never says to check isatty on both stdin and stdout."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It recommends the OS credential store and names github.com/zalando/go-keyring, listing the backend for each platform."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It notes Linux Secret Service is used 'when available', and for an unavailable store it offers an explicit opt-in plaintext fallback and says 'Don't silently fall back.'"
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The file fallback specifies a 0700 directory and a 0600 file on Unix, set explicitly rather than left to umask."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It never mentions a '--no-input' flag and invents no required-field asterisk convention for huh; it only describes a masked huh input."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says there is no reliable, portable way to detect Nerd Font glyphs and recommends Nerd Font icons as an explicit opt-in, though it still lists a conservative 'auto' mode."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer recommends an opt-in setting but cites no real precedent such as lazygit's nerdFontsVersion or eza's --icons."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer offers unicode and ascii modes, recommends plain Unicode or ASCII as the default, and says to test the fallback layout."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer gives no universal give-up timeout; it only says to set a request timeout and use capped backoff with jitter, and '42s' appears only as an example of a freshness label."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer keeps the last successful data visible on timeout and shows elapsed freshness ('last updated 42s ago'), along with a manual retry."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Says there is no reliable, portable way to detect the terminal's font or glyph support, and that `auto` should stay plain unless the user has opted in."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Proposes an `icons = auto|nerd|plain` config and flag but cites no real precedent such as lazygit or eza."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Recommends a conservative plain icon set and gives an ASCII-style fallback like `[OK] Connected`."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Gives no universal give-up threshold; the 'Retrying in 10s' text is only an illustrative status string within a capped-backoff scheme."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Explicitly keeps last successful data visible, marks it stale, and shows its age ('Showing data from 24s ago') in a status line."
+        }
+      ]
+    },
+    {
+      "trial_id": "2-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says the terminal controls the font and Ratatui cannot reliably detect Nerd Font glyphs. It warns against inferring support from $TERM or locale, and has users opt in."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The answer recommends an opt-in `icons` setting but cites no real precedent such as lazygit's nerdFontsVersion or eza's --icons."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer proposes `unicode` and `ascii` icon modes plus text labels, so a missing glyph never makes the app unusable."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer gives no fixed give-up-after-N-seconds threshold; it recommends a request timeout and capped exponential backoff without claiming a TUI convention."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer keeps the last successful data visible and shows its age, e.g. 'last updated 32s ago' and 'showing data from 42s ago'."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `py-spy record` as a sampling profiler, alongside cProfile, to capture what is slow during the sluggish interaction."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It only suggests comparing bulk `add_rows()` against individual updates as an experiment and never claims `add_rows()` is faster."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It does not recommend the DevTools Profiler, warns that a working DevTools connection does not mean profiling is supported, and says browser profiling instructions don't automatically apply to Ink."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends `node --cpu-prof dist/cli.js` and loading the resulting `.cpuprofile` in Chrome DevTools as the reliable path."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It names generic pipeline stages (reconciliation, Yoga layout, terminal writes) but none of the Ink-specific sinks: unmemoized re-renders, <Static> misuse, or always-animating spinners."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer recommends `py-spy record -o profile.svg` as a sampling profiler, with cProfile as an alternative, instead of relying on logging."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer never mentions `add_rows()` or makes any speed claim about bulk insertion versus looping `add_row()`."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "The answer only warns not to assume profiling works and says support depends on the Ink/React version and build, which suggests it might work on some versions; it never states that the DevTools Profiler doesn't work with Ink's renderer."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer recommends `node --cpu-prof dist/cli.js` and loading the resulting `.cpuprofile` in Chrome DevTools."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "The answer lists generic stages (reconciliation, Yoga layout, output generation, terminal writes) but never names unmemoized re-renders, `<Static>` misuse, or an always-animating spinner."
+        }
+      ]
+    },
+    {
+      "trial_id": "3-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The answer recommends cProfile/pstats, a deterministic profiler, and never mentions py-spy or any sampling profiler, though it does go beyond logging tools."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It uses add_rows() only as the call to time, and makes no claim that it is faster than looping add_row()."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says Ink's DevTools integration has historically supported debugging but not the Profiler, and warns against relying on the Record tab."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It recommends `node --cpu-prof dist/cli.js` and loading the .cpuprofile in Chrome DevTools."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "It lists generic cost areas (reconciliation, Yoga layout, terminal writes) and onRender timing, but never names unmemoized re-renders, <Static> misuse, or always-animating components like spinners."
+        }
+      ]
+    }
+  ]
+}

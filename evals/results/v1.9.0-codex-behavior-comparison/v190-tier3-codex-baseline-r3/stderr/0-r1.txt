@@ -1,0 +1,49 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-5_gtgahz
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a180ff-4e46-7100-88cb-34958599e288
+--------
+user
+I'm building a Rust TUI file picker (like a specialized yazi) — when the user selects a directory and quits, I want their actual shell to `cd` into it, not just print the path. Is that possible, and if not, what's the real pattern people use for this?
+
+codex
+A Rust TUI can change **its own** working directory, but it can’t change the working directory of the shell that launched it. The shell is the parent process; `std::env::set_current_dir()` only affects your process and any children it starts afterward.
+
+The usual pattern is a **shell function that launches the TUI, reads its selected directory, then runs `cd` in the shell itself**. Yazi uses this approach.
+
+For example, give your app a `--cwd-file` option that writes the chosen absolute directory to a file on successful selection. Then wrap it in Bash/Zsh:
+
+```sh
+fp() {
+    local tmp dir status
+    tmp="$(mktemp)" || return 1
+
+    command filepicker --cwd-file "$tmp" "$@"
+    status=$?
+
+    if [ "$status" -eq 0 ] && [ -s "$tmp" ]; then
+        # Sentinel preserves directory names ending in newlines.
+        dir="$(cat "$tmp"; printf '.')"
+        dir="${dir%.}"
+        cd -- "$dir"
+        status=$?
+    fi
+
+    rm -f -- "$tmp"
+    return "$status"
+}
+```
+
+Your Rust app writes the path **without an added newline**, and leaves the file empty on cancellation. Keep the TUI attached to the terminal; use the file solely to communicate the result.
+
+You can also capture a path from stdout with a shell wrapper, provided the TUI renders through stderr or `/dev/tty`. A result file is often simpler because it keeps terminal interaction separate from the selected path.
+
+The key is that users invoke `fp`, the shell function, rather than the executable directly. **The app chooses the directory; the shell function performs the `cd`.**
+tokens used
+813

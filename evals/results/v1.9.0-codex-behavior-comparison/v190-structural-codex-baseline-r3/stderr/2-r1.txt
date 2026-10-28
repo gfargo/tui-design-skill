@@ -1,0 +1,48 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-78rk9j4_
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a18107-5492-7100-9414-a25511a0bb9b
+--------
+user
+I need a small Go tool that lets someone pick one of their recent git branches with fuzzy search, then use it in `git checkout $(branchpick)`. I want the invoking command and chosen branch to remain visible in scrollback. Should this be a full-screen Bubble Tea app? Describe the output contract, terminal mode, and the most important implementation and test choices.
+
+codex
+Use an **inline picker**, not a full-screen app. Bubble Tea is a good fit, but leave the alternate screen disabled so the invoking command and final selection remain in scrollback.
+
+The output contract should be strict:
+
+- **stdout:** exactly the chosen local branch name plus `\n`, emitted only on successful selection.
+- **UI:** read keys from `/dev/tty` and render to `/dev/tty` (or terminal-connected stderr). Never render the UI to stdout.
+- **Exit status:** `0` for a selection, a documented nonzero status for cancellation or no candidates, and another nonzero status for errors. Failures produce no stdout.
+
+Quote the substitution:
+
+```sh
+git checkout "$(branchpick)"
+```
+
+However, cancellation does not stop the outer command from running. For reliable cancellation handling, recommend:
+
+```sh
+branch=$(branchpick) && git checkout "$branch"
+```
+
+For the terminal behavior, use Bubble Tea’s normal inline renderer with raw keyboard input, no alternate screen, and no mouse capture. Keep the picker compact and bound the visible list. On acceptance, replace the interactive view with a durable line such as `Selected: feature/search`, then quit and write the branch to stdout. On cancellation, leave a brief cancellation line. Restore terminal settings and the cursor on every normal exit and error path. If no controlling terminal is available, fail clearly rather than hanging.
+
+The important implementation choices are:
+
+- Define “recent” explicitly. A useful definition is local branches ordered by their most recent checkout in the reflog, deduplicated and filtered against branches that still exist. Commit date measures different behavior.
+- Run Git with `exec.Command` and separate arguments; avoid shell commands and parsing human-formatted `git branch` output. Preserve the exact branch name separately from its display label.
+- Filter and rank candidates in memory. Preserve recency order for an empty query and use recency to break equal fuzzy scores.
+- Load candidates before entering raw mode. Keep selection state separate from rendering, and print the stdout result only after Bubble Tea has finished cleaning up.
+- Handle empty results, narrow terminals, resizing, and an existing selection disappearing after filtering.
+
+Prioritize two kinds of tests. Unit-test ordering, deduplication, fuzzy ranking, and selection transitions. Then use **PTY integration tests with stdout captured separately**: accept, cancel, resize, and trigger errors; assert exact stdout bytes, exit statuses, restored terminal settings, and a final visible selection. Check that no alternate-screen escape sequences are emitted. A small temporary Git repository should exercise repeated checkouts and deleted branches.
+tokens used
+1,139

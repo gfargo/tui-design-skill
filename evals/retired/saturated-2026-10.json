@@ -1,0 +1,234 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Cases retired from the live eval sets on 2026-10-28 because they scored 100% on Claude Code and on Codex, with and without the skill, in the v1.9.0 evidence rounds (three repetitions per cell), so they cannot show an effect. Each entry keeps the full case and its four results. The cases stay here as regression checks that can be run occasionally; they are not part of any current comparison. The recorded bundles that include them stay valid, because the harness checks them against the commit they ran at.",
+  "retired": [
+    {
+      "from_set": "evals/v190-cli-evals.json",
+      "results": {
+        "claude baseline": "12/12",
+        "claude with-skill": "12/12",
+        "codex with-skill": "12/12",
+        "codex baseline": "12/12"
+      },
+      "case": {
+        "id": "sigint-re-raise",
+        "name": "sigint-re-raise",
+        "prompt": "My Go CLI catches SIGINT, cleans up, and calls os.Exit(130). Users report that Ctrl+C in a shell loop doesn't stop the loop. What's wrong?",
+        "files": [],
+        "assertions": [
+          "Explains that after catching SIGINT the program should restore the default handler and re-raise SIGINT to itself so the parent sees death by signal",
+          "Explains that exit(130) reads as 'handled' to bash, which keeps running the loop or script",
+          "Shows the Go approach: signal.Reset(os.Interrupt), then syscall.Kill(syscall.Getpid(), syscall.SIGINT), noting it does not apply on Windows",
+          "Does not claim that a plain exit(130) is equivalent to dying from SIGINT"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-ecosystem-evals.json",
+      "results": {
+        "claude baseline": "12/12",
+        "claude with-skill": "12/12",
+        "codex with-skill": "12/12",
+        "codex baseline": "12/12"
+      },
+      "case": {
+        "id": "go76-spinner-never-moves",
+        "name": "go76-spinner-never-moves",
+        "prompt": "My Bubble Tea v2 model embeds a bubbles spinner and a bubbles timer. I created them in New() and render m.spinner.View(), but the spinner is frozen on its first frame and the timer never counts down. My Init returns nil. What do I change?",
+        "files": [],
+        "assertions": [
+          "Says the spinner does not start itself and Init must return the spinner's Tick command (m.spinner.Tick, the method value, which is a tea.Cmd), batched with the timer",
+          "Returns the timer's Init() (or equivalent start command) from the parent Init, usually combined with tea.Batch",
+          "Says the spinner keeps animating only while its spinner.TickMsg is forwarded to spinner.Update and the Cmd it returns is kept; dropping that Cmd stops the animation",
+          "Does not invent a spinner.Init() method or tell the user to call spinner.Tick as a package-level function"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-ecosystem-evals.json",
+      "results": {
+        "claude baseline": "12/12",
+        "claude with-skill": "12/12",
+        "codex with-skill": "12/12",
+        "codex baseline": "12/12"
+      },
+      "case": {
+        "id": "go76-first-frame-placeholder",
+        "name": "go76-first-frame-placeholder",
+        "prompt": "My Bubble Tea v2 app embeds a bubbles list and a viewport. On startup the list renders as a garbled fragment and the viewport is empty until I resize the terminal. How should I handle sizing?",
+        "files": [],
+        "assertions": [
+          "Explains that the model has no size until the first tea.WindowSizeMsg arrives and that Bubbles do not read WindowSizeMsg by themselves",
+          "Sizes the children in Update on tea.WindowSizeMsg using the v2 setters (list.SetSize, viewport.SetWidth/SetHeight), not v1 exported fields",
+          "Renders a placeholder from View until the first WindowSizeMsg has been received (for example when the stored width is 0)",
+          "Does not claim the children size themselves from the terminal or suggest sleeping or polling for the size"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-ecosystem-evals.json",
+      "results": {
+        "claude baseline": "12/12",
+        "claude with-skill": "12/12",
+        "codex with-skill": "12/12",
+        "codex baseline": "12/12"
+      },
+      "case": {
+        "id": "go76-lipgloss-overlay-hit",
+        "name": "go76-lipgloss-overlay-hit",
+        "prompt": "In Bubble Tea v2 with Lipgloss v2, how do I show a centered confirmation dialog over my existing screen and detect whether a mouse click landed on the dialog or on the background?",
+        "files": [],
+        "assertions": [
+          "Builds the overlay with lipgloss layers (lipgloss.NewLayer) with X and Y positions and a higher Z for the dialog, and composes them with lipgloss.NewCompositor(...).Render() instead of splicing strings",
+          "Gives each layer a click can land on an ID and uses Compositor.Hit(x, y) to find the top-most layer under the click",
+          "Enables mouse input on the view (v.MouseMode) and hit-tests either in v.OnMouse against the compositor built in View, or in Update on tea.MouseClickMsg with a compositor rebuilt from the same layout",
+          "Does not use removed v1 options such as tea.WithMouseCellMotion, and does not assume Z is added to a parent layer's Z"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-ecosystem-evals.json",
+      "results": {
+        "claude baseline": "9/9",
+        "claude with-skill": "9/9",
+        "codex with-skill": "9/9",
+        "codex baseline": "9/9"
+      },
+      "case": {
+        "id": "ratatui-input-cursor-cells",
+        "name": "ratatui-input-cursor-cells",
+        "prompt": "In my Ratatui search box the blinking cursor is in the wrong place after I type Japanese text, and there is no cursor at all when I just render a Paragraph. How should I position the real terminal cursor?",
+        "files": [],
+        "assertions": [
+          "Calls frame.set_cursor_position((x, y)) during the draw, and says the cursor stays hidden when it is not called, so it is called only while the input has focus",
+          "Computes x in terminal cells (for example text[..cursor].cell_width() with ratatui::buffer::CellWidth, available since 0.30.1, or Line::width()/unicode-width) from the inner area's origin, not from text.len() bytes or chars().count()",
+          "Notes that wide (CJK) characters take two cells, and keeps the cursor inside the input's inner area rather than on the border"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-ecosystem-evals.json",
+      "results": {
+        "claude baseline": "12/12",
+        "claude with-skill": "12/12",
+        "codex with-skill": "12/12",
+        "codex baseline": "12/12"
+      },
+      "case": {
+        "id": "ink-focus-input-routing",
+        "name": "ink-focus-input-routing",
+        "prompt": "In my Ink 8 app a file list and a search box (@inkjs/ui TextInput) share the screen. I used useFocus in both so Tab switches between them, but typing in the search box also moves the list selection and arrow keys in the list edit the search text. Why, and how do I fix it?",
+        "files": [],
+        "assertions": [
+          "States that every mounted useInput handler receives every key unless its isActive option is false, and that useFocus only tracks which component Tab selected without muting other handlers",
+          "Gates the list's useInput with { isActive: isFocused } taken from useFocus (or an equivalent mode flag)",
+          "Says @inkjs/ui inputs such as TextInput have no useFocus integration and are controlled with isDisabled, so passes isDisabled={!isFocused}",
+          "Does not claim that wrapping the components in useFocus alone stops input from reaching the unfocused one"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-ecosystem-evals.json",
+      "results": {
+        "claude baseline": "9/9",
+        "claude with-skill": "9/9",
+        "codex with-skill": "9/9",
+        "codex baseline": "9/9"
+      },
+      "case": {
+        "id": "commander-async-action-ink",
+        "name": "commander-async-action-ink",
+        "prompt": "My commander 15 CLI has `.action(async () => { const app = render(<App />); await app.waitUntilExit(); })` and I call program.parse() at the bottom. Errors thrown in the action crash with an unhandled rejection and post-run code sometimes runs too early. What is wrong?",
+        "files": [],
+        "assertions": [
+          "Says parse() returns before an async action settles, so a rejection escapes as an unhandled rejection and code after parse() runs early",
+          "Recommends await program.parseAsync() whenever any action handler is async",
+          "Keeps awaiting the render handle's waitUntilExit() inside the action so post-run output waits for Ink to unmount"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v190-interaction-evals.json",
+      "results": {
+        "claude with-skill": "12/12",
+        "claude baseline": "12/12",
+        "codex baseline": "12/12",
+        "codex with-skill": "12/12"
+      },
+      "case": {
+        "id": "multiline-submit",
+        "name": "multiline-submit",
+        "prompt": "My chat TUI's input field should send on Enter but let users add newlines. Shift+Enter doesn't seem to work in some terminals. What should I do?",
+        "files": [],
+        "assertions": [
+          "Explains that Shift+Enter is distinguishable from Enter only with the kitty keyboard protocol or similar enhanced keyboard reporting",
+          "Falls back to Alt+Enter or Ctrl+J for inserting a newline",
+          "Tells users the newline key in the placeholder or footer",
+          "Makes pasted newlines insert newlines instead of submitting (bracketed paste)"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/tier2-content-evals.json",
+      "results": {
+        "claude with-skill": "15/15",
+        "claude baseline": "15/15",
+        "codex baseline": "15/15",
+        "codex with-skill": "15/15"
+      },
+      "case": {
+        "id": 2,
+        "name": "ratatui-debug-regression",
+        "prompt": "My Ratatui app (crossterm backend, tokio) has a rendering bug: after certain resizes, one panel's bottom border overlaps the footer by one row. It's intermittent and I've been println-debugging, which obviously corrupts the screen. What's the right way to (a) debug this properly and (b) write a regression test so it can't come back?",
+        "files": [],
+        "assertions": [
+          "Tells the user println/stdout debugging corrupts a raw-mode TUI and gives a working alternative: log to a file (e.g. tracing + file appender or tui-logger) and tail it in a second terminal",
+          "Recommends TestBackend with a fixed terminal size to reproduce the layout deterministically",
+          "Shows buffer assertions (assert_buffer_lines / expected Buffer) or insta snapshot testing on the rendered buffer",
+          "Points out the bug class: layout math computed from a stale/cached size instead of the current frame area each draw",
+          "Suggests testing the specific failing sizes (table-driven across widths/heights, including odd sizes) rather than one happy-path size"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v174-correction-evals.json",
+      "results": {
+        "claude baseline": "9/9",
+        "claude with-skill": "9/9",
+        "codex baseline": "9/9",
+        "codex with-skill": "9/9"
+      },
+      "case": {
+        "id": "lipgloss-v2-printing",
+        "name": "lipgloss-v2-printing",
+        "prompt": "My non-interactive Go CLI uses Lipgloss v2 styles and prints with fmt.Println(style.Render(msg)). Is that fine when stdout is piped or NO_COLOR is set?",
+        "files": [],
+        "assertions": [
+          "Says Lipgloss v2 Render always emits full-color escape sequences regardless of the output",
+          "Recommends lipgloss.Println, Sprint, or Fprint, which detect the output's color profile and downsample or strip color for pipes and NO_COLOR",
+          "Does not recommend lipgloss.SetColorProfile or a renderer-based fix, which were removed in v2"
+        ]
+      }
+    },
+    {
+      "from_set": "evals/v174-correction-evals.json",
+      "results": {
+        "claude baseline": "9/9",
+        "claude with-skill": "9/9",
+        "codex baseline": "9/9",
+        "codex with-skill": "9/9"
+      },
+      "case": {
+        "id": "ratatui-ctrl-c-raw-mode",
+        "name": "ratatui-ctrl-c-raw-mode",
+        "prompt": "My Ratatui app quits on `q`. Users report that Ctrl+C does nothing. Why, and what should the key handling be?",
+        "files": [],
+        "assertions": [
+          "Explains that raw mode clears ISIG, so Ctrl+C is delivered as a key event instead of SIGINT",
+          "Handles KeyCode::Char('c') with the CONTROL modifier as quit or cancel, alongside q and optionally Esc",
+          "Acts only on KeyEventKind::Press so key-release events are ignored"
+        ]
+      }
+    }
+  ]
+}

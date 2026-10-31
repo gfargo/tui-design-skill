@@ -1,0 +1,9 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My dashboard polls five build servers, ci-1 to ci-5, every 30 seconds. Right now ci-2 and ci-4 did not answer (timed out after 10 seconds). The others returned:
+
+ci-1: api #412 passed (2m 10s), web #88 passed (1m 02s)
+ci-3: api #413 failed (3m 40s)
+ci-5: worker #9 running (started 40s ago)
+
+Show me, as a plain-text sketch at 80 columns, what the main screen should display right now, and describe what the user can do from it.

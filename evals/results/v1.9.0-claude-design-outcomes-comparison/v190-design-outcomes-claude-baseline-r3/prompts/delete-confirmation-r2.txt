@@ -1,0 +1,1 @@
+In my file manager, the list has 3,000 files and the user has marked 14 of them. They press d. Design the confirmation. Show it as a plain-text sketch on an 80-column terminal, and say what each key does.

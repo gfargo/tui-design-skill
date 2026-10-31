@@ -1,0 +1,49 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-i77f0tdn
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1846e-5092-74d0-be9c-cd0a2818c299
+--------
+user
+My dashboard polls five build servers, ci-1 to ci-5, every 30 seconds. Right now ci-2 and ci-4 did not answer (timed out after 10 seconds). The others returned:
+
+ci-1: api #412 passed (2m 10s), web #88 passed (1m 02s)
+ci-3: api #413 failed (3m 40s)
+ci-5: worker #9 running (started 40s ago)
+
+Show me, as a plain-text sketch at 80 columns, what the main screen should display right now, and describe what the user can do from it.
+
+codex
+```text
+BUILD DASHBOARD                                      Auto-refresh: every 30s
+===============================================================================
+PARTIAL RESULTS: 3 of 5 servers answered. 2 timed out after 10s.
+Build totals below exclude servers that did not answer.
+
+SERVER  CONNECTION   PROJECT  BUILD   RESULT    DURATION / AGE
+-------------------------------------------------------------------------------
+ci-1    Responded    api      #412    PASSED    2m 10s
+                     web      #88     PASSED    1m 02s
+ci-2    TIMED OUT    Unknown build status; server did not answer
+ci-3    Responded    api      #413    FAILED    3m 40s
+ci-4    TIMED OUT    Unknown build status; server did not answer
+ci-5    Responded    worker   #9      RUNNING   Started 40s ago*
+-------------------------------------------------------------------------------
+Reported builds: 2 passed | 1 failed | 1 running
+* Age reported at last response.
+
+Up/Down Select   Enter Details   R Refresh all   T Retry timed-out servers
+Space Pause auto-refresh   Q Quit
+===============================================================================
+```
+
+The user can select a build and open its details or logs, including the failed `api #413`. Selecting a timed-out server opens connection details; its builds remain unknown.
+
+They can refresh all servers, retry only ci-2 and ci-4, or pause automatic polling to inspect results. Keep current results visible during retries, and label any retained older results as stale.
+tokens used
+890

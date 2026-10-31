@@ -1,0 +1,71 @@
+{
+  "schema_version": 5,
+  "artifact_type": "tui-design-eval-summary",
+  "run_id": "v190-design-outcomes-codex-baseline-r3",
+  "created_at": "2026-10-28T21:55:37Z",
+  "run_manifest_sha256": "cf8088f64ee437e6c55a2f03ff4b34004272441a309877e926e069ac1a2b7b02",
+  "grades_file": "grades.json",
+  "grades_sha256": "68a29e9ca68534e26205cdebe71367b8d72ad6f8051d270728f04f4e05e0a372",
+  "passed": 134,
+  "total": 156,
+  "pass_rate": 0.8589743589743589,
+  "by_case": [
+    {
+      "case_id": "count-the-borders",
+      "case_name": "count-the-borders",
+      "passed": 12,
+      "total": 21,
+      "pass_rate": 0.5714285714285714
+    },
+    {
+      "case_id": "sixty-column-sketch",
+      "case_name": "sixty-column-sketch",
+      "passed": 15,
+      "total": 18,
+      "pass_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "partial-failure-screen",
+      "case_name": "partial-failure-screen",
+      "passed": 21,
+      "total": 21,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "focus-without-color",
+      "case_name": "focus-without-color",
+      "passed": 18,
+      "total": 18,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "footer-at-two-widths",
+      "case_name": "footer-at-two-widths",
+      "passed": 20,
+      "total": 21,
+      "pass_rate": 0.9523809523809523
+    },
+    {
+      "case_id": "seeded-defects-bubbletea",
+      "case_name": "seeded-defects-bubbletea",
+      "passed": 18,
+      "total": 18,
+      "pass_rate": 1.0
+    },
+    {
+      "case_id": "log-viewer-from-scratch",
+      "case_name": "log-viewer-from-scratch",
+      "passed": 18,
+      "total": 21,
+      "pass_rate": 0.8571428571428571
+    },
+    {
+      "case_id": "delete-confirmation",
+      "case_name": "delete-confirmation",
+      "passed": 12,
+      "total": 18,
+      "pass_rate": 0.6666666666666666
+    }
+  ],
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/summary.schema.json"
+}

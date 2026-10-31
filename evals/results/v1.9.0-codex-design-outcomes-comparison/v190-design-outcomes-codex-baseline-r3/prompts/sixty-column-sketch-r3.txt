@@ -1,0 +1,3 @@
+I'm building a git browser with three panes: a repository list on the left (28 columns wide), a commit list in the middle (it needs at least 40 columns to be readable), and a diff view that takes the rest. Every pane's width includes its borders. At 140 columns it looks great.
+
+Show me, as a plain-text sketch, exactly what the screen should look like when the terminal is 60 columns wide and 24 rows tall. Then tell me how a user reaches whatever is not on screen, and what happens if the terminal is made even smaller.

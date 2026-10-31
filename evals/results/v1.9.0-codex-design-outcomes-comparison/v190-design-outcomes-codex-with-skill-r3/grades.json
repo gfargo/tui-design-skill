@@ -1,0 +1,930 @@
+{
+  "schema_version": 5,
+  "schema": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5/grades.schema.json",
+  "artifact_type": "tui-design-eval-grades",
+  "run_id": "v190-design-outcomes-codex-with-skill-r3",
+  "grader": {
+    "kind": "model",
+    "name": "claude-opus-5-5 blind rubric grader",
+    "prompt_version": "v180-direct-rubric-v1",
+    "prompt_sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4",
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "runner_version": "Claude Code 2.1.295",
+    "generation": {
+      "seed": null,
+      "temperature": null,
+      "system_prompt": {
+        "status": "unavailable",
+        "sha256": null,
+        "bytes": null
+      }
+    }
+  },
+  "grading_prompt": {
+    "path": "grading-prompt.md",
+    "sha256": "29551938fd0ec1a61d7d1821d61591a270fb45531d36b0eea84b639e9264a5d4"
+  },
+  "trials": [
+    {
+      "trial_id": "count-the-borders-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer says content currently sits \"three borders deep.\""
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says each result is encoded four ways: status word, redundant word, symbol, and color."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "It says \"three markers on three rows distinguish nothing.\""
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The redesigned screen is a borderless table, so no border sits between the edge and any row."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The table lists api, web, and worker with PASS/FAIL under Job, Status, and Duration columns, and api's duration is 2m 10s."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Each row shows only the PASS/FAIL word, with red added for FAIL alone, so the word is the non-color signal."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "The longest line, the header row, is about 27 characters, well under 72."
+        }
+      ]
+    },
+    {
+      "trial_id": "count-the-borders-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer states that content sits three borders deep: the outer frame plus both layers around each pane."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer says each status appears four ways: word, repeated word, symbol, and color."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The answer says the three identical > markers on every row distinguish nothing."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The redesigned screen has no borders at all between the edge and the job rows."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "All three jobs appear with PASS/FAIL, and api's job, status, and 2m 10s duration are shown in columns."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Each row shows status only as the PASS/FAIL word plus color on that word, so one signal is not color."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Every line of the redesigned screen is well under 72 characters."
+        }
+      ]
+    },
+    {
+      "trial_id": "count-the-borders-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer names three layers of borders and states border depth 3 \u2192 0."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It says the same status is repeated four ways: `[PASS]`, `ok`, `v`, and green."
+        },
+        {
+          "index": 2,
+          "passed": false,
+          "notes": "It says to delete the `>` on every row and mark only the selected row, but never says the marker fails to tell the rows apart because it is on all three."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The redesigned screen has no borders at all."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "All three jobs appear with PASS/FAIL; the selected row carries job and status, and Duration is kept below."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "PASS rows show only the word, and the FAIL row shows the word plus red, so each row has at most two signals and one is text."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Every line of the sketch is far shorter than 72 characters."
+        }
+      ]
+    },
+    {
+      "trial_id": "sixty-column-sketch-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer includes a fenced plain-text sketch of the 60x24 screen with header, a bordered commit pane and a footer."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "The first five commit rows have more trailing padding than the later rows, which puts their closing border at column 61, one past the 60-column limit."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Only one full-width pane is shown, and the 60-column commit list exceeds the 40-column minimum."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "It names Enter/Esc for drilling between Repositories, Commits and Diff, plus 1/2/3 and Tab/Shift+Tab to reach the hidden panes directly."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It states that below 40 columns (or 8 rows) a too-small message, 'Need 40x8; resize or q to quit', replaces the layout."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The sketch shows only the commit pane, with no narrow repo or diff sliver beside it."
+        }
+      ]
+    },
+    {
+      "trial_id": "sixty-column-sketch-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives a bordered plain-text sketch of the 60x24 screen in a code block."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Each sketch line is a 60-character frame line (border plus 58 interior columns), so none goes past 60."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Only the commit pane is shown, at the full 60 columns, which is within 60 and above the 40-column minimum."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The answer names keys for the hidden panes: 1/2/3 to jump to repositories or diff, Tab/Shift+Tab to cycle, and Enter/Esc to move between levels."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The answer sets a 40x8 minimum and shows a 'Terminal too small' message below it."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "No sliver panes appear; the repository list and diff are fully hidden rather than squeezed beside the commits."
+        }
+      ]
+    },
+    {
+      "trial_id": "sixty-column-sketch-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Provides a plain-text sketch of a single full-width commit pane with tab bar, context row, border, and hint rows."
+        },
+        {
+          "index": 1,
+          "passed": false,
+          "notes": "Measured: the tab-bar line is 62 characters and every commit row is 61, so several lines exceed 60."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Only one pane is shown side by side, the commit list at 60 columns including borders, which meets the 40-column minimum."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Names 1/2/3 to jump to repos, commits or diff, Tab/Shift+Tab to cycle, Enter to open a diff and Esc to go back to repos."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "States that below 40 columns (or 8 rows) a 'Terminal too small' message replaces the browser."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "No sliver panes appear; the repository list and diff are hidden entirely rather than squeezed next to the commit list."
+        }
+      ]
+    },
+    {
+      "trial_id": "partial-failure-screen-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The sketch lists ci-1 api #412 and web #88, ci-3 api #413, and ci-5 worker #9 as table rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Rows for ci-2 and ci-4 appear, and the summary line says 'ci-2 and ci-4 build states unavailable.'"
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The timeout rows carry the text label 'UNKNOWN' with 'Request timed out after 10s', so they read without color."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The footer and description name 'r retry timeouts' for ci-2 and ci-4 and 'R refresh all'."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "ci-2 and ci-4 show '--' with UNKNOWN, and the text says any cached results would be labeled STALE with their last-success age."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The header reads 'PARTIAL: 3/5 servers responded; 2 timed out'."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "The longest lines in both sketches are about 63 characters, well under 80."
+        }
+      ]
+    },
+    {
+      "trial_id": "partial-failure-screen-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The sketch lists the ci-1 api and web builds, the ci-3 api build and the ci-5 worker build as separate rows."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The header says 'ci-2 and ci-4 timed out after 10s', and each has its own row."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The ci-2 and ci-4 rows show the text 'UNKNOWN' and 'Request timed out (10s)', which read without color."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The footer and description name 'r: refresh all', and Enter on a timed-out server offers a retry for that server."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The ci-2 and ci-4 rows show '--' with no build, and the text says cached results would carry a STALE label and last-success time."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The header states 'PARTIAL RESULTS: 3/5 servers answered'."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "The longest lines, the header and the PARTIAL RESULTS line, come to about 73 characters, within 80."
+        }
+      ]
+    },
+    {
+      "trial_id": "partial-failure-screen-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The sketch lists the ci-1 api/web, ci-3 api, and ci-5 worker builds with their statuses and times."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The header line says 'ci-2 and ci-4 timed out after 10s', and each has its own row."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The ci-2 and ci-4 rows carry the text label 'UNKNOWN' plus 'request timed out (10s)', which reads without color."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The key hints include 'r retry timed-out servers' and 'R refresh all', and the description repeats both."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The ci-2 and ci-4 rows show '--' for project and build, and the text says any prior results would be marked STALE with their last-success age."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The header reads 'PARTIAL: 3/5 servers responded'."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "The longest lines in the 80-column sketch, the header and the key hints, run about 70 characters, so none exceeds 80."
+        }
+      ]
+    },
+    {
+      "trial_id": "focus-without-color-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Two labeled code blocks are shown: 'Files focused' and 'Preview focused'."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The focused pane's title carries the text '[focus]' and the unfocused title does not."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The cue is the literal text marker '[focus]', which is visible with colors disabled."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "'[focus]' appears only on Files in the first screen and only on Preview in the second."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Only one cue is used, the title marker, and the answer says it adds no extra borders or row markers."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Border lines are 66 characters (25 + space + 40), padded content lines match that width, and the 60-column variant is 60."
+        }
+      ]
+    },
+    {
+      "trial_id": "focus-without-color-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer shows a 'Files focused' screen and a 'Preview focused' screen in plain text."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The focused pane's title carries a literal '[focus]' label that the unfocused pane lacks."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The cue is ASCII text, and the answer notes it survives removal of all terminal styling."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "'[focus]' appears on Files in the first screen and on Preview in the second, never on both."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Focus is marked with a single cue, the title label, and the clutter audit confirms 'one focus cue'."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The two-pane screens are 66 characters wide and the narrow-layout example is 60, so no line exceeds 66."
+        }
+      ]
+    },
+    {
+      "trial_id": "focus-without-color-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives two plain-text screens, labeled 'Files focused' and 'Preview focused'."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The focused pane's title has the visible text '[focus]' appended, which the unfocused pane lacks."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The '[focus]' marker is plain text, so it shows with colors disabled and in black-and-white screenshots."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "'[focus]' appears only on Files in the first screen and only on Preview in the second."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Focus is marked by a single cue, the '[focus]' title marker, and the answer states a budget of one focus cue."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The border lines are 66 characters, and the padded title lines keep the same 66-character width."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-at-two-widths-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives one labeled footer line for 80 columns and one for 40 columns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The 80-column line is 53 characters, well under 80."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The 40-column line is 30 characters, under 40."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Both lines end with '? help'."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Both lines begin with 'Enter open'."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The 40-column line drops r refresh (20%) and j/k move (35%), the two least frequent actions on the 80-column line, keeping the higher-frequency open and filter."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Each footer appears as a single unwrapped line in its own code block."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-at-two-widths-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives one labeled footer line for 80 columns and one for 40 columns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The 80-column line 'Enter open | / filter | j/k move | r refresh | ? help' is 53 characters, within 80."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The 40-column line 'Enter open | / filter | ? help' is 30 characters, within 40."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Both lines end with '? help'."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Both lines begin with 'Enter open'."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The 40-column line drops 'r refresh' (20%) and 'j/k move' (35%), the two least frequent of the four ranked hints on the 80-column line, and the answer notes that keeping movement would need 41 cells."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Each footer is shown as a single unwrapped line in its own code block."
+        }
+      ]
+    },
+    {
+      "trial_id": "footer-at-two-widths-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The answer gives one code-block line for 80 columns and another for 40 columns."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The 80-column line is 53 characters, matching the count the answer states."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The 40-column line is 30 characters, within the limit."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Both lines contain '? help'."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Both lines begin with 'Enter open'."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The 40-column line drops r refresh (20%) and j/k move (35%), the least frequent of the displayed actions, and keeps help and the higher-frequency open and filter."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Each footer is shown as a single unwrapped line."
+        }
+      ]
+    },
+    {
+      "trial_id": "seeded-defects-bubbletea-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Item 3 says the 80-character rule ignores the actual terminal size and recommends handling tea.WindowSizeMsg."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Item 1 explains that http.Get inside Update freezes the UI, so keys, resize events, and q cannot be processed."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Item 7 says the same dot means success or failure solely through red/green, and that the meaning disappears in monochrome."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Item 4 notes that long Detail strings wrap and %-20s is only a minimum width, so the text is not constrained to its column."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Item 1's fix returns a tea.Cmd that fetches the data and returns a result message, which Update then installs."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The answer never says the q/ctrl+c handling is wrong; it only stresses keeping quit working."
+        }
+      ]
+    },
+    {
+      "trial_id": "seeded-defects-bubbletea-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Section 4 notes the 80-character separator wraps in a 60-column split and says to store width and height from tea.WindowSizeMsg."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Section 1 says http.Get and decoding inside Update freeze the UI, including quit and resize."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Section 6 says the dot relies entirely on red versus green and recommends adding text status."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Sections 3 and 4 say Detail is rendered verbatim and wraps or overflows, and recommend explicit truncation with ansi.Truncate."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "Section 1 proposes a tea.Cmd that returns a rowsLoadedMsg, which Update then applies."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The answer never says the q and ctrl+c quit handling is wrong; it only stresses keeping quit responsive."
+        }
+      ]
+    },
+    {
+      "trial_id": "seeded-defects-bubbletea-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Point 4 notes `width = 80` only sizes the separator and says to store dimensions from `tea.WindowSizeMsg`, which the code never handles."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Point 1 says `http.Get` and decoding inside `Update` freeze the UI, preventing quitting, navigation, and resize handling."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Point 6 says the red/green dot conveys meaning only through color and recommends explicit text status."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Point 4 says `Detail` is unlimited and the layout cannot fit small panes, and recommends truncation with `ansi.Truncate`."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The fix for point 1 is to return a `tea.Cmd` that fetches and returns a typed result message, which `Update` then applies."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "The answer only says to keep Ctrl+C working in every state and never calls the existing quit handling wrong."
+        }
+      ]
+    },
+    {
+      "trial_id": "log-viewer-from-scratch-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": false,
+          "notes": "The first sketch is explicitly a 120-column layout, and its header lines (source path plus right-aligned 'CONNECTED  FOLLOW', and the filter/counts line) run past 80 characters."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It specifies 80\u00d724 behavior (drop extra fields), a 60-column sketch, a compact 40\u00d78 layout, and a 'Too small' message below that."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Scrolling back freezes the viewport and selection while ingestion continues, shows a '+37 new match' count, and only G/End/F resumes following."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Rows carry text level labels (WARN, ERROR, PARSE), and it states that NO_COLOR relies on level text with color only reinforcing."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "It shows 'Opening...' then 'Connected; waiting for records', says waiting is never presented as an error, and separates this from a filter that matches nothing (offering 'f edit filter')."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "q quits at the root, and Ctrl+C cancels active input or otherwise exits with code 130."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "When stdout is redirected, it emits the original matching lines without ANSI or headers, sends diagnostics to stderr, handles backpressure and closed pipes, and offers a --output=jsonl option."
+        }
+      ]
+    },
+    {
+      "trial_id": "log-viewer-from-scratch-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "Includes wide and 60-column screen sketches; the longest sketch line (the WARN row with the detail-pane timestamp) is about 77 characters, under 80."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Gives a 60-column sketch plus a responsive table for 60\u201379 and 40\u201359 columns, and a 'Terminal too small; need 40x6' message below 40 columns."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "Pause freezes the viewport while collection continues, shows 'PAUSED +143 new', and uses stable event identity so new arrivals cannot move the selected event."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Levels appear as text words (WARN, ERROR, '?' for unknown), and it explicitly honors NO_COLOR with textual levels."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The edge-case table specifies 'Opening...' then 'Waiting for first event' with quit kept responsive, alongside the always-visible footer hints."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "q quits from the main list, and Ctrl+C only cancels an active prompt or otherwise quits immediately."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Redirected stdout selects linear output that preserves the original JSON records one per line, sends diagnostics to stderr, and exits silently on a closed pipe."
+        }
+      ]
+    },
+    {
+      "trial_id": "log-viewer-from-scratch-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "It gives three plain-text sketches (wide, 60-column, too-small), and every line is well under 80 characters."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "It describes the 80\u00d724 and 60-column layouts, what is dropped first, and a 60\u00d78 minimum with a resize message below that."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The viewport and selection stay steady, a '23 new matching' count is shown, and scrolling to the bottom alone does not resume follow."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "Severity is shown as level words (INFO/WARN/ERROR/OTHER), and color is only optional."
+        },
+        {
+          "index": 4,
+          "passed": false,
+          "notes": "For an empty source it only says to show 'Waiting for first record'; it gives no action for that case (the 'f edit filter' hint applies only to an empty filter result)."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "`q` quits at the root, and Ctrl+C cancels an explicit operation first, otherwise quits cleanly."
+        },
+        {
+          "index": 6,
+          "passed": true,
+          "notes": "Redirected stdout switches to streaming mode with original JSON lines, no escapes or prompts, diagnostics on stderr, and it handles backpressure and a closed pipe."
+        }
+      ]
+    },
+    {
+      "trial_id": "delete-confirmation-r1",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The dialog title reads \"Delete 14 marked files?\" and the action line says \"y delete 14 files\"."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "The answer defaults to No and maps Enter to cancel; only `y` deletes."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The sketch's bottom line shows \"n/Enter/Esc cancel\"."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The confirmation box itself is about 64 characters wide (a 60-column variant is about 56), though it sits inside 80-column screen context and a couple of rows are misaligned by one character."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The dialog states \"Permanently delete these files. This cannot be undone.\" and the answer gives alternate Trash wording with recovery."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Every action is mapped to a key (y, n, Enter, Esc, q, arrows, PgUp/PgDn, Home/End, Ctrl+C) and nothing needs a mouse."
+        }
+      ]
+    },
+    {
+      "trial_id": "delete-confirmation-r2",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The dialog title reads \"Delete 14 marked files?\" and the body repeats \"Only the 14 marked files out of 3,000\"."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Enter is listed as a cancel key alongside n and Esc; only y deletes, so No is the default."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The sketch's control line shows \"n / Enter / Esc Cancel\"."
+        },
+        {
+          "index": 3,
+          "passed": true,
+          "notes": "The 80-column dialog's border is 64 characters wide (62 dashes plus two corners), though one body line is misaligned by a character."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The text states \"This permanently deletes them. You cannot undo this.\" and explains how to relabel if d moves files to Trash."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Every action is mapped to a key (y, n, Enter, Esc, q, Ctrl+C, Ctrl+Z), and no mouse interaction is required."
+        }
+      ]
+    },
+    {
+      "trial_id": "delete-confirmation-r3",
+      "assertions": [
+        {
+          "index": 0,
+          "passed": true,
+          "notes": "The dialog title reads 'Delete 14 marked files?' and the action label says 'Delete 14 files'."
+        },
+        {
+          "index": 1,
+          "passed": true,
+          "notes": "Enter is listed as Cancel, Cancel is the stated default, and only 'y' deletes."
+        },
+        {
+          "index": 2,
+          "passed": true,
+          "notes": "The sketch shows 'Enter/n/Esc Cancel' in the controls line."
+        },
+        {
+          "index": 3,
+          "passed": false,
+          "notes": "The main 80-column sketch's border is 64 characters, but the 'Only the 14 marked files\u2026' and '2,986 files will remain' lines run to 65 characters. It also sits behind an 8-space indent, so it exceeds the 64-character limit."
+        },
+        {
+          "index": 4,
+          "passed": true,
+          "notes": "The dialog says 'This permanently deletes the files. Cannot be undone.', and the answer gives alternate 'moves to Trash' wording for when Trash is used."
+        },
+        {
+          "index": 5,
+          "passed": true,
+          "notes": "Every action is mapped to a key (y, Enter, n, Esc, q, Ctrl+C), and the modal owns keyboard input; no mouse is needed."
+        }
+      ]
+    }
+  ]
+}

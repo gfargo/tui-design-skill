@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.7.4 correctness regressions for facts corrected after the October 2026 freshness audit, checked against tagged upstream sources (bubbletea v2.1.0, huh v2.0.3, lipgloss v2.0.6, ratatui 0.30.2, ratatui-textarea 0.9.3, tokio select! semantics, Ink 8.0.0 release notes, the Node.js release schedule, Typer 0.26.0 release notes, pytest-textual-snapshot 1.1.0 metadata, Claude Code fullscreen docs, the Copilot CLI changelog, and lazygit's go.mod). The ratatui-select-reader-ends and ratatui-ctrl-c-raw-mode cases grade sample fixes that land with the reference sample checks (#42). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-28): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-behavior-comparison/ and evals/results/v1.9.0-codex-behavior-comparison/ against skill tree 164c1aefd956.",
+  "notes": "Focused v1.7.4 correctness regressions for facts corrected after the October 2026 freshness audit, checked against tagged upstream sources (bubbletea v2.1.0, huh v2.0.3, lipgloss v2.0.6, ratatui 0.30.2, ratatui-textarea 0.9.3, tokio select! semantics, Ink 8.0.0 release notes, the Node.js release schedule, Typer 0.26.0 release notes, pytest-textual-snapshot 1.1.0 metadata, Claude Code fullscreen docs, the Copilot CLI changelog, and lazygit's go.mod). The ratatui-select-reader-ends and ratatui-ctrl-c-raw-mode cases grade sample fixes that land with the reference sample checks (#42). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-28): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-behavior-comparison/ and evals/results/v1.9.0-codex-behavior-comparison/ against skill tree 164c1aefd956. 2 cases that scored 100% on both hosts in both conditions in the v1.9.0 runs were retired on 2026-10-28 and moved to evals/retired/saturated-2026-10.json.",
   "evals": [
     {
       "id": "huh-v2-embedding",
@@ -12,17 +12,6 @@
         "Returns or batches the tea.Cmd that form.Update produces",
         "Composes the form's string view into the parent's tea.View rather than returning the string as the view",
         "Requests the terminal background color from the parent program (Huh does not request it itself) and forwards the resulting message to the form"
-      ]
-    },
-    {
-      "id": "lipgloss-v2-printing",
-      "name": "lipgloss-v2-printing",
-      "prompt": "My non-interactive Go CLI uses Lipgloss v2 styles and prints with fmt.Println(style.Render(msg)). Is that fine when stdout is piped or NO_COLOR is set?",
-      "files": [],
-      "assertions": [
-        "Says Lipgloss v2 Render always emits full-color escape sequences regardless of the output",
-        "Recommends lipgloss.Println, Sprint, or Fprint, which detect the output's color profile and downsample or strip color for pipes and NO_COLOR",
-        "Does not recommend lipgloss.SetColorProfile or a renderer-based fix, which were removed in v2"
       ]
     },
     {
@@ -46,17 +35,6 @@
         "Notes the user cannot quit because Ctrl+C arrives as a key event in raw mode, not as SIGINT",
         "Fixes it by matching the None case and breaking out or returning an error",
         "Restores the terminal on that exit path"
-      ]
-    },
-    {
-      "id": "ratatui-ctrl-c-raw-mode",
-      "name": "ratatui-ctrl-c-raw-mode",
-      "prompt": "My Ratatui app quits on `q`. Users report that Ctrl+C does nothing. Why, and what should the key handling be?",
-      "files": [],
-      "assertions": [
-        "Explains that raw mode clears ISIG, so Ctrl+C is delivered as a key event instead of SIGINT",
-        "Handles KeyCode::Char('c') with the CONTROL modifier as quit or cancel, alongside q and optionally Esc",
-        "Acts only on KeyEventKind::Press so key-release events are ignored"
       ]
     },
     {

@@ -1,19 +1,7 @@
 {
   "skill_name": "tui-design",
-  "notes": "Focused v1.9.0 CLI regressions for #75: SIGINT re-raise, structured --json errors and schema compatibility, one-shot CLI testing, the exit-code scheme, Windows behavior, atomic writes, the completions contract, pagination and config explainability, the macOS config-dir footgun, and MYTOOL_DEBUG. Checked against primary sources on 2026-10-27 (Cracauer, the bash manual, POSIX, Microsoft docs, clap_complete 4.6.11, Click 8.5.0, Typer 0.27.3, go-internal 1.16.0). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956.",
+  "notes": "Focused v1.9.0 CLI regressions for #75: SIGINT re-raise, structured --json errors and schema compatibility, one-shot CLI testing, the exit-code scheme, Windows behavior, atomic writes, the completions contract, pagination and config explainability, the macOS config-dir footgun, and MYTOOL_DEBUG. Checked against primary sources on 2026-10-27 (Cracauer, the bash manual, POSIX, Microsoft docs, clap_complete 4.6.11, Click 8.5.0, Typer 0.27.3, go-internal 1.16.0). Assertions define the grading rubric; improvement claims require a recorded harness run against one immutable skill hash. Status (2026-10-27): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-comparison/ and evals/results/v1.9.0-codex-comparison/ against skill tree 164c1aefd956. 1 case that scored 100% on both hosts in both conditions in the v1.9.0 runs were retired on 2026-10-28 and moved to evals/retired/saturated-2026-10.json.",
   "evals": [
-    {
-      "id": "sigint-re-raise",
-      "name": "sigint-re-raise",
-      "prompt": "My Go CLI catches SIGINT, cleans up, and calls os.Exit(130). Users report that Ctrl+C in a shell loop doesn't stop the loop. What's wrong?",
-      "files": [],
-      "assertions": [
-        "Explains that after catching SIGINT the program should restore the default handler and re-raise SIGINT to itself so the parent sees death by signal",
-        "Explains that exit(130) reads as 'handled' to bash, which keeps running the loop or script",
-        "Shows the Go approach: signal.Reset(os.Interrupt), then syscall.Kill(syscall.Getpid(), syscall.SIGINT), noting it does not apply on Windows",
-        "Does not claim that a plain exit(130) is equivalent to dying from SIGINT"
-      ]
-    },
     {
       "id": "json-errors",
       "name": "json-errors",

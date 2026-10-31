@@ -1,0 +1,101 @@
+Use a **single-column stream with an expandable event inspector**. Keep the default view readable at 60 columns; reserve color for severity and make every state understandable without it.
+
+### Screen layout
+
+At 80 columns:
+
+```text
+payments-api · FOLLOW · 142/s · 0 dropped
+level>=info  query:"checkout"                   38 matched
+ TIME         LEVEL  MESSAGE
+ 14:32:08.041  INFO   Checkout started             req=a81
+ 14:32:08.062  WARN   Inventory response slow       842ms
+>14:32:09.104  ERROR  Payment authorization failed
+ 14:32:09.108  INFO   Retry scheduled               try=2
+────────────────────────────────────────────────────────
+ event · 14:32:09.104Z                       line 184,203
+ message     Payment authorization failed
+ service     payments-api
+ request_id  a81
+ error.code  upstream_timeout
+ duration_ms 1002
+────────────────────────────────────────────────────────
+[PAUSED · 219 new]  / search  f filter  Enter detail  ? help
+```
+
+The inspector is hidden until opened. Selection is marked with `>`, never color alone. Times use a consistent display timezone, shown in help and the inspector; the original timestamp remains available.
+
+At 40 columns:
+
+```text
+payments-api · FOLLOW · 142/s
+filter: level>=info · 38 matched
+14:32:08 I Checkout started
+14:32:08 W Inventory response slow
+14:32:09 E Payment authorization fail…
+14:32:09 I Retry scheduled
+/ search  f filter  Enter detail  ?
+```
+
+Below 50 columns, hide auxiliary fields and milliseconds before shortening messages. The inspector takes over the screen instead of splitting it. Below 24 columns, show severity and message, with a minimal status line.
+
+Rows occupy one line by default. Detail view wraps long values and lets you inspect the complete event. This keeps one noisy stack trace from consuming the stream.
+
+### Key bindings
+
+| Key | Action |
+|---|---|
+| `↑` / `↓`, `k` / `j` | Move selection; pause following |
+| `Page Up` / `Page Down` | Move one screen; pause following |
+| `Home` / `g` | Oldest retained event |
+| `End` / `G` | Newest event and resume following |
+| `Space` | Pause/resume following |
+| `Enter` | Open/close selected event’s inspector |
+| `Tab` | Switch focus between stream and inspector |
+| `/` | Search retained events; literal text by default |
+| `n` / `N` | Next/previous search match |
+| `f` | Edit filter |
+| `Esc` | Cancel an edit or close an overlay |
+| `?` | Show help |
+| `q` | Quit |
+| `Ctrl-C` | Quit immediately |
+
+Search highlights and navigates; **filters hide events**. Label them separately. Filter syntax should support field comparisons and explicit regular expressions, with examples in the editor. Invalid filters show an error and leave the previous filter active.
+
+### Behavior that matters
+
+**Pausing affects the viewport, not ingestion.** Keep reading while the user inspects an event. Show the number of newly received events and preserve the selected event’s position. Resuming jumps to the latest event. Opening detail also pauses following.
+
+**Memory is bounded.** Retain events within configurable byte and event limits. Evict the oldest first. If the selected event is evicted, retain its open detail temporarily and show “event no longer in history.” Distinguish intentional history eviction from input loss. Never imply that search covers anything beyond retained history.
+
+**Preserve input order.** Do not reorder by timestamps: clocks drift, timestamps repeat, and services emit late events. Show missing or invalid timestamps as `—`; expose receive time separately. Filtering severity must accommodate unknown levels rather than quietly discard them.
+
+**Bad input stays visible.** Render malformed JSON as a marked raw-text event, with the parse error in detail. Accept valid JSON values that are not objects. Make timestamp, severity, and message field mappings configurable, with sensible detected defaults. Never interpret a field as executable markup.
+
+**Handle stream boundaries explicitly.**
+
+- Buffer an incomplete line until its newline arrives. At EOF, accept a final line without a newline and mark an unfinished JSON value as malformed.
+- Set a configurable maximum record size. Oversized records get a visible marker and byte count; consume through the next newline to recover. Do not silently truncate them.
+- For file following, detect rotation and truncation, display a boundary marker, and reopen according to a documented follow-by-name policy.
+- For stdin EOF, keep the interactive history open with an `EOF` status. A disconnected source gets a distinct error status.
+- Empty input says “Waiting for logs”; zero filter matches says “No matching events.”
+
+**Stay usable under load.** Batch redraws rather than repainting for every event. If rendering falls behind, skip intermediate frames, not records. If an actual ingestion buffer overflows, report the lost-record count prominently. Backpressure can propagate through pipes; explain this in CLI help.
+
+**Treat terminal content as untrusted.** Escape ANSI sequences, control characters, and carriage returns from logs. Render invalid UTF-8 visibly. Account for wide Unicode characters when clipping. Resizing preserves selection, filters, and follow state.
+
+### Pipes and SSH
+
+Choose mode from the output destination:
+
+| Situation | Default behavior |
+|---|---|
+| stdout is a terminal | Interactive viewer; read keys from the controlling terminal |
+| stdout is a pipe or file | Stream original JSON-lines bytes, applying only explicitly requested filters |
+| Interactive mode requested without a controlling terminal | Fail with a clear error |
+
+For example, `service-logs | viewer` opens the UI while stdin carries logs. `viewer app.log | jq ...` emits records without headers, color, clipping, status text, or terminal escape sequences.
+
+In pipe mode, preserve malformed lines unless the user explicitly requests validation or filtering that excludes them. Send diagnostics to stderr. Exit quietly on a downstream closed pipe. Offer `--no-color` and respect `NO_COLOR`; provide an ASCII fallback for limited terminals.
+
+Restore terminal settings on exit, interruption, and recoverable failures. Document that `q` stops consuming stdin, which may cause the upstream producer to receive a broken pipe.

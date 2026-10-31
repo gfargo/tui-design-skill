@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+In my file manager, the list has 3,000 files and the user has marked 14 of them. They press d. Design the confirmation. Show it as a plain-text sketch on an 80-column terminal, and say what each key does.

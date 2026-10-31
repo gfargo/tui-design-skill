@@ -266,6 +266,14 @@ The first phase of [#79](https://github.com/gfargo/tui-design-skill/issues/79) r
 
 The design-review sets show the least: the Claude baseline already scored 92.3% on the clutter and floor reviews, the Claude `tier2` set scored slightly lower with the skill (−1.1 pp), and the biggest gap is in the set of corrections to facts newer than the model. A Codex re-grade of a 15% sample of trials (612 assertions across both rounds) agreed with the Claude grader on 94.1% of assertions (Cohen's kappa 0.83); Codex was the stricter grader, and the skill's gain held under both. The reports in [`evals/results/v1.9.0-claude-behavior-comparison/`](evals/results/v1.9.0-claude-behavior-comparison/comparison.md) and [`evals/results/v1.9.0-codex-behavior-comparison/`](evals/results/v1.9.0-codex-behavior-comparison/comparison.md) and the [spot-check](evals/results/v1.9.0-grader-spotcheck/spotcheck.md) give the details. Build output and outcome-based design cases are still unmeasured.
 
+A second phase of #79 added eight outcome-based design cases whose assertions can be counted or read off the answer (nesting depth of a mockup, whether a sketch fits in 60 columns, a footer at two widths, a named partial failure, a focus cue in plain text, seeded defects), with the rubric committed before the run:
+
+| Eval set | Claude Code: baseline → with skill | Codex CLI: baseline → with skill |
+|---|---|---|
+| Outcome-based design cases (8 cases) | 91.0% → 95.5% | 85.9% → 96.2% |
+
+The effect is smaller than on the fact-recall sets: one of the eight cases is at 100% in all four cells, and one (`partial-failure-screen`) scored slightly lower with the skill on Claude. The reports in [`evals/results/v1.9.0-claude-design-outcomes-comparison/`](evals/results/v1.9.0-claude-design-outcomes-comparison/comparison.md) and [`evals/results/v1.9.0-codex-design-outcomes-comparison/`](evals/results/v1.9.0-codex-design-outcomes-comparison/comparison.md) give the per-case results and the limitations, including width and count assertions the graders read two ways. Eleven cases that saturated everywhere moved to `evals/retired/`. Compiled and running build output is still unmeasured.
+
 ## Reference freshness
 
 The framework references (`plugins/tui-design/skills/tui-design/references/ecosystem-*.md`) carry version-sensitive guidance for Bubble Tea, Ratatui, Textual, and Ink — pinned "current version" claims and tag-pinned source-code citations that can age even though the surrounding design guidance stays correct. `scripts/reference-inventory.json` is the explicit, hand-maintained list of those claims and links; `scripts/check-reference-freshness.py` audits it:

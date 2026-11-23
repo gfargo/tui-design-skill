@@ -11,7 +11,9 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, which has no Python 3.9 build for
+    # setup-python, so the 3.9 floor job could no longer start. 24.04 still does.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

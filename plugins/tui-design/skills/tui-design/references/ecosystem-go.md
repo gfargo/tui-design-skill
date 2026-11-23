@@ -208,7 +208,7 @@ The old `AdaptiveColor` survives only in `charm.land/lipgloss/v2/compat` for mig
 The component library for Bubble Tea. Each Bubble is itself a `tea.Model` you embed and forward messages to.
 
 **Components shipped:**
-- **`textinput`** — single-line input with placeholder, suggestions, validation. **`textarea`** — multi-line input with optional line numbers; v2.2+ adds text selection, copy/cut and word motion.
+- **`textinput`** — single-line input with placeholder, suggestions, validation. **`textarea`** — multi-line input with optional line numbers; v2.2+ adds text selection, cut/copy editing commands and word motion (they act only on the field the user is typing in).
 - **`list`** — virtualized list with filtering, pagination, custom delegate for row rendering. **`table`** — virtualized table with row selection (no built-in sorting; sort the rows yourself).
 - **`tree`** — navigable hierarchical tree, rendered with `lipgloss/tree`. **`viewport`** — scrollable region for long content.
 - **`spinner`** — prebuilt sets (`Line`, `Dot`/`MiniDot` braille, `Pulse`, …) or custom frames. **`progress`** — gradient bar with percent. **`paginator`**, **`filepicker`**, **`cursor`**, **`stopwatch`**, **`timer`**.

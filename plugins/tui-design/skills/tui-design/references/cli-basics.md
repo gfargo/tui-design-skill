@@ -215,7 +215,7 @@ Say what and why in one lowercase line with no trailing period, name the object,
 
 **Group repeated errors.** If 100 files fail to parse, summarize: "100 files failed to parse — first three: …; pass `--show-all-errors` to list all."
 
-**"Did you mean…?"** suggestions on typos. Brew, Heroku, Cargo, Git, npm all do this. Suggest, don't auto-execute.
+**"Did you mean…?"** suggestions on typos. Brew, Heroku, Cargo, Git, npm all do this. Print the suggestion and let the user re-run the command themselves; never run the corrected command for them.
 
 ---
 
@@ -303,7 +303,7 @@ For screenshots and demo GIFs of a CLI or TUI, use the `vhs-cli-demos` skill whe
 ## Subcommands
 
 Single-command tools (`grep`, `cp`, `rg`) are simple; multi-command tools (`git`, `gh`, `docker`) fit many objects. For multi-command tools, **noun-verb** is the more common order (clig.dev says either order works, but noun-verb "seems to be more common"):
-- `docker container create` (noun-verb), not `docker create container`.
+- Order subcommands noun-verb (`docker container create`), not verb-noun.
 - `gh pr list`, `gh issue close`, `gh repo clone`.
 
 Noun-verb scales: adding `pr review` doesn't conflict with `issue review`. Verb-first runs out of namespace.
@@ -350,7 +350,7 @@ For env vars, keybindings, or functions that need to live in the *current* shell
 
 ### Never silently edit rc files
 
-Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's `curl | sh` installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
+Show the user the line and tell them to add it (`Add this to the end of ~/.zshrc`) — this is what starship, zoxide, and mise all do, and it's the strong convention. Auto-appending via an explicit, visible installer step (atuin's shell-script installer does this) is an accepted variant; silently mutating a user's rc file without telling them is not.
 
 ---
 
@@ -422,7 +422,7 @@ Two patterns dominate, and both are legitimate:
 - Node — **not `keytar`, archived and unmaintained since December 2022**; VS Code moved to Electron's `safeStorage`, and a plain Node CLI should fall back to a config file.
 - On Linux, keychain backends need a running Secret Service daemon (GNOME Keyring/KWallet) that headless containers often lack, so ship an explicit plaintext fallback (gh's opt-in `--insecure-storage`) rather than failing silently.
 
-**If you do fall back to a plaintext file, set the permissions explicitly — don't rely on umask.** AWS CLI shipped this bug (CVE-2026-13769): under a default umask, three subcommands wrote credential files world-readable (0644) instead of 0600. `chmod 600` the file yourself at creation time.
+**If you do fall back to a plaintext file, create it owner-only (mode 0600) from the start — don't rely on umask.** The AWS CLI shipped this bug (CVE-2026-13769): under a default umask, three subcommands wrote credential files with group/world read access. Set the mode explicitly when you create the file, rather than fixing it afterwards.
 
 ---
 
@@ -532,7 +532,7 @@ Once shipped, your CLI is an API. Users script around it.
 
 If you check for updates: check async, cache the result (once a day is the norm — both gh and the widely-used `update-notifier` npm package default to a 24-hour interval), and print the notice to stderr *after* your normal output, not interleaved with it. Auto-skip in CI and gate on stdout being a TTY. Provide an opt-out env var (gh's is `GH_NO_UPDATE_NOTIFIER`; the npm package's is `NO_UPDATE_NOTIFIER`).
 
-**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't tell them to self-update through a mechanism the package manager doesn't own. gh compiles its update checker in only under the `updateable` build tag, which the Homebrew formula sets ([update_enabled.go](https://github.com/cli/cli/blob/v2.103.2/internal/ghcmd/update_enabled.go)), and the notice it prints for Homebrew installs says `brew upgrade gh`.
+**Defer to the package manager that installed you.** If a user got your tool via Homebrew, `brew upgrade` should be the update path — don't have the tool replace its own binary behind the package manager's back. gh compiles its update checker in only under the `updateable` build tag, which the Homebrew formula sets ([update_enabled.go](https://github.com/cli/cli/blob/v2.103.2/internal/ghcmd/update_enabled.go)), and the notice it prints for Homebrew installs says `brew upgrade gh`.
 
 ### Telemetry, if you collect it
 

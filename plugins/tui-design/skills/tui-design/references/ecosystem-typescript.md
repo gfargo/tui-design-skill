@@ -223,7 +223,7 @@ unmount();
 
 - **`console.log` is not lost.** The `patchConsole` render option defaults to `true`: Ink intercepts `console.*`, renders the message above the live output, and repaints. If console output *is* garbling the screen, something bypassed the patch: direct `process.stdout.write` or child-process stdio inherited straight to the terminal.
 - **`render(<App />, {debug: true})`** renders every update as separate appended output instead of diffing in place, the best tool for "which frame went wrong".
-- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools` separately to inspect the live component tree. **Tree/props inspection only, not profiling:** Ink's reconciler sets none of the flags React's Profiler needs.
+- **React DevTools:** install the optional `react-devtools-core` peer, run your CLI with `DEV=true`, and launch `npx react-devtools@6` (pin the version) separately to inspect the live component tree. **Tree/props inspection only, not profiling:** Ink's reconciler sets none of the flags React's Profiler needs.
 - **High-volume tracing** goes to stderr (`useStderr().write()`) or a file you `tail -f`, never stdout; Ink owns it.
 - **Profiling:** `node --cpu-prof` is the real path; it writes a `.cpuprofile` on exit, loadable in Chrome DevTools' Performance panel or `speedscope`. Common Ink cost sinks: unmemoized components re-rendering on every parent update; `<Static>` misuse (static content left out of it, or changing content put in it); a mounted-but-hidden long list (see *Lists, focus, and tables*); and an always-animating leaf such as `ink-spinner` keeping the render cycle busy.
 

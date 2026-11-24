@@ -144,7 +144,7 @@ lipgloss.Println(titleStyle.Render("Hello, world")) // downsamples for the termi
 
 **Layout helpers:** `lipgloss.JoinHorizontal(lipgloss.Top, left, right)` (side-by-side), `lipgloss.JoinVertical(lipgloss.Left, a, b, c)` (stacked), `lipgloss.Place(width, height, hPos, vPos, content)` (center/anchor in a box), and `lipgloss.Width(s)` / `lipgloss.Height(s)` (measure rendered output, skipping ANSI and counting wide graphemes).
 
-**Sizing:** in v2, `Width`/`Height` are the total block size, border and padding included (`// Include borders in block size` in [`style.go`](https://github.com/charmbracelet/lipgloss/blob/v2.0.6/style.go)). In v1 the border sat outside ([v1.1.0](https://github.com/charmbracelet/lipgloss/blob/v1.1.0/style.go)), so carried-over math such as `Width(w - 2)` for a bordered pane now comes out 2 cells too narrow. Margins stay outside. Text wraps at `Width` minus border and padding.
+**Sizing:** in v2, `Width`/`Height` are the total block size, border and padding included (`// Include borders in block size` in [`style.go`](https://github.com/charmbracelet/lipgloss/blob/v2.1.1/style.go)). In v1 the border sat outside ([v1.1.0](https://github.com/charmbracelet/lipgloss/blob/v1.1.0/style.go)), so carried-over math such as `Width(w - 2)` for a bordered pane now comes out 2 cells too narrow. Margins stay outside. Text wraps at `Width` minus border and padding.
 
 ```go check=go/lipgloss-block-size
 box := lipgloss.NewStyle().
@@ -332,7 +332,7 @@ func (k keyMap) ShortHelp() []key.Binding  { return []key.Binding{k.Up, k.Down, 
 func (k keyMap) FullHelp() [][]key.Binding { return [][]key.Binding{{k.Up, k.Down}, {k.Quit}} }
 ```
 
-**Real cursor.** `textinput` and `textarea` draw a virtual cursor (a styled cell) and leave the terminal's cursor hidden, but IME composition windows and screen readers follow the terminal cursor. For text entry call `SetVirtualCursor(false)` and set `v.Cursor = m.input.Cursor()`, adding the input's offset in the frame (`Cursor()` is relative to the input). It is nil while blurred, so blur the input when an overlay covers it. `textinput.Cursor()` counts runes, not cells (v2.2.1): each wide CJK or emoji rune leaves the caret a cell short; `textarea` counts cells.
+**Real cursor.** `textinput` and `textarea` draw a virtual cursor (a styled cell) and leave the terminal's cursor hidden, but IME composition windows and screen readers follow the terminal cursor. For text entry call `SetVirtualCursor(false)` and set `v.Cursor = m.input.Cursor()`, adding the input's offset in the frame (`Cursor()` is relative to the input). It is nil while blurred, so blur the input when an overlay covers it. `textinput.Cursor()` counted runes, not cells, through v2.2.1, so each wide CJK or emoji rune left the caret a cell short; v2.2.2 measures display width, so use it as returned there. On older versions, measure the text before the caret in cells yourself, or use `textarea`, which counts cells.
 
 ```go check=go/real-cursor
 m.input = textinput.New()

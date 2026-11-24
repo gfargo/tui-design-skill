@@ -6,6 +6,7 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ### Fixed
 - Reference wording that ClawHub's automated security scan flagged: removed the literal `curl | sh` and `docker create container` phrasing, reworded the self-update, "Did you mean…?" and plaintext-credentials guidance so it reads as a rule rather than an instruction to act, pinned the `react-devtools` example, and added a privacy note to the text-input history guidance (don't record secret fields, owner-only file, opt-out). No change to the skill's design advice.
+- **Go and OpenTUI references re-verified against current releases:** Bubbles v2.2.2 fixes `textinput.Cursor()` for wide characters (it counted runes through v2.2.1), so *ecosystem-go.md* now says to use it as returned from v2.2.2 and to correct the offset only on older versions, and the matching eval assertion follows. The Lipgloss block-size and compositor claims were re-checked against v2.1.1 and still hold. *ecosystem-typescript.md* adds that OpenTUI 0.9 removed the declarative `h()` and `Box()` factories. The freshness inventory pins move to Lipgloss 2.1.1, Bubbles 2.2.2 and OpenTUI 0.9.9.
 
 ### Release engineering
 - The `validate` workflow is pinned to `ubuntu-24.04`. `ubuntu-latest` now resolves to 26.04, which has no Python 3.9 build for `actions/setup-python`, so the 3.9 floor job failed before running any checks.

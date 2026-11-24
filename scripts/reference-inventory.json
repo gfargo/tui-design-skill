@@ -353,8 +353,8 @@
       "framework": "Lipgloss",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
-      "claim": "\"in v2, Width/Height are the total block size, border and padding included\" (Include borders in block size, as of v2.0.6)",
-      "pinned_version": "2.0.6",
+      "claim": "\"in v2, Width/Height are the total block size, border and padding included\" (Include borders in block size, as of v2.1.1)",
+      "pinned_version": "2.1.1",
       "granularity": "minor",
       "registry": {
         "type": "go_proxy",
@@ -429,8 +429,8 @@
       "framework": "OpenTUI",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-typescript.md",
-      "claim": "\"v0.x churn (0.6 moved layout and painting into the native core, and 0.6 and 0.7 each broke custom renderables; 0.7 also dropped the screen-sized hit grid ...)\"",
-      "pinned_version": "0.7.0",
+      "claim": "\"v0.x churn (0.6 moved layout and painting into the native core, and 0.6 and 0.7 each broke custom renderables; 0.7 also dropped the screen-sized hit grid ...; 0.9 removed the declarative h() and Box() factories)\"",
+      "pinned_version": "0.9.9",
       "granularity": "minor",
       "registry": {
         "type": "npm",
@@ -626,8 +626,8 @@
       "framework": "Bubbles",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
-      "claim": "\"SetVirtualCursor(false) and v.Cursor = m.input.Cursor() ... textinput.Cursor() counts runes, not cells (v2.2.1); textarea counts cells\"",
-      "pinned_version": "2.2.1",
+      "claim": "\"SetVirtualCursor(false) and v.Cursor = m.input.Cursor() ... textinput.Cursor() counted runes, not cells, through v2.2.1; v2.2.2 measures display width; textarea counts cells\"",
+      "pinned_version": "2.2.2",
       "granularity": "patch",
       "registry": {
         "type": "go_proxy",
@@ -639,8 +639,8 @@
       "framework": "Lipgloss",
       "kind": "pinned_version",
       "file": "plugins/tui-design/skills/tui-design/references/ecosystem-go.md",
-      "claim": "\"NewLayer(...).ID().X().Y().Z(), NewCompositor(...).Render(), Compositor.Hit returns the top-most layer with an ID; Z is compared as written, not added to the parent's\" (as of v2.0.6)",
-      "pinned_version": "2.0.6",
+      "claim": "\"NewLayer(...).ID().X().Y().Z(), NewCompositor(...).Render(), Compositor.Hit returns the top-most layer with an ID; Z is compared as written, not added to the parent's\" (as of v2.1.1)",
+      "pinned_version": "2.1.1",
       "granularity": "minor",
       "registry": {
         "type": "go_proxy",

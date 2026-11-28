@@ -144,3 +144,24 @@ The report does not touch the bundles or their grades, and it is not a schema ar
 Most older sets grade an answer against the skill's own wording, so a high score can mean the answer repeated what it read. `evals/design-outcomes-evals.json` grades things that can be counted or read off the answer instead: the nesting depth of a mockup, whether a sketch fits in 60 or 80 columns, whether a footer line fits in 40, which servers a screen names, whether seeded defects are found. The mockups carry ground truth that `make_set` checks when the set is generated, and the rubric is committed before the first run so it cannot be tuned to the result.
 
 Cases that scored 100% on both hosts in both conditions cannot show an effect. They move to `evals/retired/saturated-2026-10.json`, which keeps each case with its four results. They are not part of any comparison; run them occasionally as regression checks. Bundles that include a retired case stay valid, because `validate-evidence.sh` checks them against the commit they ran at.
+
+## Build checks
+
+A model grader reading code can only judge whether the code looks right. `evals/build-checks-evals.json` asks for three complete programs instead: a Bubble Tea v2 service board in Go, a Ratatui 0.30 log viewer in Rust, and a Textual 8 task board in Python. Each reads a data file given in the prompt. The prompts name the build command, the launch command, and the answer format (a `File: <path>` line before each fenced file). They ask for features and color, but not for the behavior the skill supplies by default, so the with-skill condition is measured on whether it adds that behavior.
+
+`scripts/runners/build_checker.py` grades a finished run by building and running every answer, and writes schema-v6 grades with `kind: "automated"`:
+
+1. It extracts the answer's files. An answer with no usable `File:` headers fails every check, with the problem in the note.
+2. It fetches dependencies from the answer's manifest (`go mod tidy`, `cargo generate-lockfile` and `cargo fetch`, or `pip install` into a virtual environment) in a toolchain container pinned by digest. This is the only stage with network access.
+3. It builds without network in the same image. The resolved dependencies are kept for audit.
+4. It runs the program in a pseudo-terminal inside a pinned Python container, without network and limited to 2 CPUs and 2 GB, through four fixed launches. A small terminal emulator in the checker reads the screen back and answers the usual terminal queries (cursor position, device attributes, background color).
+
+The ten assertions are the same for every case and are checked in a fixed order: it builds; it draws a screen within 3 s at 80×24; it shows an item from the data file; the first screen names q next to the word quit; q quits within 2 s with status 0; after q, the line settings match those before launch and the alternate screen, hidden cursor, mouse, paste, focus and keyboard-enhancement modes are off; it redraws within 1.5 s of a resize to 60×20; it is still running 1 s after a resize to 20×6, with no panic or traceback; Ctrl+C quits within 2 s with the terminal restored; and with `NO_COLOR=1` it draws a screen without setting a chromatic color.
+
+The `NO_COLOR` check allows grays. Textual answers `NO_COLOR` by rendering in monochrome, which still sets gray truecolor values, and the skill asks for meaning that survives monochrome rather than for zero escape codes. Bubble Tea v2 and crossterm strip color themselves under `NO_COLOR`, so this check fails only when a program bypasses its framework.
+
+```bash
+python3 scripts/runners/build_checker.py --run evals/runs/RUN_ID/run.json --jobs 2
+```
+
+The checker needs Docker. It copies itself into the run directory as `checker.py`, which grades.json links by digest, and records the Docker version, platform, image digests, and toolchain versions in `grader.tools`. Each trial's fetch and build logs, resolved dependencies, and the screens it read back are kept under `checks/<trial_id>/`. Launches run one at a time so concurrent builds cannot slow a timed check. The checker was calibrated against a correct and a careless program for each language before any recorded run, and `tests/test_build_checker.py` drives two small programs through the same pseudo-terminal checks without Docker.

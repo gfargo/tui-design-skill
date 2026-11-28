@@ -1,0 +1,143 @@
+{
+  "skill_name": "tui-design",
+  "notes": "Build tasks graded by running the code, not by reading it (#79, phase 3). Each case asks for a complete, self-contained program that reads a data file given in the prompt, and names the build command, the launch command, and the answer format: a `File: <path>` line before each fenced file. The prompts ask for the features and for color, and leave out the behavior the skill supplies by default (quit keys, terminal restoration, resize handling, NO_COLOR), so the with-skill condition is measured on whether it supplies them. scripts/runners/build_checker.py grades every trial: it extracts the files, fetches dependencies with network access in a pinned toolchain container, builds without network, then drives the program in a pseudo-terminal inside a pinned Python container without network and records what it observed for each assertion. Each case's build_check object configures the checker and is part of the eval set's recorded digest. Assertion order is fixed by the checker; the texts are the same in every case except the build step.",
+  "evals": [
+    {
+      "id": "go-service-board",
+      "name": "go-service-board",
+      "prompt": "Build me a terminal dashboard in Go with Bubble Tea v2 and Lip Gloss v2 for our services. It reads services.json and shows the services in a list on the left (name and status, with status in color: green for up, yellow for degraded, red for down) and the details of the selected service on the right. The arrow keys move the selection. I'll share it with the team, so make it solid.\n\nI'll run `go mod tidy` and `go build` with Go 1.27, then start it from the project root as `<binary> services.json`. Include go.mod. Reply with the complete project. Put a line `File: <path>` (relative to the project root) directly before each file, followed by the file's contents in a fenced code block. Don't include services.json; I'll put it in the project root.\n\nservices.json looks like this:\n\n```json\n[\n  {\n    \"name\": \"api-gateway\",\n    \"status\": \"up\",\n    \"region\": \"us-east-1\",\n    \"latency_ms\": 42,\n    \"version\": \"2.14.1\",\n    \"last_deploy\": \"2026-11-20T14:02:00Z\"\n  },\n  {\n    \"name\": \"auth-service\",\n    \"status\": \"up\",\n    \"region\": \"us-east-1\",\n    \"latency_ms\": 18,\n    \"version\": \"1.9.0\",\n    \"last_deploy\": \"2026-11-18T09:41:00Z\"\n  },\n  {\n    \"name\": \"billing-worker\",\n    \"status\": \"degraded\",\n    \"region\": \"eu-west-1\",\n    \"latency_ms\": 870,\n    \"version\": \"3.2.7\",\n    \"last_deploy\": \"2026-11-25T22:15:00Z\"\n  },\n  {\n    \"name\": \"search-indexer\",\n    \"status\": \"up\",\n    \"region\": \"us-west-2\",\n    \"latency_ms\": 133,\n    \"version\": \"0.31.4\",\n    \"last_deploy\": \"2026-11-02T11:00:00Z\"\n  },\n  {\n    \"name\": \"notifications\",\n    \"status\": \"down\",\n    \"region\": \"eu-west-1\",\n    \"latency_ms\": 0,\n    \"version\": \"5.0.2\",\n    \"last_deploy\": \"2026-11-26T07:30:00Z\"\n  },\n  {\n    \"name\": \"media-transcoder\",\n    \"status\": \"up\",\n    \"region\": \"ap-south-1\",\n    \"latency_ms\": 260,\n    \"version\": \"1.4.0\",\n    \"last_deploy\": \"2026-10-29T16:20:00Z\"\n  },\n  {\n    \"name\": \"ledger-db-proxy\",\n    \"status\": \"degraded\",\n    \"region\": \"us-east-1\",\n    \"latency_ms\": 410,\n    \"version\": \"2.0.0\",\n    \"last_deploy\": \"2026-11-21T03:05:00Z\"\n  },\n  {\n    \"name\": \"feature-flags\",\n    \"status\": \"up\",\n    \"region\": \"us-west-2\",\n    \"latency_ms\": 9,\n    \"version\": \"4.6.3\",\n    \"last_deploy\": \"2026-11-27T18:44:00Z\"\n  }\n]\n```",
+      "files": [],
+      "build_check": {
+        "language": "go",
+        "fixture": {
+          "path": "services.json",
+          "content": "[\n  {\n    \"name\": \"api-gateway\",\n    \"status\": \"up\",\n    \"region\": \"us-east-1\",\n    \"latency_ms\": 42,\n    \"version\": \"2.14.1\",\n    \"last_deploy\": \"2026-11-20T14:02:00Z\"\n  },\n  {\n    \"name\": \"auth-service\",\n    \"status\": \"up\",\n    \"region\": \"us-east-1\",\n    \"latency_ms\": 18,\n    \"version\": \"1.9.0\",\n    \"last_deploy\": \"2026-11-18T09:41:00Z\"\n  },\n  {\n    \"name\": \"billing-worker\",\n    \"status\": \"degraded\",\n    \"region\": \"eu-west-1\",\n    \"latency_ms\": 870,\n    \"version\": \"3.2.7\",\n    \"last_deploy\": \"2026-11-25T22:15:00Z\"\n  },\n  {\n    \"name\": \"search-indexer\",\n    \"status\": \"up\",\n    \"region\": \"us-west-2\",\n    \"latency_ms\": 133,\n    \"version\": \"0.31.4\",\n    \"last_deploy\": \"2026-11-02T11:00:00Z\"\n  },\n  {\n    \"name\": \"notifications\",\n    \"status\": \"down\",\n    \"region\": \"eu-west-1\",\n    \"latency_ms\": 0,\n    \"version\": \"5.0.2\",\n    \"last_deploy\": \"2026-11-26T07:30:00Z\"\n  },\n  {\n    \"name\": \"media-transcoder\",\n    \"status\": \"up\",\n    \"region\": \"ap-south-1\",\n    \"latency_ms\": 260,\n    \"version\": \"1.4.0\",\n    \"last_deploy\": \"2026-10-29T16:20:00Z\"\n  },\n  {\n    \"name\": \"ledger-db-proxy\",\n    \"status\": \"degraded\",\n    \"region\": \"us-east-1\",\n    \"latency_ms\": 410,\n    \"version\": \"2.0.0\",\n    \"last_deploy\": \"2026-11-21T03:05:00Z\"\n  },\n  {\n    \"name\": \"feature-flags\",\n    \"status\": \"up\",\n    \"region\": \"us-west-2\",\n    \"latency_ms\": 9,\n    \"version\": \"4.6.3\",\n    \"last_deploy\": \"2026-11-27T18:44:00Z\"\n  }\n]\n"
+        },
+        "args": [
+          "services.json"
+        ],
+        "expect_any": [
+          "api-gateway",
+          "auth-service",
+          "billing-worker",
+          "search-indexer",
+          "notifications",
+          "media-transcoder",
+          "ledger-db-proxy",
+          "feature-flags"
+        ]
+      },
+      "assertions": [
+        "Builds: the dependencies resolve from the manifest the answer gives, and `go build` succeeds",
+        "Starts: within 3 s of launch in an 80x24 terminal it draws a non-empty screen and is still running",
+        "Shows the data: once the first screen settles, it shows at least one item from the data file",
+        "Names the quit key: the first screen shows q next to the word quit, for example in a footer hint",
+        "Pressing q quits within 2 s with exit status 0",
+        "After q, the terminal is restored: line settings match those before launch, the alternate screen is left, the cursor is visible, and mouse, paste, focus and keyboard-enhancement modes are off",
+        "Redraws after a resize from 80x24 to 60x20, writing visible output within 1.5 s",
+        "Survives 20x6: after a resize to 20x6 it is still running 1 s later, with no panic or traceback on screen",
+        "Ctrl+C quits within 2 s and leaves the terminal restored as described for q",
+        "With NO_COLOR=1 set, it draws a screen within 3 s and that output sets no chromatic foreground, background or underline color (grays, as in monochrome rendering, are allowed)"
+      ]
+    },
+    {
+      "id": "rust-log-viewer",
+      "name": "rust-log-viewer",
+      "prompt": "Build me a log viewer in Rust with Ratatui 0.30 and crossterm. It opens app.log and shows its lines in a scrollable list, colored by level (ERROR red, WARN yellow, INFO default, DEBUG dim). The arrow keys and PgUp/PgDn scroll, a key cycles the minimum level shown (DEBUG, INFO, WARN, ERROR), and a status line shows the current filter and how many lines match. We'll use it over SSH on our servers, so make it solid.\n\nI'll run `cargo build` with the current stable Rust, then start the one binary from the project root as `<binary> app.log`. Include Cargo.toml. Reply with the complete project. Put a line `File: <path>` (relative to the project root) directly before each file, followed by the file's contents in a fenced code block. Don't include app.log; I'll put it in the project root.\n\napp.log looks like this:\n\n```text\n2026-11-27T09:00:01Z INFO  http: GET /healthz 200 3ms\n2026-11-27T09:00:02Z DEBUG cache: warmed 1200 keys from snapshot\n2026-11-27T09:00:04Z INFO  http: POST /v1/orders 201 48ms\n2026-11-27T09:00:05Z WARN  db: slow query on orders_by_customer took 912ms\n2026-11-27T09:00:07Z INFO  http: GET /v1/orders/8812 200 12ms\n2026-11-27T09:00:08Z DEBUG auth: token refreshed for client mobile-ios\n2026-11-27T09:00:11Z ERROR payments: card processor timeout after 30s (order 8813)\n2026-11-27T09:00:12Z INFO  queue: retry scheduled for order 8813 in 60s\n2026-11-27T09:00:15Z INFO  http: GET /v1/catalog?page=2 200 31ms\n2026-11-27T09:00:16Z DEBUG gc: pause 4ms, heap 212MB\n2026-11-27T09:00:19Z WARN  http: client 10.0.4.17 exceeded rate limit (120/min)\n2026-11-27T09:00:21Z INFO  http: DELETE /v1/carts/551 204 9ms\n2026-11-27T09:00:24Z ERROR db: connection reset by peer (pool replica-2)\n2026-11-27T09:00:24Z INFO  db: reconnected to replica-2 after 1 attempt\n2026-11-27T09:00:27Z DEBUG cache: evicted 87 keys (lru)\n2026-11-27T09:00:30Z INFO  http: GET /healthz 200 2ms\n2026-11-27T09:00:33Z INFO  worker: exported daily report to s3://reports/2026-11-26.csv\n2026-11-27T09:00:35Z WARN  disk: /var/lib/app at 86% capacity\n2026-11-27T09:00:38Z INFO  http: POST /v1/orders 201 52ms\n2026-11-27T09:00:40Z DEBUG auth: session 3f9a expired\n2026-11-27T09:00:43Z ERROR mailer: template order_shipped missing variable tracking_url\n2026-11-27T09:00:45Z INFO  http: GET /v1/orders/8814 200 14ms\n2026-11-27T09:00:48Z INFO  queue: processed 340 jobs in the last minute\n2026-11-27T09:00:50Z WARN  db: replication lag 4.2s on replica-1\n2026-11-27T09:00:53Z INFO  http: PUT /v1/profile 200 22ms\n2026-11-27T09:00:55Z DEBUG cache: hit ratio 0.94\n2026-11-27T09:00:58Z INFO  payments: retry for order 8813 succeeded\n2026-11-27T09:01:00Z INFO  http: GET /healthz 200 3ms\n```",
+      "files": [],
+      "build_check": {
+        "language": "rust",
+        "fixture": {
+          "path": "app.log",
+          "content": "2026-11-27T09:00:01Z INFO  http: GET /healthz 200 3ms\n2026-11-27T09:00:02Z DEBUG cache: warmed 1200 keys from snapshot\n2026-11-27T09:00:04Z INFO  http: POST /v1/orders 201 48ms\n2026-11-27T09:00:05Z WARN  db: slow query on orders_by_customer took 912ms\n2026-11-27T09:00:07Z INFO  http: GET /v1/orders/8812 200 12ms\n2026-11-27T09:00:08Z DEBUG auth: token refreshed for client mobile-ios\n2026-11-27T09:00:11Z ERROR payments: card processor timeout after 30s (order 8813)\n2026-11-27T09:00:12Z INFO  queue: retry scheduled for order 8813 in 60s\n2026-11-27T09:00:15Z INFO  http: GET /v1/catalog?page=2 200 31ms\n2026-11-27T09:00:16Z DEBUG gc: pause 4ms, heap 212MB\n2026-11-27T09:00:19Z WARN  http: client 10.0.4.17 exceeded rate limit (120/min)\n2026-11-27T09:00:21Z INFO  http: DELETE /v1/carts/551 204 9ms\n2026-11-27T09:00:24Z ERROR db: connection reset by peer (pool replica-2)\n2026-11-27T09:00:24Z INFO  db: reconnected to replica-2 after 1 attempt\n2026-11-27T09:00:27Z DEBUG cache: evicted 87 keys (lru)\n2026-11-27T09:00:30Z INFO  http: GET /healthz 200 2ms\n2026-11-27T09:00:33Z INFO  worker: exported daily report to s3://reports/2026-11-26.csv\n2026-11-27T09:00:35Z WARN  disk: /var/lib/app at 86% capacity\n2026-11-27T09:00:38Z INFO  http: POST /v1/orders 201 52ms\n2026-11-27T09:00:40Z DEBUG auth: session 3f9a expired\n2026-11-27T09:00:43Z ERROR mailer: template order_shipped missing variable tracking_url\n2026-11-27T09:00:45Z INFO  http: GET /v1/orders/8814 200 14ms\n2026-11-27T09:00:48Z INFO  queue: processed 340 jobs in the last minute\n2026-11-27T09:00:50Z WARN  db: replication lag 4.2s on replica-1\n2026-11-27T09:00:53Z INFO  http: PUT /v1/profile 200 22ms\n2026-11-27T09:00:55Z DEBUG cache: hit ratio 0.94\n2026-11-27T09:00:58Z INFO  payments: retry for order 8813 succeeded\n2026-11-27T09:01:00Z INFO  http: GET /healthz 200 3ms\n"
+        },
+        "args": [
+          "app.log"
+        ],
+        "expect_any": [
+          "GET /healthz 200 3ms",
+          "warmed 1200 keys from snapshot",
+          "POST /v1/orders 201 48ms",
+          "slow query on orders_by_customer took 912ms",
+          "GET /v1/orders/8812 200 12ms",
+          "token refreshed for client mobile-ios",
+          "card processor timeout after 30s (order 8813)",
+          "retry scheduled for order 8813 in 60s",
+          "GET /v1/catalog?page=2 200 31ms",
+          "pause 4ms, heap 212MB",
+          "client 10.0.4.17 exceeded rate limit (120/min)",
+          "DELETE /v1/carts/551 204 9ms",
+          "connection reset by peer (pool replica-2)",
+          "reconnected to replica-2 after 1 attempt",
+          "evicted 87 keys (lru)",
+          "GET /healthz 200 2ms",
+          "exported daily report to s3://reports/2026-11-26.csv",
+          "/var/lib/app at 86% capacity",
+          "POST /v1/orders 201 52ms",
+          "session 3f9a expired",
+          "template order_shipped missing variable tracking_url",
+          "GET /v1/orders/8814 200 14ms",
+          "processed 340 jobs in the last minute",
+          "replication lag 4.2s on replica-1",
+          "PUT /v1/profile 200 22ms",
+          "hit ratio 0.94",
+          "retry for order 8813 succeeded",
+          "GET /healthz 200 3ms"
+        ]
+      },
+      "assertions": [
+        "Builds: the dependencies resolve from the manifest the answer gives, and `cargo build` succeeds",
+        "Starts: within 3 s of launch in an 80x24 terminal it draws a non-empty screen and is still running",
+        "Shows the data: once the first screen settles, it shows at least one item from the data file",
+        "Names the quit key: the first screen shows q next to the word quit, for example in a footer hint",
+        "Pressing q quits within 2 s with exit status 0",
+        "After q, the terminal is restored: line settings match those before launch, the alternate screen is left, the cursor is visible, and mouse, paste, focus and keyboard-enhancement modes are off",
+        "Redraws after a resize from 80x24 to 60x20, writing visible output within 1.5 s",
+        "Survives 20x6: after a resize to 20x6 it is still running 1 s later, with no panic or traceback on screen",
+        "Ctrl+C quits within 2 s and leaves the terminal restored as described for q",
+        "With NO_COLOR=1 set, it draws a screen within 3 s and that output sets no chromatic foreground, background or underline color (grays, as in monochrome rendering, are allowed)"
+      ]
+    },
+    {
+      "id": "python-task-board",
+      "name": "python-task-board",
+      "prompt": "Build me a task board in Python with Textual 8. It reads tasks.json and shows the tasks in a table (id, title, status, assignee, due), with each status in its own color, and the full details of the highlighted task in a panel below the table. A key cycles a status filter (all, todo, doing, done). The team will use it every day, so make it solid.\n\nI'll install requirements.txt into a fresh virtual environment with pip on Python 3.14, then run `python app.py tasks.json` from the project root. Include requirements.txt, and make app.py the entry point. Reply with the complete project. Put a line `File: <path>` (relative to the project root) directly before each file, followed by the file's contents in a fenced code block. Don't include tasks.json; I'll put it in the project root.\n\ntasks.json looks like this:\n\n```json\n[\n  {\n    \"id\": 101,\n    \"title\": \"Rotate staging TLS certificates\",\n    \"status\": \"doing\",\n    \"assignee\": \"priya\",\n    \"due\": \"2026-12-02\"\n  },\n  {\n    \"id\": 102,\n    \"title\": \"Write the Q4 incident review\",\n    \"status\": \"todo\",\n    \"assignee\": \"marco\",\n    \"due\": \"2026-12-10\"\n  },\n  {\n    \"id\": 103,\n    \"title\": \"Upgrade Postgres to 18.1\",\n    \"status\": \"todo\",\n    \"assignee\": \"lena\",\n    \"due\": \"2026-12-15\"\n  },\n  {\n    \"id\": 104,\n    \"title\": \"Remove the legacy billing endpoint\",\n    \"status\": \"done\",\n    \"assignee\": \"sam\",\n    \"due\": \"2026-11-20\"\n  },\n  {\n    \"id\": 105,\n    \"title\": \"Add retries to the export worker\",\n    \"status\": \"doing\",\n    \"assignee\": \"priya\",\n    \"due\": \"2026-11-30\"\n  },\n  {\n    \"id\": 106,\n    \"title\": \"Audit IAM roles for the data team\",\n    \"status\": \"todo\",\n    \"assignee\": \"jo\",\n    \"due\": \"2026-12-05\"\n  },\n  {\n    \"id\": 107,\n    \"title\": \"Fix flaky checkout integration test\",\n    \"status\": \"done\",\n    \"assignee\": \"marco\",\n    \"due\": \"2026-11-22\"\n  },\n  {\n    \"id\": 108,\n    \"title\": \"Document the on-call runbook\",\n    \"status\": \"doing\",\n    \"assignee\": \"lena\",\n    \"due\": \"2026-12-01\"\n  },\n  {\n    \"id\": 109,\n    \"title\": \"Benchmark the new search cluster\",\n    \"status\": \"todo\",\n    \"assignee\": \"sam\",\n    \"due\": \"2026-12-12\"\n  },\n  {\n    \"id\": 110,\n    \"title\": \"Archive 2024 audit logs\",\n    \"status\": \"done\",\n    \"assignee\": \"jo\",\n    \"due\": \"2026-11-15\"\n  }\n]\n```",
+      "files": [],
+      "build_check": {
+        "language": "python",
+        "fixture": {
+          "path": "tasks.json",
+          "content": "[\n  {\n    \"id\": 101,\n    \"title\": \"Rotate staging TLS certificates\",\n    \"status\": \"doing\",\n    \"assignee\": \"priya\",\n    \"due\": \"2026-12-02\"\n  },\n  {\n    \"id\": 102,\n    \"title\": \"Write the Q4 incident review\",\n    \"status\": \"todo\",\n    \"assignee\": \"marco\",\n    \"due\": \"2026-12-10\"\n  },\n  {\n    \"id\": 103,\n    \"title\": \"Upgrade Postgres to 18.1\",\n    \"status\": \"todo\",\n    \"assignee\": \"lena\",\n    \"due\": \"2026-12-15\"\n  },\n  {\n    \"id\": 104,\n    \"title\": \"Remove the legacy billing endpoint\",\n    \"status\": \"done\",\n    \"assignee\": \"sam\",\n    \"due\": \"2026-11-20\"\n  },\n  {\n    \"id\": 105,\n    \"title\": \"Add retries to the export worker\",\n    \"status\": \"doing\",\n    \"assignee\": \"priya\",\n    \"due\": \"2026-11-30\"\n  },\n  {\n    \"id\": 106,\n    \"title\": \"Audit IAM roles for the data team\",\n    \"status\": \"todo\",\n    \"assignee\": \"jo\",\n    \"due\": \"2026-12-05\"\n  },\n  {\n    \"id\": 107,\n    \"title\": \"Fix flaky checkout integration test\",\n    \"status\": \"done\",\n    \"assignee\": \"marco\",\n    \"due\": \"2026-11-22\"\n  },\n  {\n    \"id\": 108,\n    \"title\": \"Document the on-call runbook\",\n    \"status\": \"doing\",\n    \"assignee\": \"lena\",\n    \"due\": \"2026-12-01\"\n  },\n  {\n    \"id\": 109,\n    \"title\": \"Benchmark the new search cluster\",\n    \"status\": \"todo\",\n    \"assignee\": \"sam\",\n    \"due\": \"2026-12-12\"\n  },\n  {\n    \"id\": 110,\n    \"title\": \"Archive 2024 audit logs\",\n    \"status\": \"done\",\n    \"assignee\": \"jo\",\n    \"due\": \"2026-11-15\"\n  }\n]\n"
+        },
+        "entry": "app.py",
+        "args": [
+          "tasks.json"
+        ],
+        "expect_any": [
+          "Rotate staging TLS certificates",
+          "Write the Q4 incident review",
+          "Upgrade Postgres to 18.1",
+          "Remove the legacy billing endpoint",
+          "Add retries to the export worker",
+          "Audit IAM roles for the data team",
+          "Fix flaky checkout integration test",
+          "Document the on-call runbook",
+          "Benchmark the new search cluster",
+          "Archive 2024 audit logs"
+        ]
+      },
+      "assertions": [
+        "Builds: the dependencies resolve from the manifest the answer gives, and installing the requirements and byte-compiling the project succeeds",
+        "Starts: within 3 s of launch in an 80x24 terminal it draws a non-empty screen and is still running",
+        "Shows the data: once the first screen settles, it shows at least one item from the data file",
+        "Names the quit key: the first screen shows q next to the word quit, for example in a footer hint",
+        "Pressing q quits within 2 s with exit status 0",
+        "After q, the terminal is restored: line settings match those before launch, the alternate screen is left, the cursor is visible, and mouse, paste, focus and keyboard-enhancement modes are off",
+        "Redraws after a resize from 80x24 to 60x20, writing visible output within 1.5 s",
+        "Survives 20x6: after a resize to 20x6 it is still running 1 s later, with no panic or traceback on screen",
+        "Ctrl+C quits within 2 s and leaves the terminal restored as described for q",
+        "With NO_COLOR=1 set, it draws a screen within 3 s and that output sets no chromatic foreground, background or underline color (grays, as in monochrome rendering, are allowed)"
+      ]
+    }
+  ]
+}

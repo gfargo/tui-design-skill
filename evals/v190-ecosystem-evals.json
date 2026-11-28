@@ -11,7 +11,7 @@
         "Explains that the textinput draws a virtual cursor by default and the terminal's own cursor is hidden, so the IME has nothing to anchor to",
         "Calls m.input.SetVirtualCursor(false) and sets v.Cursor = m.input.Cursor() in View, with the input focused because Cursor() is nil while blurred",
         "Adds the input's offset within the frame to the returned cursor position, since Cursor() is relative to the input",
-        "Warns that textinput.Cursor() counts runes rather than display cells, so wide CJK characters leave the cursor short and need a correction or a textarea"
+        "Says textinput.Cursor() counted runes rather than display cells through Bubbles v2.2.1, so wide CJK characters left the cursor short, and that v2.2.2 measures display width, so a correction or a textarea is only needed on older versions"
       ]
     },
     {

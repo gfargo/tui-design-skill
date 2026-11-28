@@ -38,17 +38,30 @@ _V3_REQUIREMENTS = frozenset(
 )
 _V4_REQUIREMENTS = _V3_REQUIREMENTS | {"grading_prompt_file"}  # grades link a preserved grading-prompt file
 _V5_REQUIREMENTS = _V4_REQUIREMENTS | {"skill_invocation_path"}  # runs record the embedded skill path
+# grades may come from a scripted checker; it records its tools and a note per assertion, and its program
+# is preserved and hash-linked through the same file as a grading prompt (grading_prompt_file)
+_V6_REQUIREMENTS = _V5_REQUIREMENTS | {"automated_grader"}
 SCHEMA_REQUIREMENTS = {
     2: frozenset(),
     3: _V3_REQUIREMENTS,
     4: _V4_REQUIREMENTS,
     5: _V5_REQUIREMENTS,
+    6: _V6_REQUIREMENTS,
 }
 SUPPORTED_SCHEMA_VERSIONS = set(SCHEMA_REQUIREMENTS)
+# Version only the artifact whose contract changes: v6 changed grades alone, so runs and summaries stay at
+# v5, and v6 grades pair with v5 runs.
+ARTIFACT_SCHEMA_VERSIONS = {
+    "tui-design-eval-run": frozenset({2, 3, 4, 5}),
+    "tui-design-eval-grades": frozenset({2, 3, 4, 5, 6}),
+    "tui-design-eval-summary": frozenset({2, 3, 4, 5}),
+}
+GRADES_RUN_VERSIONS = {6: frozenset({5})}  # grades versions that pair with a different run version
 SCHEMA_ROOTS = {
     3: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v3",
     4: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v4",
     5: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v5",
+    6: "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v6",
 }
 SCHEMA_FILES = {
     "tui-design-eval-run": "run.schema.json",
@@ -118,7 +131,7 @@ def read_json(path: Path) -> Any:
 
 def requires(version: int, requirement: str) -> bool:
     """Return whether artifacts of this schema version must meet a named requirement."""
-    if requirement not in _V5_REQUIREMENTS:
+    if requirement not in _V6_REQUIREMENTS:
         raise HarnessError(f"unknown schema requirement: {requirement}")
     return requirement in SCHEMA_REQUIREMENTS[version]
 
@@ -132,7 +145,8 @@ def schema_uri(artifact_type: str, version: int) -> str:
 
 def artifact_schema_version(artifact: dict[str, Any], artifact_type: str) -> int:
     version = artifact.get("schema_version")
-    if isinstance(version, bool) or not isinstance(version, int) or version not in SUPPORTED_SCHEMA_VERSIONS:
+    allowed = ARTIFACT_SCHEMA_VERSIONS.get(artifact_type, SUPPORTED_SCHEMA_VERSIONS)
+    if isinstance(version, bool) or not isinstance(version, int) or version not in allowed:
         raise HarnessError(f"{artifact_type} has an unsupported schema version")
     if artifact.get("artifact_type") != artifact_type:
         raise HarnessError(f"artifact is not {artifact_type}")
@@ -643,14 +657,17 @@ def validate_grades(
 ) -> None:
     manifest_version = artifact_schema_version(manifest, "tui-design-eval-run")
     grades_version = artifact_schema_version(grades, "tui-design-eval-grades")
-    if grades_version != manifest_version:
+    if grades_version != manifest_version and manifest_version not in GRADES_RUN_VERSIONS.get(grades_version, ()):
         raise HarnessError("grades schema version does not match the run manifest")
     if grades.get("run_id") != manifest.get("run_id"):
         raise HarnessError("grades run_id does not match the run manifest")
     grader = grades.get("grader")
     if not isinstance(grader, dict) or not grader.get("kind") or not grader.get("name"):
         raise HarnessError("grades must record grader.kind and grader.name")
-    if requires(grades_version, "grader_kind") and grader.get("kind") not in {"human", "model"}:
+    if requires(grades_version, "automated_grader"):
+        if grader.get("kind") not in {"human", "model", "automated"}:
+            raise HarnessError("grader.kind must be human, model, or automated")
+    elif requires(grades_version, "grader_kind") and grader.get("kind") not in {"human", "model"}:
         raise HarnessError("grader.kind must be human or model")
     if not grader.get("prompt_version"):
         raise HarnessError("grades must record grader.prompt_version")
@@ -666,6 +683,14 @@ def validate_grades(
                 if not grader.get(key):
                     raise HarnessError(f"schema-v3 model grading must record grader.{key}")
             validate_generation_metadata(grader.get("generation"), "grader.generation")
+    automated = grader.get("kind") == "automated"
+    if automated:
+        tools = grader.get("tools")
+        if not isinstance(tools, dict) or not tools or not all(
+            isinstance(name, str) and name.strip() and isinstance(version, str) and version.strip()
+            for name, version in tools.items()
+        ):
+            raise HarnessError("automated grading must record grader.tools as tool name to exact version")
     if requires(grades_version, "grading_prompt_file"):
         validate_grading_prompt(grades, grader, grades_path)
 
@@ -691,6 +716,10 @@ def validate_grades(
             raise HarnessError(f"assertion indexes for {item['trial_id']} must be ordered from zero")
         if not all(isinstance(assertion.get("passed"), bool) for assertion in assertions):
             raise HarnessError(f"every assertion for {item['trial_id']} needs a boolean passed value")
+        if automated and not all(
+            isinstance(assertion.get("notes"), str) and assertion["notes"].strip() for assertion in assertions
+        ):
+            raise HarnessError(f"every automated assertion for {item['trial_id']} needs notes with its evidence")
 
 
 def score_metrics(manifest: dict[str, Any], grades: dict[str, Any]) -> tuple[int, int, list[dict[str, Any]]]:

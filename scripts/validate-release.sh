@@ -258,7 +258,15 @@ expected_schema_versions = {
         "grades.schema.json": "tui-design evaluation grades v5",
         "summary.schema.json": "tui-design evaluation summary v5",
     },
+    # v6 changed only grades; runs and summaries stay at v5.
+    6: {
+        "grades.schema.json": "tui-design evaluation grades v6",
+    },
 }
+shared_defs = root / "evals/schema/defs.schema.json"
+defs_schema = json.loads(shared_defs.read_text())
+if defs_schema.get("$id") != "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/defs.schema.json" or not defs_schema.get("$defs"):
+    raise SystemExit("wrong identity or empty $defs: evals/schema/defs.schema.json")
 for schema_version, expected_schema_files in expected_schema_versions.items():
     schema_root = root / f"evals/schema/v{schema_version}"
     actual_schema_files = {path.name for path in schema_root.glob("*.json")}

@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v6/grades.schema.json",
+  "title": "tui-design evaluation grades v6",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "schema",
+    "artifact_type",
+    "run_id",
+    "grader",
+    "grading_prompt",
+    "trials"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 6
+    },
+    "schema": {
+      "const": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v6/grades.schema.json"
+    },
+    "artifact_type": {
+      "const": "tui-design-eval-grades"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "grader": {
+      "type": "object",
+      "required": [
+        "kind",
+        "name",
+        "prompt_version",
+        "prompt_sha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "human",
+            "model",
+            "automated"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_sha256": {
+          "$ref": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/defs.schema.json#/$defs/sha256"
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runner_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generation": {
+          "$ref": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/defs.schema.json#/$defs/generation"
+        },
+        "tools": {
+          "type": "object",
+          "description": "Automated graders: each tool the checker ran (compiler, container image, runtime) mapped to its exact version or digest.",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "model"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "provider",
+              "model",
+              "runner_version",
+              "generation"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "automated"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "tools"
+            ]
+          }
+        }
+      ]
+    },
+    "grading_prompt": {
+      "type": "object",
+      "description": "Machine-checkable link from grader.prompt_sha256 to a preserved file committed inside this evidence bundle: the grading prompt for a human or model grader, or the checker program for an automated grader. The path is relative to the directory containing this grades document and must resolve inside it; sha256 must equal both the file's digest and grader.prompt_sha256.",
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/defs.schema.json#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "trial_id",
+          "assertions"
+        ],
+        "properties": {
+          "trial_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assertions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "index",
+                "passed"
+              ],
+              "properties": {
+                "index": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "passed": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "grader": {
+            "properties": {
+              "kind": {
+                "const": "automated"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          }
+        },
+        "required": [
+          "grader"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trials": {
+            "items": {
+              "properties": {
+                "assertions": {
+                  "items": {
+                    "required": [
+                      "index",
+                      "passed",
+                      "notes"
+                    ],
+                    "properties": {
+                      "notes": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -27,6 +27,8 @@ RUN_SCHEMA_V5 = f"{SCHEMA_ROOT_V5}/run.schema.json"
 GRADES_SCHEMA_V5 = f"{SCHEMA_ROOT_V5}/grades.schema.json"
 SUMMARY_SCHEMA_V5 = f"{SCHEMA_ROOT_V5}/summary.schema.json"
 RUN_SCHEMAS = {3: RUN_SCHEMA_V3, 4: RUN_SCHEMA_V4, 5: RUN_SCHEMA_V5}
+SCHEMA_ROOT_V6 = "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/v6"
+GRADES_SCHEMA_V6 = f"{SCHEMA_ROOT_V6}/grades.schema.json"
 
 
 class EvalHarnessTest(unittest.TestCase):
@@ -165,10 +167,13 @@ class EvalHarnessTest(unittest.TestCase):
             "model_grader_provenance",
         }
         # Published versions are frozen: changing any of these sets breaks committed evidence.
-        expected = {2: set(), 3: v3, 4: v3 | {"grading_prompt_file"}, 5: v3 | {"grading_prompt_file", "skill_invocation_path"}}
+        v5 = v3 | {"grading_prompt_file", "skill_invocation_path"}
+        expected = {2: set(), 3: v3, 4: v3 | {"grading_prompt_file"}, 5: v5, 6: v5 | {"automated_grader"}}
         self.assertEqual({version: set(rules) for version, rules in harness.SCHEMA_REQUIREMENTS.items()}, expected)
         versions = sorted(harness.SCHEMA_REQUIREMENTS)
-        self.assertEqual(harness.SCHEMA_VERSION, versions[-1])
+        # New runs use the newest run version; v6 changed only grades, so runs stay at v5.
+        self.assertEqual(harness.SCHEMA_VERSION, max(harness.ARTIFACT_SCHEMA_VERSIONS["tui-design-eval-run"]))
+        self.assertEqual(max(max(allowed) for allowed in harness.ARTIFACT_SCHEMA_VERSIONS.values()), versions[-1])
         for older, newer in zip(versions, versions[1:]):
             # Each new version adds at least one evidence requirement and drops none.
             self.assertLess(harness.SCHEMA_REQUIREMENTS[older], harness.SCHEMA_REQUIREMENTS[newer])
@@ -762,6 +767,110 @@ class EvalHarnessTest(unittest.TestCase):
                 schema = json.loads((schema_dir / schema_name).read_text())
                 jsonschema.Draft202012Validator.check_schema(schema)
                 jsonschema.Draft202012Validator(schema).validate(json.loads(path.read_text()))
+
+    def automated_grades(self, manifest_path: Path) -> tuple[Path, dict]:
+        """Schema-v6 grades from a scripted checker, linked to a preserved copy of the checker program."""
+        checker = manifest_path.parent / "checker.py"
+        checker.write_text("print('checks')\n")
+        digest = hashlib.sha256(checker.read_bytes()).hexdigest()
+        manifest = json.loads(manifest_path.read_text())
+        grades = {
+            "schema_version": 6,
+            "schema": GRADES_SCHEMA_V6,
+            "artifact_type": "tui-design-eval-grades",
+            "run_id": manifest["run_id"],
+            "grader": {
+                "kind": "automated",
+                "name": "build and PTY checker",
+                "prompt_version": "build-checks-v1",
+                "prompt_sha256": digest,
+                "tools": {"docker": "29.1.0", "golang image": "sha256:" + "a" * 64},
+            },
+            "grading_prompt": {"path": "checker.py", "sha256": digest},
+            "trials": [
+                {
+                    "trial_id": manifest["trials"][0]["trial_id"],
+                    "assertions": [
+                        {"index": 0, "passed": True, "notes": "go build exited 0"},
+                        {"index": 1, "passed": False, "notes": "no redraw within 1 s after resize to 60x20"},
+                    ],
+                }
+            ],
+        }
+        grades_path = manifest_path.parent / "grades.json"
+        grades_path.write_text(json.dumps(grades))
+        return grades_path, grades
+
+    def test_v6_automated_grades_validate_and_score_with_a_v5_run(self) -> None:
+        manifest_path = self.run_fixture("v6-automated", "print('ok')")
+        grades_path, _ = self.automated_grades(manifest_path)
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path))
+        summary_path = manifest_path.parent / "summary.json"
+        self.invoke("score", "--run", str(manifest_path), "--grades", str(grades_path), "--output", str(summary_path))
+        summary = json.loads(summary_path.read_text())
+        self.assertEqual((summary["schema_version"], summary["passed"], summary["total"]), (5, 1, 2))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), "--summary", str(summary_path))
+
+    def test_v6_automated_grades_require_tools(self) -> None:
+        manifest_path = self.run_fixture("v6-automated-tools", "print('ok')")
+        grades_path, grades = self.automated_grades(manifest_path)
+        for tools in (None, {}, {"docker": ""}):
+            with self.subTest(tools=tools):
+                if tools is None:
+                    grades["grader"].pop("tools", None)
+                else:
+                    grades["grader"]["tools"] = tools
+                grades_path.write_text(json.dumps(grades))
+                self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_v6_automated_assertions_need_notes(self) -> None:
+        manifest_path = self.run_fixture("v6-automated-notes", "print('ok')")
+        grades_path, grades = self.automated_grades(manifest_path)
+        grades["trials"][0]["assertions"][1]["notes"] = "  "
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_automated_grader_kind_is_rejected_before_v6(self) -> None:
+        manifest_path = self.run_fixture("v5-automated", "print('ok')")
+        grades_path, grades = self.automated_grades(manifest_path)
+        grades["schema_version"], grades["schema"] = 5, GRADES_SCHEMA_V5
+        grades_path.write_text(json.dumps(grades))
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_only_grades_may_declare_schema_v6(self) -> None:
+        manifest_path = self.run_fixture("v6-run", "print('ok')")
+        manifest = json.loads(manifest_path.read_text())
+        manifest["schema_version"], manifest["schema"] = 6, f"{SCHEMA_ROOT_V6}/run.schema.json"
+        manifest_path.write_text(json.dumps(manifest))
+        self.invoke("validate", "--run", str(manifest_path), expected=2)
+
+    def test_v6_grades_do_not_pair_with_older_runs(self) -> None:
+        manifest_path = self.run_fixture("v6-with-v4-run", "print('ok')")
+        grades_path, _ = self.automated_grades(manifest_path)
+        self.downgrade_manifest(manifest_path, 4)
+        self.invoke("validate", "--run", str(manifest_path), "--grades", str(grades_path), expected=2)
+
+    def test_v6_grades_conform_to_the_published_schema(self) -> None:
+        try:
+            import jsonschema
+            from referencing import Registry, Resource
+        except ImportError:
+            self.skipTest("jsonschema is not installed (CI installs it)")
+        manifest_path = self.run_fixture("v6-conformance", "print('ok')")
+        grades_path, grades = self.automated_grades(manifest_path)
+        defs = json.loads((REPO_ROOT / "evals/schema/defs.schema.json").read_text())
+        schema = json.loads((REPO_ROOT / "evals/schema/v6/grades.schema.json").read_text())
+        registry = Registry().with_resource(defs["$id"], Resource.from_contents(defs))
+        jsonschema.Draft202012Validator.check_schema(schema)
+        validator = jsonschema.Draft202012Validator(schema, registry=registry)
+        validator.validate(json.loads(grades_path.read_text()))
+        grades["trials"][0]["assertions"][0].pop("notes")
+        with self.assertRaises(jsonschema.ValidationError):
+            validator.validate(grades)
+        grades["trials"][0]["assertions"][0]["notes"] = "ok"
+        grades["grader"].pop("tools")
+        with self.assertRaises(jsonschema.ValidationError):
+            validator.validate(grades)
 
     def test_legacy_with_skill_bundle_validates_from_another_checkout_with_recorded_path(self) -> None:
         elsewhere = self.make_checkout("elsewhere")

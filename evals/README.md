@@ -4,7 +4,7 @@
 
 ## Schema versions
 
-- **v5** is the current format. Run, grade, and summary artifacts declare their canonical schema URI. New runs are always v5.
+- **v6** applies to grades only and is the current grades format: it adds the `automated` grader kind. Runs and summaries stay at **v5**, and v6 grades pair with v5 runs. Every artifact declares its canonical schema URI. New runs are always v5.
 - **v4**, **v3**, and **v2** are accepted so historical evidence can still be validated from its recorded source snapshot.
 
 Schema v3 adds caller-reported runner and generation provenance. Executed runs require an exact runner version. Seed and temperature are recorded when exposed. A system prompt is represented as one of `recorded`, `none`, or `unavailable`; `recorded` stores only the SHA-256 digest and byte length, never the prompt or its path.
@@ -12,6 +12,8 @@ Schema v3 adds caller-reported runner and generation provenance. Executed runs r
 Schema v4 adds `grading_prompt` to grades: a `{path, sha256}` object that machine-links `grader.prompt_sha256` to a grading-prompt file preserved inside the same evidence bundle. `path` is relative to the directory containing the grades document; the harness resolves it, rejects any path that is absolute or escapes that directory, and requires the file to exist with a SHA-256 that matches both `grading_prompt.sha256` and `grader.prompt_sha256`. Before schema v4, that relationship could only be checked by running `sha256sum` by hand. v2 and v3 grades never had this field and continue to validate under their original rules — `grading_prompt` is not retrofitted onto them.
 
 Schema v5 adds `skill_invocation_path` to run manifests. A with-skill prompt reads `Use $tui-design at <absolute skill directory> to solve this request:`, and before v5 that absolute path lived only inside the prompt files, so the validator could reconstruct the prompts only from a checkout at the exact same location. v5 records the path verbatim (null for baseline runs, whose prompts embed no path), and the validator rebuilds the prompts from the recorded value instead of from its own location. The path string is checked, not trusted: it must be absolute, must end with the recorded `skill_dir`, and the reconstructed prompt must still match the preserved prompt file and its recorded SHA-256, while the skill's contents remain anchored by `skill_dir` and `skill_sha256`. v2–v4 manifests never had this field and are not retrofitted; see the portable revalidation recipe below.
+
+Schema v6 changes grades only and adds the `automated` grader kind, for checks a program runs rather than a person or a model, such as compiling an answer and driving it in a pseudo-terminal. An automated grader records `grader.tools`, mapping each tool it ran (compiler, container image digest, runtime) to its exact version, and every assertion carries non-empty `notes` with the evidence for its result. Its program is preserved inside the bundle and hash-linked through `grading_prompt`, the same mechanism v4 added for grading prompts, so `grader.prompt_sha256` is the checker's digest. Runs and summaries are unchanged and stay at v5, so the harness accepts v6 grades beside a v5 run and nowhere else. The v6 grades schema takes its shared definitions from `evals/schema/defs.schema.json` instead of repeating them; v3 to v5 are untouched.
 
 ### Immutability policy
 

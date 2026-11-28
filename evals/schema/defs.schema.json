@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/gfargo/tui-design-skill/main/evals/schema/defs.schema.json",
+  "title": "tui-design evaluation shared definitions",
+  "description": "Definitions shared by schema versions from v6 on. Published v3-v5 files keep their own copies and are never edited.",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "generation": {
+      "type": "object",
+      "required": [
+        "seed",
+        "temperature",
+        "system_prompt"
+      ],
+      "properties": {
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "temperature": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "system_prompt": {
+          "type": "object",
+          "required": [
+            "status",
+            "sha256",
+            "bytes"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "recorded",
+                "none",
+                "unavailable"
+              ]
+            },
+            "sha256": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/sha256"
+                }
+              ]
+            },
+            "bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

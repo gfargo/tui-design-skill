@@ -1,0 +1,3 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+Design a terminal log viewer for tailing a service's JSON-lines logs. People will use it over SSH, often in a narrow tmux pane, and sometimes pipe it into other tools. Give me the screen layout as a plain-text sketch, the key bindings, and what it does in the cases I haven't thought of.

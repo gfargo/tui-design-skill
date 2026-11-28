@@ -1,0 +1,49 @@
+OpenAI Codex v0.165.0-alpha.1.2
+--------
+workdir: /var/folders/lw/m6k703v53xzgjc02zvryfphr0000gn/T/tui-design-codex-run-g3b9s4zn
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1846f-5a15-7080-9a62-35c6643c025f
+--------
+user
+Several of our users run with NO_COLOR set, and our screenshots in the docs are black and white. Users say they can't tell which pane has the keyboard focus. Right now the Files pane has focus, and the screen looks like this in plain text:
+
++-----------------------+ +--------------------------------------+
+| Files                 | | Preview                              |
+| > main.go             | | package main                         |
+|   util.go             | |                                      |
+|   README.md           | | func main() {                        |
++-----------------------+ +--------------------------------------+
+
+Fix it. Show me the screen with the Files pane focused, and again with the Preview pane focused, as plain text exactly as it would appear with colors disabled.
+
+codex
+Use an explicit `[FOCUSED]` label and `=` borders so focus remains visible without color.
+
+Files focused:
+```text
++=======================+ +--------------------------------------+
+| Files [FOCUSED]       | | Preview                              |
+| > main.go             | | package main                         |
+|   util.go             | |                                      |
+|   README.md           | | func main() {                        |
++=======================+ +--------------------------------------+
+```
+
+Preview focused:
+```text
++-----------------------+ +======================================+
+| Files                 | | Preview [FOCUSED]                    |
+| > main.go             | | package main                         |
+|   util.go             | |                                      |
+|   README.md           | | func main() {                        |
++-----------------------+ +======================================+
+```
+
+The `>` continues to mark the selected file; the label and border identify keyboard focus.
+tokens used
+909

@@ -1,0 +1,317 @@
+{
+  "schema": "tui-design grader spot-check v1",
+  "created_at": "2026-10-31T00:26:18Z",
+  "fraction": 0.4,
+  "seed": 79,
+  "grader": {
+    "provider": "OpenAI",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "runner_version": "codex-cli 0.164.0-alpha.11.1"
+  },
+  "reference_grader": {
+    "provider": "Anthropic",
+    "model": "claude-opus-5-5",
+    "prompt_version": "v180-direct-rubric-v1"
+  },
+  "bundles": [
+    {
+      "run_id": "v190-design-outcomes-claude-baseline-r3",
+      "condition": "baseline",
+      "provider": "Anthropic",
+      "trials": 10,
+      "assertions": 63,
+      "agree": 62,
+      "agreement": 0.9841269841269841,
+      "kappa": 0.848920863309352,
+      "claude_pass_rate": 0.9523809523809523,
+      "codex_pass_rate": 0.9365079365079365
+    },
+    {
+      "run_id": "v190-design-outcomes-claude-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "Anthropic",
+      "trials": 10,
+      "assertions": 64,
+      "agree": 60,
+      "agreement": 0.9375,
+      "kappa": 0.3005464480874317,
+      "claude_pass_rate": 0.953125,
+      "codex_pass_rate": 0.953125
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-baseline-r3",
+      "condition": "baseline",
+      "provider": "OpenAI",
+      "trials": 10,
+      "assertions": 64,
+      "agree": 59,
+      "agreement": 0.921875,
+      "kappa": 0.7515527950310559,
+      "claude_pass_rate": 0.8125,
+      "codex_pass_rate": 0.796875
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-with-skill-r3",
+      "condition": "with-skill",
+      "provider": "OpenAI",
+      "trials": 10,
+      "assertions": 67,
+      "agree": 62,
+      "agreement": 0.9253731343283582,
+      "kappa": -0.037151702786378256,
+      "claude_pass_rate": 0.9701492537313433,
+      "codex_pass_rate": 0.9552238805970149
+    }
+  ],
+  "overall": {
+    "assertions": 258,
+    "agree": 243,
+    "agreement": 0.9418604651162791,
+    "kappa": 0.6196186357381561,
+    "claude_pass_rate": 0.9224806201550387,
+    "codex_pass_rate": 0.9108527131782945
+  },
+  "by_condition": [
+    {
+      "provider": "Anthropic",
+      "condition": "baseline",
+      "assertions": 63,
+      "claude_pass_rate": 0.9523809523809523,
+      "codex_pass_rate": 0.9365079365079365
+    },
+    {
+      "provider": "Anthropic",
+      "condition": "with-skill",
+      "assertions": 64,
+      "claude_pass_rate": 0.953125,
+      "codex_pass_rate": 0.953125
+    },
+    {
+      "provider": "OpenAI",
+      "condition": "baseline",
+      "assertions": 64,
+      "claude_pass_rate": 0.8125,
+      "codex_pass_rate": 0.796875
+    },
+    {
+      "provider": "OpenAI",
+      "condition": "with-skill",
+      "assertions": 67,
+      "claude_pass_rate": 0.9701492537313433,
+      "codex_pass_rate": 0.9552238805970149
+    }
+  ],
+  "disagreements": [
+    {
+      "run_id": "v190-design-outcomes-claude-baseline-r3",
+      "trial_id": "partial-failure-screen-r3",
+      "assertion": 6,
+      "text": "States, in the sketch or the text, how many of the five servers answered (three of five)",
+      "claude": {
+        "passed": true,
+        "note": "The summary line says '2 of 5 servers not responding', which tells the reader that three of five answered."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer states that two of five servers are not responding but never explicitly states that three of five answered."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-claude-with-skill-r3",
+      "trial_id": "focus-without-color-r2",
+      "assertion": 5,
+      "text": "Uses no more than two different cues to mark focus, instead of stacking several",
+      "claude": {
+        "passed": true,
+        "note": "The screens use only the border cue, and the answer says to keep color terminals to one color cue plus the border."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The answer additionally recommends accent color, a bold title, and focus-dependent reverse video alongside the border."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-claude-with-skill-r3",
+      "trial_id": "footer-at-two-widths-r2",
+      "assertion": 6,
+      "text": "The 40-column line shows fewer hints than the 80-column line, and the hints it drops are among the least frequently used",
+      "claude": {
+        "passed": false,
+        "note": "The 40-column line has fewer hints, but it drops 'j/k move' (35%), the third most-used action, while keeping lower-ranked '? help', so not all dropped hints are among the least used."
+      },
+      "codex": {
+        "passed": true,
+        "note": "The narrower footer drops movement, refresh, delete, and copy path, retaining the two most frequently used actions and help."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-claude-with-skill-r3",
+      "trial_id": "log-viewer-from-scratch-r2",
+      "assertion": 5,
+      "text": "Describes what the user sees when no log lines have arrived yet, and what they can do",
+      "claude": {
+        "passed": false,
+        "note": "The empty-file case shows 'Waiting for lines from api.log (0 bytes) \u00b7 following' but does not say what actions the user can take."
+      },
+      "codex": {
+        "passed": true,
+        "note": "An empty file shows a waiting-for-lines message with following enabled, and the documented keys allow filtering, help, or quitting."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-claude-with-skill-r3",
+      "trial_id": "delete-confirmation-r2",
+      "assertion": 4,
+      "text": "The sketch is no wider than 64 characters (80 percent of the terminal width)",
+      "claude": {
+        "passed": true,
+        "note": "The confirmation box measures 64 columns (62 inner plus two borders), drawn over the 80-column screen behind it."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The sketch exceeds 64 characters in width, including its dialog border and background rows."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-baseline-r3",
+      "trial_id": "count-the-borders-r1",
+      "assertion": 1,
+      "text": "States that a job row sits behind three borders (the outer frame, the pane box, and the inner box), or gives a count of 3 for the nesting",
+      "claude": {
+        "passed": false,
+        "note": "The answer says to remove 'both layers of boxes around each pane' but never counts the three borders around a job row."
+      },
+      "codex": {
+        "passed": true,
+        "note": "It identifies two layers of pane boxes plus the outer screen border, accounting for three border layers."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-baseline-r3",
+      "trial_id": "count-the-borders-r1",
+      "assertion": 5,
+      "text": "The redesigned screen still shows all three job names with their pass or fail state, and the job, status, and duration details",
+      "claude": {
+        "passed": true,
+        "note": "All three names appear with PASS/FAIL, and the selected job (api), its status (PASS) and Duration: 2m 10s are all still visible."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The redesign retains all three jobs and duration but removes the job and status details from the detail pane."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-baseline-r3",
+      "trial_id": "count-the-borders-r2",
+      "assertion": 7,
+      "text": "No line of the redesigned screen is wider than 72 characters",
+      "claude": {
+        "passed": false,
+        "note": "The api row with '2m 10s' carries extra trailing spaces, so its closing border falls past column 72."
+      },
+      "codex": {
+        "passed": true,
+        "note": "Every line of the redesigned screen fits within 72 characters."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-baseline-r3",
+      "trial_id": "sixty-column-sketch-r2",
+      "assertion": 3,
+      "text": "The widths of the panes visible side by side in the sketch add up to no more than 60 columns, and the commit list in it is at least 40 columns wide as the spec requires",
+      "claude": {
+        "passed": true,
+        "note": "Only one pane, the commit list, is visible; it spans the full 60 columns, which is at least 40 and within the limit."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The commit pane meets the 40-column minimum, but its 62-character content rows exceed the available width."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-baseline-r3",
+      "trial_id": "sixty-column-sketch-r3",
+      "assertion": 3,
+      "text": "The widths of the panes visible side by side in the sketch add up to no more than 60 columns, and the commit list in it is at least 40 columns wide as the spec requires",
+      "claude": {
+        "passed": true,
+        "note": "Only the commit list is shown, spanning the full 60 columns, which is within the limit and meets the 40-column minimum."
+      },
+      "codex": {
+        "passed": false,
+        "note": "Although the horizontal borders are 60 columns wide, commit rows extend to 62 columns, exceeding the available width."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-with-skill-r3",
+      "trial_id": "count-the-borders-r3",
+      "assertion": 3,
+      "text": "Points out that the > marker appears on all three rows, so it separates none of them from the others",
+      "claude": {
+        "passed": false,
+        "note": "It says to delete the `>` on every row and mark only the selected row, but never says the marker fails to tell the rows apart because it is on all three."
+      },
+      "codex": {
+        "passed": true,
+        "note": "It identifies the > on every row and recommends reserving a marker for only the selected row."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-with-skill-r3",
+      "trial_id": "count-the-borders-r3",
+      "assertion": 5,
+      "text": "The redesigned screen still shows all three job names with their pass or fail state, and the job, status, and duration details",
+      "claude": {
+        "passed": true,
+        "note": "All three jobs appear with PASS/FAIL; the selected row carries job and status, and Duration is kept below."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The redesign retains all three jobs and their states plus duration, but explicitly removes the job and status detail fields."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-with-skill-r3",
+      "trial_id": "footer-at-two-widths-r2",
+      "assertion": 6,
+      "text": "The 40-column line shows fewer hints than the 80-column line, and the hints it drops are among the least frequently used",
+      "claude": {
+        "passed": true,
+        "note": "The 40-column line drops 'r refresh' (20%) and 'j/k move' (35%), the two least frequent of the four ranked hints on the 80-column line, and the answer notes that keeping movement would need 41 cells."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The narrower footer has fewer hints, but drops refresh (20%) and movement (35%), while several much less frequent actions are omitted from both."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-with-skill-r3",
+      "trial_id": "log-viewer-from-scratch-r3",
+      "assertion": 5,
+      "text": "Describes what the user sees when no log lines have arrived yet, and what they can do",
+      "claude": {
+        "passed": false,
+        "note": "For an empty source it only says to show 'Waiting for first record'; it gives no action for that case (the 'f edit filter' hint applies only to an empty filter result)."
+      },
+      "codex": {
+        "passed": true,
+        "note": "An empty source displays \u201cWaiting for first record,\u201d with follow, filter, help, and quit controls available."
+      }
+    },
+    {
+      "run_id": "v190-design-outcomes-codex-with-skill-r3",
+      "trial_id": "delete-confirmation-r2",
+      "assertion": 4,
+      "text": "The sketch is no wider than 64 characters (80 percent of the terminal width)",
+      "claude": {
+        "passed": true,
+        "note": "The 80-column dialog's border is 64 characters wide (62 dashes plus two corners), though one body line is misaligned by a character."
+      },
+      "codex": {
+        "passed": false,
+        "note": "The 80-column sketch spans 72 characters including its eight leading spaces."
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+Use $tui-design at /Users/gfargo/dev/gfargo/tui-design-skill/.claude/worktrees/eloquent-ritchie-f2f1c8/plugins/tui-design/skills/tui-design to solve this request:
+
+My file browser has these actions, with how often users trigger them in our logs:
+
+Enter open (90%), / filter (40%), j/k move (35%), r refresh (20%), d delete (8%), y copy path (6%), e edit (5%), s sort (4%), t tag (3%), : command (2%), ? help, q quit
+
+I want a single footer line of key hints. Show me exactly what that line should say when the terminal is 80 columns wide and again when it is 40 columns wide, and say which hints you dropped at 40 and why.

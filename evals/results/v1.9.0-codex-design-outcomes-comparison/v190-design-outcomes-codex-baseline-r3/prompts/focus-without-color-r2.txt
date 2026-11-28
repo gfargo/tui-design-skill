@@ -1,0 +1,10 @@
+Several of our users run with NO_COLOR set, and our screenshots in the docs are black and white. Users say they can't tell which pane has the keyboard focus. Right now the Files pane has focus, and the screen looks like this in plain text:
+
++-----------------------+ +--------------------------------------+
+| Files                 | | Preview                              |
+| > main.go             | | package main                         |
+|   util.go             | |                                      |
+|   README.md           | | func main() {                        |
++-----------------------+ +--------------------------------------+
+
+Fix it. Show me the screen with the Files pane focused, and again with the Preview pane focused, as plain text exactly as it would appear with colors disabled.

@@ -136,3 +136,9 @@ CODEX_BIN=/path/to/codex python3 scripts/grader_spotcheck.py \
 ```
 
 The report does not touch the bundles or their grades, and it is not a schema artifact, so `validate-evidence.sh` ignores it. The v1.9.0 spot-check is in `evals/results/v1.9.0-grader-spotcheck/`.
+
+## Outcome-based design cases and retired cases
+
+Most older sets grade an answer against the skill's own wording, so a high score can mean the answer repeated what it read. `evals/design-outcomes-evals.json` grades things that can be counted or read off the answer instead: the nesting depth of a mockup, whether a sketch fits in 60 or 80 columns, whether a footer line fits in 40, which servers a screen names, whether seeded defects are found. The mockups carry ground truth that `make_set` checks when the set is generated, and the rubric is committed before the first run so it cannot be tuned to the result.
+
+Cases that scored 100% on both hosts in both conditions cannot show an effect. They move to `evals/retired/saturated-2026-10.json`, which keeps each case with its four results. They are not part of any comparison; run them occasionally as regression checks. Bundles that include a retired case stay valid, because `validate-evidence.sh` checks them against the commit they ran at.

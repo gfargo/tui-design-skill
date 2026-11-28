@@ -1,6 +1,6 @@
 {
   "skill_name": "tui-design",
-  "notes": "Tier-2 content-gap evals (2026-07-03). The v1.3.0 audit identified four zero-coverage areas: (1) testing TUIs, (2) debugging workflow, (3) inline vs alt-screen as a design decision, (4) OSC escapes (8 hyperlinks / 52 clipboard / 9 notifications). These prompts test whether the skill produces correct, current, ecosystem-specific answers in those areas. Baseline = v1.3.0 skill (which lacks the content); with-skill = post-expansion. Because these are knowledge gaps rather than behavior gaps, the failure mode to watch in baseline runs is confident hallucination of testing/debugging APIs \u2014 the same rot class the v1.3.0 audit fixed elsewhere. Assertions are graded against web-verified ground truth briefs stored in the workspace. Status (2026-10-28): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-behavior-comparison/ and evals/results/v1.9.0-codex-behavior-comparison/ against skill tree 164c1aefd956.",
+  "notes": "Tier-2 content-gap evals (2026-07-03). The v1.3.0 audit identified four zero-coverage areas: (1) testing TUIs, (2) debugging workflow, (3) inline vs alt-screen as a design decision, (4) OSC escapes (8 hyperlinks / 52 clipboard / 9 notifications). These prompts test whether the skill produces correct, current, ecosystem-specific answers in those areas. Baseline = v1.3.0 skill (which lacks the content); with-skill = post-expansion. Because these are knowledge gaps rather than behavior gaps, the failure mode to watch in baseline runs is confident hallucination of testing/debugging APIs \u2014 the same rot class the v1.3.0 audit fixed elsewhere. Assertions are graded against web-verified ground truth briefs stored in the workspace. Status (2026-10-28): recorded. Baseline and with-skill runs on Claude Code and Codex, three repetitions per case, are in evals/results/v1.9.0-claude-behavior-comparison/ and evals/results/v1.9.0-codex-behavior-comparison/ against skill tree 164c1aefd956. 1 case that scored 100% on both hosts in both conditions in the v1.9.0 runs were retired on 2026-10-28 and moved to evals/retired/saturated-2026-10.json.",
   "evals": [
     {
       "id": 0,
@@ -26,19 +26,6 @@
         "Shows how to assert on posted messages or state (not just rendered text)",
         "Mentions pytest-textual-snapshot / snap_compare for visual regression as a complementary layer",
         "Code contains no stale API (e.g. .renderable, sync run_test, push_screen_wait outside a worker)"
-      ]
-    },
-    {
-      "id": 2,
-      "name": "ratatui-debug-regression",
-      "prompt": "My Ratatui app (crossterm backend, tokio) has a rendering bug: after certain resizes, one panel's bottom border overlaps the footer by one row. It's intermittent and I've been println-debugging, which obviously corrupts the screen. What's the right way to (a) debug this properly and (b) write a regression test so it can't come back?",
-      "files": [],
-      "assertions": [
-        "Tells the user println/stdout debugging corrupts a raw-mode TUI and gives a working alternative: log to a file (e.g. tracing + file appender or tui-logger) and tail it in a second terminal",
-        "Recommends TestBackend with a fixed terminal size to reproduce the layout deterministically",
-        "Shows buffer assertions (assert_buffer_lines / expected Buffer) or insta snapshot testing on the rendered buffer",
-        "Points out the bug class: layout math computed from a stale/cached size instead of the current frame area each draw",
-        "Suggests testing the specific failing sizes (table-driven across widths/heights, including odd sizes) rather than one happy-path size"
       ]
     },
     {

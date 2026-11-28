@@ -4,19 +4,23 @@ All notable changes to the `tui-design` skill are documented here. The format is
 
 ## [Unreleased]
 
+### Added
+- **Outcome-based design cases ([#79](https://github.com/gfargo/tui-design-skill/issues/79), phase 2):** `evals/design-outcomes-evals.json` has eight cases (52 assertions) graded on observable outcomes instead of the skill's wording: the nesting depth and signal count of a mockup, a 60-column sketch whose pane widths add up, a footer that fits in 80 and 40 columns, a screen that names the two servers that failed, a focus cue that survives plain text, four seeded defects in a Bubble Tea model, a log-viewer design, and a delete confirmation. The mockups' ground truth is checked by script and the rubric was committed before any run.
+- **Retired cases:** 11 cases that scored 100% on both hosts in both conditions in the v1.9.0 runs moved from the live sets to `evals/retired/saturated-2026-10.json`, which keeps each case with its four results.
+
 ### Fixed
 - Reference wording that ClawHub's automated security scan flagged: removed the literal `curl | sh` and `docker create container` phrasing, reworded the self-update, "Did you mean…?" and plaintext-credentials guidance so it reads as a rule rather than an instruction to act, pinned the `react-devtools` example, and added a privacy note to the text-input history guidance (don't record secret fields, owner-only file, opt-out). No change to the skill's design advice.
 - **Go and OpenTUI references re-verified against current releases:** Bubbles v2.2.2 fixes `textinput.Cursor()` for wide characters (it counted runes through v2.2.1), so *ecosystem-go.md* now says to use it as returned from v2.2.2 and to correct the offset only on older versions, and the matching eval assertion follows. The Lipgloss block-size and compositor claims were re-checked against v2.1.1 and still hold. *ecosystem-typescript.md* adds that OpenTUI 0.9 removed the declarative `h()` and `Box()` factories. The freshness inventory pins move to Lipgloss 2.1.1, Bubbles 2.2.2 and OpenTUI 0.9.9.
 
-### Release engineering
-- The `validate` workflow is pinned to `ubuntu-24.04`. `ubuntu-latest` now resolves to 26.04, which has no Python 3.9 build for `actions/setup-python`, so the 3.9 floor job failed before running any checks.
-
 ### Evaluation
 - **Phase 1 of [#79](https://github.com/gfargo/tui-design-skill/issues/79):** `evals/results/v1.9.0-claude-behavior-comparison/` and `v1.9.0-codex-behavior-comparison/` record baseline and with-skill runs of five older sets that had no recorded run (`evals.json`, `v160-structural`, `tier2`, `tier3`, `v174`; 27 cases), three repetitions per case and condition, all at one commit and one skill hash, with a report for each host. Claude Code went from 77.2% to 94.4% of assertions and Codex from 63.5% to 87.7%. The design-review sets show the least: the Claude baseline already scored 92.3% on the clutter and floor reviews, and the Claude `tier2` set scored slightly lower with the skill (−1.1 pp). The biggest gap is in the v1.7.4 corrections, which test facts newer than the model. The Codex account hit its usage limit twice; every affected bundle was discarded and rerun in full, so no failed trial is committed.
 - **Grader spot-check:** a Codex re-grade of a deterministic 15% sample of trials (612 assertions across this round and the v1.9.0 round) agreed with the Claude grader on 94.1% of assertions (Cohen's kappa 0.83). Codex was the stricter grader (33 of 36 disagreements), and the skill's measured gain held under both graders. See `evals/results/v1.9.0-grader-spotcheck/`.
-- The five sets' status notes now point at these runs. Build output and outcome-based design cases remain unmeasured (phases 2 and 3 of #79).
+- The five sets' status notes now point at these runs. Build output remains unmeasured (phase 3 of #79).
+- **Outcome-based design cases, recorded (phase 2):** `evals/results/v1.9.0-claude-design-outcomes-comparison/` and `v1.9.0-codex-design-outcomes-comparison/` record baseline and with-skill runs of `design-outcomes-evals.json` (8 cases, three repetitions, one commit and skill hash). Claude Code went from 91.0% to 95.5% of assertions and Codex from 85.9% to 96.2%. The effect is smaller than on the fact-recall sets: Claude's baseline is already high, `seeded-defects-bubbletea` is at 100% in all four cells, and `partial-failure-screen` was slightly lower with the skill on Claude (20/21 to 19/21). The gains are in `delete-confirmation` (both hosts), `count-the-borders` (Codex: 12/21 to 20/21), and `focus-without-color` (Claude).
+- **Grader spot-check on the outcome-based set:** a 40% Codex re-grade (258 assertions) agreed on 94.2% (Cohen's kappa 0.62), with 15 disagreements in both directions, mostly on width and count assertions that can be read two ways. The rubric was fixed before the run and left unchanged; a later revision should clarify those assertions.
 
 ### Release engineering
+- The `validate` workflow is pinned to `ubuntu-24.04`. `ubuntu-latest` now resolves to 26.04, which has no Python 3.9 build for `actions/setup-python`, so the 3.9 floor job failed before running any checks.
 - `scripts/grader_spotcheck.py` samples recorded trials, re-grades them through the isolated Codex runner with each bundle's own grading prompt, and reports per-assertion agreement, Cohen's kappa, pass rates by answering provider and condition, and every disagreement (six tests in `tests/test_grader_spotcheck.py`).
 
 ## [1.9.0] — 2026-10-27
